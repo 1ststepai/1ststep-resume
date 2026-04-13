@@ -96,26 +96,52 @@ export default async function handler(req, res) {
     results.ghl = 'skipped';
   }
 
-  // ── 2. Admin email via FormSubmit ─────────────────────────────────────────
-  try {
-    const body = new URLSearchParams();
-    body.set('name',      fullName);
-    body.set('email',     email);
-    body.set('message',   `New 1stStep.ai signup\n\nName: ${fullName}\nEmail: ${email}\nTime: ${new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })}`);
-    body.set('_subject',  `🆕 New signup: ${fullName}`);
-    body.set('_captcha',  'false');
-    body.set('_template', 'box');
-    body.set('_replyto',  email); // reply goes to the user, not noreply
-
-    await fetch('https://formsubmit.co/evan@1ststep.ai', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body:    body.toString(),
-    });
-    results.email = 'sent';
-  } catch (err) {
-    console.error('Admin email send failed:', err.message);
-    results.email = 'error';
+  // ── 2. Admin email via Resend ─────────────────────────────────────────────
+  const resendKey = process.env.RESEND_API_KEY;
+  if (resendKey) {
+    try {
+      const time = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
+      const r = await fetch('https://api.resend.com/emails', {
+        method:  'POST',
+        headers: {
+          'Authorization': `Bearer ${resendKey}`,
+          'Content-Type':  'application/json',
+        },
+        body: JSON.stringify({
+          from:     'onboarding@resend.dev',
+          to:       'evan@1ststep.ai',
+          reply_to: email,
+          subject:  `🆕 New signup: ${fullName}`,
+          html: `
+            <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+              <h2 style="margin:0 0 16px;color:#0F172A">New 1stStep.ai Signup</h2>
+              <table style="width:100%;border-collapse:collapse">
+                <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Name</td><td style="padding:8px 0;font-size:14px;font-weight:600;color:#0F172A">${fullName}</td></tr>
+                <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Email</td><td style="padding:8px 0;font-size:14px;font-weight:600;color:#0F172A"><a href="mailto:${email}" style="color:#4338CA">${email}</a></td></tr>
+                <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Time</td><td style="padding:8px 0;font-size:14px;color:#0F172A">${time}</td></tr>
+                <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Plan</td><td style="padding:8px 0;font-size:14px;color:#0F172A">Free</td></tr>
+              </table>
+              <div style="margin-top:20px;padding:12px 16px;background:#EEF2FF;border-radius:8px;font-size:13px;color:#4338CA">
+                Hit reply to reach ${firstName || 'them'} directly.
+              </div>
+            </div>`,
+        }),
+      });
+      const data = await r.json();
+      if (r.ok) {
+        console.log(`✅ Admin email sent via Resend: ${data.id}`);
+        results.email = 'sent';
+      } else {
+        console.error('Resend error:', JSON.stringify(data));
+        results.email = 'error';
+      }
+    } catch (err) {
+      console.error('Resend send failed:', err.message);
+      results.email = 'error';
+    }
+  } else {
+    console.log('RESEND_API_KEY not set — skipping email');
+    results.email = 'skipped';
   }
 
   return res.status(200).json({ ok: true, results });
