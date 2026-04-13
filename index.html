@@ -4864,41 +4864,33 @@ function saveProfile() {
 }
 
 // Fires when a user saves their profile for the first time.
-// 1. Identifies the contact in the GHL CRM (appears in contacts dashboard).
-// 2. Sends an email alert to evan@1ststep.ai via FormSubmit (no backend needed).
+// Calls /api/notify-signup which:
+//   1. Upserts a GHL contact tagged 'free' + 'signup' for retargeting
+//   2. Sends an admin email alert to evan@1ststep.ai via FormSubmit
 function notifyNewSignup(p) {
   const fullName = [p.firstName, p.lastName].filter(Boolean).join(' ');
 
-  // ── 1. GHL contact identification ─────────────────────────────────────
-  // LeadConnector widget exposes setCustomerData once the widget loads.
-  // This makes the visitor show up as a named contact in the GHL dashboard.
+  // ── Server-side: GHL contact capture + admin email ─────────────────────
+  // Fire-and-forget — never block the user flow
+  fetch('/api/notify-signup', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ firstName: p.firstName, lastName: p.lastName, email: p.email }),
+  }).catch(() => { /* silent — non-blocking */ });
+
+  // ── Also identify in GHL chat widget if loaded ─────────────────────────
   try {
     if (typeof window.LeadConnector !== 'undefined' && window.LeadConnector.setCustomerData) {
       window.LeadConnector.setCustomerData({ email: p.email, name: fullName });
     } else {
-      // Widget may not be loaded yet — retry once after 3 s
       setTimeout(() => {
-        if (typeof window.LeadConnector !== 'undefined' && window.LeadConnector.setCustomerData) {
-          window.LeadConnector.setCustomerData({ email: p.email, name: fullName });
-        }
+        try {
+          if (typeof window.LeadConnector !== 'undefined' && window.LeadConnector.setCustomerData) {
+            window.LeadConnector.setCustomerData({ email: p.email, name: fullName });
+          }
+        } catch (e) { /* silent */ }
       }, 3000);
     }
-  } catch (e) { /* silent — don't break the app if GHL widget fails */ }
-
-  // ── 2. Email alert via FormSubmit ──────────────────────────────────────
-  // FormSubmit.co forwards POST submissions to the destination email.
-  // First submission to a new email triggers a one-time confirmation email
-  // to evan@1ststep.ai — just click "Confirm" in that email to activate.
-  try {
-    const body = new FormData();
-    body.append('name',    fullName);
-    body.append('email',   p.email);
-    body.append('message', `New 1stStep.ai signup — ${fullName} (${p.email}) at ${new Date().toLocaleString()}`);
-    body.append('_subject', `New signup: ${fullName}`);
-    body.append('_captcha', 'false');
-    body.append('_template', 'box');
-    fetch('https://formsubmit.co/evan@1ststep.ai', { method: 'POST', body })
-      .catch(() => { /* silent fail — never block the user flow */ });
   } catch (e) { /* silent */ }
 }
 
