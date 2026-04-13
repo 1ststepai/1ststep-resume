@@ -3,7 +3,8 @@
     "api/claude.js":           { "maxDuration": 60 },
     "api/jobs.js":             { "maxDuration": 30 },
     "api/subscription.js":    { "maxDuration": 15 },
-    "api/stripe-webhook.js":  { "maxDuration": 10 }
+    "api/stripe-webhook.js":  { "maxDuration": 10 },
+    "api/notify-signup.js":   { "maxDuration": 10 }
   },
   "rewrites": [
     { "source": "/api/jobs/details", "destination": "/api/jobs" },

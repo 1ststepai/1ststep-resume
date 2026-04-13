@@ -111,6 +111,9 @@
       --blue: #4338CA; --blue-dark: #3730A3; --blue-light: #EEF2FF;
       --dark: var(--bg); --dark2: var(--surface); --dark3: var(--border2);
       --white: #FFFFFF;
+      /* Legacy dark-mode aliases used in older inline styles */
+      --fg: var(--text);
+      --input-bg: var(--surface2);
     }
     html, body { height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
 
@@ -1783,7 +1786,7 @@
   </div>
 
   <!-- Footer -->
-  <div id="appFooter" style="display:flex;align-items:center;justify-content:center;gap:20px;padding:10px 20px;border-top:1px solid var(--border);background:var(--dark2);flex-shrink:0">
+  <div id="appFooter" style="display:flex;align-items:center;justify-content:center;gap:20px;padding:10px 20px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0">
     <a href="https://www.youtube.com/@1ststepdotai" target="_blank" rel="noopener"
        style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);text-decoration:none;transition:color 0.15s"
        onmouseover="this.style.color='#FF0000'" onmouseout="this.style.color='var(--muted)'">
@@ -1798,7 +1801,7 @@
       Report a bug
     </a>
     <span style="color:var(--border)">·</span>
-    <span style="font-size:11px;color:var(--dark3)">© 2026 1stStep.ai</span>
+    <span style="font-size:11px;color:var(--muted)">© 2026 1stStep.ai</span>
     <span style="color:var(--border)">·</span>
     <a href="/terms" target="_blank" style="font-size:12px;color:var(--muted);text-decoration:none;transition:color 0.15s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">Terms</a>
     <span style="color:var(--border)">·</span>
@@ -5025,6 +5028,11 @@ function _applySubscriptionTier(tier, notify) {
 // ── LinkedIn Profile Optimizer ────────────────────────────────────────────────
 
 function initLinkedInPanel() {
+  // Gate to Essential and Complete plans — free users see upgrade prompt
+  if (currentTier === 'free') {
+    setTimeout(() => openUpgradeModal(), 100);
+    return;
+  }
   // Auto-load resume from Resume Tailor if available
   const resumeText = fileContent || document.getElementById('resumeText').value.trim();
   const liResumeEl = document.getElementById('liResume');

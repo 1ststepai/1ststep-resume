@@ -15,6 +15,7 @@ export const maxDuration = 30;
 const ALLOWED_ORIGINS = [
   'https://1ststep.ai',
   'https://www.1ststep.ai',
+  'https://app.1ststep.ai',
 ];
 
 // ── Allowed query parameters forwarded to JSearch ──────────────────────────

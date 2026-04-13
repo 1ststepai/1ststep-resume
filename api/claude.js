@@ -33,13 +33,16 @@ const RATE_LIMIT_MAX_CALLS = 15;     // max Claude calls per IP per minute
 const monthlyIpUsage = new Map();
 
 // Server-side monthly limits per IP.
-// Set high enough that no paying user ever hits them,
-// low enough to block a free-tier abuser who clears localStorage repeatedly.
+// These are ABUSE backstops only — must be well above the highest plan limits
+// so no paying user ever hits them.
+//   Free: 3 tailors / 3 searches   →  a free abuser clears localStorage ~66x before hitting 200
+//   Essential: 25 tailors / 40 searches  →  server limit is 8x above plan
+//   Complete: ~unlimited tailors / 80 searches  →  server limit is well above plan
 const MONTHLY_IP_LIMITS = {
-  tailor:      15,  // free tier client limit is 3 → abuser cut off after 5 resets
-  coverLetter: 15,
-  search:      30,
-  linkedin:     8,
+  tailor:      200,  // Complete plan is "unlimited" — 200 is pure abuse backstop
+  coverLetter: 200,
+  search:      150,  // Complete plan = 80 searches — 150 gives clear headroom
+  linkedin:     50,
 };
 
 // callType values that are counted against monthly limits
