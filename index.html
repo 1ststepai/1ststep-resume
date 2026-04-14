@@ -5824,11 +5824,15 @@ function checkBetaAccess() {
     return;
   }
 
-  // Valid beta token — restore Complete tier from sub cache if it matches
-  const cached = JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || 'null');
-  if (cached?.tier === 'complete' && cached?.tierToken) {
-    _applySubscriptionTier('complete', false);
-  }
+  // Valid beta token — always force Complete tier regardless of sub cache state.
+  // Don't gate on tierToken being present — it may be empty if TIER_SECRET wasn't
+  // set at the time the code was entered, and the old verifySubscription bug may
+  // have reset 1ststep_tier back to 'free' before it was fixed.
+  currentTier = 'complete';
+  localStorage.setItem('1ststep_tier', 'complete');
+  updateTailorUsageMeter?.();
+  updateSearchUsageMeter?.();
+  updateTierLockIcon?.();
 
   updateBetaBadge(beta.expiresAt);
 }
