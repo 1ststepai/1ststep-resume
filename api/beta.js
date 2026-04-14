@@ -144,7 +144,7 @@ export default async function handler(req, res) {
       method:  'POST',
       headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from:    'onboarding@resend.dev',
+        from:    'notifications@1ststep.ai',
         to:      'evan@1ststep.ai',
         reply_to: cleanEmail,
         subject: `🧪 New beta user: ${cleanEmail}`,

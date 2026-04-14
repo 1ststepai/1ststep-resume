@@ -131,7 +131,7 @@ export default async function handler(req, res) {
       if (verified) {
         check('Resend Email', 'OK', '1ststep.ai domain verified — emails send from notifications@1ststep.ai');
       } else if (pending) {
-        check('Resend Email', 'WARN', '1ststep.ai domain NOT YET VERIFIED — emails still sending from onboarding@resend.dev (may land in spam). Check resend.com/domains.');
+        check('Resend Email', 'WARN', '1ststep.ai domain not fully verified (SPF pending) — check resend.com/domains.');
       } else {
         check('Resend Email', 'OK', 'API key valid (domain check inconclusive)');
       }
@@ -206,7 +206,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from:    'onboarding@resend.dev',
+        from:    'notifications@1ststep.ai',
         to:      'evan@1ststep.ai',
         subject,
         html: `

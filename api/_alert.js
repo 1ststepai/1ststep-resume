@@ -60,7 +60,7 @@ export async function alertOnAbuse(event, identifier = '', details = '') {
         'Content-Type':  'application/json',
       },
       body: JSON.stringify({
-        from:    'onboarding@resend.dev',
+        from:    'notifications@1ststep.ai',
         to:      'evan@1ststep.ai',
         subject: `1stStep.ai alert: ${label}`,
         html: `
