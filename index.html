@@ -1226,6 +1226,14 @@
       </div>
     </div>
     <div class="topbar-right">
+      <!-- Beta chip — shown only when beta is active -->
+      <div id="betaBadge" style="display:none;align-items:center;gap:5px;padding:5px 10px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);border-radius:8px;font-size:11px;font-weight:600;color:#818CF8;cursor:default" title="Beta access active">
+        <span>🧪</span><span id="betaDaysLeft" class="hide-mobile">Beta</span>
+      </div>
+      <!-- Feedback button — shown only during beta -->
+      <button id="feedbackBtn" onclick="openFeedbackForm()" style="display:none;align-items:center;gap:5px;padding:6px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s" onmouseover="this.style.borderColor='var(--brand)';this.style.color='var(--brand)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
+        <span>💬</span><span class="hide-mobile">Feedback</span>
+      </button>
       <div class="api-badge" onclick="openProfileModal()">
         <span>👤</span>
         <span id="profileBadgeText" class="hide-mobile">Account</span>
@@ -2015,6 +2023,47 @@
 </div>
 
 <!-- Welcome / Onboarding Modal (first visit only) -->
+<!-- ── Beta Gate Overlay ──────────────────────────────────────────────────── -->
+<!-- Shown to visitors who don't have a valid beta token in localStorage.     -->
+<!-- Hidden entirely once beta period ends and app goes public.               -->
+<div id="betaGate" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.92);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:24px">
+  <div style="background:var(--surface);border-radius:20px;padding:40px 36px;max-width:400px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.3);text-align:center">
+    <div style="font-size:28px;margin-bottom:12px">🧪</div>
+    <div style="font-weight:800;font-size:20px;color:var(--text);margin-bottom:6px">1stStep.ai Beta</div>
+    <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 28px">
+      This is an invite-only beta. Enter your email and the invite code you received to get <strong style="color:var(--text)">15 days of free Complete access.</strong>
+    </p>
+    <input id="betaEmail" type="email" placeholder="Your email address" autocomplete="email"
+      style="width:100%;margin-bottom:10px;padding:13px 16px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-family:'Inter',sans-serif;font-size:14px;color:var(--text);outline:none;box-sizing:border-box"
+      onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--border)'">
+    <input id="betaCode" type="text" placeholder="Invite code" autocomplete="off" spellcheck="false"
+      style="width:100%;margin-bottom:16px;padding:13px 16px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-family:'Inter',sans-serif;font-size:14px;color:var(--text);letter-spacing:0.05em;outline:none;box-sizing:border-box;text-transform:uppercase"
+      onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--border)'"
+      onkeydown="if(event.key==='Enter')submitBetaCode()">
+    <div id="betaError" style="display:none;color:var(--red);font-size:12px;margin-bottom:12px;padding:8px 12px;background:var(--red-light);border-radius:8px"></div>
+    <button id="betaSubmitBtn" onclick="submitBetaCode()" style="width:100%;padding:13px;background:linear-gradient(135deg,#4338CA,#6366F1);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity 0.15s">
+      Unlock Beta Access →
+    </button>
+    <p style="font-size:11px;color:var(--muted);margin:14px 0 0">Got an invite? <a href="mailto:evan@1ststep.ai" style="color:var(--brand);text-decoration:none">Contact us</a> to request one.</p>
+  </div>
+</div>
+
+<!-- ── Beta Expired Overlay ───────────────────────────────────────────────── -->
+<div id="betaExpired" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.92);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:24px">
+  <div style="background:var(--surface);border-radius:20px;padding:40px 36px;max-width:400px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.3);text-align:center">
+    <div style="font-size:28px;margin-bottom:12px">⏰</div>
+    <div style="font-weight:800;font-size:20px;color:var(--text);margin-bottom:6px">Your beta has ended</div>
+    <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 24px">
+      Thanks for being an early tester! Your 15-day beta period has expired.<br>Upgrade to keep tailoring your resume.
+    </p>
+    <a id="betaUpgradeBtn" href="https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00" target="_blank"
+      style="display:block;width:100%;padding:13px;background:linear-gradient(135deg,#4338CA,#6366F1);color:white;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;box-sizing:border-box;margin-bottom:10px">
+      See Plans →
+    </a>
+    <button onclick="clearBetaAndShowGate()" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline">Use a new invite code</button>
+  </div>
+</div>
+
 <div class="welcome-overlay" id="welcomeOverlay">
   <div class="welcome-modal">
     <div class="welcome-logo">1stStep<span>.ai</span></div>
@@ -5601,6 +5650,188 @@ function downloadBulkResult(entryId) {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ── BETA ACCESS SYSTEM ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Flow:
+//   1. On load: checkBetaAccess() — checks localStorage for a valid beta token
+//   2. No token / expired → show betaGate overlay
+//   3. User enters email + code → submitBetaCode() → POST /api/beta
+//   4. Valid → store token in sub cache, grant Complete tier, hide gate
+//   5. Beta badge + feedback button shown in topbar while beta is active
+//
+// localStorage keys used:
+//   1ststep_beta        — { email, expiresAt, grantedAt }
+//   1ststep_sub_cache   — { email, tier, ts, tierToken } (shared with verifySubscription)
+
+const BETA_KEY = '1ststep_beta';
+
+// Tally feedback form URL — paste your Tally form share link here after creating it at tally.so
+// Format: https://tally.so/r/XXXXXXXX
+// Make sure your form has an Email field — the webhook uses it to match the GHL contact.
+const TALLY_FEEDBACK_FORM_URL = 'https://tally.so/r/rjd97o';
+
+function openFeedbackForm() {
+  // Pre-fill the user's email into the Tally form using Tally's hidden field feature.
+  // In Tally: add a Hidden Field named "email" → it auto-populates from the URL param.
+  // This means the webhook receives their email without them having to type it.
+  const beta    = getBetaState();
+  const profile = loadProfile();
+  const email   = beta?.email || profile?.email || '';
+  const url     = email
+    ? `${TALLY_FEEDBACK_FORM_URL}?email=${encodeURIComponent(email)}`
+    : TALLY_FEEDBACK_FORM_URL;
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+function getBetaState() {
+  try { return JSON.parse(localStorage.getItem(BETA_KEY) || 'null'); }
+  catch { return null; }
+}
+
+function saveBetaState(state) {
+  try { localStorage.setItem(BETA_KEY, JSON.stringify(state)); } catch {}
+}
+
+function clearBetaAndShowGate() {
+  localStorage.removeItem(BETA_KEY);
+  localStorage.removeItem(SUB_CACHE_KEY);
+  localStorage.removeItem('1ststep_tier');
+  currentTier = 'free';
+  document.getElementById('betaExpired').style.display = 'none';
+  document.getElementById('betaGate').style.display = 'flex';
+  document.getElementById('betaEmail').focus();
+}
+
+function updateBetaBadge(expiresAt) {
+  const badge     = document.getElementById('betaBadge');
+  const daysEl    = document.getElementById('betaDaysLeft');
+  const feedbackBtn = document.getElementById('feedbackBtn');
+  if (!badge) return;
+  const daysLeft = Math.max(0, Math.ceil((expiresAt - Date.now()) / (1000 * 60 * 60 * 24)));
+  badge.style.display = 'flex';
+  daysEl.textContent  = `Beta · ${daysLeft}d left`;
+  feedbackBtn.style.display = 'flex';
+}
+
+function checkBetaAccess() {
+  const beta = getBetaState();
+
+  // No beta token at all → show gate
+  if (!beta) {
+    document.getElementById('betaGate').style.display = 'flex';
+    return;
+  }
+
+  // Token expired → show expired screen
+  if (Date.now() > beta.expiresAt) {
+    document.getElementById('betaExpired').style.display = 'flex';
+    // Reset tier so they can't still use features
+    localStorage.setItem('1ststep_tier', 'free');
+    currentTier = 'free';
+    return;
+  }
+
+  // Valid beta token — restore Complete tier from sub cache if it matches
+  const cached = JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || 'null');
+  if (cached?.tier === 'complete' && cached?.tierToken) {
+    _applySubscriptionTier('complete', false);
+  }
+
+  updateBetaBadge(beta.expiresAt);
+}
+
+async function submitBetaCode() {
+  const emailInput = document.getElementById('betaEmail');
+  const codeInput  = document.getElementById('betaCode');
+  const errorEl    = document.getElementById('betaError');
+  const submitBtn  = document.getElementById('betaSubmitBtn');
+
+  const email = emailInput.value.trim().toLowerCase();
+  const code  = codeInput.value.trim().toUpperCase();
+
+  errorEl.style.display = 'none';
+
+  if (!email || !email.includes('@')) {
+    errorEl.textContent = 'Please enter a valid email address.';
+    errorEl.style.display = 'block';
+    emailInput.focus();
+    return;
+  }
+  if (!code) {
+    errorEl.textContent = 'Please enter your invite code.';
+    errorEl.style.display = 'block';
+    codeInput.focus();
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Checking…';
+
+  try {
+    const resp = await fetch('/api/beta', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email, code }),
+    });
+    const data = await resp.json();
+
+    if (data.valid) {
+      // Store beta state
+      saveBetaState({ email, expiresAt: data.expiresAt, grantedAt: Date.now() });
+
+      // Store in sub cache so callClaude() picks up the tierToken automatically
+      localStorage.setItem(SUB_CACHE_KEY, JSON.stringify({
+        email,
+        tier:      'complete',
+        ts:        Date.now(),
+        tierToken: data.tierToken || '',
+      }));
+      localStorage.setItem(PROFILE_KEY, JSON.stringify({
+        ...(JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}')),
+        email,
+      }));
+
+      // Apply Complete tier immediately
+      currentTier = 'complete';
+      localStorage.setItem('1ststep_tier', 'complete');
+      updateTailorUsageMeter?.();
+      updateSearchUsageMeter?.();
+
+      // Hide gate, show badge
+      document.getElementById('betaGate').style.display = 'none';
+      updateBetaBadge(data.expiresAt);
+      updateProfileBadge();
+
+      // Show welcome overlay for new users, or just toast for returning ones
+      if (!localStorage.getItem('1ststep_welcomed')) {
+        document.getElementById('welcomeOverlay').classList.add('visible');
+      } else {
+        showToast('🧪 Beta access unlocked — welcome! You have Complete plan for 15 days.', 'success');
+      }
+    } else {
+      errorEl.textContent = data.error || 'Invalid code — please check your invite and try again.';
+      errorEl.style.display = 'block';
+      codeInput.focus();
+      codeInput.select();
+    }
+  } catch (err) {
+    errorEl.textContent = 'Something went wrong — check your connection and try again.';
+    errorEl.style.display = 'block';
+    console.error('Beta submit error:', err);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Unlock Beta Access →';
+  }
+}
+
+// Run beta check immediately on page load (before DOMContentLoaded for instant gating)
+// Wrapped in a small delay so the DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  checkBetaAccess();
+});
 
 </script>
 

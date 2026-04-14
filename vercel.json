@@ -12,7 +12,9 @@
     "api/stripe-webhook.js":  { "maxDuration": 10 },
     "api/notify-signup.js":   { "maxDuration": 10 },
     "api/track-event.js":    { "maxDuration": 10 },
-    "api/health.js":         { "maxDuration": 30 }
+    "api/health.js":         { "maxDuration": 30 },
+    "api/beta.js":           { "maxDuration": 15 },
+    "api/tally-webhook.js":  { "maxDuration": 15 }
   },
   "rewrites": [
     { "source": "/api/jobs/details", "destination": "/api/jobs" },
