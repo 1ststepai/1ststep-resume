@@ -1344,6 +1344,9 @@
           <span id="runBtnLabel">✦ Tailor My Resume</span>
         </button>
         <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:10px;">Takes 20–45 seconds</p>
+        <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:6px;">
+          Already have a job description? <button onclick="showJdSection();document.getElementById('jobText').focus()" style="background:none;border:none;color:var(--brand);font-size:11px;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;font-family:'Inter',sans-serif">Paste it manually →</button>
+        </p>
         <!-- Monthly tailor usage meter — always visible for free users -->
         <div id="tailorUsageMeter" style="margin-top:14px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
@@ -2143,7 +2146,6 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         document.getElementById('resumeText').value = saved.text;
       }
-      showJdSection();
       updateCounts();
       refreshSetupSteps();
     }
@@ -2154,7 +2156,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('resumeText').addEventListener('input', () => {
     updateCounts();
     refreshSetupSteps();
-    if (document.getElementById('resumeText').value.trim()) showJdSection();
     clearTimeout(_resumeSaveTimer);
     _resumeSaveTimer = setTimeout(() => {
       const text = document.getElementById('resumeText').value.trim();
@@ -2472,7 +2473,6 @@ async function processFile(file) {
     document.getElementById('fileName').textContent = file.name;
     document.getElementById('fileLoaded').style.display = 'flex';
     document.getElementById('fileDrop').style.display = 'none';
-    showJdSection();
     updateCounts();
     refreshSetupSteps();
     updateRunButton();
@@ -2514,7 +2514,7 @@ function updateRunButton() {
   } else if (!hasJob) {
     btn.style.opacity = '0.65';
     btn.style.cursor = 'default';
-    lbl.textContent = '↓ Add a job description above to continue';
+    lbl.textContent = '↓ Find a job in Job Search to tailor to';
   } else {
     btn.style.opacity = '';
     btn.style.cursor = '';
