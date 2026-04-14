@@ -6,6 +6,8 @@
 //
 // Set it in Vercel: Project → Settings → Environment Variables
 
+import { alertOnAbuse } from './_alert.js';
+
 export const maxDuration = 60; // seconds — needed for long Sonnet rewrites
 
 // ── Allowed origins (same-origin calls don't need CORS, but list here for preflight) ──
@@ -226,6 +228,7 @@ export default async function handler(req, res) {
 
   // Per-minute rate limiting (prevents hammering)
   if (isRateLimited(ip)) {
+    alertOnAbuse('rate_limited', ip, `callType:${req.body?.callType || '?'}`);
     return res.status(429).json({
       error: 'Too many requests — please wait a moment and try again.',
       code: 'RATE_LIMITED',
@@ -285,6 +288,7 @@ export default async function handler(req, res) {
   // linkedin: Sonnet LinkedIn optimizer (Complete-only, checked below)
   const SONNET_ALLOWED_TYPES = new Set(['tailor', 'coverLetter', 'linkedin']);
   if (model === 'claude-sonnet-4-6' && !SONNET_ALLOWED_TYPES.has(callType)) {
+    alertOnAbuse('model_restricted', ip, `callType:${callType} email:${userEmail}`);
     return res.status(403).json({
       error: 'Model not available for this request type.',
       code:  'MODEL_RESTRICTED',
@@ -298,6 +302,7 @@ export default async function handler(req, res) {
   if (PAID_ONLY_TYPES.has(callType)) {
     const verifiedTier = await getVerifiedTier(userEmail, tierToken);
     if (verifiedTier === 'free') {
+      alertOnAbuse('tier_required', ip, `callType:${callType} email:${userEmail}`);
       return res.status(403).json({
         error: 'This feature requires an active paid subscription.',
         code:  'TIER_REQUIRED',
@@ -305,6 +310,7 @@ export default async function handler(req, res) {
       });
     }
     if (COMPLETE_ONLY_TYPES.has(callType) && verifiedTier !== 'complete') {
+      alertOnAbuse('tier_required', ip, `callType:${callType} email:${userEmail} tier:${verifiedTier}`);
       return res.status(403).json({
         error: 'This feature requires the Complete plan.',
         code:  'COMPLETE_REQUIRED',
@@ -319,6 +325,7 @@ export default async function handler(req, res) {
   // once they've consumed their monthly server-side allowance for this IP.
   const limitCheck = checkAndIncrementMonthly(ip, callType);
   if (!limitCheck.allowed) {
+    alertOnAbuse('monthly_limit', ip, `callType:${callType} used:${limitCheck.used} email:${userEmail}`);
     return res.status(429).json({
       error: `Monthly limit reached for this IP address. Upgrade to continue.`,
       code: 'MONTHLY_LIMIT',
@@ -374,6 +381,10 @@ export default async function handler(req, res) {
       const errBody = await anthropicRes.json().catch(() => ({}));
       const message = errBody?.error?.message || `Anthropic API error ${anthropicRes.status}`;
       console.error(JSON.stringify({ ...logEntry, status: 'error', httpStatus: anthropicRes.status, errMsg: message }));
+      // Alert on auth failures — these mean the API key is invalid or revoked
+      if (anthropicRes.status === 401 || anthropicRes.status === 403) {
+        alertOnAbuse('anthropic_auth_failure', 'api_key', `status:${anthropicRes.status} msg:${message}`);
+      }
       return res.status(anthropicRes.status).json({ error: message });
     }
 

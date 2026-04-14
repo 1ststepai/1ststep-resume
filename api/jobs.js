@@ -1,4 +1,5 @@
 // Vercel Serverless Function — Job Search Proxy
+import { alertOnAbuse } from './_alert.js';
 // Keeps the RapidAPI key server-side so customers don't need their own.
 //
 // Environment variable required:
@@ -92,11 +93,13 @@ export default async function handler(req, res) {
            || 'unknown';
 
   if (isRateLimited(ip)) {
+    alertOnAbuse('rate_limited', ip, 'endpoint:jobs');
     return res.status(429).json({ error: 'Too many searches — please wait a moment and try again.' });
   }
 
   // Monthly quota guard (COST-01: prevents draining JSearch plan)
   if (checkMonthlyJobLimit(ip)) {
+    alertOnAbuse('monthly_limit', ip, 'endpoint:jobs');
     return res.status(429).json({ error: 'Monthly job search limit reached for this IP.' });
   }
 
@@ -127,6 +130,7 @@ export default async function handler(req, res) {
     });
 
     if (upstream.status === 403 || upstream.status === 401) {
+      alertOnAbuse('jsearch_auth_failure', 'rapidapi_key', `status:${upstream.status}`);
       return res.status(403).json({ error: 'Invalid RapidAPI key on server. Contact support at evan@1ststep.ai' });
     }
     if (upstream.status === 429) {

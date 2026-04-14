@@ -20,6 +20,7 @@
  */
 
 import Stripe from 'stripe';
+import { alertOnAbuse } from './_alert.js';
 
 // Webhooks must receive the raw body — disable body parsing
 export const config = { api: { bodyParser: false } };
@@ -251,6 +252,7 @@ export default async function handler(req, res) {
     event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.error('Webhook signature verification failed:', err.message);
+    alertOnAbuse('webhook_sig_failure', req.headers['x-real-ip'] || 'unknown', err.message);
     return res.status(400).json({ error: `Webhook error: ${err.message}` });
   }
 
