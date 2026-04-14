@@ -325,7 +325,7 @@
     }
     .match-score-badge.good { background: var(--green-light); color: #065F46; }
     .match-score-badge.ok { background: var(--amber-light); color: #78350F; }
-    .topbar-actions { display: flex; gap: 8px; }
+    .topbar-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
     .btn-sm {
       padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
       cursor: pointer; border: 1.5px solid var(--border); font-family: 'Inter', sans-serif;
@@ -1551,23 +1551,53 @@
         <div class="results-topbar">
           <div id="matchBadge" class="match-score-badge good">✓ Resume Tailored</div>
           <div class="topbar-actions">
-            <button class="btn-sm btn-sm-outline" onclick="openTemplateModal()" style="white-space:nowrap;gap:5px;display:inline-flex;align-items:center" id="applyTemplateBtn" title="Apply a visual resume template">
-              🎨 Apply Template
-            </button>
-            <button class="btn-sm btn-sm-outline" onclick="openDiffModal()" style="white-space:nowrap;gap:5px;display:inline-flex;align-items:center" id="viewChangesBtn" title="See what changed from your original resume">
-              📊 View Changes
-            </button>
-            <button class="btn-sm btn-sm-outline" onclick="openInterviewModal()" style="white-space:nowrap;gap:5px;display:inline-flex;align-items:center" id="interviewPrepBtn" title="Get likely interview questions with personalized talking points">
-              🎤 Interview Prep
-            </button>
-            <button class="btn-sm btn-sm-primary" onclick="downloadDocx()" style="white-space:nowrap;gap:5px;display:inline-flex;align-items:center">
+            <!-- Tools dropdown -->
+            <div style="position:relative" id="toolsDropdownWrap">
+              <button class="btn-sm btn-sm-outline" onclick="toggleToolsDropdown()" style="white-space:nowrap;gap:5px;display:inline-flex;align-items:center" id="toolsDropdownBtn">
+                🛠 Tools
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" id="toolsChevron" style="transition:transform 0.2s"><path d="M4 6l4 4 4-4"/></svg>
+              </button>
+              <div id="toolsDropdown" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);min-width:190px;z-index:200;overflow:hidden">
+                <button onclick="openTemplateModal();closeToolsDropdown()" id="applyTemplateBtn"
+                  style="width:100%;text-align:left;padding:10px 14px;border:none;background:transparent;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);display:flex;align-items:center;gap:9px;transition:background 0.1s"
+                  onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='transparent'">
+                  🎨 <span>Apply Template</span>
+                </button>
+                <button onclick="openInterviewModal();closeToolsDropdown()" id="interviewPrepBtn"
+                  style="width:100%;text-align:left;padding:10px 14px;border:none;background:transparent;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);display:flex;align-items:center;gap:9px;transition:background 0.1s;border-top:1px solid var(--border)"
+                  onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='transparent'">
+                  🎤 <span>Interview Prep</span>
+                </button>
+                <button onclick="openDiffModal();closeToolsDropdown()" id="viewChangesBtn"
+                  style="width:100%;text-align:left;padding:10px 14px;border:none;background:transparent;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);display:flex;align-items:center;gap:9px;transition:background 0.1s;border-top:1px solid var(--border)"
+                  onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='transparent'">
+                  📊 <span>View Changes</span>
+                </button>
+              </div>
+            </div>
+            <button class="btn-sm btn-sm-primary" onclick="downloadDocx()" style="white-space:nowrap;gap:6px;display:inline-flex;align-items:center">
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v8M5 7l3 3 3-3M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1"/></svg>
               Download .docx
             </button>
             <button class="btn-sm btn-sm-outline" onclick="runTailoring()" style="white-space:nowrap">↺ Re-tailor</button>
             <button class="btn-sm btn-sm-outline" onclick="switchMode('jobs')" style="white-space:nowrap">🔍 Jobs</button>
-            <button class="btn-sm btn-sm-outline" onclick="switchMode('tailored')" style="white-space:nowrap">📄 Save</button>
+            <button class="btn-sm btn-sm-outline" onclick="switchMode('tailored')" style="white-space:nowrap">📁 History</button>
           </div>
+        </div>
+
+        <!-- What's Next nudge — shown after tailoring, dismissed on action -->
+        <div id="whatsNextBar" style="display:none;align-items:center;gap:6px;padding:10px 20px;background:linear-gradient(90deg,#F0FDF4,#F0F9FF);border-bottom:1px solid #BBF7D0;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:600;color:#065F46;margin-right:4px;white-space:nowrap">What's next?</span>
+          <button id="wnDownload" onclick="downloadDocx();markNextDone('wnDownload')" style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1.5px solid #6EE7B7;background:#fff;font-size:12px;font-weight:500;cursor:pointer;color:#065F46;transition:all 0.15s" onmouseenter="this.style.background='#ECFDF5'" onmouseleave="this.style.background='#fff'">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M8 2v8M5 7l3 3 3-3M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1"/></svg> Download resume
+          </button>
+          <button id="wnInterview" onclick="openInterviewModal();closeToolsDropdown();markNextDone('wnInterview')" style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1.5px solid #6EE7B7;background:#fff;font-size:12px;font-weight:500;cursor:pointer;color:#065F46;transition:all 0.15s" onmouseenter="this.style.background='#ECFDF5'" onmouseleave="this.style.background='#fff'">
+            🎤 Prep for interview
+          </button>
+          <button id="wnTrack" onclick="switchMode('tailored');markNextDone('wnTrack')" style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1.5px solid #6EE7B7;background:#fff;font-size:12px;font-weight:500;cursor:pointer;color:#065F46;transition:all 0.15s" onmouseenter="this.style.background='#ECFDF5'" onmouseleave="this.style.background='#fff'">
+            📁 Save to history
+          </button>
+          <button onclick="document.getElementById('whatsNextBar').style.display='none'" style="margin-left:auto;background:none;border:none;color:#9CA3AF;cursor:pointer;font-size:16px;line-height:1;padding:0;flex-shrink:0">✕</button>
         </div>
 
         <!-- Post-tailor account nudge — hidden once account is set -->
@@ -2533,6 +2563,26 @@ function updateRunButton() {
   }
 }
 
+// ── Tools Dropdown ───────────────────────────────────────────────────────
+function toggleToolsDropdown() {
+  const dd      = document.getElementById('toolsDropdown');
+  const chevron = document.getElementById('toolsChevron');
+  const isOpen  = dd.style.display !== 'none';
+  dd.style.display        = isOpen ? 'none' : 'block';
+  chevron.style.transform = isOpen ? ''     : 'rotate(180deg)';
+}
+function closeToolsDropdown() {
+  const dd      = document.getElementById('toolsDropdown');
+  const chevron = document.getElementById('toolsChevron');
+  if (dd) dd.style.display = 'none';
+  if (chevron) chevron.style.transform = '';
+}
+// Close dropdown when clicking anywhere outside it
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('toolsDropdownWrap');
+  if (wrap && !wrap.contains(e.target)) closeToolsDropdown();
+});
+
 // ── Job Context Banner ────────────────────────────────────────────────────
 function showJobContext(title, company) {
   const banner = document.getElementById('jobContextBanner');
@@ -3029,11 +3079,38 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
 }
 
 // ── Render Results ────────────────────────────────────────────────────────
+function markNextDone(id) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.style.background    = '#ECFDF5';
+  btn.style.borderColor   = '#10B981';
+  btn.style.color         = '#065F46';
+  btn.style.textDecoration = 'line-through';
+  btn.style.opacity       = '0.6';
+  btn.style.pointerEvents = 'none';
+  // If all three done, hide the bar after a beat
+  const ids = ['wnDownload', 'wnInterview', 'wnTrack'];
+  if (ids.every(i => document.getElementById(i)?.style.pointerEvents === 'none')) {
+    setTimeout(() => { const bar = document.getElementById('whatsNextBar'); if (bar) bar.style.display = 'none'; }, 1200);
+  }
+}
+
 function renderResults() {
   const { resume, keywords, changes, coverLetter, score } = results;
 
   // Resume tab
   document.getElementById('resumeOutput').innerHTML = autoLinkUrls(resume);
+
+  // Reset & show What's Next bar
+  ['wnDownload','wnInterview','wnTrack'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.style.background = '#fff'; btn.style.borderColor = '#6EE7B7';
+    btn.style.color = '#065F46'; btn.style.textDecoration = '';
+    btn.style.opacity = '1'; btn.style.pointerEvents = '';
+  });
+  const wnBar = document.getElementById('whatsNextBar');
+  if (wnBar) wnBar.style.display = 'flex';
 
   // Score badge — show before→after delta if we have both scores
   const matchBadge = document.getElementById('matchBadge');
@@ -3145,6 +3222,16 @@ function downloadTxt() {
   showToast('Downloaded ✓');
 }
 
+
+// Topbar shortcut — downloads resume (and cover letter if present)
+async function downloadDocx() {
+  if (results.coverLetter) {
+    await downloadResumeDocx();
+    await downloadCoverLetterDocx();
+  } else {
+    await downloadResumeDocx();
+  }
+}
 
 // ── Word (.docx) Export ───────────────────────────────────────────────────
 
@@ -6343,7 +6430,7 @@ const TEMPLATE_PREVIEWS = {
 let _parsedResumeData = null;
 
 function openTemplateModal() {
-  const resumeEl = document.getElementById('resultsResume');
+  const resumeEl = document.getElementById('resumeOutput');
   if (!resumeEl?.innerText?.trim()) {
     showToast('Please tailor your resume first.', 'info');
     return;
@@ -6380,7 +6467,7 @@ async function applyTemplate(id) {
   document.getElementById('templateLoadingMsg').style.display = 'block';
 
   try {
-    const resumeText = document.getElementById('resultsResume')?.innerText || '';
+    const resumeText = results?.resume || document.getElementById('resumeOutput')?.innerText || '';
     const data = await parseResumeForTemplate(resumeText);
     _parsedResumeData = data;
     closeTemplateModal();
