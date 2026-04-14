@@ -65,7 +65,7 @@ async function sendAdminAlert(subject, message, replyTo = '') {
       .replace(/\n/g, '<br>');
 
     const payload = {
-      from:    'notifications@1ststep.ai',
+      from:    process.env.RESEND_FROM || 'onboarding@resend.dev',
       to:      'evan@1ststep.ai',
       subject,
       html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px">

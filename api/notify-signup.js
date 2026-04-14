@@ -171,7 +171,7 @@ export default async function handler(req, res) {
           'Content-Type':  'application/json',
         },
         body: JSON.stringify({
-          from:     'notifications@1ststep.ai',
+          from:     process.env.RESEND_FROM || 'onboarding@resend.dev',
           to:       'evan@1ststep.ai',
           reply_to: email,
           subject:  `🆕 New signup: ${fullName}`,
