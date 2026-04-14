@@ -5916,15 +5916,48 @@ function clearBetaAndShowGate() {
   document.getElementById('betaEmail').focus();
 }
 
+let _betaTickerInterval = null;
+
+function _betaTickLabel(expiresAt) {
+  const msLeft = expiresAt - Date.now();
+  if (msLeft <= 0) return null; // expired
+  const totalMins = Math.floor(msLeft / 60000);
+  const days  = Math.floor(totalMins / (60 * 24));
+  const hours = Math.floor((totalMins % (60 * 24)) / 60);
+  const mins  = totalMins % 60;
+  if (days >= 3)  return `Beta · ${days}d left`;
+  if (days >= 1)  return `Beta · ${days}d ${hours}h left`;
+  if (hours >= 1) return `Beta · ${hours}h ${mins}m left`;
+  return `Beta · ${mins}m left`;
+}
+
 function updateBetaBadge(expiresAt) {
-  const badge     = document.getElementById('betaBadge');
-  const daysEl    = document.getElementById('betaDaysLeft');
+  const badge       = document.getElementById('betaBadge');
+  const daysEl      = document.getElementById('betaDaysLeft');
   const feedbackBtn = document.getElementById('feedbackBtn');
   if (!badge) return;
-  const daysLeft = Math.max(0, Math.ceil((expiresAt - Date.now()) / (1000 * 60 * 60 * 24)));
-  badge.style.display = 'flex';
-  daysEl.textContent  = `Beta · ${daysLeft}d left`;
+
+  function tick() {
+    const label = _betaTickLabel(expiresAt);
+    if (!label) {
+      // Expired mid-session — clean up and show expired screen
+      if (_betaTickerInterval) { clearInterval(_betaTickerInterval); _betaTickerInterval = null; }
+      clearBetaAndShowGate();
+      return;
+    }
+    daysEl.textContent = label;
+  }
+
+  badge.style.display     = 'flex';
   feedbackBtn.style.display = 'flex';
+  tick(); // immediate render
+
+  // Clear any previous interval before starting a new one
+  if (_betaTickerInterval) clearInterval(_betaTickerInterval);
+  // Update every 60s normally; switch to every 30s when under 1 hour
+  const msLeft = expiresAt - Date.now();
+  const interval = msLeft < 60 * 60 * 1000 ? 30000 : 60000;
+  _betaTickerInterval = setInterval(tick, interval);
 }
 
 function checkBetaAccess() {
