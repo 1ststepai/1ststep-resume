@@ -1304,8 +1304,8 @@
         <textarea id="resumeText" rows="8" placeholder="Paste your resume text here...&#10;&#10;Tip: In Word, press Ctrl+A then Ctrl+C, then click here and Ctrl+V."></textarea>
       </div>
 
-      <!-- JD input -->
-      <div class="panel-section">
+      <!-- JD input — hidden until resume is loaded -->
+      <div class="panel-section" id="jdSection" style="display:none">
         <div class="panel-label"><span class="num">2</span> Job Description</div>
         <!-- Job context banner — shown when tailoring from a job card -->
         <div id="jobContextBanner" style="display:none;align-items:center;gap:8px;padding:10px 14px;background:#EEF2FF;border:1.5px solid rgba(67,56,202,0.25);border-radius:10px;margin-bottom:10px;font-size:13px;color:var(--brand);font-weight:500">
@@ -2142,6 +2142,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         document.getElementById('resumeText').value = saved.text;
       }
+      showJdSection();
       updateCounts();
       refreshSetupSteps();
     }
@@ -2152,6 +2153,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('resumeText').addEventListener('input', () => {
     updateCounts();
     refreshSetupSteps();
+    if (document.getElementById('resumeText').value.trim()) showJdSection();
     clearTimeout(_resumeSaveTimer);
     _resumeSaveTimer = setTimeout(() => {
       const text = document.getElementById('resumeText').value.trim();
@@ -2241,6 +2243,17 @@ function toggleMoreMenu(forceClose) {
         }
       });
     }, 10);
+  }
+}
+
+// ── Reveal JD section once a resume is present ───────────────────────────────
+function showJdSection() {
+  const el = document.getElementById('jdSection');
+  if (el && el.style.display === 'none') {
+    el.style.display = '';
+    el.style.opacity = '0';
+    el.style.transition = 'opacity 0.3s ease';
+    requestAnimationFrame(() => { el.style.opacity = '1'; });
   }
 }
 
@@ -2465,6 +2478,7 @@ async function processFile(file) {
     document.getElementById('fileName').textContent = file.name;
     document.getElementById('fileLoaded').style.display = 'flex';
     document.getElementById('fileDrop').style.display = 'none';
+    showJdSection();
     // Hide the paste textarea and divider — file is loaded, no need to show both
     const orDiv = document.querySelector('.or-divider');
     const resumeTxt = document.getElementById('resumeText');
@@ -4527,6 +4541,7 @@ ${desc}`;
 
   // Switch to resume tailor mode and pre-fill
   switchMode('resume');
+  showJdSection();
   document.getElementById('jobText').value = jobDescription.trim();
   document.getElementById('jobText').dispatchEvent(new Event('input'));
 
