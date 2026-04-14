@@ -135,6 +135,37 @@ export default async function handler(req, res) {
 
   console.log(`✅ Beta access granted: ${cleanEmail} — expires ${new Date(expiresAt).toISOString()}`);
 
+  // ── Notify Evan via Resend ───────────────────────────────────────────────
+  const resendKey = process.env.RESEND_API_KEY;
+  if (resendKey) {
+    const time    = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
+    const expires = new Date(expiresAt).toLocaleString('en-US', { timeZone: 'America/New_York' });
+    fetch('https://api.resend.com/emails', {
+      method:  'POST',
+      headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from:    'onboarding@resend.dev',
+        to:      'evan@1ststep.ai',
+        reply_to: cleanEmail,
+        subject: `🧪 New beta user: ${cleanEmail}`,
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+            <h2 style="margin:0 0 16px;color:#0F172A">New Beta User 🧪</h2>
+            <table style="width:100%;border-collapse:collapse">
+              <tr><td style="padding:8px 0;color:#64748B;font-size:14px;width:80px">Email</td><td style="padding:8px 0;font-size:14px;font-weight:600;color:#0F172A"><a href="mailto:${cleanEmail}" style="color:#4338CA">${cleanEmail}</a></td></tr>
+              <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Joined</td><td style="padding:8px 0;font-size:14px;color:#0F172A">${time}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Expires</td><td style="padding:8px 0;font-size:14px;color:#0F172A">${expires}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Plan</td><td style="padding:8px 0;font-size:14px;color:#0F172A">Complete (15-day beta)</td></tr>
+            </table>
+            <div style="margin-top:20px;padding:12px 16px;background:#EEF2FF;border-radius:8px;font-size:13px;color:#4338CA">
+              Hit reply to reach them directly.
+            </div>
+          </div>`,
+      }),
+    }).catch(err => console.error('Beta notification email failed:', err.message));
+    // fire-and-forget — don't delay the response
+  }
+
   return res.status(200).json({
     valid:      true,
     tier:       'complete',
