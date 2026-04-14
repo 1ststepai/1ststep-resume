@@ -2512,13 +2512,15 @@ function updateRunButton() {
     btn.style.cursor = 'default';
     lbl.textContent = '↑ Upload or paste your resume first';
   } else if (!hasJob) {
-    btn.style.opacity = '0.65';
-    btn.style.cursor = 'default';
-    lbl.textContent = '↓ Find a job in Job Search to tailor to';
+    btn.style.opacity = '0.85';
+    btn.style.cursor = 'pointer';
+    lbl.textContent = '🔍 Find a Job First';
+    btn.onclick = () => switchMode('jobs');
   } else {
     btn.style.opacity = '';
     btn.style.cursor = '';
     lbl.textContent = '✦ Tailor My Resume';
+    btn.onclick = runTailoring;
   }
 }
 
