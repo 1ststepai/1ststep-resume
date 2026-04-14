@@ -2,13 +2,51 @@
  * GET /api/subscription?email=user@example.com
  *
  * Looks up the user's active Stripe subscription by email.
- * Returns { tier: 'free' | 'essential' | 'complete', status, subscriptionId }
+ * Returns { tier, status, tierToken } where tierToken is a short-lived HMAC
+ * proof that claude.js can verify without hitting Stripe on every call.
  *
  * Env vars required:
  *   STRIPE_SECRET_KEY  — sk_live_... (Stripe secret key)
+ *   TIER_SECRET        — any random 32+ char string, used to sign tier tokens
+ *                        Generate with: openssl rand -hex 32
  */
 
 import Stripe from 'stripe';
+import { createHmac } from 'crypto';
+
+// ── Tier token helpers ────────────────────────────────────────────────────────
+// A tierToken is: base64(email + "|" + tier + "|" + expiry) + "." + HMAC
+// Valid for 20 minutes. claude.js verifies without contacting Stripe.
+const TOKEN_TTL_MS = 20 * 60 * 1000;
+
+function signTierToken(email, tier) {
+  const secret = process.env.TIER_SECRET;
+  if (!secret) return ''; // no secret configured — skip token
+  const exp     = Date.now() + TOKEN_TTL_MS;
+  const payload = Buffer.from(`${email}|${tier}|${exp}`).toString('base64');
+  const sig     = createHmac('sha256', secret).update(payload).digest('hex');
+  return `${payload}.${sig}`;
+}
+
+export function verifyTierToken(token) {
+  const secret = process.env.TIER_SECRET;
+  if (!secret || !token) return null;
+  try {
+    const [payload, sig] = token.split('.');
+    if (!payload || !sig) return null;
+    const expected = createHmac('sha256', secret).update(payload).digest('hex');
+    // Constant-time comparison to prevent timing attacks
+    if (sig.length !== expected.length) return null;
+    let diff = 0;
+    for (let i = 0; i < sig.length; i++) diff |= sig.charCodeAt(i) ^ expected.charCodeAt(i);
+    if (diff !== 0) return null;
+    const [email, tier, exp] = Buffer.from(payload, 'base64').toString().split('|');
+    if (Date.now() > Number(exp)) return null; // expired
+    return { email, tier };
+  } catch {
+    return null;
+  }
+}
 
 const ALLOWED_ORIGINS = [
   'https://1ststep.ai',
@@ -84,9 +122,9 @@ export default async function handler(req, res) {
           const product = item.price.product;
           const tier = productToTier(product.name);
           if (tier !== 'free') {
-            // Only expose tier and status — never expose subscriptionId, productName,
-            // or billing dates to prevent enumeration and social engineering.
-            return res.status(200).json({ tier, status: sub.status });
+            // Only expose tier and status — no subscriptionId, productName, or billing dates.
+            // Include a short-lived HMAC tierToken so claude.js can verify without re-hitting Stripe.
+            return res.status(200).json({ tier, status: sub.status, tierToken: signTierToken(email, tier) });
           }
         }
       }
@@ -104,7 +142,7 @@ export default async function handler(req, res) {
           const product = item.price.product;
           const tier = productToTier(product.name);
           if (tier !== 'free') {
-            return res.status(200).json({ tier, status: 'trialing' });
+            return res.status(200).json({ tier, status: 'trialing', tierToken: signTierToken(email, tier) });
           }
         }
       }

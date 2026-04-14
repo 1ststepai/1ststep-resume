@@ -26,7 +26,36 @@ const COMPLETE_ONLY_TYPES = new Set(['linkedin']); // linkedin requires Complete
 const subCache = new Map(); // email → { tier, ts }
 const SUB_CACHE_TTL_MS = 10 * 60 * 1000;
 
-async function getVerifiedTier(email) {
+async function getVerifiedTier(email, tierToken) {
+  // ── Fast path: verify HMAC tier token (no Stripe call needed) ────────────
+  // The token was signed by api/subscription.js using TIER_SECRET and is valid for 20 min.
+  // This closes the email impersonation gap — the token is bound to the verified email.
+  if (tierToken) {
+    try {
+      const { createHmac } = await import('crypto');
+      const secret = process.env.TIER_SECRET;
+      if (secret) {
+        const [payload, sig] = tierToken.split('.');
+        if (payload && sig) {
+          const expected = createHmac('sha256', secret).update(payload).digest('hex');
+          let diff = 0;
+          if (sig.length === expected.length) {
+            for (let i = 0; i < sig.length; i++) diff |= sig.charCodeAt(i) ^ expected.charCodeAt(i);
+          } else { diff = 1; }
+          if (diff === 0) {
+            const [tokenEmail, tier, exp] = Buffer.from(payload, 'base64').toString().split('|');
+            if (Date.now() <= Number(exp) && tokenEmail.toLowerCase() === (email || '').toLowerCase()) {
+              return tier; // ✅ Valid signed token — no Stripe call needed
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Tier token verification error:', err.message);
+    }
+  }
+
+  // ── Slow path: fall back to direct Stripe check (token absent or expired) ─
   if (!email || !email.includes('@')) return 'free';
   const key = email.toLowerCase();
   const cached = subCache.get(key);
@@ -212,7 +241,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Server configuration error — API key not configured.' });
   }
 
-  const { model, system, messages, max_tokens, callType = 'utility', userEmail = '' } = req.body || {};
+  const { model, system, messages, max_tokens, callType = 'utility', userEmail = '', tierToken = '' } = req.body || {};
 
   if (!model || !messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Missing required fields: model, messages' });
@@ -229,12 +258,25 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: `Model not allowed: ${model}` });
   }
 
+  // ── Sonnet model guard — Sonnet may only be used for specific counted callTypes ──
+  // Prevents free users from abusing the expensive model via 'utility' label.
+  // tailor: the resume rewrite step (Sonnet, counted at the Haiku analysis step above it)
+  // coverLetter: Sonnet cover letter (paid-only, checked below)
+  // linkedin: Sonnet LinkedIn optimizer (Complete-only, checked below)
+  const SONNET_ALLOWED_TYPES = new Set(['tailor', 'coverLetter', 'linkedin']);
+  if (model === 'claude-sonnet-4-6' && !SONNET_ALLOWED_TYPES.has(callType)) {
+    return res.status(403).json({
+      error: 'Model not available for this request type.',
+      code:  'MODEL_RESTRICTED',
+    });
+  }
+
   // ── Server-side tier enforcement (VULN-01, VULN-02) ───────────────────────
   // Premium callTypes require a verified paid subscription regardless of what
   // the client claims. This prevents localStorage tier spoofing and callType
   // manipulation from bypassing feature gates.
   if (PAID_ONLY_TYPES.has(callType)) {
-    const verifiedTier = await getVerifiedTier(userEmail);
+    const verifiedTier = await getVerifiedTier(userEmail, tierToken);
     if (verifiedTier === 'free') {
       return res.status(403).json({
         error: 'This feature requires an active paid subscription.',

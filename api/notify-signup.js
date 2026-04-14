@@ -34,6 +34,27 @@ function isSignupRateLimited(ip) {
   return hits.length > SIGNUP_MAX_PER_IP;
 }
 
+// ── Disposable email domain blocklist ────────────────────────────────────────
+// Prevents throwaway signups from polluting GHL CRM and admin inbox.
+const DISPOSABLE_DOMAINS = new Set([
+  'mailinator.com','guerrillamail.com','guerrillamail.net','guerrillamail.org',
+  'guerrillamail.biz','guerrillamail.de','guerrillamail.info','sharklasers.com',
+  'guerrillamailblock.com','spam4.me','yopmail.com','yopmail.fr','cool.fr.nf',
+  'jetable.fr.nf','nospam.ze.tc','nomail.xl.cx','mega.zik.dj','speed.1s.fr',
+  'courriel.fr.nf','moncourrier.fr.nf','monemail.fr.nf','monmail.fr.nf',
+  'trashmail.com','trashmail.me','trashmail.net','trashmail.at','trashmail.io',
+  'trashmail.org','trashmail.xyz','dispostable.com','mailnull.com','spamgourmet.com',
+  'tempr.email','discard.email','throwam.com','throwam.net','10minutemail.com',
+  '10minutemail.net','10minutemail.org','10minemail.com','tempmail.com',
+  'tempmail.net','temp-mail.org','temp-mail.io','mailtemp.org','maildrop.cc',
+  'getairmail.com','fakeinbox.com','spambox.us','mailnesia.com','mailnull.com',
+]);
+
+function isDisposableEmail(email) {
+  const domain = (email.split('@')[1] || '').toLowerCase();
+  return DISPOSABLE_DOMAINS.has(domain);
+}
+
 const ALLOWED_ORIGINS = [
   'https://1ststep.ai',
   'https://www.1ststep.ai',
@@ -76,6 +97,13 @@ export default async function handler(req, res) {
 
   if (!email || !email.includes('@')) {
     return res.status(400).json({ error: 'Valid email required' });
+  }
+
+  // Silently reject disposable email domains — don't tell the client why
+  // so bots can't iterate around the blocklist.
+  if (isDisposableEmail(email)) {
+    console.log(`Disposable email blocked: ${email}`);
+    return res.status(200).json({ ok: true, results: { ghl: 'skipped', email: 'skipped' } });
   }
 
   const fullName  = [firstName, lastName].filter(Boolean).join(' ').trim() || email;
