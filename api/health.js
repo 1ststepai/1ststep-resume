@@ -23,10 +23,18 @@ export default async function handler(req, res) {
   // Only allow GET
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  // Verify secret — prevents public access to health check data
-  const secret = req.query.secret || '';
-  const expected = process.env.HEALTH_CHECK_SECRET || '';
-  if (!expected || secret !== expected) {
+  // Auth — accepts either:
+  //   1. ?secret=HEALTH_CHECK_SECRET  (manual / external cron calls)
+  //   2. Authorization: Bearer CRON_SECRET  (Vercel Cron internal calls)
+  const querySecret  = req.query.secret || '';
+  const authHeader   = req.headers.authorization || '';
+  const cronSecret   = process.env.CRON_SECRET || '';
+  const healthSecret = process.env.HEALTH_CHECK_SECRET || '';
+
+  const validQuerySecret = healthSecret && querySecret === healthSecret;
+  const validCronHeader  = cronSecret && authHeader === `Bearer ${cronSecret}`;
+
+  if (!validQuerySecret && !validCronHeader) {
     return res.status(403).json({ error: 'Forbidden' });
   }
 

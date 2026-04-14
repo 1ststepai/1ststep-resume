@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/health",
+      "schedule": "0 12 * * *"
+    }
+  ],
   "functions": {
     "api/claude.js":           { "maxDuration": 60 },
     "api/jobs.js":             { "maxDuration": 30 },
