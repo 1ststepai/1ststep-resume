@@ -88,7 +88,7 @@ export default async function handler(req, res) {
     return res.status(429).json({ valid: false, error: 'Too many attempts — try again later.' });
   }
 
-  const { email = '', code = '' } = req.body || {};
+  const { email = '', code = '', firstName = '', lastName = '' } = req.body || {};
 
   // Validate email
   const cleanEmail = email.trim().toLowerCase();
@@ -116,20 +116,57 @@ export default async function handler(req, res) {
   const locationId = process.env.GHL_LOCATION_ID;
 
   if (apiKey && locationId) {
-    await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
+    const pipelineId   = process.env.GHL_PIPELINE_ID;
+    const betaStageId  = process.env.GHL_STAGE_BETA_SIGNUP;
+
+    // ── Upsert contact ──────────────────────────────────────────────────────
+    const ghlPayload = {
+      locationId,
+      email:  cleanEmail,
+      tags:   ['beta', 'complete', 'beta_2026'],
+      source: '1stStep.ai — Beta Access',
+    };
+    if (firstName) ghlPayload.firstName = firstName.trim();
+    if (lastName)  ghlPayload.lastName  = lastName.trim();
+
+    const contactRes = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
       method:  'PUT',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Version':       '2021-07-28',
         'Content-Type':  'application/json',
       },
-      body: JSON.stringify({
-        locationId,
-        email:  cleanEmail,
-        tags:   ['beta', 'complete', 'beta_2026'],
-        source: '1stStep.ai — Beta Access',
-      }),
-    }).catch(err => console.error('GHL beta contact error:', err.message));
+      body: JSON.stringify(ghlPayload),
+    }).catch(err => { console.error('GHL contact error:', err.message); return null; });
+
+    // ── Add to pipeline if IDs are configured ──────────────────────────────
+    if (contactRes?.ok && pipelineId && betaStageId) {
+      const contactData = await contactRes.json().catch(() => ({}));
+      const contactId   = contactData?.contact?.id || contactData?.id;
+
+      if (contactId) {
+        const fullName = [firstName, lastName].filter(Boolean).join(' ') || cleanEmail;
+        await fetch('https://services.leadconnectorhq.com/opportunities/', {
+          method:  'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Version':       '2021-07-28',
+            'Content-Type':  'application/json',
+          },
+          body: JSON.stringify({
+            locationId,
+            pipelineId,
+            pipelineStageId: betaStageId,
+            contactId,
+            name:   `${fullName} — Beta Signup`,
+            status: 'open',
+            source: '1stStep.ai Beta',
+          }),
+        }).catch(err => console.error('GHL opportunity error:', err.message));
+
+        console.log(`✅ GHL pipeline opportunity created for ${cleanEmail}`);
+      }
+    }
   }
 
   console.log(`✅ Beta access granted: ${cleanEmail} — expires ${new Date(expiresAt).toISOString()}`);
@@ -146,11 +183,12 @@ export default async function handler(req, res) {
         from:    'notifications@1ststep.ai',
         to:      ['evan@1ststep.ai', cleanEmail],
         reply_to: cleanEmail,
-        subject: `🧪 New beta user: ${cleanEmail}`,
+        subject: `🧪 New beta user: ${firstName ? firstName + ' ' + lastName : cleanEmail}`,
         html: `
           <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
             <h2 style="margin:0 0 16px;color:#0F172A">New Beta User 🧪</h2>
             <table style="width:100%;border-collapse:collapse">
+              ${firstName ? `<tr><td style="padding:8px 0;color:#64748B;font-size:14px;width:80px">Name</td><td style="padding:8px 0;font-size:14px;font-weight:600;color:#0F172A">${firstName} ${lastName}</td></tr>` : ''}
               <tr><td style="padding:8px 0;color:#64748B;font-size:14px;width:80px">Email</td><td style="padding:8px 0;font-size:14px;font-weight:600;color:#0F172A"><a href="mailto:${cleanEmail}" style="color:#4338CA">${cleanEmail}</a></td></tr>
               <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Joined</td><td style="padding:8px 0;font-size:14px;color:#0F172A">${time}</td></tr>
               <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Expires</td><td style="padding:8px 0;font-size:14px;color:#0F172A">${expires}</td></tr>

@@ -1420,7 +1420,10 @@
           <span><span class="num">4</span> Job Keywords</span>
           <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">Auto-filled by AI ↑</span>
         </div>
-        <input type="text" id="jobKeywords" placeholder="Auto-filled when you analyze resume..." onkeydown="if(event.key==='Enter') searchJobs()" />
+        <input type="text" id="jobKeywords" placeholder="e.g. Product Manager, Software Engineer React…" onkeydown="if(event.key==='Enter') searchJobs()" />
+        <div style="margin-top:6px;font-size:11.5px;color:var(--muted);line-height:1.5">
+          Start with your <strong style="color:var(--text2)">job title</strong>, then add industry or skills — e.g. <em>"Procurement Manager Supply Chain"</em> or <em>"UX Designer Figma"</em>. One focused phrase works better than a list.
+        </div>
       </div>
 
       <!-- Job Type -->
@@ -2095,7 +2098,15 @@
     <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 28px">
       This is an invite-only beta. Enter your email and the invite code you received to get <strong style="color:var(--text)">15 days of free Complete access.</strong>
     </p>
-    <input id="betaEmail" type="email" placeholder="Your email address" autocomplete="email"
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input id="betaFirstName" type="text" placeholder="First name" autocomplete="given-name" required
+        style="flex:1;padding:13px 16px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-family:'Inter',sans-serif;font-size:14px;color:var(--text);outline:none;box-sizing:border-box;min-width:0"
+        onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--border)'">
+      <input id="betaLastName" type="text" placeholder="Last name" autocomplete="family-name" required
+        style="flex:1;padding:13px 16px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-family:'Inter',sans-serif;font-size:14px;color:var(--text);outline:none;box-sizing:border-box;min-width:0"
+        onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--border)'">
+    </div>
+    <input id="betaEmail" type="email" placeholder="Email address" autocomplete="email" required
       style="width:100%;margin-bottom:10px;padding:13px 16px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-family:'Inter',sans-serif;font-size:14px;color:var(--text);outline:none;box-sizing:border-box"
       onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--border)'">
     <input id="betaCode" type="text" placeholder="Invite code" autocomplete="off" spellcheck="false"
@@ -3020,15 +3031,24 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
     const tailorLimit = getLimit('tailors');
     updateTailorUsageMeter();
 
-    // First-tailor milestone — tag GHL contact so upgrade sequences can fire
-    if (tailorCount === 1) {
+    // Milestone pipeline updates — fire and forget, never block the user
+    if (tailorCount === 1 || tailorCount === 5) {
       const _profile = loadProfile();
       if (_profile?.email) {
-        fetch('/api/track-event', {
+        const stage = tailorCount === 1 ? 'active_user' : 'power_user';
+        fetch('/api/ghl-stage', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ email: _profile.email, event: 'first_tailor' }),
+          body:    JSON.stringify({ email: _profile.email, stage }),
         }).catch(() => {});
+        // Legacy event track (keep for any existing automations)
+        if (tailorCount === 1) {
+          fetch('/api/track-event', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ email: _profile.email, event: 'first_tailor' }),
+          }).catch(() => {});
+        }
       }
     }
     if (tailorCount >= tailorLimit) {
@@ -5939,16 +5959,32 @@ function checkBetaAccess() {
 }
 
 async function submitBetaCode() {
+  const firstInput = document.getElementById('betaFirstName');
+  const lastInput  = document.getElementById('betaLastName');
   const emailInput = document.getElementById('betaEmail');
   const codeInput  = document.getElementById('betaCode');
   const errorEl    = document.getElementById('betaError');
   const submitBtn  = document.getElementById('betaSubmitBtn');
 
-  const email = emailInput.value.trim().toLowerCase();
-  const code  = codeInput.value.trim().toUpperCase();
+  const firstName = firstInput.value.trim();
+  const lastName  = lastInput.value.trim();
+  const email     = emailInput.value.trim().toLowerCase();
+  const code      = codeInput.value.trim().toUpperCase();
 
   errorEl.style.display = 'none';
 
+  if (!firstName) {
+    errorEl.textContent = 'Please enter your first name.';
+    errorEl.style.display = 'block';
+    firstInput.focus();
+    return;
+  }
+  if (!lastName) {
+    errorEl.textContent = 'Please enter your last name.';
+    errorEl.style.display = 'block';
+    lastInput.focus();
+    return;
+  }
   if (!email || !email.includes('@')) {
     errorEl.textContent = 'Please enter a valid email address.';
     errorEl.style.display = 'block';
@@ -5969,7 +6005,7 @@ async function submitBetaCode() {
     const resp = await fetch('/api/beta', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ email, code }),
+      body:    JSON.stringify({ email, code, firstName, lastName }),
     });
     const data = await resp.json();
 
@@ -5987,6 +6023,8 @@ async function submitBetaCode() {
       localStorage.setItem(PROFILE_KEY, JSON.stringify({
         ...(JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}')),
         email,
+        firstName,
+        lastName,
       }));
 
       // Apply Complete tier immediately

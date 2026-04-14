@@ -144,31 +144,59 @@ async function pushToGHL({ email, name, tier }) {
     return;
   }
 
-  // 2. Create opportunity in pipeline (only if GHL_PIPELINE_ID is set)
+  // 2. Move/create opportunity in the correct Converted stage
   const pipelineId = process.env.GHL_PIPELINE_ID;
   if (!pipelineId || !contactId) return;
 
+  // Pick stage based on tier
+  const stageId = tier === 'complete'
+    ? process.env.GHL_STAGE_CONVERTED_COMPLETE
+    : process.env.GHL_STAGE_CONVERTED_ESSENTIAL;
+
   try {
-    const r = await fetch('https://services.leadconnectorhq.com/opportunities/', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
+    // Check if they already have an opportunity (came through beta)
+    const searchRes = await fetch(
+      `https://services.leadconnectorhq.com/opportunities/search?location_id=${locationId}&pipeline_id=${pipelineId}&contact_id=${contactId}`,
+      { headers }
+    );
+    const searchData = searchRes.ok ? await searchRes.json() : {};
+    const existingOpp = searchData?.opportunities?.[0];
+
+    if (existingOpp?.id) {
+      // Move existing opportunity to Converted stage
+      const updateBody = { status: 'won' };
+      if (stageId) updateBody.pipelineStageId = stageId;
+      await fetch(`https://services.leadconnectorhq.com/opportunities/${existingOpp.id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(updateBody),
+      });
+      console.log(`✅ GHL opportunity moved to Converted (${tierLabel}): ${existingOpp.id}`);
+    } else {
+      // Create new opportunity directly in Converted stage
+      const oppBody = {
         pipelineId,
         locationId,
         contactId,
         name:   `${name || email} — ${tierLabel}`,
-        status: 'open',
-      }),
-    });
-    const data = await r.json();
-    const oppId = data.opportunity?.id;
-    if (oppId) {
-      console.log(`✅ GHL opportunity created: ${oppId}`);
-    } else {
-      console.error('GHL opportunity creation failed:', JSON.stringify(data));
+        status: 'won',
+      };
+      if (stageId) oppBody.pipelineStageId = stageId;
+      const r = await fetch('https://services.leadconnectorhq.com/opportunities/', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(oppBody),
+      });
+      const data = await r.json();
+      const oppId = data.opportunity?.id;
+      if (oppId) {
+        console.log(`✅ GHL opportunity created in Converted (${tierLabel}): ${oppId}`);
+      } else {
+        console.error('GHL opportunity creation failed:', JSON.stringify(data));
+      }
     }
   } catch (err) {
-    console.error('GHL opportunity creation error:', err.message);
+    console.error('GHL opportunity error:', err.message);
   }
 }
 
