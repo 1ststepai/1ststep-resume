@@ -10,6 +10,7 @@
  *   GHL_API_KEY            — pit-... (GoHighLevel Private Integration Token)
  *   GHL_LOCATION_ID        — GHL Location ID
  *   GHL_PIPELINE_ID        — (optional) GHL Pipeline ID — add after creating pipeline in GHL
+ *   RESEND_API_KEY         — re_... (from resend.com) — used for all admin alert emails
  *
  * Stripe events to enable in Dashboard:
  *   checkout.session.completed
@@ -32,24 +33,51 @@ async function getRawBody(req) {
   });
 }
 
-// ── Admin email alert via FormSubmit ─────────────────────────────────────────
-// Sends a plain POST to FormSubmit so Evan gets an email for critical events.
-// Requires one-time activation: first submission triggers a confirmation email
-// to evan@1ststep.ai — click Confirm to activate.
-async function sendAdminAlert(subject, message) {
+// ── Admin email alert via Resend ─────────────────────────────────────────────
+// Sends a transactional email via Resend so Evan gets an alert for critical events.
+// Requires RESEND_API_KEY env var in Vercel.
+// 'from' uses resend.dev until 1ststep.ai domain is verified in Resend.
+async function sendAdminAlert(subject, message, replyTo = '') {
+  const resendKey = process.env.RESEND_API_KEY;
+  if (!resendKey) {
+    console.log('RESEND_API_KEY not set — skipping admin alert');
+    return;
+  }
   try {
-    const body = new URLSearchParams();
-    body.set('name',      '1stStep.ai System');
-    body.set('email',     'noreply@1ststep.ai');
-    body.set('message',   message);
-    body.set('_subject',  subject);
-    body.set('_captcha',  'false');
-    body.set('_template', 'box');
-    await fetch('https://formsubmit.co/evan@1ststep.ai', {
+    // Convert plain-text message to simple HTML (preserve line breaks)
+    const htmlBody = message
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\n/g, '<br>');
+
+    const payload = {
+      from:    'onboarding@resend.dev',
+      to:      'evan@1ststep.ai',
+      subject,
+      html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px">
+               <h2 style="margin:0 0 16px;color:#0F172A">${subject}</h2>
+               <p style="color:#374151;line-height:1.6;font-size:14px">${htmlBody}</p>
+               <hr style="border:none;border-top:1px solid #E5E7EB;margin:20px 0">
+               <p style="font-size:12px;color:#9CA3AF">1stStep.ai automated alert — do not reply to this address.</p>
+             </div>`,
+    };
+    if (replyTo) payload.reply_to = replyTo;
+
+    const r = await fetch('https://api.resend.com/emails', {
       method:  'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body:    body.toString(),
+      headers: {
+        'Authorization': `Bearer ${resendKey}`,
+        'Content-Type':  'application/json',
+      },
+      body: JSON.stringify(payload),
     });
+    const data = await r.json();
+    if (r.ok) {
+      console.log(`✅ Admin alert sent via Resend: ${data.id}`);
+    } else {
+      console.error('Resend admin alert error:', JSON.stringify(data));
+    }
   } catch (err) {
     console.error('Admin alert send failed:', err.message);
   }
@@ -218,15 +246,25 @@ export default async function handler(req, res) {
   switch (event.type) {
 
     case 'checkout.session.completed': {
-      const session = event.data.object;
-      const email   = session.customer_details?.email || session.customer_email || '';
-      const name    = session.customer_details?.name  || '';
+      const session      = event.data.object;
+      const email        = session.customer_details?.email || session.customer_email || '';
+      const name         = session.customer_details?.name  || '';
+      const amountPaid   = session.amount_total ? `$${(session.amount_total / 100).toFixed(2)}` : 'unknown';
       console.log(`✅ Checkout complete — email: ${email}`);
 
-      const tier = await getTierFromSession(stripe, session.id);
+      const tier      = await getTierFromSession(stripe, session.id);
+      const tierLabel = tier === 'complete' ? 'Complete' : 'Essential';
       console.log(`   Tier: ${tier}`);
 
+      // Sync to GHL CRM
       await pushToGHL({ email, name, tier });
+
+      // Notify Evan — reply-to set so he can follow up directly
+      await sendAdminAlert(
+        `💰 New subscriber — ${tierLabel} plan`,
+        `Name:   ${name || '(not provided)'}\nEmail:  ${email}\nPlan:   ${tierLabel}\nAmount: ${amountPaid}\nTime:   ${new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })}\n\nContact has been added to GHL automatically.`,
+        email,
+      );
       break;
     }
 

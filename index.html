@@ -2730,6 +2730,18 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
     const tailorCount = incrementUsage('tailors');
     const tailorLimit = getLimit('tailors');
     updateTailorUsageMeter();
+
+    // First-tailor milestone — tag GHL contact so upgrade sequences can fire
+    if (tailorCount === 1) {
+      const _profile = loadProfile();
+      if (_profile?.email) {
+        fetch('/api/track-event', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ email: _profile.email, event: 'first_tailor' }),
+        }).catch(() => {});
+      }
+    }
     if (tailorCount >= tailorLimit) {
       setTimeout(() => showToast(`Monthly tailor limit reached — upgrade for more`, 'warning'), 1000);
     } else if (tailorCount / tailorLimit >= 0.8) {
