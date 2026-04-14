@@ -4157,9 +4157,9 @@ async function searchAllRolesInParallel(titles, bestQuery, locationQuery, summar
     });
   });
 
-  const pool = merged
-    .filter(j => j.distanceMiles == null || j.distanceMiles <= currentRadius * 1.5)
-    .sort((a, b) => (a.distanceMiles ?? 999) - (b.distanceMiles ?? 999));
+  // Sort by distance (nulls = no coords go to end). No client-side radius filter —
+  // JSearch already filters by radius server-side; double-filtering drops valid jobs.
+  const pool = merged.sort((a, b) => (a.distanceMiles ?? 999) - (b.distanceMiles ?? 999));
 
   _allJobPool = pool;
   window._jobResults = pool;
@@ -4227,17 +4227,32 @@ async function searchJobsInternal(overrideKeywords) {
 
     document.getElementById('jobLoadingText').textContent = `Searching within ${currentRadius} miles...`;
 
-    const rawJobs = await fetchMuseJobs(keywords, locationQuery);
-    const enriched = rawJobs
-      .map(job => {
+    const normaliseAndTag = (rawJobs, coords) =>
+      rawJobs.map(job => {
         const norm = normaliseMuseJob(job);
-        if (norm.latitude && norm.longitude) {
+        if (norm.latitude && norm.longitude && coords?.lat && coords?.lon) {
           norm.distanceMiles = haversineDistance(coords.lat, coords.lon, norm.latitude, norm.longitude);
         }
         return norm;
-      })
-      .filter(job => job.distanceMiles === null || job.distanceMiles <= currentRadius * 1.5)
-      .sort((a, b) => (a.distanceMiles ?? 999) - (b.distanceMiles ?? 999));
+      }).sort((a, b) => (a.distanceMiles ?? 999) - (b.distanceMiles ?? 999));
+
+    let rawJobs = await fetchMuseJobs(keywords, locationQuery);
+    let enriched = normaliseAndTag(rawJobs, coords);
+
+    // Auto-expand: if 0 results, silently retry at 2× radius before giving up
+    if (!enriched.length) {
+      const expandedRadius = Math.min(currentRadius * 2, 100);
+      document.getElementById('jobLoadingText').textContent = `Expanding search to ${expandedRadius} miles...`;
+      const savedRadius = currentRadius;
+      currentRadius = expandedRadius;
+      rawJobs = await fetchMuseJobs(keywords, locationQuery);
+      enriched = normaliseAndTag(rawJobs, coords);
+      currentRadius = savedRadius; // restore UI radius selection
+      if (enriched.length) {
+        showToast(`No jobs within ${savedRadius} mi — showing results within ${expandedRadius} mi`, 'info');
+      }
+    }
+
     renderJobResults(enriched, coords);
   } catch (err) {
     document.getElementById('jobLoading').classList.remove('visible');
@@ -4451,7 +4466,8 @@ async function fetchMuseJobs(keywords, locationQuery) {
     query,
     num_pages: '3',
     radius: String(currentRadius),
-    date_posted: 'month',
+    // No date_posted filter — niche roles in smaller markets often don't have
+    // recent postings. Leaving this out returns the full available job pool.
   });
 
   // Job type filters
