@@ -18,7 +18,9 @@
   },
   "rewrites": [
     { "source": "/api/jobs/details", "destination": "/api/jobs" },
-    { "source": "/api/jobs",         "destination": "/api/jobs" }
+    { "source": "/api/jobs",         "destination": "/api/jobs" },
+    { "source": "/terms",            "destination": "/terms.html" },
+    { "source": "/privacy",          "destination": "/privacy.html" }
   ],
   "headers": [
     {
