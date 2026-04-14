@@ -71,10 +71,10 @@ export default async function handler(req, res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
 
-  // CORS — require Origin header (JOBS-01: removes !origin bypass)
+  // CORS — allow same-origin (no Origin header) and approved external origins
   const origin = req.headers['origin'] || '';
-  const originAllowed = origin && (ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.vercel.app'));
-  if (originAllowed) {
+  const originAllowed = !origin || ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.vercel.app');
+  if (origin && originAllowed) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
   }
