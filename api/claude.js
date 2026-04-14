@@ -15,6 +15,58 @@ const ALLOWED_ORIGINS = [
   'https://app.1ststep.ai',
 ];
 
+// ── CallTypes that require a verified paid subscription ──────────────────────
+// Free users may not use coverLetter, linkedin, or request Sonnet directly.
+// Server verifies via Stripe before serving these calls.
+const PAID_ONLY_TYPES = new Set(['coverLetter', 'linkedin']);
+const COMPLETE_ONLY_TYPES = new Set(['linkedin']); // linkedin requires Complete plan
+
+// ── Subscription verification cache (in-memory, per warm instance) ───────────
+// Avoids hitting Stripe on every single call. TTL: 10 minutes.
+const subCache = new Map(); // email → { tier, ts }
+const SUB_CACHE_TTL_MS = 10 * 60 * 1000;
+
+async function getVerifiedTier(email) {
+  if (!email || !email.includes('@')) return 'free';
+  const key = email.toLowerCase();
+  const cached = subCache.get(key);
+  if (cached && Date.now() - cached.ts < SUB_CACHE_TTL_MS) return cached.tier;
+
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+  if (!stripeKey) return 'free'; // fail open if Stripe not configured
+
+  try {
+    const { default: Stripe } = await import('stripe');
+    const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' });
+    const customers = await stripe.customers.list({ email: key, limit: 3 });
+    for (const customer of customers.data) {
+      const subs = await stripe.subscriptions.list({
+        customer: customer.id, status: 'active', limit: 3,
+        expand: ['data.items.data.price.product'],
+      });
+      for (const sub of subs.data) {
+        for (const item of sub.items.data) {
+          const name = (item.price.product.name || '').toLowerCase();
+          if (name.includes('complete') || name.includes('essential')) {
+            const tier = name.includes('complete') ? 'complete' : 'essential';
+            subCache.set(key, { tier, ts: Date.now() });
+            if (subCache.size > 5000) {
+              const oldest = [...subCache.keys()].slice(0, 500);
+              oldest.forEach(k => subCache.delete(k));
+            }
+            return tier;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Server-side tier check failed:', err.message);
+    return 'free'; // fail open — don't block users if Stripe is temporarily down
+  }
+  subCache.set(key, { tier: 'free', ts: Date.now() });
+  return 'free';
+}
+
 // ── Server-side caps — client cannot exceed these even if it tries ──
 const MAX_TOKENS_HARD_CAP = 4096;
 const MAX_BODY_BYTES       = 32_000; // ~32 KB — enough for any resume + job desc
@@ -96,9 +148,11 @@ function isRateLimited(ip) {
 
 function getOriginHeader(req, res) {
   const origin = req.headers['origin'] || '';
-  // Allow same-origin (no origin header) and listed origins
-  const allowed = !origin || ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.vercel.app');
-  if (allowed && origin) {
+  // Require an Origin header — rejects direct curl/server-to-server calls that have no browser context.
+  // All legitimate calls come from a browser and will always include Origin.
+  if (!origin) return false;
+  const allowed = ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.vercel.app');
+  if (allowed) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
   }
@@ -131,8 +185,10 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: 'Forbidden' });
   }
 
-  // Resolve client IP
-  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim()
+  // Resolve client IP — use x-real-ip (set by Vercel, not spoofable) or the
+  // LAST entry in x-forwarded-for (rightmost = last trusted hop, not user-controlled).
+  const ip = req.headers['x-real-ip']
+           || (req.headers['x-forwarded-for'] || '').split(',').pop().trim()
            || req.socket?.remoteAddress
            || 'unknown';
 
@@ -156,7 +212,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Server configuration error — API key not configured.' });
   }
 
-  const { model, system, messages, max_tokens, callType = 'utility' } = req.body || {};
+  const { model, system, messages, max_tokens, callType = 'utility', userEmail = '' } = req.body || {};
 
   if (!model || !messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Missing required fields: model, messages' });
@@ -171,6 +227,28 @@ export default async function handler(req, res) {
   ];
   if (!allowedModels.includes(model)) {
     return res.status(400).json({ error: `Model not allowed: ${model}` });
+  }
+
+  // ── Server-side tier enforcement (VULN-01, VULN-02) ───────────────────────
+  // Premium callTypes require a verified paid subscription regardless of what
+  // the client claims. This prevents localStorage tier spoofing and callType
+  // manipulation from bypassing feature gates.
+  if (PAID_ONLY_TYPES.has(callType)) {
+    const verifiedTier = await getVerifiedTier(userEmail);
+    if (verifiedTier === 'free') {
+      return res.status(403).json({
+        error: 'This feature requires an active paid subscription.',
+        code:  'TIER_REQUIRED',
+        callType,
+      });
+    }
+    if (COMPLETE_ONLY_TYPES.has(callType) && verifiedTier !== 'complete') {
+      return res.status(403).json({
+        error: 'This feature requires the Complete plan.',
+        code:  'COMPLETE_REQUIRED',
+        callType,
+      });
+    }
   }
 
   // ── Monthly per-IP limit check ─────────────────────────────────────────────
@@ -229,6 +307,7 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('Proxy error:', err);
-    return res.status(500).json({ error: err.message || 'Internal server error' });
+    // Never expose internal error details to the client
+    return res.status(500).json({ error: 'Internal server error. Please try again.' });
   }
 }

@@ -84,13 +84,9 @@ export default async function handler(req, res) {
           const product = item.price.product;
           const tier = productToTier(product.name);
           if (tier !== 'free') {
-            return res.status(200).json({
-              tier,
-              status:         sub.status,
-              subscriptionId: sub.id,
-              productName:    product.name,
-              currentPeriodEnd: sub.current_period_end,
-            });
+            // Only expose tier and status — never expose subscriptionId, productName,
+            // or billing dates to prevent enumeration and social engineering.
+            return res.status(200).json({ tier, status: sub.status });
           }
         }
       }
@@ -108,13 +104,7 @@ export default async function handler(req, res) {
           const product = item.price.product;
           const tier = productToTier(product.name);
           if (tier !== 'free') {
-            return res.status(200).json({
-              tier,
-              status:         'trialing',
-              subscriptionId: sub.id,
-              productName:    product.name,
-              currentPeriodEnd: sub.current_period_end,
-            });
+            return res.status(200).json({ tier, status: 'trialing' });
           }
         }
       }

@@ -15,6 +15,23 @@
 
 export const maxDuration = 10;
 
+// ── Per-IP rate limiter — 20 event tracks per IP per hour ────────────────────
+const eventWindows = new Map();
+const EVENT_WINDOW_MS  = 60 * 60 * 1000;
+const EVENT_MAX_PER_IP = 20;
+
+function isEventRateLimited(ip) {
+  const now  = Date.now();
+  const hits = (eventWindows.get(ip) || []).filter(t => now - t < EVENT_WINDOW_MS);
+  hits.push(now);
+  eventWindows.set(ip, hits);
+  if (eventWindows.size > 2000) {
+    const oldest = [...eventWindows.keys()].slice(0, 200);
+    oldest.forEach(k => eventWindows.delete(k));
+  }
+  return hits.length > EVENT_MAX_PER_IP;
+}
+
 const ALLOWED_ORIGINS = [
   'https://1ststep.ai',
   'https://www.1ststep.ai',
@@ -51,6 +68,12 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const ip = (req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || '').split(',').pop().trim()
+           || req.socket?.remoteAddress || 'unknown';
+  if (isEventRateLimited(ip)) {
+    return res.status(429).json({ error: 'Too many requests' });
   }
 
   const { email, event } = req.body || {};

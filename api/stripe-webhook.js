@@ -24,6 +24,18 @@ import Stripe from 'stripe';
 // Webhooks must receive the raw body — disable body parsing
 export const config = { api: { bodyParser: false } };
 
+// ── Idempotency guard — prevents duplicate processing on Stripe retries ───────
+// Stores the last 1,000 processed event IDs in memory.
+const processedEvents = new Set();
+function markProcessed(eventId) {
+  processedEvents.add(eventId);
+  if (processedEvents.size > 1000) {
+    // Remove oldest entries (Sets maintain insertion order)
+    const toDelete = [...processedEvents].slice(0, 200);
+    toDelete.forEach(id => processedEvents.delete(id));
+  }
+}
+
 async function getRawBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -241,6 +253,13 @@ export default async function handler(req, res) {
     console.error('Webhook signature verification failed:', err.message);
     return res.status(400).json({ error: `Webhook error: ${err.message}` });
   }
+
+  // ── Idempotency check — ignore duplicate deliveries ────────────────────────
+  if (processedEvents.has(event.id)) {
+    console.log(`Duplicate webhook event ignored: ${event.id}`);
+    return res.status(200).json({ received: true, duplicate: true });
+  }
+  markProcessed(event.id);
 
   // ── Handle events ──────────────────────────────────────────────────────────
   switch (event.type) {

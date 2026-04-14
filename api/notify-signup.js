@@ -16,6 +16,24 @@
 
 export const maxDuration = 10;
 
+// ── Per-IP rate limiter — prevents CRM spam and inbox flooding ───────────────
+// Limit: 5 signup notifications per IP per hour.
+const signupWindows = new Map(); // ip → [timestamp, ...]
+const SIGNUP_WINDOW_MS  = 60 * 60 * 1000; // 1 hour
+const SIGNUP_MAX_PER_IP = 5;
+
+function isSignupRateLimited(ip) {
+  const now  = Date.now();
+  const hits = (signupWindows.get(ip) || []).filter(t => now - t < SIGNUP_WINDOW_MS);
+  hits.push(now);
+  signupWindows.set(ip, hits);
+  if (signupWindows.size > 2000) {
+    const oldest = [...signupWindows.keys()].slice(0, 200);
+    oldest.forEach(k => signupWindows.delete(k));
+  }
+  return hits.length > SIGNUP_MAX_PER_IP;
+}
+
 const ALLOWED_ORIGINS = [
   'https://1ststep.ai',
   'https://www.1ststep.ai',
@@ -45,6 +63,13 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Rate limit — prevents CRM/inbox spam
+  const ip = (req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || '').split(',').pop().trim()
+           || req.socket?.remoteAddress || 'unknown';
+  if (isSignupRateLimited(ip)) {
+    return res.status(429).json({ error: 'Too many requests' });
   }
 
   const { firstName, lastName, email } = req.body || {};
