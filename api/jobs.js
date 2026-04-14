@@ -130,6 +130,8 @@ export default async function handler(req, res) {
     });
 
     if (upstream.status === 403 || upstream.status === 401) {
+      const errBody = await upstream.text().catch(() => '');
+      console.error(`RapidAPI auth failure — status:${upstream.status} key_prefix:${apiKey.slice(0,8)}... body:${errBody.slice(0,200)}`);
       alertOnAbuse('jsearch_auth_failure', 'rapidapi_key', `status:${upstream.status}`);
       return res.status(403).json({ error: 'Invalid RapidAPI key on server. Contact support at evan@1ststep.ai' });
     }
