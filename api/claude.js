@@ -16,9 +16,12 @@ const ALLOWED_ORIGINS = [
 ];
 
 // ── CallTypes that require a verified paid subscription ──────────────────────
-// Free users may not use coverLetter, linkedin, or request Sonnet directly.
-// Server verifies via Stripe before serving these calls.
-const PAID_ONLY_TYPES = new Set(['coverLetter', 'linkedin']);
+// Free users may not use tailor (Sonnet), coverLetter, or linkedin.
+// Server verifies via Stripe (HMAC fast path, slow path fallback) before serving.
+// COST-02: 'tailor' added — prevents free users from running unlimited Sonnet
+//          tailoring by clearing localStorage. Free users can still use Haiku
+//          for search analysis and salary estimation (callType: 'search'/'utility').
+const PAID_ONLY_TYPES = new Set(['tailor', 'coverLetter', 'linkedin']);
 const COMPLETE_ONLY_TYPES = new Set(['linkedin']); // linkedin requires Complete plan
 
 // ── Subscription verification cache (in-memory, per warm instance) ───────────

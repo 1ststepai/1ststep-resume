@@ -43,15 +43,37 @@ function isRateLimited(ip) {
   return calls.length > RATE_LIMIT_MAX_CALLS;
 }
 
+// ── Monthly job search counter (COST-01) ─────────────────────────────────────
+// Prevents a single IP from draining the entire JSearch plan quota in one burst.
+// JSearch plan: 50,000 searches/month. Cap per IP: 500/month — well above any
+// legitimate user (even power users rarely exceed 100 searches/month).
+const monthlyJobSearches = new Map(); // "ip:YYYY-MM" → count
+const MONTHLY_JOB_LIMIT  = 500;
+
+function jobSearchMonthKey(ip) {
+  const d = new Date();
+  return `${ip}:${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+function checkMonthlyJobLimit(ip) {
+  const key   = jobSearchMonthKey(ip);
+  const count = (monthlyJobSearches.get(key) || 0) + 1;
+  monthlyJobSearches.set(key, count);
+  if (monthlyJobSearches.size > 10_000) {
+    [...monthlyJobSearches.keys()].slice(0, 1000).forEach(k => monthlyJobSearches.delete(k));
+  }
+  return count > MONTHLY_JOB_LIMIT;
+}
+
 export default async function handler(req, res) {
   // Security headers
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
 
-  // CORS
+  // CORS — require Origin header (JOBS-01: removes !origin bypass)
   const origin = req.headers['origin'] || '';
-  const originAllowed = !origin || ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.vercel.app');
-  if (originAllowed && origin) {
+  const originAllowed = origin && (ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.vercel.app'));
+  if (originAllowed) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
   }
@@ -63,10 +85,19 @@ export default async function handler(req, res) {
   if (!originAllowed) return res.status(403).json({ error: 'Forbidden' });
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  // Rate limiting
-  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress || 'unknown';
+  // IP resolution — use last trusted hop (JOBS-02: prevents X-Forwarded-For spoofing)
+  const ip = req.headers['x-real-ip']
+           || (req.headers['x-forwarded-for'] || '').split(',').pop().trim()
+           || req.socket?.remoteAddress
+           || 'unknown';
+
   if (isRateLimited(ip)) {
     return res.status(429).json({ error: 'Too many searches — please wait a moment and try again.' });
+  }
+
+  // Monthly quota guard (COST-01: prevents draining JSearch plan)
+  if (checkMonthlyJobLimit(ip)) {
+    return res.status(429).json({ error: 'Monthly job search limit reached for this IP.' });
   }
 
   const apiKey = process.env.RAPIDAPI_KEY;

@@ -2642,8 +2642,9 @@ function showResults() {
 
 // ── Main Run ──────────────────────────────────────────────────────────────
 async function runTailoring() {
-  const resumeRaw = fileContent || document.getElementById('resumeText').value.trim();
-  const jobDesc = document.getElementById('jobText').value.trim();
+  // INJECT-01: Sanitize both text sources — pasting bypasses the file-upload sanitizer
+  const resumeRaw = sanitizeResumeText(fileContent || document.getElementById('resumeText').value.trim());
+  const jobDesc   = sanitizeResumeText(document.getElementById('jobText').value.trim());
   const notes = document.getElementById('notesText').value.trim();
 
   if (!resumeRaw) { showToast('⚠️ Please add your resume first'); return; }
@@ -3608,7 +3609,8 @@ function setAnalyzeStatus(msg, type) {
 }
 
 async function analyzeResumeForJobSearch() {
-  let resume = getJobSearchResume();
+  // INJECT-01: Sanitize at point of use — covers both file and pasted text paths
+  let resume = sanitizeResumeText(getJobSearchResume());
 
   if (!resume) {
     setAnalyzeStatus('⚠️ No resume found. Paste your resume above, or go to <strong>Resume Tailor</strong> and add it there first.', 'warning');
@@ -5165,12 +5167,21 @@ async function verifySubscription(email) {
 }
 
 function _applySubscriptionTier(tier, notify) {
-  if (!['essential', 'complete'].includes(tier)) return;
+  // AUTH-01: Accept all valid tiers including 'free' (handles subscription downgrade/expiry)
+  const validTiers = ['free', 'essential', 'complete'];
+  if (!validTiers.includes(tier)) return;
   const current = localStorage.getItem('1ststep_tier') || 'free';
   if (tier === current) return; // no change
   localStorage.setItem('1ststep_tier', tier);
+  currentTier = tier; // ← update in-memory variable so gates take effect immediately
   // Update the in-memory TIER if it exists
   if (typeof TIER !== 'undefined') window.TIER = tier;
+  // Notify user on downgrade
+  if (tier === 'free' && current !== 'free') {
+    showToast('Your subscription has ended — upgrade to continue', 'warning');
+    updateTailorUsageMeter();
+    updateSearchUsageMeter();
+  }
   updateTailorUsageMeter?.();
   if (notify && tier !== 'free') {
     const label = tier === 'complete' ? 'Complete' : 'Essential';
@@ -5253,9 +5264,10 @@ function copyText(id) {
 }
 
 async function runLinkedInOptimize() {
-  const resume = document.getElementById('liResume').value.trim();
-  const targetRole = document.getElementById('liTargetRole').value.trim();
-  const keywords = document.getElementById('liKeywords').value.trim();
+  // INJECT-01: Sanitize all user-pasted inputs before they reach any prompt
+  const resume     = sanitizeResumeText(document.getElementById('liResume').value.trim());
+  const targetRole = sanitizeResumeText(document.getElementById('liTargetRole').value.trim());
+  const keywords   = sanitizeResumeText(document.getElementById('liKeywords').value.trim());
   const tone = document.getElementById('liTone').value;
 
   if (!resume) { showToast('Please paste your resume first', 'warning'); return; }
@@ -5404,7 +5416,8 @@ function updateBulkAddBtn() {
 }
 
 async function runBulkApply() {
-  const resume = fileContent || document.getElementById('resumeText').value.trim();
+  // INJECT-01: Sanitize resume text regardless of source (file or paste)
+  const resume = sanitizeResumeText(fileContent || document.getElementById('resumeText').value.trim());
   if (!resume) {
     showToast('No resume found — paste your resume in Resume Tailor first', 'warning');
     return;

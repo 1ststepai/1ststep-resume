@@ -16,6 +16,16 @@
 
 export const maxDuration = 10;
 
+// ── HTML escape helper (EMAIL-01: prevents XSS in admin email) ───────────────
+function escHtml(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ── Per-IP rate limiter — prevents CRM spam and inbox flooding ───────────────
 // Limit: 5 signup notifications per IP per hour.
 const signupWindows = new Map(); // ip → [timestamp, ...]
@@ -169,13 +179,13 @@ export default async function handler(req, res) {
             <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
               <h2 style="margin:0 0 16px;color:#0F172A">New 1stStep.ai Signup</h2>
               <table style="width:100%;border-collapse:collapse">
-                <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Name</td><td style="padding:8px 0;font-size:14px;font-weight:600;color:#0F172A">${fullName}</td></tr>
-                <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Email</td><td style="padding:8px 0;font-size:14px;font-weight:600;color:#0F172A"><a href="mailto:${email}" style="color:#4338CA">${email}</a></td></tr>
-                <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Time</td><td style="padding:8px 0;font-size:14px;color:#0F172A">${time}</td></tr>
+                <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Name</td><td style="padding:8px 0;font-size:14px;font-weight:600;color:#0F172A">${escHtml(fullName)}</td></tr>
+                <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Email</td><td style="padding:8px 0;font-size:14px;font-weight:600;color:#0F172A"><a href="mailto:${escHtml(email)}" style="color:#4338CA">${escHtml(email)}</a></td></tr>
+                <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Time</td><td style="padding:8px 0;font-size:14px;color:#0F172A">${escHtml(time)}</td></tr>
                 <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Plan</td><td style="padding:8px 0;font-size:14px;color:#0F172A">Free</td></tr>
               </table>
               <div style="margin-top:20px;padding:12px 16px;background:#EEF2FF;border-radius:8px;font-size:13px;color:#4338CA">
-                Hit reply to reach ${firstName || 'them'} directly.
+                Hit reply to reach ${escHtml(firstName) || 'them'} directly.
               </div>
             </div>`,
         }),
