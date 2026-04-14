@@ -116,7 +116,7 @@ export default async function handler(req, res) {
   const locationId = process.env.GHL_LOCATION_ID;
 
   if (apiKey && locationId) {
-    fetch('https://services.leadconnectorhq.com/contacts/upsert', {
+    await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
       method:  'PUT',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
@@ -130,7 +130,6 @@ export default async function handler(req, res) {
         source: '1stStep.ai — Beta Access',
       }),
     }).catch(err => console.error('GHL beta contact error:', err.message));
-    // fire-and-forget — don't delay the response
   }
 
   console.log(`✅ Beta access granted: ${cleanEmail} — expires ${new Date(expiresAt).toISOString()}`);
@@ -140,12 +139,12 @@ export default async function handler(req, res) {
   if (resendKey) {
     const time    = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
     const expires = new Date(expiresAt).toLocaleString('en-US', { timeZone: 'America/New_York' });
-    fetch('https://api.resend.com/emails', {
+    const resendRes = await fetch('https://api.resend.com/emails', {
       method:  'POST',
       headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         from:    'notifications@1ststep.ai',
-        to:      'evan@1ststep.ai',
+        to:      ['evan@1ststep.ai', cleanEmail],
         reply_to: cleanEmail,
         subject: `🧪 New beta user: ${cleanEmail}`,
         html: `
@@ -162,8 +161,13 @@ export default async function handler(req, res) {
             </div>
           </div>`,
       }),
-    }).catch(err => console.error('Beta notification email failed:', err.message));
-    // fire-and-forget — don't delay the response
+    }).catch(err => { console.error('Beta notification email failed:', err.message); return null; });
+    if (resendRes) {
+      const resendBody = await resendRes.json().catch(() => ({}));
+      console.log('Resend beta email status:', resendRes.status, JSON.stringify(resendBody));
+    }
+  } else {
+    console.warn('RESEND_API_KEY not set — skipping beta notification email');
   }
 
   return res.status(200).json({
