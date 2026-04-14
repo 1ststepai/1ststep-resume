@@ -1259,7 +1259,7 @@
     <span style="font-weight:700;color:var(--text);margin-right:10px">How it works:</span>
     <span id="flowStep1" style="padding:3px 10px;border-radius:100px;background:rgba(67,56,202,0.12);color:var(--brand);font-weight:600">1 · Upload resume</span>
     <span style="margin:0 6px;color:var(--muted)">→</span>
-    <span id="flowStep2" style="padding:3px 10px;border-radius:100px;background:var(--surface2);color:var(--text2)">2 · Paste job description</span>
+    <span id="flowStep2" style="padding:3px 10px;border-radius:100px;background:var(--surface2);color:var(--text2)">2 · Find a job</span>
     <span style="margin:0 6px;color:var(--muted)">→</span>
     <span id="flowStep3" style="padding:3px 10px;border-radius:100px;background:var(--surface2);color:var(--text2)">3 · Tailor in 30s</span>
     <span style="margin:0 6px;color:var(--muted)">→</span>
@@ -1487,10 +1487,10 @@
           <div class="setup-step-row" id="setupStep3">
             <div class="setup-step-num" id="setupNum3">2</div>
             <div class="setup-step-text">
-              <strong>Paste a job description</strong>
-              <span>Any job posting from any site</span>
+              <strong>Find a job to tailor to</strong>
+              <span>Search jobs or paste a listing directly</span>
             </div>
-            <span class="setup-step-action" onclick="document.getElementById('jobText').focus()">Add JD →</span>
+            <span class="setup-step-action" onclick="showJdSection();document.getElementById('jobText').focus()">Add JD →</span>
           </div>
         </div>
 
@@ -2512,7 +2512,7 @@ function updateRunButton() {
   } else if (!hasJob) {
     btn.style.opacity = '0.65';
     btn.style.cursor = 'default';
-    lbl.textContent = '↓ Paste a job description above';
+    lbl.textContent = '↓ Add a job description above to continue';
   } else {
     btn.style.opacity = '';
     btn.style.cursor = '';
