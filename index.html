@@ -1300,8 +1300,7 @@
           <button onclick="clearFile()">✕ Remove</button>
         </div>
 
-        <div class="or-divider">— or paste text directly below —</div>
-        <textarea id="resumeText" rows="8" placeholder="Paste your resume text here...&#10;&#10;Tip: In Word, press Ctrl+A then Ctrl+C, then click here and Ctrl+V."></textarea>
+        <textarea id="resumeText" rows="1" style="display:none;height:0;padding:0;border:none;resize:none" placeholder="" aria-hidden="true" tabindex="-1"></textarea>
       </div>
 
       <!-- JD input — hidden until resume is loaded -->
@@ -2170,13 +2169,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Also hook run button update to resume textarea
   document.getElementById('resumeText').addEventListener('input', updateRunButton);
 
-  // If resume was restored from localStorage as a file, hide paste area
-  if (fileContent) {
-    const orDiv = document.querySelector('.or-divider');
-    const resumeTxt = document.getElementById('resumeText');
-    if (orDiv) orDiv.style.display = 'none';
-    if (resumeTxt) resumeTxt.style.display = 'none';
-  }
 
   refreshSetupSteps();
   updateRunButton();
@@ -2479,11 +2471,6 @@ async function processFile(file) {
     document.getElementById('fileLoaded').style.display = 'flex';
     document.getElementById('fileDrop').style.display = 'none';
     showJdSection();
-    // Hide the paste textarea and divider — file is loaded, no need to show both
-    const orDiv = document.querySelector('.or-divider');
-    const resumeTxt = document.getElementById('resumeText');
-    if (orDiv) orDiv.style.display = 'none';
-    if (resumeTxt) resumeTxt.style.display = 'none';
     updateCounts();
     refreshSetupSteps();
     updateRunButton();
@@ -2505,11 +2492,6 @@ function clearFile() {
   document.getElementById('fileInput').value = '';
   document.getElementById('fileLoaded').style.display = 'none';
   document.getElementById('fileDrop').style.display = 'block';
-  // Restore the paste textarea and divider
-  const orDiv = document.querySelector('.or-divider');
-  const resumeTxt = document.getElementById('resumeText');
-  if (orDiv) orDiv.style.display = '';
-  if (resumeTxt) resumeTxt.style.display = '';
   updateCounts();
   updateRunButton();
 }
