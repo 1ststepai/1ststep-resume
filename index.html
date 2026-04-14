@@ -2516,6 +2516,15 @@ function sanitizeProse(text, maxLen = 8000) {
 //   'search'      — job search / resume analysis for search (counts against monthly limit)
 //   'linkedin'    — LinkedIn profile optimizer (counts against monthly limit)
 //   'utility'     — internal helper calls (salary estimates, profile parse, etc.) — NOT counted
+// ── Profile helper — returns the saved profile object (or empty obj if none) ──
+// Used by callClaude() to send userEmail + tierToken on every API call.
+// PROFILE_KEY is defined lower in the file; use the literal string here to
+// avoid TDZ (temporal dead zone) since const declarations are not hoisted.
+function loadProfile() {
+  try { return JSON.parse(localStorage.getItem('1ststep_profile') || '{}'); }
+  catch { return {}; }
+}
+
 async function callClaude(systemPrompt, userMessage, model = 'claude-haiku-4-5-20251001', maxTokens = 1024, callType = 'utility') {
   const isLocal = window.location.protocol === 'file:' ||
                   window.location.hostname === 'localhost' ||
@@ -2850,7 +2859,8 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
         const clRem = clLimit - clCount;
         setTimeout(() => showToast(`Heads up — ${clRem} cover letter${clRem === 1 ? '' : 's'} left this month`, 'warning'), 1200);
       }
-    } else {
+    } else if (outputMode === 'complete') {
+      // User explicitly requested a cover letter but the limit is exhausted
       showToast('Cover letter limit reached for this month — upgrade to generate more', 'warning');
     }
 
@@ -2918,10 +2928,17 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
           <p style="margin:10px 0 20px;opacity:0.85">You've used your free tailors for this month.<br>Upgrade to keep going — no limits, cancel any time.</p>
           <button class="btn-run" style="width:auto;padding:10px 28px;font-size:0.95rem" onclick="openUpgradeModal()">See Plans →</button>
         </div>`;
-      document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'none');
+    } else if (err.code === 'TIER_REQUIRED' || err.code === 'COMPLETE_REQUIRED' || err.status === 403) {
+      document.getElementById('resumeOutput').innerHTML = `
+        <div class="error-box" style="text-align:center;padding:32px 24px">
+          <div style="font-size:2rem;margin-bottom:8px">🔒</div>
+          <strong style="font-size:1.1rem">Subscription required</strong>
+          <p style="margin:10px 0 20px;opacity:0.85">This feature requires a paid plan.</p>
+          <button class="btn-run" style="width:auto;padding:10px 28px;font-size:0.95rem" onclick="openUpgradeModal()">See Plans →</button>
+        </div>`;
+      setTimeout(() => openUpgradeModal(), 400);
     } else {
       document.getElementById('resumeOutput').innerHTML = `<div class="error-box"><strong>Error:</strong> ${err.message}<br><br>Common fixes:<br>• Check your internet connection and try again<br>• If the error says "529", Anthropic is temporarily overloaded — wait 30 seconds<br>• Contact support at evan@1ststep.ai if the problem persists</div>`;
-      document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'none');
     }
   } finally {
     btn.disabled = false;
@@ -5353,6 +5370,10 @@ Rules:
       document.getElementById('liEmpty').textContent = '🔒 Monthly limit reached — upgrade to continue.';
       showToast('Monthly limit reached — upgrade to continue', 'warning');
       setTimeout(() => openUpgradeModal(), 800);
+    } else if (err.code === 'TIER_REQUIRED' || err.code === 'COMPLETE_REQUIRED' || err.status === 403) {
+      document.getElementById('liEmpty').textContent = '🔒 This feature requires a paid plan.';
+      showToast('Upgrade to use LinkedIn optimization', 'warning');
+      setTimeout(() => openUpgradeModal(), 400);
     } else {
       document.getElementById('liEmpty').textContent = 'Something went wrong — please try again.';
       showToast(err.message || 'Optimization failed — please try again', 'warning');
@@ -5545,6 +5566,17 @@ ${job.jd.slice(0, 1000)}
     } catch (err) {
       if (statusEl) { statusEl.textContent = '✗ Failed — try again'; statusEl.style.color = '#f87171'; }
       console.error(`Bulk job ${job.title} failed:`, err);
+      // If a tier or rate error fires mid-batch, abort the rest and prompt upgrade
+      if (err.code === 'TIER_REQUIRED' || err.code === 'COMPLETE_REQUIRED' || err.status === 403) {
+        showToast('Upgrade to Complete plan to use Bulk Apply', 'warning');
+        setTimeout(() => openUpgradeModal(), 400);
+        break; // stop processing remaining jobs
+      }
+      if (err.code === 'MONTHLY_LIMIT' || err.status === 429) {
+        showToast('Monthly limit reached — upgrade to continue', 'warning');
+        setTimeout(() => openUpgradeModal(), 400);
+        break;
+      }
     }
   }
 
