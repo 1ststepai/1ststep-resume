@@ -420,12 +420,14 @@
       position: fixed; inset: 0; background: rgba(15,23,42,0.5);
       display: flex; align-items: center; justify-content: center;
       z-index: 1000; display: none; backdrop-filter: blur(2px);
+      overflow-y: auto; padding: 24px;
     }
     .modal-overlay.visible { display: flex; }
     .modal {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 20px; padding: 32px; width: 440px; max-width: 90vw;
-      box-shadow: var(--shadow-md);
+      border-radius: 20px; padding: 32px; width: 440px; max-width: 100%;
+      box-shadow: var(--shadow-md); max-height: 90vh; overflow-y: auto;
+      margin: auto;
     }
     .modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
     .modal p { font-size: 14px; color: var(--text2); margin-bottom: 20px; line-height: 1.6; }
@@ -5290,6 +5292,17 @@ const SUB_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 
 async function verifySubscription(email) {
   if (!email || IS_LOCAL_DEV) return; // skip in local dev
+
+  // If user has an active beta token, skip Stripe — beta tier is already set
+  // and Stripe would return 'free' (beta users haven't paid), triggering a false downgrade toast
+  try {
+    const betaRaw = localStorage.getItem('1ststep_beta');
+    if (betaRaw) {
+      const beta = JSON.parse(betaRaw);
+      if (beta.expiresAt && Date.now() < beta.expiresAt) return;
+    }
+  } catch {}
+
   try {
     // Check cache first to avoid hammering the API
     const cached = JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || 'null');
