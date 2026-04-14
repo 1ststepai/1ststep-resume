@@ -1551,6 +1551,9 @@
         <div class="results-topbar">
           <div id="matchBadge" class="match-score-badge good">✓ Resume Tailored</div>
           <div class="topbar-actions">
+            <button class="btn-sm btn-sm-outline" onclick="openTemplateModal()" style="white-space:nowrap;gap:5px;display:inline-flex;align-items:center" id="applyTemplateBtn" title="Apply a visual resume template">
+              🎨 Apply Template
+            </button>
             <button class="btn-sm btn-sm-primary" onclick="downloadDocx()" style="white-space:nowrap;gap:5px;display:inline-flex;align-items:center">
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v8M5 7l3 3 3-3M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1"/></svg>
               Download .docx
@@ -5929,7 +5932,467 @@ document.addEventListener('DOMContentLoaded', () => {
   checkBetaAccess();
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// RESUME TEMPLATE PICKER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const TEMPLATE_DEFS = [
+  { id:'classic',   name:'Classic',   desc:'Traditional & ATS-friendly',    accent:'#1E3A5F' },
+  { id:'modern',    name:'Modern',    desc:'Bold sidebar with color accent', accent:'#4338CA' },
+  { id:'minimal',   name:'Minimal',   desc:'Clean lines, ultra-modern',      accent:'#111827' },
+  { id:'executive', name:'Executive', desc:'Premium dark header design',     accent:'#0F172A' },
+];
+
+const TEMPLATE_PREVIEWS = {
+  classic: `<div style="background:#fff;width:100%;height:100%;padding:8px 10px;font-family:Georgia,serif">
+    <div style="border-bottom:2.5px solid #1E3A5F;padding-bottom:4px;margin-bottom:5px;display:flex;justify-content:space-between;align-items:flex-end">
+      <div><div style="font-size:8px;font-weight:bold;color:#1E3A5F;letter-spacing:.5px">FULL NAME</div><div style="font-size:5px;color:#555;font-style:italic">Professional Title</div></div>
+      <div style="text-align:right"><div style="font-size:4.5px;color:#555">email@example.com</div><div style="font-size:4.5px;color:#555">555-000-0000</div><div style="font-size:4.5px;color:#555">City, State</div></div>
+    </div>
+    <div style="font-size:5.5px;font-weight:bold;color:#1E3A5F;text-transform:uppercase;letter-spacing:1px;border-bottom:1.5px solid #1E3A5F;margin-bottom:3px;padding-bottom:1px">Experience</div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:1px"><div style="font-size:5px;font-weight:bold">Company Name</div><div style="font-size:4.5px;color:#555">2020–Present</div></div>
+    <div style="font-size:4.5px;color:#444;font-style:italic;margin-bottom:2px">Job Title</div>
+    <div style="font-size:4px;background:#e8e8e8;height:2px;margin-bottom:1.5px;border-radius:1px"></div>
+    <div style="font-size:4px;background:#e8e8e8;height:2px;margin-bottom:3px;border-radius:1px;width:80%"></div>
+    <div style="font-size:5.5px;font-weight:bold;color:#1E3A5F;text-transform:uppercase;letter-spacing:1px;border-bottom:1.5px solid #1E3A5F;margin-bottom:3px;padding-bottom:1px">Education</div>
+    <div style="font-size:5px;font-weight:bold">University Name</div>
+    <div style="font-size:4.5px;color:#555">B.S. Field • 2018</div>
+  </div>`,
+
+  modern: `<div style="background:#fff;width:100%;height:100%;display:flex;font-family:Arial,sans-serif">
+    <div style="width:32%;background:#4338CA;padding:7px 6px">
+      <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.25);margin:0 auto 4px"></div>
+      <div style="font-size:5.5px;color:#fff;font-weight:bold;text-align:center;margin-bottom:1px">FULL NAME</div>
+      <div style="font-size:4px;color:rgba(255,255,255,0.7);text-align:center;margin-bottom:6px">Job Title</div>
+      <div style="font-size:4px;color:rgba(255,255,255,0.8);margin-bottom:1.5px">📧 email@example.com</div>
+      <div style="font-size:4px;color:rgba(255,255,255,0.8);margin-bottom:1.5px">📱 555-000-0000</div>
+      <div style="font-size:4px;color:rgba(255,255,255,0.8);margin-bottom:5px">📍 City, State</div>
+      <div style="font-size:4.5px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Skills</div>
+      <div style="display:flex;flex-wrap:wrap;gap:1.5px">
+        <span style="font-size:3.5px;background:rgba(255,255,255,0.2);color:#fff;padding:1px 3px;border-radius:2px">Skill One</span>
+        <span style="font-size:3.5px;background:rgba(255,255,255,0.2);color:#fff;padding:1px 3px;border-radius:2px">Skill Two</span>
+        <span style="font-size:3.5px;background:rgba(255,255,255,0.2);color:#fff;padding:1px 3px;border-radius:2px">Skill Three</span>
+      </div>
+    </div>
+    <div style="flex:1;padding:7px 8px">
+      <div style="font-size:5px;font-weight:bold;color:#4338CA;text-transform:uppercase;letter-spacing:.5px;border-bottom:1.5px solid #4338CA;margin-bottom:3px;padding-bottom:1px">Experience</div>
+      <div style="font-size:5px;font-weight:bold;margin-bottom:1px">Company Name</div>
+      <div style="font-size:4.5px;color:#555;font-style:italic;margin-bottom:2px">Job Title • 2020–Present</div>
+      <div style="font-size:3.5px;background:#eee;height:2px;margin-bottom:1.5px;border-radius:1px"></div>
+      <div style="font-size:3.5px;background:#eee;height:2px;margin-bottom:3px;border-radius:1px;width:75%"></div>
+      <div style="font-size:5px;font-weight:bold;color:#4338CA;text-transform:uppercase;letter-spacing:.5px;border-bottom:1.5px solid #4338CA;margin-bottom:2px;padding-bottom:1px">Education</div>
+      <div style="font-size:4.5px;font-weight:bold">University Name</div>
+      <div style="font-size:4px;color:#555">B.S. Field • 2018</div>
+    </div>
+  </div>`,
+
+  minimal: `<div style="background:#fff;width:100%;height:100%;padding:10px 12px;font-family:Arial,sans-serif">
+    <div style="text-align:center;margin-bottom:6px">
+      <div style="font-size:10px;font-weight:800;color:#111827;letter-spacing:1.5px">FULL NAME</div>
+      <div style="font-size:4.5px;color:#6B7280;letter-spacing:.5px;margin-top:1px">TITLE &nbsp;|&nbsp; EMAIL &nbsp;|&nbsp; PHONE &nbsp;|&nbsp; CITY</div>
+    </div>
+    <div style="height:1px;background:#D1D5DB;margin-bottom:5px"></div>
+    <div style="font-size:5px;font-weight:600;color:#374151;margin-bottom:2px;letter-spacing:.8px;text-transform:uppercase">Experience</div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:1px"><div style="font-size:5px;font-weight:600">Company Name</div><div style="font-size:4.5px;color:#9CA3AF">2020–Present</div></div>
+    <div style="font-size:4.5px;color:#6B7280;font-style:italic;margin-bottom:2px">Job Title</div>
+    <div style="font-size:3.5px;background:#F3F4F6;height:2px;margin-bottom:1.5px;border-radius:1px"></div>
+    <div style="font-size:3.5px;background:#F3F4F6;height:2px;margin-bottom:4px;border-radius:1px;width:80%"></div>
+    <div style="height:1px;background:#D1D5DB;margin-bottom:3px"></div>
+    <div style="font-size:5px;font-weight:600;color:#374151;margin-bottom:2px;letter-spacing:.8px;text-transform:uppercase">Education</div>
+    <div style="font-size:5px;font-weight:600">University Name</div>
+    <div style="font-size:4.5px;color:#6B7280">B.S. Field • 2018</div>
+  </div>`,
+
+  executive: `<div style="background:#fff;width:100%;height:100%;font-family:Arial,sans-serif">
+    <div style="background:#0F172A;padding:9px 10px">
+      <div style="font-size:9px;font-weight:800;color:#fff;letter-spacing:.8px">FULL NAME</div>
+      <div style="font-size:4.5px;color:#94A3B8;margin-top:2px;letter-spacing:.3px">Senior Title &nbsp;•&nbsp; email@example.com &nbsp;•&nbsp; 555-000-0000 &nbsp;•&nbsp; City, State</div>
+    </div>
+    <div style="padding:7px 10px">
+      <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">
+        <div style="font-size:5px;font-weight:700;color:#0F172A;text-transform:uppercase;letter-spacing:.8px;white-space:nowrap">Experience</div>
+        <div style="flex:1;height:1px;background:#0F172A"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:1px"><div style="font-size:5px;font-weight:bold">Company Name</div><div style="font-size:4.5px;color:#64748B">2020–Present</div></div>
+      <div style="font-size:4.5px;color:#475569;font-style:italic;margin-bottom:2px">Job Title</div>
+      <div style="font-size:3.5px;background:#F1F5F9;height:2px;margin-bottom:1.5px;border-radius:1px"></div>
+      <div style="font-size:3.5px;background:#F1F5F9;height:2px;margin-bottom:4px;border-radius:1px;width:80%"></div>
+      <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">
+        <div style="font-size:5px;font-weight:700;color:#0F172A;text-transform:uppercase;letter-spacing:.8px;white-space:nowrap">Education</div>
+        <div style="flex:1;height:1px;background:#0F172A"></div>
+      </div>
+      <div style="font-size:5px;font-weight:bold">University Name</div>
+      <div style="font-size:4.5px;color:#475569">B.S. Field • 2018</div>
+    </div>
+  </div>`,
+};
+
+let _parsedResumeData = null;
+
+function openTemplateModal() {
+  const resumeEl = document.getElementById('resultsResume');
+  if (!resumeEl?.innerText?.trim()) {
+    showToast('Please tailor your resume first.', 'info');
+    return;
+  }
+
+  // Build template cards
+  const grid = document.getElementById('templateGrid');
+  grid.style.display = 'grid';
+  grid.innerHTML = TEMPLATE_DEFS.map(t => `
+    <div onclick="applyTemplate('${t.id}')"
+         style="border:2px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color 0.15s,transform 0.15s,box-shadow 0.15s;background:#fff"
+         onmouseenter="this.style.borderColor='${t.accent}';this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.1)'"
+         onmouseleave="this.style.borderColor='var(--border)';this.style.transform='';this.style.boxShadow=''">
+      <div style="height:95px;overflow:hidden;background:#f8fafc;border-bottom:1px solid var(--border)">${TEMPLATE_PREVIEWS[t.id]}</div>
+      <div style="padding:8px 10px">
+        <div style="font-size:13px;font-weight:600;color:var(--text)">${t.name}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:1px">${t.desc}</div>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('templateLoadingMsg').style.display = 'none';
+  document.getElementById('templatePickerOverlay').style.display = 'flex';
+}
+
+function closeTemplateModal() {
+  document.getElementById('templatePickerOverlay').style.display = 'none';
+  document.getElementById('templateLoadingMsg').style.display = 'none';
+  document.getElementById('templateGrid').style.display = 'grid';
+}
+
+async function applyTemplate(id) {
+  document.getElementById('templateGrid').style.display = 'none';
+  document.getElementById('templateLoadingMsg').style.display = 'block';
+
+  try {
+    const resumeText = document.getElementById('resultsResume')?.innerText || '';
+    const data = await parseResumeForTemplate(resumeText);
+    _parsedResumeData = data;
+    closeTemplateModal();
+    openTemplateWindow(id, data);
+  } catch (err) {
+    console.error('Template error:', err);
+    showToast('Could not parse resume — please try again.', 'error');
+    closeTemplateModal();
+  }
+}
+
+async function parseResumeForTemplate(text) {
+  let tierToken = '';
+  try { tierToken = JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}').tierToken || ''; } catch {}
+
+  const r = await fetch('/api/claude', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2000,
+      tierToken,
+      messages: [{
+        role: 'user',
+        content: `Parse this resume into a JSON object. Output ONLY valid JSON — no markdown fences, no explanation.\n\nUse this schema exactly:\n{"name":"","email":"","phone":"","location":"","linkedin":"","website":"","title":"","summary":"","experience":[{"company":"","title":"","dates":"","location":"","bullets":[]}],"education":[{"school":"","degree":"","field":"","dates":"","location":"","gpa":""}],"skills":[],"certifications":[]}\n\nResume text:\n${text.slice(0, 8000)}`,
+      }],
+    }),
+  });
+
+  if (!r.ok) throw new Error(`API error: ${r.status}`);
+  const result = await r.json();
+  const raw = (result.content?.[0]?.text || '')
+    .replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+  return JSON.parse(raw);
+}
+
+// ── HTML escape helper for templates ──────────────────────────────────────────
+function _e(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function openTemplateWindow(id, data) {
+  const builders = { classic: tplClassic, modern: tplModern, minimal: tplMinimal, executive: tplExecutive };
+  const html = builders[id]?.(data);
+  if (!html) return;
+  const w = window.open('', '_blank', 'width=920,height=1100');
+  if (!w) { showToast('Pop-up blocked — please allow pop-ups and try again.', 'error'); return; }
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+}
+
+// ── Shared print button HTML ────────────────────────────────────────────────
+const _PRINT_BTN = `<button onclick="window.print()" style="position:fixed;bottom:24px;right:24px;background:#0F172A;color:#fff;border:none;padding:11px 22px;border-radius:8px;font-size:13px;font-family:sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.25);z-index:99;display:flex;align-items:center;gap:7px" onmouseenter="this.style.background='#1E293B'" onmouseleave="this.style.background='#0F172A'">
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M8 2v8M5 7l3 3 3-3M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1"/></svg>
+  Save as PDF
+</button>`;
+
+// ── Template 1: Classic ───────────────────────────────────────────────────────
+function tplClassic(d) {
+  const expHtml = (d.experience || []).map(e => `
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <div style="font-weight:700;font-size:13.5px;color:#0d2240">${_e(e.company)}</div>
+        <div style="font-size:11.5px;color:#555;white-space:nowrap;flex-shrink:0">${_e(e.dates)}</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <div style="font-style:italic;font-size:12.5px;color:#333">${_e(e.title)}</div>
+        ${e.location ? `<div style="font-size:11.5px;color:#555;flex-shrink:0">${_e(e.location)}</div>` : ''}
+      </div>
+      ${(e.bullets || []).length ? `<ul style="margin:5px 0 0 16px;padding:0">${(e.bullets || []).map(b => `<li style="font-size:12.5px;line-height:1.55;margin-bottom:2px;color:#1a1a1a">${_e(b)}</li>`).join('')}</ul>` : ''}
+    </div>
+  `).join('');
+
+  const eduHtml = (d.education || []).map(e => `
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <div style="font-weight:700;font-size:13.5px;color:#0d2240">${_e(e.school)}</div>
+        <div style="font-size:11.5px;color:#555;white-space:nowrap;flex-shrink:0">${_e(e.dates)}</div>
+      </div>
+      <div style="font-size:12.5px;color:#333">${_e([e.degree, e.field].filter(Boolean).join(', '))}${e.gpa ? ` — GPA: ${_e(e.gpa)}` : ''}</div>
+      ${e.location ? `<div style="font-size:11.5px;color:#555">${_e(e.location)}</div>` : ''}
+    </div>
+  `).join('');
+
+  const contactRight = [d.email, d.phone, d.location, d.linkedin, d.website]
+    .filter(Boolean).map(_e).join('<br>');
+
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${_e(d.name)} — Resume</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;color:#1a1a1a;background:#fff;padding:52px 58px;max-width:870px;margin:0 auto;font-size:13px;line-height:1.5}
+h1{font-family:'EB Garamond',Georgia,serif;font-size:28px;font-weight:700;color:#1E3A5F;letter-spacing:.5px}
+.sec-head{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.8px;color:#1E3A5F;border-bottom:2px solid #1E3A5F;padding-bottom:3px;margin:20px 0 10px}
+@media print{body{padding:.45in .55in}@page{margin:0;size:letter}.print-btn{display:none!important}}
+</style></head><body>
+<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px">
+  <div>
+    <h1>${_e(d.name)}</h1>
+    ${d.title ? `<div style="font-size:13px;color:#4B5563;margin-top:2px">${_e(d.title)}</div>` : ''}
+  </div>
+  <div style="text-align:right;font-size:11.5px;color:#444;line-height:1.75">${contactRight}</div>
+</div>
+<hr style="border:none;border-top:3px solid #1E3A5F;margin-bottom:14px">
+${d.summary ? `<div style="font-size:12.5px;color:#333;line-height:1.6;margin-bottom:4px">${_e(d.summary)}</div>` : ''}
+${expHtml ? `<div class="sec-head">Experience</div>${expHtml}` : ''}
+${eduHtml ? `<div class="sec-head">Education</div>${eduHtml}` : ''}
+${(d.skills || []).length ? `<div class="sec-head">Skills</div><div style="font-size:12.5px;color:#1a1a1a;line-height:1.6">${_e((d.skills || []).join(' • '))}</div>` : ''}
+${(d.certifications || []).length ? `<div class="sec-head">Certifications</div><div style="font-size:12.5px;color:#1a1a1a">${(d.certifications || []).map(_e).join(' • ')}</div>` : ''}
+<div class="print-btn">${_PRINT_BTN}</div>
+</body></html>`;
+}
+
+// ── Template 2: Modern (sidebar) ─────────────────────────────────────────────
+function tplModern(d) {
+  const expHtml = (d.experience || []).map(e => `
+    <div style="margin-bottom:15px">
+      <div style="font-weight:700;font-size:13.5px;color:#1e1e2e">${_e(e.company)}</div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <div style="font-size:12.5px;color:#4338CA;font-weight:500">${_e(e.title)}</div>
+        <div style="font-size:11.5px;color:#64748B;flex-shrink:0">${_e(e.dates)}</div>
+      </div>
+      ${e.location ? `<div style="font-size:11.5px;color:#94A3B8;margin-top:1px">${_e(e.location)}</div>` : ''}
+      ${(e.bullets || []).length ? `<ul style="margin:5px 0 0 15px;padding:0">${(e.bullets || []).map(b => `<li style="font-size:12.5px;line-height:1.55;margin-bottom:2px;color:#1e1e2e">${_e(b)}</li>`).join('')}</ul>` : ''}
+    </div>
+  `).join('');
+
+  const skillTags = (d.skills || []).map(s =>
+    `<span style="display:inline-block;background:rgba(255,255,255,0.15);color:#fff;font-size:11px;padding:3px 8px;border-radius:4px;margin:0 3px 4px 0">${_e(s)}</span>`
+  ).join('');
+
+  const eduHtml = (d.education || []).map(e => `
+    <div style="margin-bottom:10px">
+      <div style="font-weight:600;font-size:12px;color:#fff">${_e(e.school)}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.75)">${_e([e.degree, e.field].filter(Boolean).join(', '))}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.6)">${_e(e.dates)}</div>
+    </div>
+  `).join('');
+
+  const contactItems = [
+    d.email    ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.8);margin-bottom:4px;word-break:break-all">✉ ${_e(d.email)}</div>` : '',
+    d.phone    ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.8);margin-bottom:4px">☎ ${_e(d.phone)}</div>` : '',
+    d.location ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.8);margin-bottom:4px">⌖ ${_e(d.location)}</div>` : '',
+    d.linkedin ? `<div style="font-size:11px;color:rgba(255,255,255,0.7);margin-bottom:4px;word-break:break-all">in ${_e(d.linkedin)}</div>` : '',
+  ].filter(Boolean).join('');
+
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${_e(d.name)} — Resume</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#fff;color:#1e1e2e;min-height:100vh;display:flex;flex-direction:column}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:260px;min-width:260px;background:#4338CA;padding:32px 22px;color:#fff}
+.main{flex:1;padding:40px 44px}
+.sec-head{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#4338CA;border-bottom:2px solid #4338CA;padding-bottom:3px;margin:22px 0 12px}
+.sidebar-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.6);border-bottom:1px solid rgba(255,255,255,0.2);padding-bottom:3px;margin:18px 0 8px}
+@media print{body{display:block}.layout{display:flex;min-height:0}.sidebar{min-height:100vh}@page{margin:0;size:letter}.print-btn{display:none!important}}
+</style></head><body>
+<div class="layout">
+  <div class="sidebar">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.2);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:22px;color:rgba(255,255,255,0.8)">👤</div>
+      <div style="font-size:15px;font-weight:800;color:#fff;line-height:1.3">${_e(d.name)}</div>
+      ${d.title ? `<div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:3px">${_e(d.title)}</div>` : ''}
+    </div>
+    <div class="sidebar-head">Contact</div>
+    ${contactItems}
+    ${skillTags ? `<div class="sidebar-head">Skills</div><div style="line-height:1">${skillTags}</div>` : ''}
+    ${eduHtml ? `<div class="sidebar-head">Education</div>${eduHtml}` : ''}
+    ${(d.certifications || []).length ? `<div class="sidebar-head">Certifications</div>${(d.certifications || []).map(c => `<div style="font-size:11px;color:rgba(255,255,255,0.8);margin-bottom:3px">${_e(c)}</div>`).join('')}` : ''}
+  </div>
+  <div class="main">
+    ${d.summary ? `<div style="font-size:13px;color:#475569;line-height:1.65;margin-bottom:4px;padding:14px 16px;background:#EEF2FF;border-radius:8px;border-left:3px solid #4338CA">${_e(d.summary)}</div>` : ''}
+    ${expHtml ? `<div class="sec-head">Experience</div>${expHtml}` : ''}
+  </div>
+</div>
+${_PRINT_BTN}
+</body></html>`;
+}
+
+// ── Template 3: Minimal ───────────────────────────────────────────────────────
+function tplMinimal(d) {
+  const expHtml = (d.experience || []).map(e => `
+    <div style="margin-bottom:18px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <div style="font-weight:600;font-size:13.5px;color:#111827">${_e(e.company)}</div>
+        <div style="font-size:11.5px;color:#9CA3AF;white-space:nowrap;flex-shrink:0">${_e(e.dates)}</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <div style="font-size:12.5px;color:#6B7280">${_e(e.title)}</div>
+        ${e.location ? `<div style="font-size:11.5px;color:#9CA3AF;flex-shrink:0">${_e(e.location)}</div>` : ''}
+      </div>
+      ${(e.bullets || []).length ? `<ul style="margin:6px 0 0 16px;padding:0">${(e.bullets || []).map(b => `<li style="font-size:12.5px;line-height:1.6;margin-bottom:2px;color:#374151">${_e(b)}</li>`).join('')}</ul>` : ''}
+    </div>
+  `).join('');
+
+  const eduHtml = (d.education || []).map(e => `
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <div style="font-weight:600;font-size:13.5px;color:#111827">${_e(e.school)}</div>
+        <div style="font-size:11.5px;color:#9CA3AF;white-space:nowrap;flex-shrink:0">${_e(e.dates)}</div>
+      </div>
+      <div style="font-size:12.5px;color:#6B7280">${_e([e.degree, e.field].filter(Boolean).join(', '))}</div>
+    </div>
+  `).join('');
+
+  const contactLine = [d.title, d.email, d.phone, d.location, d.linkedin]
+    .filter(Boolean).map(_e).join('&nbsp;&nbsp;·&nbsp;&nbsp;');
+
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${_e(d.name)} — Resume</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;color:#1a1a1a;background:#fff;padding:56px 64px;max-width:880px;margin:0 auto;font-size:13px;line-height:1.5}
+.sec-head{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:#6B7280;margin:24px 0 12px}
+.divider{height:1px;background:#E5E7EB;margin:6px 0 20px}
+@media print{body{padding:.5in .6in}@page{margin:0;size:letter}.print-btn{display:none!important}}
+</style></head><body>
+<div style="text-align:center;margin-bottom:8px">
+  <h1 style="font-size:30px;font-weight:800;color:#111827;letter-spacing:-.5px">${_e(d.name)}</h1>
+  <div style="font-size:11.5px;color:#9CA3AF;margin-top:5px;letter-spacing:.3px">${contactLine}</div>
+</div>
+<div class="divider"></div>
+${d.summary ? `<div style="font-size:13px;color:#4B5563;line-height:1.65;margin-bottom:4px;text-align:center;max-width:680px;margin:0 auto 4px">${_e(d.summary)}</div><div class="divider">` : ''}
+${expHtml ? `<div class="sec-head">Experience</div>${expHtml}` : ''}
+<div class="divider"></div>
+${eduHtml ? `<div class="sec-head">Education</div>${eduHtml}` : ''}
+${(d.skills || []).length ? `<div class="divider"></div><div class="sec-head">Skills</div><div style="font-size:12.5px;color:#374151;line-height:1.7">${_e((d.skills || []).join('  ·  '))}</div>` : ''}
+${(d.certifications || []).length ? `<div class="divider"></div><div class="sec-head">Certifications</div><div style="font-size:12.5px;color:#374151">${(d.certifications || []).map(_e).join('  ·  ')}</div>` : ''}
+${_PRINT_BTN}
+</body></html>`;
+}
+
+// ── Template 4: Executive ──────────────────────────────────────────────────────
+function tplExecutive(d) {
+  const expHtml = (d.experience || []).map(e => `
+    <div style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <div style="font-weight:700;font-size:14px;color:#0F172A">${_e(e.company)}</div>
+        <div style="font-size:11.5px;color:#64748B;white-space:nowrap;flex-shrink:0">${_e(e.dates)}</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <div style="font-size:13px;color:#334155;font-weight:500">${_e(e.title)}</div>
+        ${e.location ? `<div style="font-size:11.5px;color:#94A3B8;flex-shrink:0">${_e(e.location)}</div>` : ''}
+      </div>
+      ${(e.bullets || []).length ? `<ul style="margin:6px 0 0 16px;padding:0">${(e.bullets || []).map(b => `<li style="font-size:12.5px;line-height:1.55;margin-bottom:2px;color:#1e293b">${_e(b)}</li>`).join('')}</ul>` : ''}
+    </div>
+  `).join('');
+
+  const eduHtml = (d.education || []).map(e => `
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <div style="font-weight:700;font-size:13.5px;color:#0F172A">${_e(e.school)}</div>
+        <div style="font-size:11.5px;color:#64748B;white-space:nowrap;flex-shrink:0">${_e(e.dates)}</div>
+      </div>
+      <div style="font-size:12.5px;color:#475569">${_e([e.degree, e.field].filter(Boolean).join(', '))}${e.gpa ? ` &nbsp;·&nbsp; GPA: ${_e(e.gpa)}` : ''}</div>
+    </div>
+  `).join('');
+
+  const skillCols = (() => {
+    const sk = d.skills || [];
+    const half = Math.ceil(sk.length / 2);
+    const col1 = sk.slice(0, half), col2 = sk.slice(half);
+    if (!sk.length) return '';
+    return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 24px">
+      <div>${col1.map(s => `<div style="font-size:12.5px;color:#1e293b;padding:2px 0;border-bottom:1px solid #F1F5F9">◈ ${_e(s)}</div>`).join('')}</div>
+      <div>${col2.map(s => `<div style="font-size:12.5px;color:#1e293b;padding:2px 0;border-bottom:1px solid #F1F5F9">◈ ${_e(s)}</div>`).join('')}</div>
+    </div>`;
+  })();
+
+  const contactLine = [d.email, d.phone, d.location, d.linkedin, d.website]
+    .filter(Boolean).map(_e).join('&ensp;·&ensp;');
+
+  const secHead = (label) => `
+    <div style="display:flex;align-items:center;gap:10px;margin:22px 0 12px">
+      <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.8px;color:#0F172A;white-space:nowrap">${label}</div>
+      <div style="flex:1;height:1.5px;background:#0F172A"></div>
+    </div>`;
+
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${_e(d.name)} — Resume</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#fff;color:#1e293b;margin:0;font-size:13px;line-height:1.5}
+.content{padding:36px 52px;max-width:870px;margin:0 auto}
+@media print{@page{margin:0;size:letter}.content{padding:.45in .55in;max-width:100%}.print-btn{display:none!important}}
+</style></head><body>
+<div style="background:#0F172A;padding:28px 52px">
+  <div style="max-width:870px;margin:0 auto">
+    <div style="font-size:28px;font-weight:800;color:#fff;letter-spacing:-.3px">${_e(d.name)}</div>
+    ${d.title ? `<div style="font-size:13px;color:#94A3B8;margin-top:4px;font-weight:500">${_e(d.title)}</div>` : ''}
+    <div style="font-size:11.5px;color:#64748B;margin-top:6px">${contactLine}</div>
+  </div>
+</div>
+<div class="content">
+  ${d.summary ? `<div style="font-size:12.5px;color:#475569;line-height:1.65;margin-top:4px;padding:12px 16px;border-left:3px solid #0F172A;background:#F8FAFC;border-radius:0 6px 6px 0">${_e(d.summary)}</div>` : ''}
+  ${expHtml ? `${secHead('Professional Experience')}${expHtml}` : ''}
+  ${eduHtml ? `${secHead('Education')}${eduHtml}` : ''}
+  ${skillCols ? `${secHead('Core Competencies')}${skillCols}` : ''}
+  ${(d.certifications || []).length ? `${secHead('Certifications')}<div style="font-size:12.5px;color:#1e293b">${(d.certifications || []).map(_e).join('&ensp;·&ensp;')}</div>` : ''}
+</div>
+${_PRINT_BTN}
+</body></html>`;
+}
+
 </script>
+
+<!-- ── Resume Template Picker Modal ────────────────────────────────────────── -->
+<div id="templatePickerOverlay" class="modal-overlay" style="display:none;z-index:1200" onclick="if(event.target===this)closeTemplateModal()">
+  <div class="modal" style="max-width:560px;width:100%">
+    <div class="modal-header">
+      <h3 style="margin:0;font-size:16px;font-weight:700;color:var(--text)">🎨 Choose a Resume Template</h3>
+      <button class="modal-close" onclick="closeTemplateModal()">×</button>
+    </div>
+    <div style="padding:20px">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">Select a template to apply to your tailored resume. Opens in a new window — use <strong>Print → Save as PDF</strong> to download.</p>
+      <div id="templateGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
+      <div id="templateLoadingMsg" style="display:none;text-align:center;padding:32px 20px">
+        <div class="spinner" style="margin:0 auto 12px"></div>
+        <div style="font-size:13px;color:var(--text2)">Parsing your resume…</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- GHL Live Chat Widget -->
   <script src="https://widgets.leadconnectorhq.com/loader.js" data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js" data-widget-id="69dc254ad0d6ea2d59ad3b08"></script>
