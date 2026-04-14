@@ -1957,6 +1957,8 @@
           <li>✓ <strong style="color:var(--fg)">25</strong> tailors / mo</li>
           <li>✓ 25 cover letters / mo</li>
           <li>✓ ATS keyword optimizer</li>
+          <li>✓ Before/after diff viewer</li>
+          <li>✓ Interview prep</li>
         </ul>
         <a id="modal-essential-cta" href="https://buy.stripe.com/28E00k7OFfCXd0E1MPfIs01" target="_blank"
            style="margin-top:auto;display:block;text-align:center;padding:9px;background:var(--blue);color:white;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none">
@@ -1975,6 +1977,10 @@
           <li>✓ <strong style="color:var(--fg)">80</strong> searches / mo</li>
           <li>✓ <strong style="color:var(--fg)">Unlimited</strong> tailors</li>
           <li>✓ Unlimited cover letters</li>
+          <li>✓ ATS keyword optimizer</li>
+          <li>✓ Before/after diff viewer</li>
+          <li>✓ Interview prep</li>
+          <li>✓ <strong style="color:var(--fg)">Resume templates</strong></li>
           <li>✓ LinkedIn optimizer</li>
           <li>✓ Bulk apply mode</li>
         </ul>
@@ -2134,6 +2140,84 @@
       See Plans →
     </a>
     <button onclick="clearBetaAndShowGate()" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline">Use a new invite code</button>
+  </div>
+</div>
+
+<!-- ── Paywall Gate Overlay (shown when BETA_MODE=false and user has no subscription) ── -->
+<!-- Replaces the beta gate when the app goes public. Users go straight to Stripe. -->
+<div id="paywallGate" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.92);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:24px;overflow-y:auto">
+  <div style="background:var(--surface);border-radius:20px;padding:40px 36px;max-width:520px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.3);text-align:center">
+    <div style="font-size:28px;margin-bottom:10px">🚀</div>
+    <div style="font-weight:800;font-size:22px;color:var(--text);margin-bottom:8px">Tailor your resume in 30 seconds</div>
+    <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 24px">
+      Beat the ATS, close keyword gaps, and land more interviews — powered by AI.
+    </p>
+
+    <!-- Plan cards -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;text-align:left">
+      <!-- Essential -->
+      <div style="border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:11px;font-weight:700;color:var(--blue);letter-spacing:0.06em;text-transform:uppercase">Essential</div>
+        <div><span style="font-size:26px;font-weight:800;color:var(--text)">$49</span><span style="font-size:12px;color:var(--muted)">/mo</span></div>
+        <ul style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:5px">
+          <li>✓ <strong style="color:var(--text)">25</strong> resume tailors / mo</li>
+          <li>✓ <strong style="color:var(--text)">40</strong> job searches / mo</li>
+          <li>✓ Cover letter generator</li>
+          <li>✓ ATS keyword optimizer</li>
+          <li>✓ Before/after diff viewer</li>
+          <li>✓ Interview prep</li>
+        </ul>
+        <a href="https://buy.stripe.com/28E00k7OFfCXd0E1MPfIs01" target="_blank"
+          style="margin-top:auto;display:block;text-align:center;padding:10px;background:var(--blue);color:white;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none">
+          Get Essential →
+        </a>
+      </div>
+      <!-- Complete -->
+      <div style="border:2px solid #6366F1;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:8px;position:relative">
+        <div style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#4338CA,#6366F1);color:white;font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;white-space:nowrap;letter-spacing:0.04em">BEST VALUE</div>
+        <div style="font-size:11px;font-weight:700;color:#818CF8;letter-spacing:0.06em;text-transform:uppercase">Complete</div>
+        <div><span style="font-size:26px;font-weight:800;color:var(--text)">$99</span><span style="font-size:12px;color:var(--muted)">/mo</span></div>
+        <ul style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:5px">
+          <li>✓ <strong style="color:var(--text)">Unlimited</strong> tailors</li>
+          <li>✓ <strong style="color:var(--text)">80</strong> job searches / mo</li>
+          <li>✓ Cover letter generator</li>
+          <li>✓ ATS keyword optimizer</li>
+          <li>✓ Before/after diff viewer</li>
+          <li>✓ Interview prep</li>
+          <li>✓ <strong style="color:var(--text)">Resume templates</strong></li>
+          <li>✓ LinkedIn optimizer</li>
+          <li>✓ Bulk apply mode</li>
+        </ul>
+        <a href="https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00" target="_blank"
+          style="margin-top:auto;display:block;text-align:center;padding:10px;background:linear-gradient(135deg,#4338CA,#6366F1);color:white;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none">
+          Get Complete →
+        </a>
+      </div>
+    </div>
+
+    <p style="font-size:11px;color:var(--muted);margin:0 0 12px">Cancel anytime · Secure checkout via Stripe</p>
+    <button onclick="openPaywallVerify()" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:2px">
+      Already subscribed? Verify access →
+    </button>
+  </div>
+</div>
+
+<!-- ── Paywall Verify Panel (inside paywallGate flow) ────────────────────── -->
+<div id="paywallVerify" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.92);backdrop-filter:blur(6px);z-index:10000;align-items:center;justify-content:center;padding:24px">
+  <div style="background:var(--surface);border-radius:20px;padding:40px 36px;max-width:380px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.3);text-align:center">
+    <div style="font-size:28px;margin-bottom:10px">🔑</div>
+    <div style="font-weight:800;font-size:18px;color:var(--text);margin-bottom:8px">Verify your subscription</div>
+    <p style="font-size:13px;color:var(--muted);margin:0 0 20px">Enter the email you used at checkout to restore your access.</p>
+    <input id="paywallEmail" type="email" placeholder="your@email.com" autocomplete="email"
+      style="width:100%;margin-bottom:12px;padding:13px 16px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-family:'Inter',sans-serif;font-size:14px;color:var(--text);outline:none;box-sizing:border-box"
+      onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--border)'"
+      onkeydown="if(event.key==='Enter')submitPaywallVerify()">
+    <div id="paywallError" style="display:none;color:var(--red);font-size:12px;margin-bottom:12px;padding:8px 12px;background:var(--red-light);border-radius:8px"></div>
+    <button id="paywallVerifyBtn" onclick="submitPaywallVerify()"
+      style="width:100%;padding:13px;background:linear-gradient(135deg,#4338CA,#6366F1);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity 0.15s">
+      Restore Access →
+    </button>
+    <button onclick="closePaywallVerify()" style="margin-top:14px;background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline">← Back to plans</button>
   </div>
 </div>
 
@@ -5960,10 +6044,50 @@ function updateBetaBadge(expiresAt) {
   _betaTickerInterval = setInterval(tick, interval);
 }
 
-function checkBetaAccess() {
+// ── App config (betaMode flag) ─────────────────────────────────────────────
+// Cached for the session to avoid redundant fetches. Defaults to true (safe).
+let _appConfig = null;
+
+async function getAppConfig() {
+  if (_appConfig !== null) return _appConfig;
+  try {
+    const res = await fetch('/api/app-config');
+    if (res.ok) _appConfig = await res.json();
+    else        _appConfig = { betaMode: true }; // safe fallback
+  } catch {
+    _appConfig = { betaMode: true }; // offline / error → stay in beta mode
+  }
+  return _appConfig;
+}
+
+async function checkBetaAccess() {
+  const config = await getAppConfig();
+
+  // ── LIVE MODE (betaMode = false) ──────────────────────────────────────────
+  if (!config.betaMode) {
+    // Check if user already has a valid subscription via sub cache
+    const sub = (() => {
+      try { return JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || 'null'); } catch { return null; }
+    })();
+    if (sub && sub.tier && sub.tier !== 'free' && sub.email) {
+      // Restore their tier and let them in
+      currentTier = sub.tier;
+      localStorage.setItem('1ststep_tier', sub.tier);
+      updateTailorUsageMeter?.();
+      updateSearchUsageMeter?.();
+      updateTierLockIcon?.();
+      showTierBadge(sub.tier);
+      return;
+    }
+    // No subscription → show paywall
+    document.getElementById('paywallGate').style.display = 'flex';
+    return;
+  }
+
+  // ── BETA MODE (betaMode = true, default) ──────────────────────────────────
   const beta = getBetaState();
 
-  // No beta token at all → show gate
+  // No beta token at all → show beta gate
   if (!beta) {
     document.getElementById('betaGate').style.display = 'flex';
     return;
@@ -5972,23 +6096,93 @@ function checkBetaAccess() {
   // Token expired → show expired screen
   if (Date.now() > beta.expiresAt) {
     document.getElementById('betaExpired').style.display = 'flex';
-    // Reset tier so they can't still use features
     localStorage.setItem('1ststep_tier', 'free');
     currentTier = 'free';
     return;
   }
 
-  // Valid beta token — always force Complete tier regardless of sub cache state.
-  // Don't gate on tierToken being present — it may be empty if TIER_SECRET wasn't
-  // set at the time the code was entered, and the old verifySubscription bug may
-  // have reset 1ststep_tier back to 'free' before it was fixed.
+  // Valid beta token — force Complete tier
   currentTier = 'complete';
   localStorage.setItem('1ststep_tier', 'complete');
   updateTailorUsageMeter?.();
   updateSearchUsageMeter?.();
   updateTierLockIcon?.();
-
   updateBetaBadge(beta.expiresAt);
+}
+
+// ── Paywall helpers ────────────────────────────────────────────────────────
+
+function openPaywallVerify() {
+  document.getElementById('paywallVerify').style.display = 'flex';
+  document.getElementById('paywallEmail').focus();
+}
+
+function closePaywallVerify() {
+  document.getElementById('paywallVerify').style.display = 'none';
+  document.getElementById('paywallError').style.display  = 'none';
+  document.getElementById('paywallEmail').value = '';
+}
+
+async function submitPaywallVerify() {
+  const emailEl  = document.getElementById('paywallEmail');
+  const errorEl  = document.getElementById('paywallError');
+  const btn      = document.getElementById('paywallVerifyBtn');
+  const email    = emailEl.value.trim().toLowerCase();
+
+  errorEl.style.display = 'none';
+  if (!email || !email.includes('@')) {
+    errorEl.textContent = 'Please enter a valid email address.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = 'Checking…';
+  btn.disabled    = true;
+
+  try {
+    // Clear cache so verifySubscription does a fresh check
+    localStorage.removeItem(SUB_CACHE_KEY);
+    await verifySubscription(email);
+
+    const tier = localStorage.getItem('1ststep_tier') || 'free';
+    if (tier !== 'free') {
+      // Access restored — hide both overlays
+      document.getElementById('paywallVerify').style.display = 'none';
+      document.getElementById('paywallGate').style.display   = 'none';
+      currentTier = tier;
+      updateTailorUsageMeter?.();
+      updateSearchUsageMeter?.();
+      updateTierLockIcon?.();
+      showTierBadge(tier);
+      showToast(`✅ ${tier === 'complete' ? 'Complete' : 'Essential'} plan restored — welcome back!`, 'success');
+    } else {
+      errorEl.textContent = 'No active subscription found for that email. Check your inbox or choose a plan below.';
+      errorEl.style.display = 'block';
+    }
+  } catch {
+    errorEl.textContent = 'Could not verify — please try again.';
+    errorEl.style.display = 'block';
+  } finally {
+    btn.textContent = 'Restore Access →';
+    btn.disabled    = false;
+  }
+}
+
+// ── Tier badge (live mode) ─────────────────────────────────────────────────
+
+function showTierBadge(tier) {
+  const badge   = document.getElementById('betaBadge');
+  const daysEl  = document.getElementById('betaDaysLeft');
+  if (!badge) return;
+  const label   = tier === 'complete' ? 'Complete' : 'Essential';
+  const color   = tier === 'complete' ? 'rgba(99,102,241,0.12)' : 'rgba(26,86,219,0.1)';
+  const border  = tier === 'complete' ? 'rgba(99,102,241,0.3)'  : 'rgba(26,86,219,0.25)';
+  const text    = tier === 'complete' ? '#818CF8' : '#60A5FA';
+  badge.style.background   = color;
+  badge.style.borderColor  = border;
+  badge.style.color        = text;
+  daysEl.textContent       = `✓ ${label}`;
+  badge.style.display      = 'flex';
 }
 
 async function submitBetaCode() {
@@ -6096,7 +6290,23 @@ async function submitBetaCode() {
 // Run beta check immediately on page load (before DOMContentLoaded for instant gating)
 // Wrapped in a small delay so the DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-  checkBetaAccess();
+  // Show a brief access-check cover so users don't see a flash of app content
+  // while the async gate check (network call to /api/app-config) is in flight.
+  // It disappears automatically once checkBetaAccess() resolves.
+  const cover = document.createElement('div');
+  cover.id = 'accessCheckCover';
+  Object.assign(cover.style, {
+    position: 'fixed', inset: '0', background: 'var(--bg, #0F172A)',
+    zIndex: '99998', display: 'flex', alignItems: 'center',
+    justifyContent: 'center', transition: 'opacity 0.2s',
+  });
+  cover.innerHTML = '<div style="font-size:22px;font-weight:800;color:rgba(255,255,255,0.15);letter-spacing:-0.5px">1stStep<span style="color:rgba(99,102,241,0.4)">.ai</span></div>';
+  document.body.appendChild(cover);
+
+  checkBetaAccess().finally(() => {
+    cover.style.opacity = '0';
+    setTimeout(() => cover.remove(), 220);
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -6501,6 +6711,13 @@ const TEMPLATE_PREVIEWS = {
 let _parsedResumeData = null;
 
 function openTemplateModal() {
+  // Templates are a Complete-only feature
+  if (currentTier !== 'complete') {
+    showToast('🎨 Resume templates are a Complete plan feature.', 'info');
+    setTimeout(() => openUpgradeModal(), 300);
+    return;
+  }
+
   const resumeEl = document.getElementById('resumeOutput');
   if (!resumeEl?.innerText?.trim()) {
     showToast('Please tailor your resume first.', 'info');
