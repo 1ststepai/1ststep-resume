@@ -48,6 +48,22 @@ export function verifyTierToken(token) {
   }
 }
 
+// ── Per-IP rate limiter — prevents email enumeration / customer probing ──────
+const subCheckWindows = new Map();
+const SUB_CHECK_WINDOW_MS  = 60_000; // 1 minute
+const SUB_CHECK_MAX_PER_IP = 10;     // 10 checks/IP/min — covers any legit user
+
+function isSubCheckRateLimited(ip) {
+  const now  = Date.now();
+  const hits = (subCheckWindows.get(ip) || []).filter(t => now - t < SUB_CHECK_WINDOW_MS);
+  hits.push(now);
+  subCheckWindows.set(ip, hits);
+  if (subCheckWindows.size > 5000) {
+    [...subCheckWindows.keys()].slice(0, 500).forEach(k => subCheckWindows.delete(k));
+  }
+  return hits.length > SUB_CHECK_MAX_PER_IP;
+}
+
 const ALLOWED_ORIGINS = [
   'https://1ststep.ai',
   'https://www.1ststep.ai',
@@ -88,6 +104,15 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Rate limit — prevents probing emails to discover paying customers
+  const ip = req.headers['x-real-ip']
+           || (req.headers['x-forwarded-for'] || '').split(',').pop().trim()
+           || req.socket?.remoteAddress
+           || 'unknown';
+  if (isSubCheckRateLimited(ip)) {
+    return res.status(429).json({ tier: 'free', error: 'Too many requests' });
+  }
+
   const email = (req.query.email || '').trim().toLowerCase();
   if (!email || !email.includes('@')) {
     return res.status(400).json({ error: 'Valid email required', tier: 'free' });
@@ -105,7 +130,8 @@ export default async function handler(req, res) {
     const customers = await stripe.customers.list({ email, limit: 5 });
 
     if (!customers.data.length) {
-      return res.status(200).json({ tier: 'free', status: 'no_customer' });
+      // Return same shape as 'free' — don't reveal whether the email has ever been seen
+      return res.status(200).json({ tier: 'free', status: 'no_active_subscription' });
     }
 
     // Check each customer for an active subscription
