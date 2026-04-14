@@ -3,18 +3,25 @@
     {
       "path": "/api/health",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/beta-expiry-check",
+      "schedule": "0 10 * * *"
     }
   ],
   "functions": {
-    "api/claude.js":           { "maxDuration": 60 },
-    "api/jobs.js":             { "maxDuration": 30 },
-    "api/subscription.js":    { "maxDuration": 15 },
-    "api/stripe-webhook.js":  { "maxDuration": 10 },
-    "api/notify-signup.js":   { "maxDuration": 10 },
-    "api/track-event.js":    { "maxDuration": 10 },
-    "api/health.js":         { "maxDuration": 30 },
-    "api/beta.js":           { "maxDuration": 15 },
-    "api/tally-webhook.js":  { "maxDuration": 15 }
+    "api/claude.js":              { "maxDuration": 60 },
+    "api/jobs.js":                { "maxDuration": 30 },
+    "api/subscription.js":        { "maxDuration": 15 },
+    "api/stripe-webhook.js":      { "maxDuration": 10 },
+    "api/notify-signup.js":       { "maxDuration": 10 },
+    "api/track-event.js":         { "maxDuration": 10 },
+    "api/health.js":              { "maxDuration": 30 },
+    "api/beta.js":                { "maxDuration": 15 },
+    "api/tally-webhook.js":       { "maxDuration": 15 },
+    "api/beta-expiry-check.js":   { "maxDuration": 30 },
+    "api/ghl-stage.js":           { "maxDuration": 15 },
+    "api/app-config.js":          { "maxDuration": 5  }
   },
   "rewrites": [
     { "source": "/api/jobs/details", "destination": "/api/jobs" },
