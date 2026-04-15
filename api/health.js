@@ -79,7 +79,7 @@ async function getStripePaidCount() {
 // ── GHL upsert helper (shared by blast backfill) ────────────────────────────
 async function upsertGhlContact(email, tags = [], firstName = '', lastName = '') {
   const r = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
-    method: 'PUT',
+    method: 'POST',
     headers: {
       'Authorization': `Bearer ${process.env.GHL_API_KEY}`,
       'Version': '2021-07-28',

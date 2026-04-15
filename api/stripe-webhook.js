@@ -121,7 +121,7 @@ async function pushToGHL({ email, name, tier }) {
   let contactId;
   try {
     const r = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
-      method: 'PUT',
+      method: 'POST',
       headers,
       body: JSON.stringify({
         locationId,
@@ -225,7 +225,7 @@ async function updateGHLOnChurn({ customerId, stripe, event }) {
 
   try {
     const r = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
-      method:  'PUT',
+      method:  'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Version':       '2021-07-28',

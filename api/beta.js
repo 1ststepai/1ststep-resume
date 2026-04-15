@@ -139,7 +139,7 @@ export default async function handler(req, res) {
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
         const r = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
-          method: 'PUT', headers: ghlUpsertHeaders, body: JSON.stringify(ghlPayload),
+          method: 'POST', headers: ghlUpsertHeaders, body: JSON.stringify(ghlPayload),
         });
         const data = await r.json().catch(() => ({}));
         if (!r.ok) {

@@ -87,7 +87,7 @@ async function upsertGHLContact(email) {
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const r = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
-        method:  'PUT',
+        method:  'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Version':       '2021-07-28',
