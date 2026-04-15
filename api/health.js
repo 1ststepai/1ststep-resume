@@ -40,13 +40,8 @@ async function countByTag(tag) {
 }
 
 async function countTotal() {
-  try {
-    const url = `${GHL_BASE}/contacts/?locationId=${encodeURIComponent(process.env.GHL_LOCATION_ID)}&limit=1`;
-    const r = await fetch(url, { headers: ghlHeaders() });
-    if (!r.ok) return null;
-    const d = await r.json();
-    return d.meta?.total ?? null;
-  } catch { return null; }
+  // Count only 1stStep.ai app users — tagged 'signup' at registration
+  return countByTag('signup');
 }
 
 async function getRecentContacts(limit = 15) {
