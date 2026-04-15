@@ -21,8 +21,7 @@
     "api/tally-webhook.js":       { "maxDuration": 15 },
     "api/beta-expiry-check.js":   { "maxDuration": 30 },
     "api/ghl-stage.js":           { "maxDuration": 15 },
-    "api/app-config.js":          { "maxDuration": 5  },
-    "api/admin-stats.js":         { "maxDuration": 15 }
+    "api/app-config.js":          { "maxDuration": 5  }
   },
   "rewrites": [
     { "source": "/api/jobs/details", "destination": "/api/jobs" },

@@ -281,9 +281,7 @@
   // ── Fetch stats ──────────────────────────────────────────────────────
   async function loadStats(isLogin = false) {
     try {
-      const res = await fetch('/api/admin-stats', {
-        headers: { 'x-admin-secret': secret }
-      });
+      const res = await fetch(`/api/health?mode=admin&secret=${encodeURIComponent(secret)}`);
 
       if (res.status === 401) {
         if (isLogin) {
