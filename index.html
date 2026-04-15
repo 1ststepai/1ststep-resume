@@ -1578,9 +1578,9 @@
                 </button>
               </div>
             </div>
-            <button class="btn-sm btn-sm-primary" onclick="downloadDocx()" style="white-space:nowrap;gap:6px;display:inline-flex;align-items:center">
+            <button class="btn-sm btn-sm-primary" onclick="downloadDocx()" style="white-space:nowrap;gap:6px;display:inline-flex;align-items:center" title="Plain text — best for uploading to job boards &amp; ATS systems">
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v8M5 7l3 3 3-3M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1"/></svg>
-              Download .docx
+              ATS Plain Text (.docx)
             </button>
             <button class="btn-sm btn-sm-outline" onclick="runTailoring()" style="white-space:nowrap">↺ Re-tailor</button>
             <button class="btn-sm btn-sm-outline" onclick="switchMode('jobs')" style="white-space:nowrap">🔍 Jobs</button>
@@ -1591,11 +1591,18 @@
         <!-- What's Next nudge — shown after tailoring, dismissed on action -->
         <div id="whatsNextBar" style="display:none;align-items:center;gap:6px;padding:10px 20px;background:linear-gradient(90deg,#F0FDF4,#F0F9FF);border-bottom:1px solid #BBF7D0;flex-wrap:wrap">
           <span style="font-size:12px;font-weight:600;color:#065F46;margin-right:4px;white-space:nowrap">What's next?</span>
-          <button id="wnDownload" onclick="downloadDocx();markNextDone('wnDownload')" style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1.5px solid #6EE7B7;background:#fff;font-size:12px;font-weight:500;cursor:pointer;color:#065F46;transition:all 0.15s" onmouseenter="this.style.background='#ECFDF5'" onmouseleave="this.style.background='#fff'">
-            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M8 2v8M5 7l3 3 3-3M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1"/></svg> Download resume
+          <!-- Template first — the recommended formatted output -->
+          <button id="wnTemplate" onclick="openTemplateModal();closeToolsDropdown();markNextDone('wnTemplate')"
+            style="display:inline-flex;align-items:center;gap:5px;padding:4px 13px;border-radius:20px;border:2px solid #4f46e5;background:#eef2ff;font-size:12px;font-weight:700;cursor:pointer;color:#4338ca;transition:all 0.15s;box-shadow:0 0 0 3px rgba(99,102,241,0.15)"
+            onmouseenter="this.style.background='#e0e7ff'" onmouseleave="this.style.background='#eef2ff'">
+            🎨 Formatted Resume
           </button>
-          <button id="wnTemplate" onclick="openTemplateModal();closeToolsDropdown();markNextDone('wnTemplate')" style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1.5px solid #6EE7B7;background:#fff;font-size:12px;font-weight:500;cursor:pointer;color:#065F46;transition:all 0.15s" onmouseenter="this.style.background='#ECFDF5'" onmouseleave="this.style.background='#fff'">
-            🎨 Apply a template
+          <!-- Plain docx — clearly labeled for ATS/job boards -->
+          <button id="wnDownload" onclick="downloadDocx();markNextDone('wnDownload')"
+            style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1.5px solid #6EE7B7;background:#fff;font-size:12px;font-weight:500;cursor:pointer;color:#065F46;transition:all 0.15s"
+            onmouseenter="this.style.background='#ECFDF5'" onmouseleave="this.style.background='#fff'"
+            title="Best for uploading to job boards &amp; ATS systems">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M8 2v8M5 7l3 3 3-3M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1"/></svg> ATS Plain Text (.docx)
           </button>
           <button id="wnInterview" onclick="openInterviewModal();closeToolsDropdown();markNextDone('wnInterview')" style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1.5px solid #6EE7B7;background:#fff;font-size:12px;font-weight:500;cursor:pointer;color:#065F46;transition:all 0.15s" onmouseenter="this.style.background='#ECFDF5'" onmouseleave="this.style.background='#fff'">
             🎤 Prep for interview
@@ -5140,10 +5147,10 @@ function renderTailoredHistory() {
           ${entry.jobUrl ? ` &nbsp;<a href="${escHtml(entry.jobUrl)}" target="_blank" style="color:var(--blue);font-size:11px;text-decoration:none">View job ↗</a>` : ''}
         </div>
         <div class="tailor-card-actions">
-          <button class="btn-tailor-dl primary" onclick="downloadTailorEntryDocx('${entry.id}')">⬇ Resume (.docx)</button>
-          <button class="btn-tailor-dl" onclick="copyTailorEntryResume('${entry.id}')">📋 Copy Resume</button>
+          <button class="btn-tailor-dl primary" onclick="openTemplateFromHistory('${entry.id}')">🎨 Formatted Resume</button>
+          <button class="btn-tailor-dl" onclick="downloadTailorEntryDocx('${entry.id}')" title="Plain text — best for uploading to job boards &amp; ATS systems">⬇ ATS Plain Text (.docx)</button>
+          <button class="btn-tailor-dl" onclick="copyTailorEntryResume('${entry.id}')">📋 Copy Text</button>
           ${hasCover ? `<button class="btn-tailor-dl" onclick="downloadTailorEntryCoverLetter('${entry.id}')">⬇ Cover Letter (.docx)</button><button class="btn-tailor-dl" onclick="copyTailorEntryCoverLetter('${entry.id}')">📋 Copy Cover Letter</button>` : ''}
-          <button class="btn-tailor-dl" onclick="openTemplateFromHistory('${entry.id}')">🎨 Template</button>
           ${entry.jobId && isApplied(entry.jobId)
             ? `<span class="btn-tailor-applied-badge">✓ Applied</span>`
             : `<button class="btn-tailor-dl apply-now" onclick="applyNowFromHistory('${entry.id}')">${entry.jobUrl ? '🚀 Apply Now' : '✓ Mark Applied'}</button>`}
@@ -6923,7 +6930,7 @@ function openTemplateWindow(id, data) {
 }
 
 // ── Shared print button HTML ────────────────────────────────────────────────
-const _PRINT_BTN = `<button onclick="window.print()" style="position:fixed;bottom:24px;right:24px;background:#0F172A;color:#fff;border:none;padding:11px 22px;border-radius:8px;font-size:13px;font-family:sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.25);z-index:99;display:flex;align-items:center;gap:7px" onmouseenter="this.style.background='#1E293B'" onmouseleave="this.style.background='#0F172A'">
+const _PRINT_BTN = `<button class="print-btn" onclick="window.print()" style="position:fixed;bottom:24px;right:24px;background:#0F172A;color:#fff;border:none;padding:11px 22px;border-radius:8px;font-size:13px;font-family:sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.25);z-index:99;display:flex;align-items:center;gap:7px" onmouseenter="this.style.background='#1E293B'" onmouseleave="this.style.background='#0F172A'">
   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M8 2v8M5 7l3 3 3-3M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1"/></svg>
   Save as PDF
 </button>`;
@@ -6985,7 +6992,7 @@ ${expHtml ? `<div class="sec-head">Experience</div>${expHtml}` : ''}
 ${eduHtml ? `<div class="sec-head">Education</div>${eduHtml}` : ''}
 ${(d.skills || []).length ? `<div class="sec-head">Skills</div><div style="font-size:12.5px;color:#1a1a1a;line-height:1.6">${_e((d.skills || []).join(' • '))}</div>` : ''}
 ${(d.certifications || []).length ? `<div class="sec-head">Certifications</div><div style="font-size:12.5px;color:#1a1a1a">${(d.certifications || []).map(_e).join(' • ')}</div>` : ''}
-<div class="print-btn">${_PRINT_BTN}</div>
+${_PRINT_BTN}
 </body></html>`;
 }
 
