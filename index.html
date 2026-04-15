@@ -6904,6 +6904,13 @@ function _e(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// ── Hyperlink helper — ensures https://, renders as <a> ───────────────────────
+function _link(url, label, color) {
+  if (!url) return '';
+  const href = /^https?:\/\//i.test(url) ? url : 'https://' + url;
+  return `<a href="${_e(href)}" target="_blank" rel="noopener noreferrer" style="color:${color || 'inherit'};text-decoration:none">${_e(label || url)}</a>`;
+}
+
 function openTemplateWindow(id, data) {
   const builders = { classic: tplClassic, modern: tplModern, minimal: tplMinimal, executive: tplExecutive };
   const html = builders[id]?.(data);
@@ -6948,8 +6955,13 @@ function tplClassic(d) {
     </div>
   `).join('');
 
-  const contactRight = [d.email, d.phone, d.location, d.linkedin, d.website]
-    .filter(Boolean).map(_e).join('<br>');
+  const contactRight = [
+    d.email    ? _e(d.email)                                       : '',
+    d.phone    ? _e(d.phone)                                       : '',
+    d.location ? _e(d.location)                                    : '',
+    d.linkedin ? _link(d.linkedin, d.linkedin, '#1E3A5F')          : '',
+    d.website  ? _link(d.website,  d.website,  '#1E3A5F')          : '',
+  ].filter(Boolean).join('<br>');
 
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${_e(d.name)} — Resume</title>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -7007,7 +7019,8 @@ function tplModern(d) {
     d.email    ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.8);margin-bottom:4px;word-break:break-all">✉ ${_e(d.email)}</div>` : '',
     d.phone    ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.8);margin-bottom:4px">☎ ${_e(d.phone)}</div>` : '',
     d.location ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.8);margin-bottom:4px">⌖ ${_e(d.location)}</div>` : '',
-    d.linkedin ? `<div style="font-size:11px;color:rgba(255,255,255,0.7);margin-bottom:4px;word-break:break-all">in ${_e(d.linkedin)}</div>` : '',
+    d.linkedin ? `<div style="font-size:11px;margin-bottom:4px;word-break:break-all">in ${_link(d.linkedin, d.linkedin, 'rgba(255,255,255,0.85)')}</div>` : '',
+    d.website  ? `<div style="font-size:11px;margin-bottom:4px;word-break:break-all">🌐 ${_link(d.website,  d.website,  'rgba(255,255,255,0.85)')}</div>` : '',
   ].filter(Boolean).join('');
 
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${_e(d.name)} — Resume</title>
@@ -7070,8 +7083,14 @@ function tplMinimal(d) {
     </div>
   `).join('');
 
-  const contactLine = [d.title, d.email, d.phone, d.location, d.linkedin]
-    .filter(Boolean).map(_e).join('&nbsp;&nbsp;·&nbsp;&nbsp;');
+  const contactLine = [
+    d.title    ? _e(d.title)                                      : '',
+    d.email    ? _e(d.email)                                      : '',
+    d.phone    ? _e(d.phone)                                      : '',
+    d.location ? _e(d.location)                                   : '',
+    d.linkedin ? _link(d.linkedin, d.linkedin, '#6B7280')         : '',
+    d.website  ? _link(d.website,  d.website,  '#6B7280')         : '',
+  ].filter(Boolean).join('&nbsp;&nbsp;·&nbsp;&nbsp;');
 
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${_e(d.name)} — Resume</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -7134,8 +7153,13 @@ function tplExecutive(d) {
     </div>`;
   })();
 
-  const contactLine = [d.email, d.phone, d.location, d.linkedin, d.website]
-    .filter(Boolean).map(_e).join('&ensp;·&ensp;');
+  const contactLine = [
+    d.email    ? _e(d.email)                                      : '',
+    d.phone    ? _e(d.phone)                                      : '',
+    d.location ? _e(d.location)                                   : '',
+    d.linkedin ? _link(d.linkedin, d.linkedin, '#94A3B8')         : '',
+    d.website  ? _link(d.website,  d.website,  '#94A3B8')         : '',
+  ].filter(Boolean).join('&ensp;·&ensp;');
 
   const secHead = (label) => `
     <div style="display:flex;align-items:center;gap:10px;margin:22px 0 12px">
