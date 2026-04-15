@@ -6959,7 +6959,7 @@ function tplClassic(d) {
     d.email    ? _e(d.email)                                       : '',
     d.phone    ? _e(d.phone)                                       : '',
     d.location ? _e(d.location)                                    : '',
-    d.linkedin ? _link(d.linkedin, d.linkedin, '#1E3A5F')          : '',
+    d.linkedin ? _link(d.linkedin, 'LinkedIn: My Profile', '#1E3A5F')  : '',
     d.website  ? _link(d.website,  d.website,  '#1E3A5F')          : '',
   ].filter(Boolean).join('<br>');
 
@@ -7019,7 +7019,7 @@ function tplModern(d) {
     d.email    ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.8);margin-bottom:4px;word-break:break-all">✉ ${_e(d.email)}</div>` : '',
     d.phone    ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.8);margin-bottom:4px">☎ ${_e(d.phone)}</div>` : '',
     d.location ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.8);margin-bottom:4px">⌖ ${_e(d.location)}</div>` : '',
-    d.linkedin ? `<div style="font-size:11px;margin-bottom:4px;word-break:break-all">in ${_link(d.linkedin, d.linkedin, 'rgba(255,255,255,0.85)')}</div>` : '',
+    d.linkedin ? `<div style="font-size:11px;margin-bottom:4px">🔗 ${_link(d.linkedin, 'My Profile', 'rgba(255,255,255,0.85)')}</div>` : '',
     d.website  ? `<div style="font-size:11px;margin-bottom:4px;word-break:break-all">🌐 ${_link(d.website,  d.website,  'rgba(255,255,255,0.85)')}</div>` : '',
   ].filter(Boolean).join('');
 
@@ -7088,7 +7088,7 @@ function tplMinimal(d) {
     d.email    ? _e(d.email)                                      : '',
     d.phone    ? _e(d.phone)                                      : '',
     d.location ? _e(d.location)                                   : '',
-    d.linkedin ? _link(d.linkedin, d.linkedin, '#6B7280')         : '',
+    d.linkedin ? _link(d.linkedin, 'LinkedIn: My Profile', '#6B7280') : '',
     d.website  ? _link(d.website,  d.website,  '#6B7280')         : '',
   ].filter(Boolean).join('&nbsp;&nbsp;·&nbsp;&nbsp;');
 
@@ -7157,7 +7157,7 @@ function tplExecutive(d) {
     d.email    ? _e(d.email)                                      : '',
     d.phone    ? _e(d.phone)                                      : '',
     d.location ? _e(d.location)                                   : '',
-    d.linkedin ? _link(d.linkedin, d.linkedin, '#94A3B8')         : '',
+    d.linkedin ? _link(d.linkedin, 'LinkedIn: My Profile', '#94A3B8') : '',
     d.website  ? _link(d.website,  d.website,  '#94A3B8')         : '',
   ].filter(Boolean).join('&ensp;·&ensp;');
 
