@@ -46,17 +46,19 @@ async function countTotal() {
 
 async function getRecentContacts(limit = 15) {
   try {
-    const url = `${GHL_BASE}/contacts/?locationId=${encodeURIComponent(process.env.GHL_LOCATION_ID)}&limit=${limit}`;
+    const url = `${GHL_BASE}/contacts/?locationId=${encodeURIComponent(process.env.GHL_LOCATION_ID)}&limit=${limit}&sortBy=dateAdded&sortOrder=desc`;
     const r = await fetch(url, { headers: ghlHeaders() });
     if (!r.ok) return [];
     const d = await r.json();
-    return (d.contacts || []).map(c => ({
+    const contacts = (d.contacts || []).map(c => ({
       id: c.id,
       name: [c.firstName, c.lastName].filter(Boolean).join(' ') || c.email || 'Unknown',
       email: c.email || '',
       tags: c.tags || [],
       dateAdded: c.dateAdded || c.createdAt || null,
     }));
+    // Ensure newest first in case API ignores sort param
+    return contacts.sort((a, b) => new Date(b.dateAdded || 0) - new Date(a.dateAdded || 0));
   } catch { return []; }
 }
 
