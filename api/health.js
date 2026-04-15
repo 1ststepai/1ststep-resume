@@ -82,7 +82,8 @@ async function fetchContactsByTag(tag) {
   const contacts = [];
   let after = null;
   for (let page = 0; page < 20; page++) {
-    const params = new URLSearchParams({ locationId: process.env.GHL_LOCATION_ID, tags: tag, limit: '100' });
+    const params = new URLSearchParams({ locationId: process.env.GHL_LOCATION_ID, limit: '100' });
+    params.append('tags[]', tag);
     if (after) params.set('startAfter', after);
     const res = await fetch(`${GHL_BASE}/contacts/?${params}`, { headers: ghlHeaders() });
     if (!res.ok) throw new Error(`GHL fetch failed ${res.status}`);
