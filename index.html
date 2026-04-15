@@ -1092,6 +1092,12 @@
     .btn-welcome-start:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(67,56,202,0.5); }
     .welcome-skip { font-size: 12px; color: var(--muted); cursor: pointer; }
     .welcome-skip:hover { color: var(--text2); }
+    /* Two-path onboarding grid — stack vertically on phones */
+    .welcome-path-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+    @media (max-width: 480px) {
+      .welcome-path-grid { grid-template-columns: 1fr; }
+      .welcome-path-grid button { padding: 12px 14px !important; }
+    }
 
     /* ── FEEDBACK WIDGET ─────────────────────────────────────────── */
     .btn-feedback {
@@ -2258,7 +2264,29 @@
       </div>
     </div>
 
-    <button class="btn-welcome-start" onclick="dismissWelcome(true)">Start with my resume →</button>
+    <!-- Two-path onboarding: existing resume vs. build from scratch -->
+    <div class="welcome-path-grid">
+      <button onclick="dismissWelcome('upload')" style="
+        padding:13px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;
+        background:linear-gradient(135deg,#3B82F6,#6366F1);color:#fff;border:none;
+        line-height:1.35;text-align:center;
+      ">
+        📄 I have a resume<br>
+        <span style="font-size:11px;font-weight:400;opacity:.85">Upload or paste it</span>
+      </button>
+      <button onclick="dismissWelcome('build')" style="
+        padding:13px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;
+        background:#1E293B;color:#C7D2FE;
+        border:1px solid rgba(99,102,241,0.35);
+        line-height:1.35;text-align:center;
+      "
+      onmouseenter="this.style.borderColor='rgba(99,102,241,0.7)'"
+      onmouseleave="this.style.borderColor='rgba(99,102,241,0.35)'"
+      >
+        ✍️ I need to build one<br>
+        <span style="font-size:11px;font-weight:400;opacity:.75">Step-by-step wizard</span>
+      </button>
+    </div>
     <p style="font-size:12px;color:var(--dark3);margin-top:12px;margin-bottom:0">Free to try · No credit card · 3 tailors on us</p>
   </div>
 </div>
@@ -2355,12 +2383,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // ── Welcome / Onboarding ──────────────────────────────────────────────────
-function dismissWelcome(focusUpload = false) {
+function dismissWelcome(path = false) {
   document.getElementById('welcomeOverlay').classList.remove('visible');
   localStorage.setItem('1ststep_welcomed', '1');
-  if (focusUpload) {
-    // Guide user immediately to step 1
-    setTimeout(() => document.getElementById('fileInput').click(), 200);
+
+  if (path === 'upload' || path === true) {
+    // Existing path — focus the file upload input
+    setTimeout(() => document.getElementById('fileInput')?.click(), 200);
+
+  } else if (path === 'build') {
+    // New path — open the Resume Builder wizard
+    // Small delay so the overlay fade-out feels clean
+    setTimeout(() => {
+      if (typeof openResumeBuilder === 'function') {
+        openResumeBuilder();
+      } else {
+        // resume-builder.js not loaded yet — show a helpful fallback
+        showToast('⏳ Builder loading… try again in a moment.', 'info');
+      }
+    }, 250);
   }
 }
 
@@ -7355,6 +7396,9 @@ ${_PRINT_BTN}
 
 <!-- GHL Live Chat Widget -->
   <script src="https://widgets.leadconnectorhq.com/loader.js" data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js" data-widget-id="69dc254ad0d6ea2d59ad3b08"></script>
+
+<!-- Resume Builder Wizard — loaded last so all helpers (saveResume, showToast, etc.) are defined -->
+<script src="resume-builder.js"></script>
 
 </body>
 </html>
