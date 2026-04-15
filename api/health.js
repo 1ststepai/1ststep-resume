@@ -203,11 +203,19 @@ export default async function handler(req, res) {
       }
     );
     if (r.ok) {
-      const data = await r.json();
-      const count = data.meta?.total ?? '?';
-      check('GHL CRM API', 'OK', `API key valid — ${count} contacts in location`);
+      // Show real app user counts broken down by tag
+      const [betaCount, freeCount, powerCount] = await Promise.all([
+        countByTag('beta_2026'),
+        countByTag('free'),
+        countByTag('power_user'),
+      ]);
+      const parts = [];
+      if (betaCount != null) parts.push(`${betaCount} beta users`);
+      if (freeCount  != null) parts.push(`${freeCount} free signups`);
+      if (powerCount != null) parts.push(`${powerCount} power users`);
+      const detail = parts.length ? `API key valid — ${parts.join(', ')}` : 'API key valid';
+      check('GHL CRM API', 'OK', detail);
     } else if (r.status === 401 || r.status === 403) {
-      // Token may be write-only scoped — key is set and GHL is reachable, treat as warn not fail
       check('GHL CRM API', 'WARN', `Key set but read access denied (${r.status}) — write ops (contact tagging) likely still work`);
     } else {
       check('GHL CRM API', 'WARN', `Status ${r.status} — may be temporary`);
