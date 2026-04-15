@@ -51,13 +51,15 @@ async function getRecentContacts(limit = 15) {
     const r = await fetch(url, { headers: ghlHeaders() });
     if (!r.ok) return [];
     const d = await r.json();
-    const contacts = (d.contacts || []).map(c => ({
-      id: c.id,
-      name: [c.firstName, c.lastName].filter(Boolean).join(' ') || c.email || 'Unknown',
-      email: c.email || '',
-      tags: c.tags || [],
-      dateAdded: c.dateAdded || c.createdAt || null,
-    }));
+    const contacts = (d.contacts || [])
+      .filter(c => (c.tags || []).includes('app_user'))  // Only app users
+      .map(c => ({
+        id: c.id,
+        name: [c.firstName, c.lastName].filter(Boolean).join(' ') || c.email || 'Unknown',
+        email: c.email || '',
+        tags: c.tags || [],
+        dateAdded: c.dateAdded || c.createdAt || null,
+      }));
     return contacts
       .sort((a, b) => new Date(b.dateAdded || 0) - new Date(a.dateAdded || 0))
       .slice(0, limit);
