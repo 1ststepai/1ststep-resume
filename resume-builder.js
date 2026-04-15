@@ -393,7 +393,16 @@ function _rbExpCard(exp, i) {
       </div>
       <div style="display:grid;grid-template-columns:${_m2col()};gap:0 12px">
         ${_field('Company', `<input id="exp_company_${exp.id}" ${_inp} value="${_esc(exp.company)}" placeholder="Acme Corp">`)}
-        ${_field('Job Title', `<input id="exp_title_${exp.id}" ${_inp} value="${_esc(exp.title)}" placeholder="Product Manager">`)}
+        ${_field('Job Title', `<input id="exp_title_${exp.id}"
+          style="width:100%;box-sizing:border-box;background:#1E293B;border:1px solid rgba(255,255,255,0.1);
+                 border-radius:8px;padding:9px 12px;font-size:13px;color:#F1F5F9;outline:none;margin-top:4px"
+          onfocus="this.style.borderColor='rgba(99,102,241,0.6)'"
+          onblur="this.style.borderColor='rgba(255,255,255,0.1)';
+                  if(this.value.trim()&&document.getElementById('exp_company_${exp.id}')?.value.trim()&&
+                     !document.getElementById('infer_checks_${exp.id}'))
+                    inferResponsibilities('${exp.id}')"
+          value="${_esc(exp.title)}" placeholder="Product Manager"
+        >`, 'Tab out after entering title to get AI-suggested responsibilities.')}
         ${_field('Dates', `<input id="exp_dates_${exp.id}" ${_inp} value="${_esc(exp.dates)}" placeholder="Jan 2022 – Present">`)}
         ${_field('Location', `<input id="exp_location_${exp.id}" ${_inp} value="${_esc(exp.location)}" placeholder="New York, NY">`)}
       </div>
@@ -612,6 +621,8 @@ function _rbStep5() {
         'Clear all data and start from scratch.',
         '_rbReset()')}
     </div>
+
+    ${_rbRenderATSSidebar(r)}
   `;
 }
 
@@ -809,11 +820,13 @@ function _rbExport() {
  * enhanceBullets(expId, rawBullets?, targetRole?)
  *
  * Reads bullet inputs from the DOM (if expId given), calls /api/claude,
- * writes improved bullets back to the DOM.
+ * then routes through Truth-Check before writing back — any metric the AI
+ * *invented* (not present in the user's original) is flagged with [VERIFY: X]
+ * and surfaced for user confirmation before being saved.
  *
  * Prompt strategy:
- *  - Haiku (fast + cheap) is fine here — bullet rewriting is not long-form prose
- *  - Uses action verb + metric framing (proven ATS pattern)
+ *  - Haiku (fast + cheap) for bullet rewriting
+ *  - AI must mark any invented numbers/percentages with [VERIFY: X] syntax
  *  - Returns JSON array so parsing is deterministic
  */
 async function enhanceBullets(expId, rawBullets = null, targetRole = '') {
@@ -822,6 +835,7 @@ async function enhanceBullets(expId, rawBullets = null, targetRole = '') {
   if (!bullets && expId) {
     const exp = _wbResume().experience.find(e => e.id === expId);
     if (!exp) return;
+    // Always read live from DOM — state may not be saved yet
     bullets = exp.bullets.map((_, bi) => {
       const el = document.getElementById(`bullet_${expId}_${bi}`);
       return el?.value.trim() || '';
@@ -837,12 +851,13 @@ async function enhanceBullets(expId, rawBullets = null, targetRole = '') {
   const btnEl = document.querySelector(`[onclick="enhanceBullets('${expId}')"]`);
   if (btnEl) { btnEl.textContent = '⏳ Enhancing…'; btnEl.disabled = true; }
 
-  // ── 3. Build prompt ─────────────────────────────────────────────────────
+  // ── 3. Build prompt — AI must flag invented metrics ─────────────────────
   const ENHANCE_PROMPT = `You are a professional resume writer specializing in ATS optimization.
 
 Rewrite these bullet points to be more impactful. Rules:
 - Start each bullet with a strong past-tense action verb (Led, Built, Designed, Reduced, Grew, etc.)
-- Add quantified results where plausible (%, $, time saved, team size) — if no data, improve the framing
+- IMPORTANT: If the user's bullet already contains a real number (%, $, a count), keep it EXACTLY as written.
+- If you add a number or metric that was NOT in the original bullet, you MUST wrap it in [VERIFY: X] — e.g. "Increased sales by [VERIFY: 20%]". This is mandatory so the user can confirm it.
 - Keep each bullet under 20 words
 - Never use: "responsible for", "helped with", "assisted in", "worked on"
 - Output ONLY a JSON array of strings — no markdown, no explanation
@@ -856,18 +871,17 @@ Output format: ["Enhanced bullet 1", "Enhanced bullet 2", ...]`;
   // ── 4. Call API ─────────────────────────────────────────────────────────
   try {
     let tierToken = '';
-    try {
-      tierToken = JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}').tierToken || '';
-    } catch {}
+    try { tierToken = JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}').tierToken || ''; } catch {}
+    const userEmail = (() => { try { return JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}').email || ''; } catch { return ''; } })();
 
     const response = await fetch('/api/claude', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model:      'claude-haiku-4-5-20251001',   // Haiku: fast + cheap for rewrites
-        max_tokens: 600,                            // ~30 words × 20 bullets = plenty
+        model:      'claude-haiku-4-5-20251001',
+        max_tokens: 600,
         callType:   'utility',
-        userEmail:  (() => { try { return JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}').email || ''; } catch { return ''; } })(),
+        userEmail,
         tierToken,
         messages: [{ role: 'user', content: ENHANCE_PROMPT }],
       }),
@@ -879,15 +893,25 @@ Output format: ["Enhanced bullet 1", "Enhanced bullet 2", ...]`;
     const cleaned  = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
     const enhanced = JSON.parse(cleaned);
 
-    // ── 5. Write back to DOM + state ───────────────────────────────────────
+    if (!enhanced?.length) throw new Error('Empty response');
+
+    // ── 5. Route through Truth-Check if AI invented any metrics ────────────
     if (expId) {
-      const exp = _wbResume().experience.find(e => e.id === expId);
-      if (exp) exp.bullets = enhanced;
-      _rbRenderContent(); // re-render step 2 with new bullets
-      if (typeof showToast === 'function') showToast('✨ Bullets enhanced!', 'success');
+      const hasUnverified = enhanced.some(b => /\[VERIFY:/i.test(b));
+      if (hasUnverified) {
+        // Show truth-check panel — do NOT write to state yet
+        _rbShowTruthCheck(expId, enhanced, bullets);
+        if (typeof showToast === 'function') showToast('⚠️ Check the highlighted numbers before saving.', 'info');
+      } else {
+        // No invented metrics — safe to apply directly (same as before)
+        const exp = _wbResume().experience.find(e => e.id === expId);
+        if (exp) exp.bullets = enhanced;
+        _rbRenderContent();
+        if (typeof showToast === 'function') showToast('✨ Bullets enhanced!', 'success');
+      }
     }
 
-    return enhanced; // also return for standalone use
+    return enhanced;
 
   } catch (err) {
     console.error('enhanceBullets error:', err);
@@ -963,4 +987,318 @@ function _esc(s) {
   return String(s || '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 11. INFERENCE ENGINE
+//     Fires on Job Title blur (if Company is also filled).
+//     Calls Haiku for 7 probable responsibilities → renders as checkboxes.
+//     User checks the true ones → they become seed bullets.
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function inferResponsibilities(expId) {
+  // Read live from DOM — state not saved yet
+  const title   = document.getElementById(`exp_title_${expId}`)?.value.trim();
+  const company = document.getElementById(`exp_company_${expId}`)?.value.trim();
+  if (!title || !company) return;
+
+  // Don't overwrite bullets the user already typed
+  const exp = _wbResume().experience.find(e => e.id === expId);
+  if (exp?.bullets.some(b => b.trim().length > 0)) return;
+
+  // Don't re-trigger if panel already showing
+  if (document.getElementById(`infer_checks_${expId}`)) return;
+
+  const bulletsContainer = document.getElementById(`bullets_${expId}`);
+  if (!bulletsContainer) return;
+
+  // ── Loading pill — matches secondary button style ────────────────────────
+  const loaderId = `infer_loader_${expId}`;
+  bulletsContainer.insertAdjacentHTML('beforebegin', `
+    <div id="${loaderId}" style="
+      display:flex;align-items:center;gap:8px;
+      padding:9px 12px;margin-bottom:8px;
+      background:rgba(99,102,241,0.08);border-radius:8px;
+      border:1px solid rgba(99,102,241,0.2);
+      font-size:12px;color:#818CF8;
+    ">
+      <span style="display:inline-block;animation:rb-spin 1s linear infinite">⟳</span>
+      Looking up common responsibilities for ${_esc(title)} at ${_esc(company)}…
+    </div>
+    <style>@keyframes rb-spin{to{transform:rotate(360deg)}}</style>
+  `);
+
+  try {
+    let tierToken = '';
+    try { tierToken = JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}').tierToken || ''; } catch {}
+    const userEmail = (() => { try { return JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}').email || ''; } catch { return ''; } })();
+
+    const res = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model:      'claude-haiku-4-5-20251001',
+        max_tokens: 400,
+        callType:   'utility',
+        userEmail,
+        tierToken,
+        messages: [{
+          role: 'user',
+          content: `List 7 specific, realistic past-tense job responsibilities for a ${title} at ${company}.
+Rules: short action statements only (under 12 words each), no metrics, no percentages — the user will add those.
+Return ONLY a JSON array of 7 strings. No markdown, no explanation.`,
+        }],
+      }),
+    });
+
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    const data  = await res.json();
+    const raw   = data?.content?.[0]?.text || data?.text || '[]';
+    const clean = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+    const items = JSON.parse(clean.match(/\[[\s\S]*\]/)?.[0] || '[]');
+
+    document.getElementById(loaderId)?.remove();
+    if (!items.length) return;
+
+    // ── Checkbox panel — matches expCard inner style ─────────────────────
+    const panelHtml = `
+      <div id="infer_checks_${expId}" style="
+        background:#0F172A;border-radius:8px;padding:12px 14px;margin-bottom:10px;
+        border:1px solid rgba(99,102,241,0.2);
+      ">
+        <p style="
+          margin:0 0 10px;
+          font-size:11px;font-weight:600;color:#818CF8;
+          text-transform:uppercase;letter-spacing:.04em;
+          display:flex;align-items:center;gap:6px
+        ">✓ Check everything that applies to your role</p>
+        <div id="infer_list_${expId}">
+          ${items.map((item, i) => `
+            <label style="
+              display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;cursor:pointer;
+            ">
+              <input type="checkbox" id="infer_cb_${expId}_${i}"
+                data-text="${_esc(item)}"
+                style="margin-top:2px;accent-color:#6366F1;flex-shrink:0;cursor:pointer"
+              >
+              <span style="font-size:12.5px;color:#CBD5E1;line-height:1.4">${_esc(item)}</span>
+            </label>
+          `).join('')}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button onclick="_rbApplyInferred('${expId}', ${items.length})" style="
+            padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;
+            background:linear-gradient(135deg,#6366F1,#4F46E5);color:#fff;border:none;
+          ">Use checked items →</button>
+          <button onclick="document.getElementById('infer_checks_${expId}')?.remove()" style="
+            padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;
+            background:rgba(255,255,255,0.05);color:#94A3B8;
+            border:1px solid rgba(255,255,255,0.1);
+          ">I'll type my own</button>
+        </div>
+      </div>
+    `;
+    bulletsContainer.insertAdjacentHTML('beforebegin', panelHtml);
+
+  } catch (err) {
+    console.warn('inferResponsibilities failed silently:', err);
+    document.getElementById(loaderId)?.remove();
+    // Fail silently — user can still type bullets manually
+  }
+}
+
+function _rbApplyInferred(expId, count) {
+  const checked = [];
+  for (let i = 0; i < count; i++) {
+    const cb = document.getElementById(`infer_cb_${expId}_${i}`);
+    if (cb?.checked && cb.dataset.text) checked.push(cb.dataset.text);
+  }
+  if (!checked.length) {
+    if (typeof showToast === 'function') showToast('Check at least one item first.', 'info');
+    return;
+  }
+
+  const exp = _wbResume().experience.find(e => e.id === expId);
+  if (exp) exp.bullets = checked;
+
+  document.getElementById(`infer_checks_${expId}`)?.remove();
+  _rbSaveCurrentStep();
+  _rbRenderContent();
+  if (typeof showToast === 'function') showToast('✅ Responsibilities added — now hit ✨ AI Enhance to polish them.', 'success');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 12. TRUTH-CHECK PANEL
+//     Shown when enhanceBullets detects [VERIFY: X] markers in AI output.
+//     Invented metrics are highlighted and editable inline — user confirms
+//     or corrects each one before bullets are written to state.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function _rbShowTruthCheck(expId, enhanced, original) {
+  // Remove any existing panel
+  document.getElementById(`truthCheck_${expId}`)?.remove();
+
+  const card = document.getElementById(`expCard_${expId}`);
+  if (!card) return;
+
+  const panelHtml = `
+    <div id="truthCheck_${expId}" style="
+      background:#1E293B;border-radius:10px;padding:14px;margin-top:10px;
+      border:1px solid rgba(250,204,21,0.25);
+    ">
+      <!-- Header — matches expCard label style but in warning colour -->
+      <p style="
+        margin:0 0 4px;
+        font-size:11px;font-weight:600;color:#FCD34D;
+        text-transform:uppercase;letter-spacing:.04em;
+        display:flex;align-items:center;gap:6px;
+      ">⚠️ Verify these numbers before adding to your resume</p>
+      <p style="margin:0 0 12px;font-size:11.5px;color:#94A3B8;line-height:1.5">
+        Numbers highlighted in yellow were estimated by the AI — not taken from your original bullets.
+        Click any to edit, then confirm they reflect your real experience.
+      </p>
+
+      <!-- Enhanced bullets — [VERIFY: X] rendered as editable marks -->
+      <div style="margin-bottom:12px">
+        ${enhanced.map((bullet, i) => {
+          const rendered = bullet.replace(/\[VERIFY:\s*([^\]]+)\]/gi, (_, val) =>
+            `<mark contenteditable="true" spellcheck="false"
+              style="
+                background:rgba(250,204,21,0.12);color:#FCD34D;
+                border:1px dashed rgba(250,204,21,0.35);border-radius:4px;
+                padding:1px 5px;cursor:text;font-style:normal;outline:none;
+                display:inline-block;min-width:24px;
+              "
+              title="Click to edit this number"
+            >${_esc(val.trim())}</mark>`
+          );
+          const hasFlag = /\[VERIFY:/i.test(bullet);
+          return `
+            <div style="
+              display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;
+              padding:7px 9px;border-radius:7px;
+              background:${hasFlag ? 'rgba(250,204,21,0.04)' : 'transparent'};
+            ">
+              <span style="color:#6366F1;flex-shrink:0;font-size:11px;margin-top:3px">•</span>
+              <span id="tc_bullet_${expId}_${i}"
+                style="font-size:12.5px;color:#E2E8F0;flex:1;line-height:1.5"
+              >${rendered}</span>
+            </div>`;
+        }).join('')}
+      </div>
+
+      <!-- Footer actions — match primary / ghost button patterns -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="_rbAcceptTruthChecked('${expId}', ${enhanced.length})" style="
+          padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;
+          background:linear-gradient(135deg,#6366F1,#4F46E5);color:#fff;border:none;
+        ">✓ Numbers are accurate — save these bullets</button>
+        <button onclick="document.getElementById('truthCheck_${expId}')?.remove()" style="
+          padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;
+          background:rgba(255,255,255,0.05);color:#94A3B8;
+          border:1px solid rgba(255,255,255,0.1);
+        ">Keep my originals</button>
+      </div>
+    </div>
+  `;
+
+  card.insertAdjacentHTML('beforeend', panelHtml);
+}
+
+function _rbAcceptTruthChecked(expId, count) {
+  const exp = _wbResume().experience.find(e => e.id === expId);
+  if (!exp) return;
+
+  const bullets = [];
+  for (let i = 0; i < count; i++) {
+    const el = document.getElementById(`tc_bullet_${expId}_${i}`);
+    if (el) {
+      // innerText reads the live text including any user edits to contenteditable marks
+      const text = el.innerText.replace(/\s+/g, ' ').trim();
+      if (text) bullets.push(text);
+    }
+  }
+
+  if (!bullets.length) return;
+
+  exp.bullets = bullets;
+  document.getElementById(`truthCheck_${expId}`)?.remove();
+  _rbSaveCurrentStep();
+  _rbRenderContent();
+  if (typeof showToast === 'function') showToast('✅ Verified bullets saved.', 'success');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 13. ATS SIDEBAR (Step 5 — Review)
+//     Uses the existing resumeToPlainText() — zero extra API calls.
+//     Shows raw parse + section detection so users see exactly what an
+//     ATS robot reads before they submit anywhere.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function _rbRenderATSSidebar(r) {
+  const plain = resumeToPlainText(r);
+
+  // Section detection — check for standard ATS section headers
+  const EXPECTED = ['EXPERIENCE', 'EDUCATION', 'SKILLS'];
+  const warnings = [];
+  const upperPlain = plain.toUpperCase();
+
+  if (!plain.includes('@'))
+    warnings.push('No email detected — ATS contact parsing may fail');
+  if (plain.length < 150)
+    warnings.push('Very short resume — may score low on keyword density');
+  EXPECTED.forEach(s => {
+    if (!upperPlain.includes(s))
+      warnings.push(`"${s}" section not found — ATS may not parse this section`);
+  });
+
+  const allGood = warnings.length === 0;
+
+  return `
+    <div style="
+      background:#0F172A;border-radius:10px;padding:14px 16px;margin-top:14px;
+      border:1px solid rgba(255,255,255,0.07);
+    ">
+      <!-- Header — matches wizard section-label style -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="
+          font-size:11px;font-weight:700;color:#818CF8;
+          text-transform:uppercase;letter-spacing:.05em;
+          display:flex;align-items:center;gap:6px;
+        ">📡 ATS Raw Text View</span>
+        <span style="font-size:11px;color:#475569">What Workday / Greenhouse actually reads</span>
+      </div>
+
+      <!-- Scan result chip — matches toast / hint colour system -->
+      ${allGood
+        ? `<div style="
+              font-size:11.5px;color:#34D399;
+              background:rgba(52,211,153,0.06);border-radius:6px;
+              padding:6px 10px;margin-bottom:10px;
+            ">✅ All key sections detected — looks ATS-readable</div>`
+        : warnings.map(w => `
+            <div style="
+              font-size:11.5px;color:#FCD34D;
+              background:rgba(250,204,21,0.06);border-radius:6px;
+              padding:6px 10px;margin-bottom:4px;
+            ">⚠️ ${_esc(w)}</div>`).join('')
+      }
+
+      <!-- Raw text pane — matches inner card bg (#060D1A used in bullet inputs) -->
+      <pre style="
+        margin:${allGood ? '0' : '10px'} 0 0;
+        font-size:11px;line-height:1.6;color:#64748B;
+        background:#060D1A;border-radius:6px;padding:10px 12px;
+        border:1px solid rgba(255,255,255,0.05);
+        max-height:200px;overflow-y:auto;
+        white-space:pre-wrap;word-break:break-word;font-family:monospace;
+      ">${_esc(plain) || '(Nothing to show yet — fill in your details above)'}</pre>
+
+      <!-- Tip — matches hint text style -->
+      <p style="margin:8px 0 0;font-size:11px;color:#334155;line-height:1.5">
+        💡 ATS parsers read this plain-text version, not the styled PDF.
+        Name and email at the top + labelled sections = you're set.
+      </p>
+    </div>
+  `;
 }
