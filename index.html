@@ -6,8 +6,8 @@
 
   <!-- ── Primary SEO ──────────────────────────────────────────────── -->
   <title>1stStep.ai — AI Resume Tailor &amp; Job Search Platform</title>
-  <meta name="description" content="Tailor your resume to any job in 30 seconds. Beat the ATS with AI-optimized keywords, a rewritten resume, and a personalized cover letter. Free to start." />
-  <meta name="keywords" content="AI resume tailor, ATS resume optimizer, resume keyword tool, AI cover letter generator, job search platform, resume builder AI" />
+  <meta name="description" content="Tailor your resume to any job in 30 seconds. See your exact skill gaps, beat the ATS with AI keywords, and get a personalized cover letter — free to start. $19/mo after." />
+  <meta name="keywords" content="AI resume tailor, ATS resume optimizer, resume keyword tool, skill gap analysis, AI cover letter generator, job search platform, resume builder AI, LinkedIn resume import" />
   <link rel="canonical" href="https://app.1ststep.ai/" />
   <meta name="theme-color" content="#F8FAFC" />
   <meta name="robots" content="noindex, follow" />
@@ -16,7 +16,7 @@
   <meta property="og:type"        content="website" />
   <meta property="og:url"         content="https://app.1ststep.ai/" />
   <meta property="og:title"       content="1stStep.ai — Tailor Your Resume to Any Job in 30 Seconds" />
-  <meta property="og:description" content="Stop sending the same resume to every job. 1stStep.ai rewrites your resume for each role, closes keyword gaps, and writes a cover letter — powered by AI." />
+  <meta property="og:description" content="Stop sending the same resume to every job. 1stStep.ai shows your exact skill gaps, rewrites your resume for each role, and writes a cover letter — in 30 seconds. Free to start." />
   <meta property="og:image"       content="https://1ststep.ai/og-image.png" />
   <meta property="og:image:width"  content="1200" />
   <meta property="og:image:height" content="630" />
@@ -26,7 +26,7 @@
   <meta name="twitter:card"        content="summary_large_image" />
   <meta name="twitter:url"         content="https://app.1ststep.ai/" />
   <meta name="twitter:title"       content="1stStep.ai — AI Resume Tailor" />
-  <meta name="twitter:description" content="Tailor your resume to any job in 30 seconds. Beat the ATS. Land more interviews." />
+  <meta name="twitter:description" content="See exactly why you're not getting callbacks. 1stStep.ai finds your skill gaps, rewrites your resume, and writes a cover letter in 30 seconds. Free to start." />
   <meta name="twitter:image"       content="https://1ststep.ai/og-image.png" />
 
   <!-- ── Structured Data — WebApplication ─────────────────────────── -->
@@ -36,25 +36,25 @@
     "@type": "WebApplication",
     "name": "1stStep.ai",
     "url": "https://1ststep.ai/",
-    "description": "AI-powered resume tailoring and job search platform. Optimize your resume for ATS, close keyword gaps, and generate cover letters in seconds.",
+    "description": "AI-powered resume tailoring and job search platform. See your exact skill gaps, optimize your resume for ATS, and generate cover letters in 30 seconds. Free to start — Essential $19/mo, Complete $39/mo.",
     "applicationCategory": "BusinessApplication",
     "operatingSystem": "Web",
     "offers": [
       {
         "@type": "Offer",
         "name": "Essential",
-        "price": "49",
+        "price": "19",
         "priceCurrency": "USD",
         "billingDuration": "P1M",
-        "description": "40 job searches and 20 resume tailors per month"
+        "description": "60 job searches and 30 resume tailors per month, plus cover letters and skill gap analysis"
       },
       {
         "@type": "Offer",
         "name": "Complete",
-        "price": "99",
+        "price": "39",
         "priceCurrency": "USD",
         "billingDuration": "P1M",
-        "description": "80 job searches and 40 resume tailors per month, plus AI cover letters"
+        "description": "Unlimited job searches and resume tailors, plus cover letters, resume templates, and all AI features"
       }
     ],
     "featureList": [
@@ -1296,6 +1296,19 @@
           <p style="margin-top:4px;font-size:11px;color:var(--muted)">PDF, Word (.docx), or plain text</p>
         </div>
 
+        <!-- LinkedIn PDF import shortcut -->
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px">
+          <div style="height:1px;flex:1;background:var(--border)"></div>
+          <button onclick="openLinkedInImportModal()"
+            style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--muted);font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:6px;transition:all 0.15s;white-space:nowrap"
+            onmouseenter="this.style.background='rgba(99,102,241,0.08)';this.style.color='#818CF8'"
+            onmouseleave="this.style.background='none';this.style.color='var(--muted)'">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 6.5v5M4 4v.5M7 11.5V9c0-1.1.9-2 2-2s2 .9 2 2v2.5M7 6.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Import from LinkedIn
+          </button>
+          <div style="height:1px;flex:1;background:var(--border)"></div>
+        </div>
+
         <!-- Privacy trust signal -->
         <p style="margin-top:8px;font-size:11px;color:var(--muted);text-align:center;line-height:1.5">
           🔒 Parsed in your browser — never stored on our servers
@@ -1361,6 +1374,7 @@
         <div id="tailorUsageMeter" style="margin-top:14px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
             <span style="font-size:12px;color:var(--text2)" id="tailorUsageLabel">3 free tailors · No card needed</span>
+            <!-- Note: label text is overwritten dynamically by updateUsageLabels() -->
             <span style="font-size:11px;color:var(--muted)" id="tailorUsageReset">resets monthly</span>
           </div>
           <div style="height:5px;background:var(--border);border-radius:100px;overflow:hidden">
@@ -1456,7 +1470,7 @@
         <!-- Daily search usage meter -->
         <div id="searchUsageMeter" style="margin-top:10px;display:none">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-            <span style="font-size:11px;color:var(--muted)" id="searchUsageLabel">0 / 10 searches this month</span>
+            <span style="font-size:11px;color:var(--muted)" id="searchUsageLabel">0 / 5 searches this month</span>
             <span style="font-size:10px;color:var(--muted);opacity:0.6">resets monthly</span>
           </div>
           <div style="height:4px;background:var(--dark3);border-radius:100px;overflow:hidden">
@@ -1474,20 +1488,29 @@
       <div class="empty-state" id="emptyState">
 
         <!-- Hero headline -->
-        <div style="margin-bottom:18px">
+        <div style="margin-bottom:16px">
           <h2 style="font-size:clamp(20px,3vw,26px);font-weight:800;color:var(--text);line-height:1.25;margin-bottom:10px">
-            Get 3× more interviews —<br><span style="background:linear-gradient(90deg,#60A5FA,#818CF8);-webkit-background-clip:text;-webkit-text-fill-color:transparent">starting right now.</span>
+            See exactly why you're not<br><span style="background:linear-gradient(90deg,#60A5FA,#818CF8);-webkit-background-clip:text;-webkit-text-fill-color:transparent">getting callbacks.</span>
           </h2>
           <p style="font-size:13px;color:var(--muted);line-height:1.6;max-width:340px;margin:0 auto">
-            Paste any job posting. 1stStep.ai rewrites your resume for that exact role in 30 seconds — ATS keywords, stronger bullets, tailored summary.
+            1stStep.ai shows your skill gaps, rewrites your resume for that exact role, and writes a cover letter — all in 30 seconds.
           </p>
+        </div>
+
+        <!-- Feature chips -->
+        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-bottom:16px">
+          <div style="padding:5px 11px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#34D399">📊 Skill gap analysis</div>
+          <div style="padding:5px 11px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">🔍 ATS keyword match</div>
+          <div style="padding:5px 11px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">✍️ Resume rewrite</div>
+          <div style="padding:5px 11px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">✉️ Cover letter</div>
+          <div style="padding:5px 11px;background:rgba(0,119,181,0.1);border:1px solid rgba(0,119,181,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#60A5FA">🔗 LinkedIn import</div>
         </div>
 
         <!-- Trust bar — honest signals only -->
         <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:18px;flex-wrap:wrap">
           <div style="font-size:11px;color:var(--muted)">🔒 Resume never leaves your browser</div>
           <div style="width:1px;height:12px;background:var(--border)"></div>
-          <div style="font-size:11px;color:var(--muted)">✓ 3 free tailors · No card required</div>
+          <div style="font-size:11px;color:var(--muted)">✓ 3 free tailors · 5 searches · No card required</div>
           <div style="width:1px;height:12px;background:var(--border)"></div>
           <div style="font-size:11px;color:var(--muted)">⚡ Done in 30 seconds</div>
         </div>
@@ -1525,11 +1548,11 @@
             </div>
           </div>
           <div style="padding:7px 12px;background:var(--input-bg);border-top:1px solid var(--border);font-size:10.5px;color:var(--muted);text-align:center">
-            Keywords, quantified impact, and ATS-friendly phrasing — automatically.
+            Keywords, quantified impact, ATS phrasing — plus a full skill gap report showing what's missing.
           </div>
         </div>
 
-        <p style="font-size:11px;color:var(--dark3);margin-top:14px;">No account required · Results in ~30 seconds</p>
+        <p style="font-size:11px;color:var(--dark3);margin-top:14px;">No account required · Results in ~30 seconds · Free — then $19/mo</p>
       </div>
 
       <!-- Progress -->
@@ -1556,6 +1579,12 @@
             <div class="step-icon">✉️</div>
             <div class="step-text"><strong>Writing your cover letter</strong><span>Personalized for this specific role</span></div>
           </div>
+        </div>
+
+        <!-- Skill Gap Preview — injected after Step 2 completes -->
+        <div id="skillGapPreview" style="display:none;margin-top:16px;padding:14px 16px;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;animation:fadeIn 0.3s ease">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Skill Match Preview</div>
+          <div id="skillGapBody" style="display:flex;flex-direction:column;gap:8px"></div>
         </div>
       </div>
 
@@ -1630,6 +1659,9 @@
           <button onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;flex-shrink:0">✕</button>
         </div>
 
+
+        <!-- Skill Gap Analysis Card — populated by renderSkillGapCard() after tailoring -->
+        <div id="skillGapCard" style="display:none;margin:14px 16px 0;padding:16px;background:var(--card-bg);border:1px solid var(--border);border-radius:12px"></div>
 
         <div class="tabs">
           <button class="tab-btn active" onclick="switchTab('resume', this)">
@@ -1937,7 +1969,7 @@
       <h2 style="font-size:20px;font-weight:800;margin:0">Choose your plan</h2>
       <button onclick="closeUpgradeModal()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1">✕</button>
     </div>
-    <p style="color:var(--muted);font-size:13px;margin:0 0 16px">You're on the <strong style="color:var(--fg)">Free plan</strong> — 3 tailors, 3 searches/mo. Upgrade for more.</p>
+    <p style="color:var(--muted);font-size:13px;margin:0 0 16px">You're on the <strong style="color:var(--fg)">Free plan</strong> — 3 tailors, 5 searches/mo. Upgrade for more.</p>
 
     <!-- Billing toggle -->
     <div style="display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:20px;background:var(--input-bg);border:1px solid var(--border);border-radius:100px;padding:3px;width:fit-content;margin-left:auto;margin-right:auto">
@@ -1956,10 +1988,10 @@
           <div style="font-size:10px;color:var(--muted);margin-top:2px">Current plan</div>
         </div>
         <ul style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:5px">
-          <li>· 3 job searches / mo</li>
+          <li>· 5 job searches / mo</li>
           <li>· 3 resume tailors / mo</li>
-          <li>· 3 cover letters / mo</li>
           <li>· ATS optimizer</li>
+          <li>· No cover letters</li>
         </ul>
         <div style="margin-top:auto;display:block;text-align:center;padding:8px;background:var(--input-bg);border:1px solid var(--border);color:var(--muted);border-radius:8px;font-size:12px;font-weight:600">
           Current
@@ -1969,15 +2001,16 @@
       <div style="border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px">
         <div style="font-size:11px;font-weight:700;color:var(--blue);letter-spacing:0.05em;text-transform:uppercase">Essential</div>
         <div>
-          <span id="modal-essential-price" style="font-size:24px;font-weight:800">$49</span><span style="font-size:12px;font-weight:400;color:var(--muted)">/mo</span>
+          <span id="modal-essential-price" style="font-size:24px;font-weight:800">$19</span><span style="font-size:12px;font-weight:400;color:var(--muted)">/mo</span>
           <div id="modal-essential-note" style="font-size:10px;color:#34d399;margin-top:2px;min-height:14px"></div>
         </div>
         <ul style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:5px">
-          <li>✓ <strong style="color:var(--fg)">40</strong> searches / mo</li>
-          <li>✓ <strong style="color:var(--fg)">25</strong> tailors / mo</li>
-          <li>✓ 25 cover letters / mo</li>
+          <li>✓ <strong style="color:var(--fg)">60</strong> searches / mo</li>
+          <li>✓ <strong style="color:var(--fg)">30</strong> tailors / mo</li>
+          <li>✓ 30 cover letters / mo</li>
           <li>✓ ATS keyword optimizer</li>
-          <li>✓ Before/after diff viewer</li>
+          <li>✓ Skill gap analysis</li>
+          <li>✓ Resume builder wizard</li>
           <li>✓ Interview prep</li>
         </ul>
         <a id="modal-essential-cta" href="https://buy.stripe.com/28E00k7OFfCXd0E1MPfIs01" target="_blank"
@@ -1990,18 +2023,18 @@
         <div style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;letter-spacing:0.05em;white-space:nowrap">MOST POPULAR</div>
         <div style="font-size:11px;font-weight:700;color:var(--blue);letter-spacing:0.05em;text-transform:uppercase">Complete</div>
         <div>
-          <span id="modal-complete-price" style="font-size:24px;font-weight:800">$99</span><span style="font-size:12px;font-weight:400;color:var(--muted)">/mo</span>
+          <span id="modal-complete-price" style="font-size:24px;font-weight:800">$39</span><span style="font-size:12px;font-weight:400;color:var(--muted)">/mo</span>
           <div id="modal-complete-note" style="font-size:10px;color:#34d399;margin-top:2px;min-height:14px"></div>
         </div>
         <ul style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:5px">
-          <li>✓ <strong style="color:var(--fg)">80</strong> searches / mo</li>
+          <li>✓ <strong style="color:var(--fg)">Unlimited</strong> searches</li>
           <li>✓ <strong style="color:var(--fg)">Unlimited</strong> tailors</li>
           <li>✓ Unlimited cover letters</li>
           <li>✓ ATS keyword optimizer</li>
-          <li>✓ Before/after diff viewer</li>
+          <li>✓ Skill gap analysis</li>
+          <li>✓ Resume builder wizard</li>
           <li>✓ Interview prep</li>
-          <li>✓ <strong style="color:var(--fg)">Resume templates</strong></li>
-          <li>✓ <strong style="color:var(--fg)">Resume builder</strong> wizard</li>
+          <li>✓ <strong style="color:var(--fg)">Resume templates</strong> (4 formats)</li>
           <li>✓ AI responsibility suggestions</li>
         </ul>
         <a id="modal-complete-cta" href="https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00" target="_blank"
@@ -2013,6 +2046,79 @@
     <p style="text-align:center;font-size:11px;color:var(--muted);margin:16px 0 0">Cancel anytime · Secure checkout via Stripe</p>
     <div style="text-align:center;margin-top:12px">
       <button onclick="(async()=>{const p=JSON.parse(localStorage.getItem('1ststep_profile')||'{}');if(!p.email){showToast('Save your profile email first');return;}localStorage.removeItem('1ststep_sub_cache');await verifySubscription(p.email);closeUpgradeModal();})()" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:2px">Already subscribed? Click to verify</button>
+    </div>
+  </div>
+</div>
+
+<!-- LinkedIn PDF Import Modal -->
+<div class="modal-overlay" id="linkedInImportModal" onclick="if(event.target===this)closeLinkedInImportModal()" style="display:none">
+  <div class="modal" style="width:500px;padding:32px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,#0077B5,#0A66C2);border-radius:8px;display:flex;align-items:center;justify-content:center">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="14" height="14" rx="2" fill="white" fill-opacity="0.15"/><path d="M4 6.5v5M4 4v.5M7 11.5V9c0-1.1.9-2 2-2s2 .9 2 2v2.5M7 6.5v5" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <h2 style="font-size:17px;font-weight:800;margin:0;color:var(--fg)">Import from LinkedIn</h2>
+          <p style="font-size:12px;color:var(--muted);margin:0">Export your profile as PDF, then upload it here</p>
+        </div>
+      </div>
+      <button onclick="closeLinkedInImportModal()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;padding:0">✕</button>
+    </div>
+
+    <!-- Steps -->
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px">
+      <!-- Step 1 -->
+      <div style="display:flex;gap:14px;align-items:flex-start;padding:14px 16px;background:var(--card-bg);border:1px solid var(--border);border-radius:12px">
+        <div style="min-width:28px;height:28px;background:linear-gradient(135deg,#0077B5,#0A66C2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white">1</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--fg);margin-bottom:3px">Open your LinkedIn profile</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.5">Visit your profile page on LinkedIn.com or the LinkedIn app.</div>
+          <a href="https://www.linkedin.com/in/" target="_blank" rel="noopener noreferrer"
+            style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:6px 14px;background:rgba(0,119,181,0.12);border:1px solid rgba(0,119,181,0.3);color:#60A5FA;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;transition:all 0.15s"
+            onmouseenter="this.style.background='rgba(0,119,181,0.2)'"
+            onmouseleave="this.style.background='rgba(0,119,181,0.12)'">
+            Open LinkedIn ↗
+          </a>
+        </div>
+      </div>
+      <!-- Step 2 -->
+      <div style="display:flex;gap:14px;align-items:flex-start;padding:14px 16px;background:var(--card-bg);border:1px solid var(--border);border-radius:12px">
+        <div style="min-width:28px;height:28px;background:linear-gradient(135deg,#0077B5,#0A66C2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white">2</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--fg);margin-bottom:3px">Save your profile as a PDF</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.6">
+            On your profile page, click <strong style="color:var(--fg)">More</strong> → <strong style="color:var(--fg)">Save to PDF</strong>.<br>
+            LinkedIn generates a PDF of your full profile in seconds.
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+            <span style="padding:4px 10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:6px;font-size:11px;color:#818CF8;font-weight:600">More ▾</span>
+            <span style="padding:4px 6px;font-size:12px;color:var(--muted)">→</span>
+            <span style="padding:4px 10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:6px;font-size:11px;color:#818CF8;font-weight:600">Save to PDF</span>
+          </div>
+        </div>
+      </div>
+      <!-- Step 3 -->
+      <div style="display:flex;gap:14px;align-items:flex-start;padding:14px 16px;background:rgba(99,102,241,0.06);border:1.5px solid rgba(99,102,241,0.25);border-radius:12px">
+        <div style="min-width:28px;height:28px;background:linear-gradient(135deg,#6366F1,#4F46E5);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white">3</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--fg);margin-bottom:3px">Upload the PDF here</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px">Click below to select the LinkedIn PDF you just saved. We'll extract your experience, education, and skills automatically.</div>
+          <button onclick="document.getElementById('linkedInPdfInput').click()"
+            style="padding:10px 20px;background:linear-gradient(135deg,#6366F1,#4F46E5);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:7px">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Upload LinkedIn PDF
+          </button>
+          <input type="file" id="linkedInPdfInput" accept=".pdf" style="display:none" onchange="handleLinkedInPdfUpload(event)" />
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:8px">
+      <span style="font-size:14px">💡</span>
+      <p style="font-size:11px;color:var(--muted);margin:0;line-height:1.5">
+        <strong style="color:#6EE7B7">Tip:</strong> LinkedIn PDFs work best when your profile is fully filled in — summary, all jobs with descriptions, skills, and education.
+      </p>
     </div>
   </div>
 </div>
@@ -2153,11 +2259,11 @@
     <div style="font-size:28px;margin-bottom:12px">⏰</div>
     <div style="font-weight:800;font-size:20px;color:var(--text);margin-bottom:6px">Your beta has ended</div>
     <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 24px">
-      Thanks for being an early tester! Your 15-day beta period has expired.<br>Upgrade to keep tailoring your resume.
+      Thanks for being an early tester! Your 15-day beta period has expired.<br>Keep your skill gap analysis, resume rewrites, and cover letters going — starting at $19/mo.
     </p>
     <a id="betaUpgradeBtn" href="https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00" target="_blank"
       style="display:block;width:100%;padding:13px;background:linear-gradient(135deg,#4338CA,#6366F1);color:white;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;box-sizing:border-box;margin-bottom:10px">
-      See Plans →
+      See Plans — from $19/mo →
     </a>
     <button onclick="clearBetaAndShowGate()" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline">Use a new invite code</button>
   </div>
@@ -2167,24 +2273,31 @@
 <!-- Replaces the beta gate when the app goes public. Users go straight to Stripe. -->
 <div id="paywallGate" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.92);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:24px;overflow-y:auto">
   <div style="background:var(--surface);border-radius:20px;padding:40px 36px;max-width:520px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.3);text-align:center">
-    <div style="font-size:28px;margin-bottom:10px">🚀</div>
-    <div style="font-weight:800;font-size:22px;color:var(--text);margin-bottom:8px">Tailor your resume in 30 seconds</div>
-    <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 24px">
-      Beat the ATS, close keyword gaps, and land more interviews — powered by AI.
+    <div style="font-size:28px;margin-bottom:10px">📊</div>
+    <div style="font-weight:800;font-size:22px;color:var(--text);margin-bottom:8px">See exactly why you're not getting callbacks.</div>
+    <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 8px">
+      1stStep.ai finds your skill gaps, rewrites your resume for each role, and writes a cover letter — in 30 seconds.
     </p>
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-bottom:20px">
+      <span style="padding:4px 10px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#34D399">📊 Skill gap analysis</span>
+      <span style="padding:4px 10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">🔍 ATS keyword match</span>
+      <span style="padding:4px 10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">✉️ Cover letter</span>
+      <span style="padding:4px 10px;background:rgba(0,119,181,0.1);border:1px solid rgba(0,119,181,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#60A5FA">🔗 LinkedIn import</span>
+    </div>
 
     <!-- Plan cards -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;text-align:left">
       <!-- Essential -->
       <div style="border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:8px">
         <div style="font-size:11px;font-weight:700;color:var(--blue);letter-spacing:0.06em;text-transform:uppercase">Essential</div>
-        <div><span style="font-size:26px;font-weight:800;color:var(--text)">$49</span><span style="font-size:12px;color:var(--muted)">/mo</span></div>
+        <div><span style="font-size:26px;font-weight:800;color:var(--text)">$19</span><span style="font-size:12px;color:var(--muted)">/mo</span></div>
         <ul style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:5px">
-          <li>✓ <strong style="color:var(--text)">25</strong> resume tailors / mo</li>
-          <li>✓ <strong style="color:var(--text)">40</strong> job searches / mo</li>
+          <li>✓ <strong style="color:var(--text)">30</strong> resume tailors / mo</li>
+          <li>✓ <strong style="color:var(--text)">60</strong> job searches / mo</li>
           <li>✓ Cover letter generator</li>
           <li>✓ ATS keyword optimizer</li>
-          <li>✓ Before/after diff viewer</li>
+          <li>✓ Skill gap analysis</li>
+          <li>✓ Resume builder wizard</li>
           <li>✓ Interview prep</li>
         </ul>
         <a href="https://buy.stripe.com/28E00k7OFfCXd0E1MPfIs01" target="_blank"
@@ -2196,16 +2309,16 @@
       <div style="border:2px solid #6366F1;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:8px;position:relative">
         <div style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#4338CA,#6366F1);color:white;font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;white-space:nowrap;letter-spacing:0.04em">BEST VALUE</div>
         <div style="font-size:11px;font-weight:700;color:#818CF8;letter-spacing:0.06em;text-transform:uppercase">Complete</div>
-        <div><span style="font-size:26px;font-weight:800;color:var(--text)">$99</span><span style="font-size:12px;color:var(--muted)">/mo</span></div>
+        <div><span style="font-size:26px;font-weight:800;color:var(--text)">$39</span><span style="font-size:12px;color:var(--muted)">/mo</span></div>
         <ul style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:5px">
           <li>✓ <strong style="color:var(--text)">Unlimited</strong> tailors</li>
-          <li>✓ <strong style="color:var(--text)">80</strong> job searches / mo</li>
+          <li>✓ <strong style="color:var(--text)">Unlimited</strong> job searches</li>
           <li>✓ Cover letter generator</li>
           <li>✓ ATS keyword optimizer</li>
-          <li>✓ Before/after diff viewer</li>
+          <li>✓ Skill gap analysis</li>
+          <li>✓ Resume builder wizard</li>
           <li>✓ Interview prep</li>
-          <li>✓ <strong style="color:var(--text)">Resume templates</strong></li>
-          <li>✓ <strong style="color:var(--text)">Resume builder</strong> wizard</li>
+          <li>✓ <strong style="color:var(--text)">Resume templates</strong> (4 formats)</li>
           <li>✓ AI responsibility suggestions</li>
         </ul>
         <a href="https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00" target="_blank"
@@ -2246,15 +2359,23 @@
     <div class="welcome-logo">1stStep<span>.ai</span></div>
 
     <h2 style="font-size:22px;font-weight:800;color:var(--text);line-height:1.25;margin:0 0 10px">
-      Get 3× more interviews —<br><span style="background:linear-gradient(90deg,#60A5FA,#818CF8);-webkit-background-clip:text;-webkit-text-fill-color:transparent">starting right now.</span>
+      See exactly why you're not<br><span style="background:linear-gradient(90deg,#60A5FA,#818CF8);-webkit-background-clip:text;-webkit-text-fill-color:transparent">getting callbacks.</span>
     </h2>
-    <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 22px">
-      Upload your resume. Paste any job posting.<br>
-      1stStep.ai rewrites your resume for that exact role in <strong style="color:var(--text)">30 seconds</strong> — keyword-optimized, ATS-ready, uniquely tailored.
+    <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 18px">
+      1stStep.ai shows your <strong style="color:var(--text)">skill gaps</strong>, rewrites your resume for that exact role, and writes a cover letter — in <strong style="color:var(--text)">30 seconds</strong>.
     </p>
 
+    <!-- Feature chips -->
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-bottom:20px">
+      <span style="padding:4px 10px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#34D399">📊 Skill gap analysis</span>
+      <span style="padding:4px 10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">🔍 ATS match score</span>
+      <span style="padding:4px 10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">✍️ Resume rewrite</span>
+      <span style="padding:4px 10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">✉️ Cover letter</span>
+      <span style="padding:4px 10px;background:rgba(0,119,181,0.1);border:1px solid rgba(0,119,181,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#60A5FA">🔗 LinkedIn import</span>
+    </div>
+
     <!-- Minimal steps — visual only -->
-    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:22px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px;flex-wrap:wrap">
       <div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--dark);border:1px solid var(--border);border-radius:8px;font-size:12px">
         <span>📄</span><span>Upload resume</span>
       </div>
@@ -2264,7 +2385,7 @@
       </div>
       <span style="color:var(--dark3);font-size:12px">→</span>
       <div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(26,86,219,0.12);border:1px solid rgba(26,86,219,0.3);border-radius:8px;font-size:12px;color:#93C5FD;font-weight:600">
-        <span>✨</span><span>Tailored resume</span>
+        <span>📊</span><span>Gap report + tailored resume</span>
       </div>
     </div>
 
@@ -2276,7 +2397,7 @@
         line-height:1.35;text-align:center;
       ">
         📄 I have a resume<br>
-        <span style="font-size:11px;font-weight:400;opacity:.85">Upload or paste it</span>
+        <span style="font-size:11px;font-weight:400;opacity:.85">Upload, paste, or import from LinkedIn</span>
       </button>
       <button onclick="dismissWelcome('build')" style="
         padding:13px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;
@@ -2291,7 +2412,7 @@
         <span style="font-size:11px;font-weight:400;opacity:.75">Step-by-step wizard</span>
       </button>
     </div>
-    <p style="font-size:12px;color:var(--dark3);margin-top:12px;margin-bottom:0">Free to try · No credit card · 3 tailors on us</p>
+    <p style="font-size:12px;color:var(--dark3);margin-top:12px;margin-bottom:0">Free to try · No credit card · 3 tailors + 5 searches on us</p>
     <p style="font-size:11px;color:var(--muted);margin-top:8px;margin-bottom:0">
       Returning user?
       <button onclick="triggerRestoreBackup()" style="background:none;border:none;color:var(--brand);font-size:11px;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;font-family:'Inter',sans-serif">Restore from backup →</button>
@@ -2884,6 +3005,11 @@ function showProgress() {
   document.getElementById('resultsPanel').classList.remove('visible');
   document.getElementById('progressPanel').classList.add('visible');
   [1,2,3,4,5].forEach(n => setStep(n, null));
+  // Reset skill gap widgets for next run
+  const sgp = document.getElementById('skillGapPreview');
+  if (sgp) { sgp.style.display = 'none'; const b = document.getElementById('skillGapBody'); if (b) b.innerHTML = ''; }
+  const sgc = document.getElementById('skillGapCard');
+  if (sgc) sgc.style.display = 'none';
 }
 
 function showResults() {
@@ -3031,6 +3157,9 @@ ${resumeRaw}
     setStep(1, 'done');
     setStep(2, 'done');
 
+    // Show skill gap preview while Step 3 loads (zero extra API cost)
+    showSkillGapPreview(gapData);
+
     // ── STEP 3: Resume Generation ────────────────────────────
     setStep(3, 'active');
     const resumeResult = await callClaude(
@@ -3151,6 +3280,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
     // ── Store & Display Results ───────────────────────────────
     results = { resume: atsClean, keywords: { ...kwData, ...gapData }, changes, coverLetter, score: gapData };
     renderResults();
+    renderSkillGapCard(gapData);   // ← skill gap card (free: teaser, paid: full)
     showResults();
     // Save to tailored resume history — prefer live job data if tailored from a job card
     const _srcJob = lastTailoredJobId
@@ -3616,12 +3746,13 @@ const IS_LOCAL_DEV = window.location.protocol === 'file:' ||
 function canSearch() { return !IS_LOCAL_DEV || !!adzunaAppKey; }
 
 // ── Monthly Usage Limits ───────────────────────────────────────────────────
-// Limits are per calendar month. Free: 3 searches / 2 tailors.
-// Essential: 40 searches / 20 tailors. Complete: 80 searches / 40 tailors.
+// Free: 5 searches / 3 tailors / 0 cover letters.
+// Essential $19/mo: 60 searches / 30 tailors / 30 cover letters.
+// Complete $39/mo: unlimited everything.
 const LIMITS = {
-  free:      { searches: 3,  tailors: 3,   coverLetters: 3   },
-  essential: { searches: 40, tailors: 25,  coverLetters: 25  },
-  complete:  { searches: 80, tailors: 999, coverLetters: 999 },
+  free:      { searches: 5,   tailors: 3,   coverLetters: 0   },
+  essential: { searches: 60,  tailors: 30,  coverLetters: 30  },
+  complete:  { searches: 999, tailors: 999, coverLetters: 999 },
 };
 // Stripe payment links
 const STRIPE_LINKS = {
@@ -3659,16 +3790,16 @@ function setModalBilling(mode) {
   const ep = document.getElementById('modal-essential-price');
   const en = document.getElementById('modal-essential-note');
   const ec = document.getElementById('modal-essential-cta');
-  if (ep) ep.textContent = '$' + (isAnnual ? '29' : '49');
-  if (en) en.textContent = isAnnual ? 'Billed $348/year — save $240' : '';
+  if (ep) ep.textContent = '$' + (isAnnual ? '11' : '19');
+  if (en) en.textContent = isAnnual ? 'Billed $132/year — save $96' : '';
   if (ec) { ec.href = STRIPE_LINKS.essential[period]; ec.textContent = isAnnual ? 'Get Essential — Annual' : 'Get Essential'; }
 
   // Complete
   const cp = document.getElementById('modal-complete-price');
   const cn = document.getElementById('modal-complete-note');
   const cc = document.getElementById('modal-complete-cta');
-  if (cp) cp.textContent = '$' + (isAnnual ? '59' : '99');
-  if (cn) cn.textContent = isAnnual ? 'Billed $708/year — save $480' : '';
+  if (cp) cp.textContent = '$' + (isAnnual ? '23' : '39');
+  if (cn) cn.textContent = isAnnual ? 'Billed $276/year — save $192' : '';
   if (cc) { cc.href = STRIPE_LINKS.complete[period]; cc.textContent = isAnnual ? 'Get Complete — Annual' : 'Get Complete'; }
 }
 
@@ -7342,6 +7473,189 @@ function triggerRestoreBackup() {
     document.body.appendChild(input);
   }
   input.click();
+}
+
+// ── Skill Gap Analysis ─────────────────────────────────────────────────────
+// Renders inline during progress (preview) and full card in results.
+// Zero extra API cost — data is already in gapData from the existing Haiku call.
+
+function _sgPill(label, color) {
+  // color: 'green' | 'yellow' | 'red'
+  const map = {
+    green:  { bg: 'rgba(52,211,153,0.12)', border: 'rgba(52,211,153,0.3)',  text: '#34D399' },
+    yellow: { bg: 'rgba(250,204,21,0.12)',  border: 'rgba(250,204,21,0.3)',   text: '#FCD34D' },
+    red:    { bg: 'rgba(239,68,68,0.1)',    border: 'rgba(239,68,68,0.3)',   text: '#FCA5A5' },
+  };
+  const c = map[color] || map.yellow;
+  return `<span style="display:inline-block;padding:2px 8px;border-radius:100px;background:${c.bg};border:1px solid ${c.border};color:${c.text};font-size:11px;font-weight:600;white-space:nowrap">${label}</span>`;
+}
+
+function showSkillGapPreview(gapData) {
+  const el = document.getElementById('skillGapPreview');
+  const body = document.getElementById('skillGapBody');
+  if (!el || !body) return;
+
+  const matched  = (gapData.matched_required || []).slice(0, 4);
+  const missing  = (gapData.missing_required || []).slice(0, 4);
+  const scoreBefore = gapData.match_score_before || 0;
+  const scoreAfter  = gapData.match_score_after_estimate || 0;
+
+  body.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+      <div style="flex:1">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px">Before</div>
+        <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${scoreBefore}%;background:rgba(239,68,68,0.6);border-radius:3px;transition:width 0.6s ease"></div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">${scoreBefore}% match</div>
+      </div>
+      <div style="font-size:16px;color:var(--muted)">→</div>
+      <div style="flex:1">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px">After (est.)</div>
+        <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${scoreAfter}%;background:#34D399;border-radius:3px;transition:width 0.6s ease"></div>
+        </div>
+        <div style="font-size:10px;color:#34D399;margin-top:2px">${scoreAfter}% match</div>
+      </div>
+    </div>
+    ${matched.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${matched.map(s => _sgPill('✓ ' + s, 'green')).join('')}</div>` : ''}
+    ${missing.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${missing.slice(0,2).map(s => _sgPill('✗ ' + s, 'red')).join('')}${missing.length > 2 ? _sgPill(`+${missing.length-2} gaps`, 'red') : ''}</div>` : ''}
+  `;
+  el.style.display = 'block';
+}
+
+function renderSkillGapCard(gapData) {
+  const card = document.getElementById('skillGapCard');
+  if (!card) return;
+
+  const isEssentialOrAbove = currentTier === 'essential' || currentTier === 'complete';
+
+  const matched  = gapData.matched_required  || [];
+  const matchedP = gapData.matched_preferred || [];
+  const missing  = gapData.missing_required  || [];
+  const missingP = gapData.missing_preferred || [];
+  const strengths = gapData.top_strengths   || [];
+  const scoreBefore = gapData.match_score_before || 0;
+  const scoreAfter  = gapData.match_score_after_estimate || 0;
+  const lift = scoreAfter - scoreBefore;
+
+  // Build section HTML helper
+  const section = (title, pills, color) => pills.length ? `
+    <div style="margin-bottom:10px">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:5px">${title}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">${pills.map(s => _sgPill(s, color)).join('')}</div>
+    </div>` : '';
+
+  const scoreBar = (pct, color) => `
+    <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:3px">
+      <div style="height:100%;width:${pct}%;background:${color};border-radius:3px"></div>
+    </div>`;
+
+  if (!isEssentialOrAbove) {
+    // Free users: teaser + upgrade CTA
+    card.innerHTML = `
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:700;color:var(--fg);margin-bottom:4px">📊 Skill Gap Analysis</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.5">
+            You matched <strong style="color:#34D399">${matched.length} of ${matched.length + missing.length} required skills</strong>.
+            ${missing.length > 0 ? `Missing: <span style="filter:blur(4px);user-select:none;pointer-events:none">${missing.slice(0,3).join(', ')}</span>` : 'Great coverage!'}
+          </div>
+          ${scoreBar(scoreBefore, 'rgba(239,68,68,0.5)')}
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">Current match: ${scoreBefore}% → after tailoring: ~${scoreAfter}%</div>
+        </div>
+        <button onclick="openUpgradeModal()" style="flex-shrink:0;padding:7px 14px;background:linear-gradient(135deg,#6366F1,#4F46E5);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap">
+          Unlock Full Analysis →
+        </button>
+      </div>`;
+    card.style.display = 'block';
+    return;
+  }
+
+  // Essential / Complete: full analysis
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:13px;font-weight:800;color:var(--fg)">📊 Skill Gap Analysis</div>
+      <div style="display:flex;gap:16px">
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--muted)">Before</div>
+          <div style="font-size:18px;font-weight:800;color:${scoreBefore < 50 ? '#FCA5A5' : '#FCD34D'}">${scoreBefore}%</div>
+          ${scoreBar(scoreBefore, scoreBefore < 50 ? 'rgba(239,68,68,0.6)' : 'rgba(250,204,21,0.6)')}
+        </div>
+        <div style="display:flex;align-items:center;font-size:18px;color:var(--muted);padding-top:8px">→</div>
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--muted)">After (est.)</div>
+          <div style="font-size:18px;font-weight:800;color:${scoreAfter >= 70 ? '#34D399' : '#FCD34D'}">${scoreAfter}%</div>
+          ${scoreBar(scoreAfter, scoreAfter >= 70 ? '#34D399' : '#FCD34D')}
+        </div>
+        ${lift > 0 ? `<div style="display:flex;align-items:center;font-size:12px;color:#34D399;font-weight:700;padding-top:8px">+${lift}pts ↑</div>` : ''}
+      </div>
+    </div>
+    ${section('✅ Skills You Have (required)', matched, 'green')}
+    ${section('💡 Skills You Have (preferred)', matchedP.slice(0, 6), 'green')}
+    ${section('⚠️ Missing — Required', missing, 'red')}
+    ${section('📌 Missing — Nice to Have', missingP.slice(0, 5), 'yellow')}
+    ${section('🌟 Your Top Strengths', strengths, 'green')}
+    ${missing.length > 0 ? `
+      <div style="margin-top:8px;padding:10px 12px;background:rgba(250,204,21,0.08);border:1px solid rgba(250,204,21,0.2);border-radius:8px;font-size:11px;color:var(--muted);line-height:1.5">
+        <strong style="color:#FCD34D">💡 Pro tip:</strong> If you have experience with ${missing[0]}${missing[1] ? ` or ${missing[1]}` : ''}, add it to your resume notes and re-tailor. A keyword can make the difference between ATS pass and auto-reject.
+      </div>` : ''}
+  `;
+  card.style.display = 'block';
+}
+
+// ── LinkedIn PDF Import ────────────────────────────────────────────────────
+function openLinkedInImportModal() {
+  document.getElementById('linkedInImportModal').style.display = 'flex';
+}
+function closeLinkedInImportModal() {
+  document.getElementById('linkedInImportModal').style.display = 'none';
+}
+
+async function handleLinkedInPdfUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  closeLinkedInImportModal();
+  showToast('⏳ Reading your LinkedIn PDF…', 'info');
+
+  try {
+    // Re-use the existing PDF.js extraction pipeline
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const pages = [];
+    for (let i = 1; i <= Math.min(pdf.numPages, 20); i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      pages.push(content.items.map(s => s.str).join(' '));
+    }
+    const text = pages.join('\n').trim();
+
+    if (!text || text.length < 50) {
+      showToast('⚠️ Could not extract text from this PDF. Try a different file.', 'error');
+      return;
+    }
+
+    // Sanitize and load into the resume input exactly like a regular upload
+    const sanitized = sanitizeResumeText(text);
+    document.getElementById('resumeText').value = sanitized;
+    saveResume({ source: 'linkedin-pdf', text: sanitized });
+
+    // Show the file-loaded badge
+    document.getElementById('fileLoaded').style.display = 'flex';
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileDrop').style.display = 'none';
+
+    // Reveal the JD section
+    document.getElementById('jdSection').style.display = 'block';
+
+    showToast('✅ LinkedIn profile imported! Now paste a job description.', 'success');
+  } catch (err) {
+    console.error('LinkedIn PDF import error:', err);
+    showToast('❌ Could not read that PDF. Make sure it\'s a LinkedIn-exported file.', 'error');
+  }
+  // Reset input so same file can be re-selected if needed
+  event.target.value = '';
 }
 
 </script>
