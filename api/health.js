@@ -79,10 +79,12 @@ async function getStripePaidCount() {
 // ── Email blast helpers ──────────────────────────────────────────────────────
 
 async function fetchContactsByTag(tag) {
-  const contacts = [];
+  // Fetch all contacts and filter by tag client-side — GHL's tag query param
+  // is unreliable across API versions, and at beta scale this is fine.
+  const all = [];
   let after = null;
   for (let page = 0; page < 20; page++) {
-    const params = new URLSearchParams({ locationId: process.env.GHL_LOCATION_ID, tags: tag, limit: '100' });
+    const params = new URLSearchParams({ locationId: process.env.GHL_LOCATION_ID, limit: '100' });
     if (after) params.set('startAfter', after);
     const res = await fetch(`${GHL_BASE}/contacts/?${params}`, { headers: ghlHeaders() });
     if (!res.ok) {
@@ -91,12 +93,12 @@ async function fetchContactsByTag(tag) {
     }
     const data  = await res.json();
     const batch = data.contacts || [];
-    contacts.push(...batch);
+    all.push(...batch);
     if (batch.length < 100) break;
     after = data.meta?.startAfter || null;
     if (!after) break;
   }
-  return contacts;
+  return all.filter(c => (c.tags || []).includes(tag));
 }
 
 function esc(s) {
