@@ -164,22 +164,29 @@ export default async function handler(req, res) {
             }
           } else {
             // No opportunity found — create one in Trial Ending stage
-            await fetch(`${GHL_BASE}/opportunities/`, {
-              method:  'POST',
-              headers: ghlHeaders(apiKey),
-              body:    JSON.stringify({
-                locationId,
-                pipelineId,
-                pipelineStageId: trialStageId,
-                contactId:  contact.id,
-                name:       `${contact.firstName || ''} ${contact.lastName || ''} — Beta Expiring`.trim(),
-                status:     'open',
-                source:     '1stStep.ai Beta Expiry',
-              }),
-            }).catch(() => {});
-            await addTag(apiKey, contact.id, 'trial_ending');
-            results.moved++;
-            console.log(`✅ Created Trial Ending opportunity: ${contact.email}`);
+            try {
+              const createRes = await fetch(`${GHL_BASE}/opportunities/`, {
+                method:  'POST',
+                headers: ghlHeaders(apiKey),
+                body:    JSON.stringify({
+                  locationId,
+                  pipelineId,
+                  pipelineStageId: trialStageId,
+                  contactId:  contact.id,
+                  name:       `${contact.firstName || ''} ${contact.lastName || ''} — Beta Expiring`.trim(),
+                  status:     'open',
+                  source:     '1stStep.ai Beta Expiry',
+                }),
+              });
+              if (!createRes.ok) throw new Error(`Opportunity create failed: ${createRes.status}`);
+              // Only tag after opportunity is confirmed created
+              await addTag(apiKey, contact.id, 'trial_ending');
+              results.moved++;
+              console.log(`✅ Created Trial Ending opportunity: ${contact.email}`);
+            } catch (err) {
+              console.error(`Failed to create Trial Ending opportunity for ${contact.email}:`, err.message);
+              results.skipped++;
+            }
           }
         }
       } catch (err) {

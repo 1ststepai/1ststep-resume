@@ -5143,6 +5143,7 @@ function renderTailoredHistory() {
           <button class="btn-tailor-dl primary" onclick="downloadTailorEntryDocx('${entry.id}')">⬇ Resume (.docx)</button>
           <button class="btn-tailor-dl" onclick="copyTailorEntryResume('${entry.id}')">📋 Copy Resume</button>
           ${hasCover ? `<button class="btn-tailor-dl" onclick="downloadTailorEntryCoverLetter('${entry.id}')">⬇ Cover Letter (.docx)</button><button class="btn-tailor-dl" onclick="copyTailorEntryCoverLetter('${entry.id}')">📋 Copy Cover Letter</button>` : ''}
+          <button class="btn-tailor-dl" onclick="openTemplateFromHistory('${entry.id}')">🎨 Template</button>
           ${entry.jobId && isApplied(entry.jobId)
             ? `<span class="btn-tailor-applied-badge">✓ Applied</span>`
             : `<button class="btn-tailor-dl apply-now" onclick="applyNowFromHistory('${entry.id}')">${entry.jobUrl ? '🚀 Apply Now' : '✓ Mark Applied'}</button>`}
@@ -6728,6 +6729,25 @@ const TEMPLATE_PREVIEWS = {
 };
 
 let _parsedResumeData = null;
+let _historyTemplateResume = null;
+
+function openTemplateFromHistory(id) {
+  const entry = getTailorHistory().find(e => e.id === id);
+  if (!entry?.resume) { showToast('No resume found for this entry.', 'info'); return; }
+  _historyTemplateResume = entry.resume;
+  openTemplateModal();
+}
+
+function setTemplatePreview(id, name) {
+  const html = TEMPLATE_PREVIEWS[id];
+  if (!html) return;
+  const empty   = document.getElementById('templatePreviewEmpty');
+  const content = document.getElementById('templatePreviewContent');
+  const nameEl  = document.getElementById('templatePreviewName');
+  if (empty)   empty.style.display   = 'none';
+  if (content) { content.innerHTML = html; content.style.display = 'block'; }
+  if (nameEl)  nameEl.textContent = name;
+}
 
 function openTemplateModal() {
   // Templates are a Complete-only feature
@@ -6738,10 +6758,18 @@ function openTemplateModal() {
   }
 
   const resumeEl = document.getElementById('resumeOutput');
-  if (!resumeEl?.innerText?.trim()) {
+  if (!resumeEl?.innerText?.trim() && !_historyTemplateResume) {
     showToast('Please tailor your resume first.', 'info');
     return;
   }
+
+  // Reset preview pane
+  const previewEmpty   = document.getElementById('templatePreviewEmpty');
+  const previewContent = document.getElementById('templatePreviewContent');
+  const previewName    = document.getElementById('templatePreviewName');
+  if (previewEmpty)   { previewEmpty.style.display = 'flex'; }
+  if (previewContent) { previewContent.style.display = 'none'; previewContent.innerHTML = ''; }
+  if (previewName)    { previewName.textContent = ''; }
 
   // Build template cards
   const grid = document.getElementById('templateGrid');
@@ -6749,7 +6777,7 @@ function openTemplateModal() {
   grid.innerHTML = TEMPLATE_DEFS.map(t => `
     <div onclick="applyTemplate('${t.id}')"
          style="border:2px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color 0.15s,transform 0.15s,box-shadow 0.15s;background:#fff"
-         onmouseenter="this.style.borderColor='${t.accent}';this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.1)'"
+         onmouseenter="this.style.borderColor='${t.accent}';this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.1)';setTemplatePreview('${t.id}','${t.name}')"
          onmouseleave="this.style.borderColor='var(--border)';this.style.transform='';this.style.boxShadow=''">
       <div style="height:95px;overflow:hidden;background:#f8fafc;border-bottom:1px solid var(--border)">${TEMPLATE_PREVIEWS[t.id]}</div>
       <div style="padding:8px 10px">
@@ -6767,6 +6795,7 @@ function closeTemplateModal() {
   document.getElementById('templatePickerOverlay').style.display = 'none';
   document.getElementById('templateLoadingMsg').style.display = 'none';
   document.getElementById('templateGrid').style.display = 'grid';
+  _historyTemplateResume = null;
 }
 
 async function applyTemplate(id) {
@@ -6774,7 +6803,7 @@ async function applyTemplate(id) {
   document.getElementById('templateLoadingMsg').style.display = 'block';
 
   try {
-    const resumeText = results?.resume || document.getElementById('resumeOutput')?.innerText || '';
+    const resumeText = _historyTemplateResume || results?.resume || document.getElementById('resumeOutput')?.innerText || '';
     const data = await parseResumeForTemplate(resumeText);
     _parsedResumeData = data;
     closeTemplateModal();
@@ -7148,17 +7177,33 @@ ${_PRINT_BTN}
 
 <!-- ── Resume Template Picker Modal ────────────────────────────────────────── -->
 <div id="templatePickerOverlay" class="modal-overlay" style="display:none;z-index:1200" onclick="if(event.target===this)closeTemplateModal()">
-  <div class="modal" style="max-width:560px;width:100%">
+  <div class="modal" style="max-width:860px;width:100%">
     <div class="modal-header">
       <h3 style="margin:0;font-size:16px;font-weight:700;color:var(--text)">🎨 Choose a Resume Template</h3>
       <button class="modal-close" onclick="closeTemplateModal()">×</button>
     </div>
-    <div style="padding:20px">
-      <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">Select a template to apply to your tailored resume. Opens in a new window — use <strong>Print → Save as PDF</strong> to download.</p>
-      <div id="templateGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
-      <div id="templateLoadingMsg" style="display:none;text-align:center;padding:32px 20px">
-        <div class="spinner" style="margin:0 auto 12px"></div>
-        <div style="font-size:13px;color:var(--text2)">Parsing your resume…</div>
+    <div style="padding:20px;display:flex;gap:24px;align-items:flex-start">
+      <!-- Left: grid + instructions -->
+      <div style="flex:1;min-width:0">
+        <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">Select a template to apply to your tailored resume. Opens in a new window — use <strong>Print → Save as PDF</strong> to download.</p>
+        <div id="templateGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
+        <div id="templateLoadingMsg" style="display:none;text-align:center;padding:32px 20px">
+          <div class="spinner" style="margin:0 auto 12px"></div>
+          <div style="font-size:13px;color:var(--text2)">Parsing your resume…</div>
+        </div>
+      </div>
+      <!-- Right: live preview pane -->
+      <div style="flex-shrink:0;width:260px">
+        <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.6px">Preview</div>
+        <div id="templatePreviewPane" style="width:260px;height:336px;border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#f8fafc;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,0.07);position:relative">
+          <div id="templatePreviewEmpty" style="text-align:center;color:#94a3b8;font-size:12px;padding:20px;line-height:1.6">
+            <div style="font-size:32px;margin-bottom:10px">🖱️</div>
+            Hover a template<br>to preview
+          </div>
+          <!-- inner wrapper: 104×134 scaled ×2.5 → 260×335 -->
+          <div id="templatePreviewContent" style="display:none;position:absolute;top:0;left:0;width:104px;height:134px;transform:scale(2.5);transform-origin:top left;overflow:hidden"></div>
+        </div>
+        <div id="templatePreviewName" style="font-size:12px;font-weight:600;color:var(--text);text-align:center;margin-top:8px;height:18px"></div>
       </div>
     </div>
   </div>
