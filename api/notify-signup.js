@@ -124,42 +124,35 @@ export default async function handler(req, res) {
   const locationId = process.env.GHL_LOCATION_ID;
 
   if (apiKey && locationId) {
-    const nameParts = fullName.split(/\s+/);
-    const ghlBody = JSON.stringify({
-      locationId,
-      email,
-      firstName: nameParts[0]  || '',
-      lastName:  nameParts.slice(1).join(' ') || '',
-      tags:      ['free', 'signup'],
-      source:    '1stStep.ai — Free Signup',
-    });
-    const ghlHeaders = {
-      'Authorization': `Bearer ${apiKey}`,
-      'Version':       '2021-07-28',
-      'Content-Type':  'application/json',
-    };
-
-    // Try up to 2 times (1 retry on failure)
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        const r = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
-          method: 'PUT', headers: ghlHeaders, body: ghlBody,
-        });
-        const data = await r.json();
-        if (data.contact?.id) {
-          console.log(`✅ GHL contact captured (attempt ${attempt}): ${data.contact.id} (${email})`);
-          results.ghl = 'ok';
-          break;
-        } else {
-          console.error(`GHL upsert failed (attempt ${attempt}):`, JSON.stringify(data));
-          results.ghl = 'error';
-          if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
-        }
-      } catch (err) {
-        console.error(`GHL upsert error (attempt ${attempt}):`, err.message);
+    try {
+      const nameParts = fullName.split(/\s+/);
+      const r = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
+        method:  'PUT',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Version':       '2021-07-28',
+          'Content-Type':  'application/json',
+        },
+        body: JSON.stringify({
+          locationId,
+          email,
+          firstName: nameParts[0]  || '',
+          lastName:  nameParts.slice(1).join(' ') || '',
+          tags:      ['free', 'signup'],
+          source:    '1stStep.ai — Free Signup',
+        }),
+      });
+      const data = await r.json();
+      if (data.contact?.id) {
+        console.log(`✅ GHL contact captured: ${data.contact.id} (${email})`);
+        results.ghl = 'ok';
+      } else {
+        console.error('GHL signup upsert failed:', JSON.stringify(data));
         results.ghl = 'error';
-        if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
       }
+    } catch (err) {
+      console.error('GHL signup upsert error:', err.message);
+      results.ghl = 'error';
     }
   } else {
     console.log('GHL env vars not set — skipping CRM capture');

@@ -95,32 +95,26 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, result: 'skipped' });
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
-  const ghlBody = JSON.stringify({ locationId, email: normalizedEmail, tags });
-  const ghlHeaders = {
-    'Authorization': `Bearer ${apiKey}`,
-    'Version':       '2021-07-28',
-    'Content-Type':  'application/json',
-  };
-
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    try {
-      const r = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
-        method: 'PUT', headers: ghlHeaders, body: ghlBody,
-      });
-      if (!r.ok) throw new Error(`GHL returned ${r.status}`);
-      const data = await r.json();
-      if (data.contact?.id) {
-        console.log(`✅ GHL event tracked [${event}] (attempt ${attempt}): ${data.contact.id} (${normalizedEmail})`);
-        return res.status(200).json({ ok: true, result: 'ok', contactId: data.contact.id });
-      } else {
-        console.error(`GHL event tag failed (attempt ${attempt}):`, JSON.stringify(data));
-        if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
-      }
-    } catch (err) {
-      console.error(`GHL event track error (attempt ${attempt}):`, err.message);
-      if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
+  try {
+    const r = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
+      method:  'PUT',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Version':       '2021-07-28',
+        'Content-Type':  'application/json',
+      },
+      body: JSON.stringify({ locationId, email, tags }),
+    });
+    const data = await r.json();
+    if (data.contact?.id) {
+      console.log(`✅ GHL event tracked [${event}]: ${data.contact.id} (${email})`);
+      return res.status(200).json({ ok: true, result: 'ok', contactId: data.contact.id });
+    } else {
+      console.error('GHL event tag update failed:', JSON.stringify(data));
+      return res.status(200).json({ ok: false, result: 'ghl_error' });
     }
+  } catch (err) {
+    console.error('GHL event track error:', err.message);
+    return res.status(200).json({ ok: false, result: 'error' });
   }
-  return res.status(200).json({ ok: false, result: 'error' });
 }

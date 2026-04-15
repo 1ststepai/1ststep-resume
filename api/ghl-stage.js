@@ -104,7 +104,7 @@ export default async function handler(req, res) {
 
     if (!opportunity?.id) {
       // No opportunity yet — create one in the target stage
-      const createRes = await fetch('https://services.leadconnectorhq.com/opportunities/', {
+      await fetch('https://services.leadconnectorhq.com/opportunities/', {
         method:  'POST',
         headers: GHL_HEADERS,
         body: JSON.stringify({
@@ -116,15 +116,13 @@ export default async function handler(req, res) {
           status: 'open',
         }),
       });
-      if (!createRes.ok) throw new Error(`Opportunity create failed: ${createRes.status}`);
     } else {
       // Move existing opportunity to new stage
-      const updateRes = await fetch(`https://services.leadconnectorhq.com/opportunities/${opportunity.id}`, {
+      await fetch(`https://services.leadconnectorhq.com/opportunities/${opportunity.id}`, {
         method:  'PUT',
         headers: GHL_HEADERS,
         body: JSON.stringify({ pipelineStageId: stageId }),
       });
-      if (!updateRes.ok) throw new Error(`Opportunity update failed: ${updateRes.status}`);
     }
 
     console.log(`✅ GHL stage updated: ${cleanEmail} → ${stage}`);

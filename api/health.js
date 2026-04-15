@@ -19,99 +19,9 @@
 
 export const maxDuration = 30;
 
-// ── Admin stats helpers ──────────────────────────────────────────────────────
-const GHL_BASE = 'https://services.leadconnectorhq.com';
-
-function ghlHeaders() {
-  return {
-    'Authorization': `Bearer ${process.env.GHL_API_KEY}`,
-    'Version': '2021-07-28',
-  };
-}
-
-async function countByTag(tag) {
-  try {
-    const url = `${GHL_BASE}/contacts/?locationId=${encodeURIComponent(process.env.GHL_LOCATION_ID)}&limit=1&tags[]=${encodeURIComponent(tag)}`;
-    const r = await fetch(url, { headers: ghlHeaders() });
-    if (!r.ok) return null;
-    const d = await r.json();
-    return d.meta?.total ?? d.contacts?.length ?? null;
-  } catch { return null; }
-}
-
-async function countTotal() {
-  // Count only 1stStep.ai app users — tagged 'signup' at registration
-  return countByTag('signup');
-}
-
-async function getRecentContacts(limit = 15) {
-  try {
-    // Fetch 100 contacts and sort client-side — GHL doesn't reliably sort via query params
-    const url = `${GHL_BASE}/contacts/?locationId=${encodeURIComponent(process.env.GHL_LOCATION_ID)}&limit=100`;
-    const r = await fetch(url, { headers: ghlHeaders() });
-    if (!r.ok) return [];
-    const d = await r.json();
-    const contacts = (d.contacts || []).map(c => ({
-      id: c.id,
-      name: [c.firstName, c.lastName].filter(Boolean).join(' ') || c.email || 'Unknown',
-      email: c.email || '',
-      tags: c.tags || [],
-      dateAdded: c.dateAdded || c.createdAt || null,
-    }));
-    return contacts
-      .sort((a, b) => new Date(b.dateAdded || 0) - new Date(a.dateAdded || 0))
-      .slice(0, limit);
-  } catch { return []; }
-}
-
-async function getStripePaidCount() {
-  try {
-    if (!process.env.STRIPE_SECRET_KEY) return 0;
-    const { default: Stripe } = await import('stripe');
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' });
-    const subs = await stripe.subscriptions.list({ status: 'active', limit: 100 });
-    return subs.data.length;
-  } catch { return 0; }
-}
-
 export default async function handler(req, res) {
   // Only allow GET
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
-
-  // ── Admin stats mode (?mode=admin&secret=ADMIN_SECRET) ───────────────────────
-  if (req.query.mode === 'admin') {
-    const provided = req.headers['x-admin-secret'] || req.query.secret;
-    const expected = process.env.ADMIN_SECRET;
-    if (!expected || provided !== expected) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-    res.setHeader('Cache-Control', 'no-store');
-    const [totalR, betaR, activeR, powerR, essentialR, completeR, recentR, stripeR] =
-      await Promise.allSettled([
-        countTotal(),
-        countByTag('beta'),
-        countByTag('active_user'),
-        countByTag('power_user'),
-        countByTag('converted_essential'),
-        countByTag('converted_complete'),
-        getRecentContacts(15),
-        getStripePaidCount(),
-      ]);
-    const v = (r, fb) => r.status === 'fulfilled' ? (r.value ?? fb) : fb;
-    return res.status(200).json({
-      funnel: {
-        total:       v(totalR,     null),
-        beta:        v(betaR,      null),
-        activeUsers: v(activeR,    null),
-        powerUsers:  v(powerR,     null),
-        paid:        v(stripeR,    0),
-        essential:   v(essentialR, null),
-        complete:    v(completeR,  null),
-      },
-      recent:    v(recentR, []),
-      updatedAt: new Date().toISOString(),
-    });
-  }
 
   // Auth — accepts either:
   //   1. ?secret=HEALTH_CHECK_SECRET  (manual / external cron calls)

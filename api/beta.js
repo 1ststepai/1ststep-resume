@@ -129,54 +129,42 @@ export default async function handler(req, res) {
     if (firstName) ghlPayload.firstName = firstName.trim();
     if (lastName)  ghlPayload.lastName  = lastName.trim();
 
-    // Retry upsert once on failure
-    let contactId = null;
-    const ghlUpsertHeaders = {
-      'Authorization': `Bearer ${apiKey}`,
-      'Version':       '2021-07-28',
-      'Content-Type':  'application/json',
-    };
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        const r = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
-          method: 'PUT', headers: ghlUpsertHeaders, body: JSON.stringify(ghlPayload),
-        });
-        if (!r.ok) throw new Error(`GHL returned ${r.status}`);
-        const data = await r.json();
-        contactId = data?.contact?.id || data?.id || null;
-        if (contactId) {
-          console.log(`✅ GHL beta contact upserted (attempt ${attempt}): ${contactId} (${cleanEmail})`);
-          break;
-        } else {
-          console.error(`GHL beta upsert failed (attempt ${attempt}):`, JSON.stringify(data));
-          if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
-        }
-      } catch (err) {
-        console.error(`GHL beta contact error (attempt ${attempt}):`, err.message);
-        if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
-      }
-    }
+    const contactRes = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
+      method:  'PUT',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Version':       '2021-07-28',
+        'Content-Type':  'application/json',
+      },
+      body: JSON.stringify(ghlPayload),
+    }).catch(err => { console.error('GHL contact error:', err.message); return null; });
 
     // ── Add to pipeline if IDs are configured ──────────────────────────────
-    if (contactId && pipelineId && betaStageId) {
-      const fullName = [firstName, lastName].filter(Boolean).join(' ') || cleanEmail;
-      try {
-        const oppRes = await fetch('https://services.leadconnectorhq.com/opportunities/', {
+    if (contactRes?.ok && pipelineId && betaStageId) {
+      const contactData = await contactRes.json().catch(() => ({}));
+      const contactId   = contactData?.contact?.id || contactData?.id;
+
+      if (contactId) {
+        const fullName = [firstName, lastName].filter(Boolean).join(' ') || cleanEmail;
+        await fetch('https://services.leadconnectorhq.com/opportunities/', {
           method:  'POST',
-          headers: ghlUpsertHeaders,
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Version':       '2021-07-28',
+            'Content-Type':  'application/json',
+          },
           body: JSON.stringify({
-            locationId, pipelineId,
+            locationId,
+            pipelineId,
             pipelineStageId: betaStageId,
             contactId,
             name:   `${fullName} — Beta Signup`,
             status: 'open',
             source: '1stStep.ai Beta',
           }),
-        });
-        if (!oppRes.ok) throw new Error(`GHL opportunity create failed: ${oppRes.status}`);
+        }).catch(err => console.error('GHL opportunity error:', err.message));
+
         console.log(`✅ GHL pipeline opportunity created for ${cleanEmail}`);
-      } catch (err) {
-        console.error('GHL opportunity error:', err.message);
       }
     }
   }

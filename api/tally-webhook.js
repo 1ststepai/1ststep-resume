@@ -84,33 +84,28 @@ async function upsertGHLContact(email) {
   const locationId = process.env.GHL_LOCATION_ID;
   if (!apiKey || !locationId) return null;
 
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    try {
-      const r = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
-        method:  'PUT',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Version':       '2021-07-28',
-          'Content-Type':  'application/json',
-        },
-        body: JSON.stringify({ locationId, email, tags: ['feedback_given'] }),
-      });
-      if (!r.ok) throw new Error(`GHL returned ${r.status}`);
-      const data = await r.json();
-      const contactId = data.contact?.id;
-      if (contactId) {
-        console.log(`✅ GHL contact upserted [feedback] (attempt ${attempt}): ${contactId} (${email})`);
-        return contactId;
-      } else {
-        console.error(`GHL contact upsert failed (attempt ${attempt}):`, JSON.stringify(data));
-        if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
-      }
-    } catch (err) {
-      console.error(`GHL upsert error (attempt ${attempt}):`, err.message);
-      if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
-    }
+  const r = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
+    method:  'PUT',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Version':       '2021-07-28',
+      'Content-Type':  'application/json',
+    },
+    body: JSON.stringify({
+      locationId,
+      email,
+      tags: ['feedback_given'],
+    }),
+  });
+
+  const data = await r.json();
+  const contactId = data.contact?.id;
+  if (contactId) {
+    console.log(`✅ GHL contact upserted [feedback]: ${contactId} (${email})`);
+  } else {
+    console.error('GHL contact upsert failed:', JSON.stringify(data));
   }
-  return null;
+  return contactId || null;
 }
 
 async function addGHLNote(contactId, noteBody) {
@@ -118,25 +113,24 @@ async function addGHLNote(contactId, noteBody) {
   const locationId = process.env.GHL_LOCATION_ID;
   if (!apiKey || !locationId || !contactId) return;
 
-  try {
-    const r = await fetch(`https://services.leadconnectorhq.com/contacts/${contactId}/notes`, {
-      method:  'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Version':       '2021-07-28',
-        'Content-Type':  'application/json',
-      },
-      body: JSON.stringify({ userId: locationId, body: noteBody }),
-    });
-    if (!r.ok) throw new Error(`GHL returned ${r.status}`);
-    const data = await r.json();
-    if (data.note?.id) {
-      console.log(`✅ GHL note added: ${data.note.id}`);
-    } else {
-      console.error('GHL note creation failed:', JSON.stringify(data));
-    }
-  } catch (err) {
-    console.error('GHL note error:', err.message);
+  const r = await fetch(`https://services.leadconnectorhq.com/contacts/${contactId}/notes`, {
+    method:  'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Version':       '2021-07-28',
+      'Content-Type':  'application/json',
+    },
+    body: JSON.stringify({
+      userId: locationId, // required field — use locationId as userId
+      body:   noteBody,
+    }),
+  });
+
+  const data = await r.json();
+  if (data.note?.id) {
+    console.log(`✅ GHL note added: ${data.note.id}`);
+  } else {
+    console.error('GHL note creation failed:', JSON.stringify(data));
   }
 }
 
