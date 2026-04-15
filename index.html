@@ -2435,6 +2435,27 @@ let fileContent = '';
 document.addEventListener('DOMContentLoaded', () => {
   updateProfileBadge();
 
+  // ── Identify returning users in GHL chat widget on page load ──────────────
+  // Fires after widget script loads (~2s). Prevents returning users from
+  // appearing as anonymous random strings when they open the chat widget.
+  try {
+    const p = loadProfile();
+    if (p?.email) {
+      const fullName = [p.firstName, p.lastName].filter(Boolean).join(' ') || p.email;
+      const identify = () => {
+        try {
+          if (typeof window.LeadConnector !== 'undefined' && window.LeadConnector.setCustomerData) {
+            window.LeadConnector.setCustomerData({ email: p.email, name: fullName });
+          }
+        } catch (e) { /* silent */ }
+      };
+      // Try immediately, then retry after widget has had time to load
+      identify();
+      setTimeout(identify, 2000);
+      setTimeout(identify, 5000);
+    }
+  } catch (e) { /* silent */ }
+
   // ── Restore saved resume ───────────────────────────────────────────────
   try {
     const saved = loadResume();
