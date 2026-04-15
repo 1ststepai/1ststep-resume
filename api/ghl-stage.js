@@ -45,11 +45,12 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).set(headers).end();
   Object.entries(headers).forEach(([k, v]) => res.setHeader(k, v));
 
-  // ── TEMP: GET ?mode=page — fetch GHL funnel page JSON (remove after use) ──
-  if (req.method === 'GET' && req.query.mode === 'page') {
+  // ── TEMP: GET — fetch GHL funnel page JSON (remove after use) ──
+  if (req.method === 'GET') {
+    const qs       = new URL(req.url, 'https://x').searchParams;
     const apiKey     = process.env.GHL_API_KEY;
     const locationId = process.env.GHL_LOCATION_ID;
-    const pageId     = req.query.pageId || 'ccca26a1-f81e-41a8-affd-c7ce62f9d82f';
+    const pageId     = qs.get('pageId') || 'ccca26a1-f81e-41a8-affd-c7ce62f9d82f';
     if (!apiKey) return res.status(500).json({ error: 'GHL_API_KEY not set' });
     const r = await fetch(
       `https://services.leadconnectorhq.com/funnels/page?locationId=${locationId}&pageId=${pageId}`,
