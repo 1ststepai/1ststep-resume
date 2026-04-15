@@ -123,7 +123,7 @@ export default async function handler(req, res) {
     const ghlPayload = {
       locationId,
       email:  cleanEmail,
-      tags:   ['beta', 'complete', 'beta_2026'],
+      tags:   ['app_user', 'beta', 'complete', 'beta_2026'],
       // 'source' omitted — GHL rejects custom source strings with 400
     };
     if (firstName) ghlPayload.firstName = firstName.trim();

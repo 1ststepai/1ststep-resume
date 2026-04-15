@@ -130,7 +130,7 @@ export default async function handler(req, res) {
       email,
       firstName: nameParts[0]  || '',
       lastName:  nameParts.slice(1).join(' ') || '',
-      tags:      ['free', 'signup'],
+      tags:      ['app_user', 'free', 'signup'],
       // source omitted — GHL rejects custom source strings with 400
     });
     const ghlHeaders = {

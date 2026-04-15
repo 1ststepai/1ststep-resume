@@ -40,8 +40,8 @@ async function countByTag(tag) {
 }
 
 async function countTotal() {
-  // Count only 1stStep.ai app users — tagged 'signup' at registration
-  return countByTag('signup');
+  // Count all 1stStep.ai app users — tagged 'app_user' at registration
+  return countByTag('app_user');
 }
 
 async function getRecentContacts(limit = 15) {
@@ -86,27 +86,23 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     res.setHeader('Cache-Control', 'no-store');
-    const [totalR, betaR, activeR, powerR, essentialR, completeR, recentR, stripeR] =
+    const [appUserR, betaR, freeR, powerR, paidR, recentR] =
       await Promise.allSettled([
-        countTotal(),
-        countByTag('beta'),
-        countByTag('active_user'),
+        countByTag('app_user'),
+        countByTag('beta_2026'),
+        countByTag('free'),
         countByTag('power_user'),
-        countByTag('converted_essential'),
-        countByTag('converted_complete'),
-        getRecentContacts(15),
         getStripePaidCount(),
+        getRecentContacts(15),
       ]);
     const v = (r, fb) => r.status === 'fulfilled' ? (r.value ?? fb) : fb;
     return res.status(200).json({
       funnel: {
-        total:       v(totalR,     null),
-        beta:        v(betaR,      null),
-        activeUsers: v(activeR,    null),
-        powerUsers:  v(powerR,     null),
-        paid:        v(stripeR,    0),
-        essential:   v(essentialR, null),
-        complete:    v(completeR,  null),
+        total:       v(appUserR, null),
+        beta:        v(betaR,    null),
+        activeUsers: v(freeR,    null),
+        powerUsers:  v(powerR,   null),
+        paid:        v(paidR,    0),
       },
       recent:    v(recentR, []),
       updatedAt: new Date().toISOString(),
