@@ -1255,6 +1255,10 @@
       <button id="feedbackBtn" onclick="openFeedbackForm()" style="display:none;align-items:center;gap:5px;padding:6px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s" onmouseover="this.style.borderColor='var(--brand)';this.style.color='var(--brand)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
         <span>💬</span><span class="hide-mobile">Feedback</span>
       </button>
+      <div class="api-badge" onclick="downloadDataBackup()" title="Download a backup of your resume, history &amp; subscription — restore it on any browser">
+        <span>💾</span>
+        <span class="hide-mobile">Backup</span>
+      </div>
       <div class="api-badge" onclick="openProfileModal()">
         <span>👤</span>
         <span id="profileBadgeText" class="hide-mobile">Account</span>
@@ -1620,10 +1624,10 @@
         </div>
 
         <!-- Post-tailor account nudge — hidden once account is set -->
-        <div id="accountNudge" style="display:none;align-items:center;gap:10px;padding:10px 16px;background:rgba(99,102,241,0.1);border-bottom:1px solid rgba(99,102,241,0.25);font-size:13px">
-          <span style="color:#a5b4fc" id="accountNudgeText">💾 Save your account to track usage and pick up where you left off when your free tailors reset.</span>
-          <button onclick="openProfileModal()" style="flex-shrink:0;padding:4px 12px;background:#6366F1;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Save account →</button>
-          <button onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;margin-left:auto">✕</button>
+        <div id="accountNudge" style="display:none;align-items:center;gap:10px;padding:10px 16px;background:rgba(99,102,241,0.1);border-bottom:1px solid rgba(99,102,241,0.25);font-size:13px;flex-wrap:wrap">
+          <span style="color:#a5b4fc;flex:1;min-width:0" id="accountNudgeText">📌 Your resume and history are saved in <strong style="color:#c7d2fe">this browser only</strong> — clearing your browser removes them. Download a backup to keep your data safe.</span>
+          <button onclick="downloadDataBackup()" style="flex-shrink:0;padding:4px 12px;background:#6366F1;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">💾 Backup →</button>
+          <button onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;flex-shrink:0">✕</button>
         </div>
 
 
@@ -1997,8 +2001,8 @@
           <li>✓ Before/after diff viewer</li>
           <li>✓ Interview prep</li>
           <li>✓ <strong style="color:var(--fg)">Resume templates</strong></li>
-          <li>✓ LinkedIn optimizer</li>
-          <li>✓ Bulk apply mode</li>
+          <li>✓ <strong style="color:var(--fg)">Resume builder</strong> wizard</li>
+          <li>✓ AI responsibility suggestions</li>
         </ul>
         <a id="modal-complete-cta" href="https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00" target="_blank"
            style="margin-top:auto;display:block;text-align:center;padding:9px;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none">
@@ -2201,8 +2205,8 @@
           <li>✓ Before/after diff viewer</li>
           <li>✓ Interview prep</li>
           <li>✓ <strong style="color:var(--text)">Resume templates</strong></li>
-          <li>✓ LinkedIn optimizer</li>
-          <li>✓ Bulk apply mode</li>
+          <li>✓ <strong style="color:var(--text)">Resume builder</strong> wizard</li>
+          <li>✓ AI responsibility suggestions</li>
         </ul>
         <a href="https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00" target="_blank"
           style="margin-top:auto;display:block;text-align:center;padding:10px;background:linear-gradient(135deg,#4338CA,#6366F1);color:white;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none">
@@ -2288,6 +2292,10 @@
       </button>
     </div>
     <p style="font-size:12px;color:var(--dark3);margin-top:12px;margin-bottom:0">Free to try · No credit card · 3 tailors on us</p>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px;margin-bottom:0">
+      Returning user?
+      <button onclick="triggerRestoreBackup()" style="background:none;border:none;color:var(--brand);font-size:11px;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;font-family:'Inter',sans-serif">Restore from backup →</button>
+    </p>
   </div>
 </div>
 
@@ -7239,6 +7247,101 @@ body{font-family:'Inter',sans-serif;background:#fff;color:#1e293b;margin:0;font-
 </div>
 ${_PRINT_BTN}
 </body></html>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ── DATA BACKUP & RESTORE ──────────────────────────────────────────────────
+// Lets users download a JSON snapshot of all their localStorage data so they
+// can restore it on another browser/device without losing their subscription
+// token, applications, or tailoring history.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const _BACKUP_KEYS = [
+  '1ststep_sub_cache',   // tier token + email — MOST IMPORTANT
+  '1ststep_tier',        // current subscription tier
+  '1ststep_profile',     // saved name / email for profile
+  '1ststep_applications',// application tracker entries
+  '1ststep_tailored',    // tailoring history
+  '1ststep_location',    // saved job search location
+  'monthlyUsage',        // usage counters (so limits carry over)
+  'templateContact',     // saved contact info for templates
+  '1ststep_apply_count', // apply count
+];
+
+function downloadDataBackup() {
+  const backup = {
+    version:    2,
+    exportedAt: new Date().toISOString(),
+    app:        '1ststep.ai',
+    data:       {},
+  };
+
+  _BACKUP_KEYS.forEach(key => {
+    const val = localStorage.getItem(key);
+    if (val !== null) backup.data[key] = val;
+  });
+
+  if (!Object.keys(backup.data).length) {
+    showToast('Nothing to back up yet — tailor a resume first.', 'info');
+    return;
+  }
+
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `1ststep-backup-${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✅ Backup downloaded — keep this file safe to restore on any browser.', 'success');
+}
+
+function restoreDataBackup(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const backup = JSON.parse(e.target.result);
+      if (!backup.data || typeof backup.data !== 'object')
+        throw new Error('Invalid backup structure');
+
+      // Only restore known keys — never blindly write arbitrary data
+      let restored = 0;
+      _BACKUP_KEYS.forEach(key => {
+        if (backup.data[key] !== undefined) {
+          localStorage.setItem(key, backup.data[key]);
+          restored++;
+        }
+      });
+
+      if (!restored) {
+        showToast('No matching data found in that backup file.', 'error');
+        return;
+      }
+
+      showToast(`✅ ${restored} items restored — reloading…`, 'success');
+      setTimeout(() => location.reload(), 1400);
+    } catch (err) {
+      showToast('❌ Couldn\'t read that file — make sure it\'s a 1stStep backup.', 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function triggerRestoreBackup() {
+  let input = document.getElementById('_restoreFileInput');
+  if (!input) {
+    input = document.createElement('input');
+    input.type    = 'file';
+    input.id      = '_restoreFileInput';
+    input.accept  = '.json';
+    input.style.display = 'none';
+    input.onchange = () => { restoreDataBackup(input.files[0]); input.value = ''; };
+    document.body.appendChild(input);
+  }
+  input.click();
 }
 
 </script>
