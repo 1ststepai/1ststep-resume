@@ -17,7 +17,7 @@
  *   RESEND_API_KEY        — checked for presence + used to send report
  */
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 // ── Admin stats helpers ──────────────────────────────────────────────────────
 const GHL_BASE = 'https://services.leadconnectorhq.com';
@@ -76,6 +76,84 @@ async function getStripePaidCount() {
   } catch { return 0; }
 }
 
+// ── Email blast helpers ──────────────────────────────────────────────────────
+
+async function fetchContactsByTag(tag) {
+  const contacts = [];
+  let after = null;
+  for (let page = 0; page < 20; page++) {
+    const params = new URLSearchParams({ locationId: process.env.GHL_LOCATION_ID, tags: tag, limit: '100' });
+    if (after) params.set('startAfter', after);
+    const res = await fetch(`${GHL_BASE}/contacts/?${params}`, { headers: ghlHeaders() });
+    if (!res.ok) throw new Error(`GHL fetch failed ${res.status}`);
+    const data  = await res.json();
+    const batch = data.contacts || [];
+    contacts.push(...batch);
+    if (batch.length < 100) break;
+    after = data.meta?.startAfter || null;
+    if (!after) break;
+  }
+  return contacts;
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function buildBlastHtml(firstName) {
+  const name = esc(firstName || 'there');
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
+<body style="margin:0;padding:0;background:#F8FAFC;font-family:'Inter',system-ui,sans-serif">
+<div style="max-width:560px;margin:0 auto;padding:32px 16px">
+  <div style="text-align:center;margin-bottom:28px">
+    <div style="font-size:22px;font-weight:800;color:#0F172A;letter-spacing:-0.5px">1stStep.ai</div>
+    <div style="font-size:12px;color:#94A3B8;margin-top:2px;text-transform:uppercase;letter-spacing:1px">Beta Update</div>
+  </div>
+  <div style="background:#fff;border-radius:16px;border:1.5px solid #E2E8F0;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#4338CA 0%,#6366F1 100%);padding:28px 28px 24px">
+      <div style="font-size:28px;margin-bottom:8px">🎤</div>
+      <div style="font-size:20px;font-weight:700;color:#fff;line-height:1.3;margin-bottom:6px">Your Interview Cheat Sheet is here.</div>
+      <div style="font-size:14px;color:#C7D2FE;line-height:1.5">We just shipped a feature that turns your tailored resume into a complete interview prep kit — in about 40 seconds.</div>
+    </div>
+    <div style="padding:24px 28px">
+      <p style="font-size:14px;color:#475569;line-height:1.65;margin:0 0 20px">Hey ${name},</p>
+      <p style="font-size:14px;color:#475569;line-height:1.65;margin:0 0 20px">You've already tailored your resume. Now let's make sure you actually nail the interview.</p>
+      <div style="background:#F8FAFC;border-radius:10px;padding:18px 20px;margin-bottom:22px">
+        <div style="font-size:12px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px">What's in your cheat sheet</div>
+        <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px">
+          <div style="font-size:16px;flex-shrink:0">📋</div>
+          <div><div style="font-size:13.5px;font-weight:600;color:#0F172A;margin-bottom:2px">9 predicted interview questions</div><div style="font-size:12.5px;color:#64748B;line-height:1.5">Behavioral, technical, situational — with your personalized talking point for each one.</div></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px">
+          <div style="font-size:16px;flex-shrink:0">💬</div>
+          <div><div style="font-size:13.5px;font-weight:600;color:#0F172A;margin-bottom:2px">4 smart questions to ask them</div><div style="font-size:12.5px;color:#64748B;line-height:1.5">Questions that surface real intel and signal you've done your homework.</div></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="font-size:16px;flex-shrink:0">🛡️</div>
+          <div><div style="font-size:13.5px;font-weight:600;color:#0F172A;margin-bottom:2px">Red flags to get ahead of</div><div style="font-size:12.5px;color:#64748B;line-height:1.5">Based on your actual resume — with a ready reframe for each one.</div></div>
+        </div>
+      </div>
+      <div style="background:#EEF2FF;border-radius:10px;padding:16px 18px;margin-bottom:22px">
+        <div style="font-size:12px;font-weight:700;color:#4338CA;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">How to use it</div>
+        <div style="font-size:13px;color:#475569;line-height:1.7">1. Open <a href="https://app.1ststep.ai" style="color:#4338CA;font-weight:600">app.1ststep.ai</a><br>2. Go to your <strong>Tailored Resumes</strong> tab<br>3. Hit <strong>🎤 Interview Prep</strong> on any saved resume<br>4. Your cheat sheet is ready in ~40 seconds</div>
+      </div>
+      <p style="font-size:14px;color:#475569;line-height:1.65;margin:0 0 22px">You're one of the first people to use this. If anything feels off, just reply to this email — it goes straight to me.</p>
+      <a href="https://app.1ststep.ai" style="display:block;text-align:center;background:#4338CA;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:14px 24px;border-radius:10px;margin-bottom:20px">Open My Interview Cheat Sheet →</a>
+      <p style="font-size:13px;color:#94A3B8;text-align:center;margin:0">Go get it. 💪</p>
+    </div>
+    <div style="padding:16px 28px;border-top:1px solid #F1F5F9;background:#FAFAFA">
+      <p style="font-size:12px;color:#94A3B8;margin:0;text-align:center;line-height:1.6">You're receiving this because you're a 1stStep.ai beta user.<br>Questions? Reply directly — it goes straight to Evan.<br><a href="https://1ststep.ai" style="color:#CBD5E1;text-decoration:none">1stStep.ai</a></p>
+    </div>
+  </div>
+</div>
+</body></html>`;
+}
+
+function buildBlastText(firstName) {
+  const name = firstName || 'there';
+  return `Hey ${name},\n\nYour Interview Cheat Sheet just landed at 1stStep.ai.\n\nWe shipped a feature that turns your tailored resume into a complete interview prep kit in about 40 seconds.\n\nWhat's in it:\n• 9 predicted interview questions with your personalized talking point for each\n• 4 smart questions to ask the interviewer\n• Red flags from your actual resume — with a ready reframe for each one\n\nHow to use it:\n1. Open app.1ststep.ai\n2. Go to your Tailored Resumes tab\n3. Hit "Interview Prep" on any saved resume\n4. Your cheat sheet is ready in ~40 seconds\n\nYou're one of the first people to use this. If anything feels off, just reply.\n\nGo get it.\n— Evan\n\n---\nYou're receiving this because you're a 1stStep.ai beta user.`;
+}
+
 export default async function handler(req, res) {
   // Only allow GET
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
@@ -109,6 +187,64 @@ export default async function handler(req, res) {
       recent:    v(recentR, []),
       updatedAt: new Date().toISOString(),
     });
+  }
+
+  // ── Email blast mode (?action=blast) ────────────────────────────────────────
+  // POST-style action tunnelled through GET using x-admin-secret header.
+  // Usage: GET /api/health?action=blast&tag=beta&dryRun=true
+  if (req.query.action === 'blast') {
+    const provided = req.headers['x-admin-secret'] || req.query.secret;
+    const expected = process.env.ADMIN_SECRET;
+    if (!expected || provided !== expected) return res.status(401).json({ error: 'Unauthorized' });
+
+    const tag    = req.query.tag    || 'beta';
+    const dryRun = req.query.dryRun !== 'false'; // default true — must explicitly pass dryRun=false
+    const resendKey = process.env.RESEND_API_KEY;
+    const fromAddr  = process.env.RESEND_FROM || 'evan@1ststep.ai';
+
+    if (!resendKey) return res.status(500).json({ error: 'Resend not configured' });
+
+    let contacts;
+    try { contacts = await fetchContactsByTag(tag); }
+    catch (err) { return res.status(500).json({ error: `GHL fetch failed: ${err.message}` }); }
+
+    const eligible = contacts.filter(c => c.email && c.email.includes('@'));
+    const results  = { total: eligible.length, sent: 0, skipped: 0, errors: [], dryRun };
+
+    if (dryRun) {
+      results.preview = eligible.map(c => ({
+        email: c.email,
+        name:  [c.firstName, c.lastName].filter(Boolean).join(' ') || '(no name)',
+      }));
+      return res.status(200).json(results);
+    }
+
+    for (const contact of eligible) {
+      try {
+        const r = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from:     fromAddr,
+            to:       contact.email,
+            reply_to: 'evan@1ststep.ai',
+            subject:  'Your Interview Cheat Sheet just dropped 🎤',
+            html:     buildBlastHtml(contact.firstName),
+            text:     buildBlastText(contact.firstName),
+          }),
+        });
+        const data = await r.json();
+        if (r.ok) { results.sent++; console.log(`✅ Sent to ${contact.email}`); }
+        else { results.errors.push({ email: contact.email, error: data.message }); results.skipped++; }
+      } catch (err) {
+        results.errors.push({ email: contact.email, error: err.message });
+        results.skipped++;
+      }
+      await new Promise(r => setTimeout(r, 100)); // pace sends
+    }
+
+    console.log(`Blast complete: ${results.sent} sent, ${results.skipped} skipped`);
+    return res.status(200).json(results);
   }
 
   // Auth — accepts either:
