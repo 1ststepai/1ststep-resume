@@ -124,7 +124,7 @@ export default async function handler(req, res) {
       locationId,
       email:  cleanEmail,
       tags:   ['beta', 'complete', 'beta_2026'],
-      source: '1stStep.ai — Beta Access',
+      // 'source' omitted — GHL rejects custom source strings with 400
     };
     if (firstName) ghlPayload.firstName = firstName.trim();
     if (lastName)  ghlPayload.lastName  = lastName.trim();
@@ -141,18 +141,23 @@ export default async function handler(req, res) {
         const r = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
           method: 'PUT', headers: ghlUpsertHeaders, body: JSON.stringify(ghlPayload),
         });
-        if (!r.ok) throw new Error(`GHL returned ${r.status}`);
-        const data = await r.json();
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          // Log full body so we can see exactly what GHL rejected
+          console.error(`GHL beta upsert ${r.status} (attempt ${attempt}):`, JSON.stringify(data));
+          if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
+          continue;
+        }
         contactId = data?.contact?.id || data?.id || null;
         if (contactId) {
           console.log(`✅ GHL beta contact upserted (attempt ${attempt}): ${contactId} (${cleanEmail})`);
           break;
         } else {
-          console.error(`GHL beta upsert failed (attempt ${attempt}):`, JSON.stringify(data));
+          console.error(`GHL beta upsert no contactId (attempt ${attempt}):`, JSON.stringify(data));
           if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
         }
       } catch (err) {
-        console.error(`GHL beta contact error (attempt ${attempt}):`, err.message);
+        console.error(`GHL beta contact exception (attempt ${attempt}):`, err.message);
         if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
       }
     }
@@ -183,38 +188,44 @@ export default async function handler(req, res) {
 
   console.log(`✅ Beta access granted: ${cleanEmail} — expires ${new Date(expiresAt).toISOString()}`);
 
-  // ── Notify Evan via Resend ───────────────────────────────────────────────
+  // ── Notify Evan via Resend (FIRST — before GHL so timeout can't block it) ──
   const resendKey = process.env.RESEND_API_KEY;
   if (resendKey) {
-    const time    = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
-    const expires = new Date(expiresAt).toLocaleString('en-US', { timeZone: 'America/New_York' });
-    const resendRes = await fetch('https://api.resend.com/emails', {
-      method:  'POST',
-      headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from:    process.env.RESEND_FROM || 'onboarding@resend.dev',
-        to:      ['evan@1ststep.ai', cleanEmail],
-        reply_to: cleanEmail,
-        subject: `🧪 New beta user: ${firstName ? firstName + ' ' + lastName : cleanEmail}`,
-        html: `
-          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
-            <h2 style="margin:0 0 16px;color:#0F172A">New Beta User 🧪</h2>
-            <table style="width:100%;border-collapse:collapse">
-              ${firstName ? `<tr><td style="padding:8px 0;color:#64748B;font-size:14px;width:80px">Name</td><td style="padding:8px 0;font-size:14px;font-weight:600;color:#0F172A">${firstName} ${lastName}</td></tr>` : ''}
-              <tr><td style="padding:8px 0;color:#64748B;font-size:14px;width:80px">Email</td><td style="padding:8px 0;font-size:14px;font-weight:600;color:#0F172A"><a href="mailto:${cleanEmail}" style="color:#4338CA">${cleanEmail}</a></td></tr>
-              <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Joined</td><td style="padding:8px 0;font-size:14px;color:#0F172A">${time}</td></tr>
-              <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Expires</td><td style="padding:8px 0;font-size:14px;color:#0F172A">${expires}</td></tr>
-              <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Plan</td><td style="padding:8px 0;font-size:14px;color:#0F172A">Complete (15-day beta)</td></tr>
-            </table>
-            <div style="margin-top:20px;padding:12px 16px;background:#EEF2FF;border-radius:8px;font-size:13px;color:#4338CA">
-              Hit reply to reach them directly.
-            </div>
-          </div>`,
-      }),
-    }).catch(err => { console.error('Beta notification email failed:', err.message); return null; });
-    if (resendRes) {
+    try {
+      const time    = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
+      const expires = new Date(expiresAt).toLocaleString('en-US', { timeZone: 'America/New_York' });
+      const resendRes = await fetch('https://api.resend.com/emails', {
+        method:  'POST',
+        headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from:    process.env.RESEND_FROM || 'onboarding@resend.dev',
+          to:      ['evan@1ststep.ai'],
+          reply_to: cleanEmail,
+          subject: `🧪 New beta user: ${firstName ? firstName + ' ' + lastName : cleanEmail}`,
+          html: `
+            <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+              <h2 style="margin:0 0 16px;color:#0F172A">New Beta User 🧪</h2>
+              <table style="width:100%;border-collapse:collapse">
+                ${firstName ? `<tr><td style="padding:8px 0;color:#64748B;font-size:14px;width:80px">Name</td><td style="padding:8px 0;font-size:14px;font-weight:600;color:#0F172A">${firstName} ${lastName}</td></tr>` : ''}
+                <tr><td style="padding:8px 0;color:#64748B;font-size:14px;width:80px">Email</td><td style="padding:8px 0;font-size:14px;font-weight:600;color:#0F172A"><a href="mailto:${cleanEmail}" style="color:#4338CA">${cleanEmail}</a></td></tr>
+                <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Joined</td><td style="padding:8px 0;font-size:14px;color:#0F172A">${time}</td></tr>
+                <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Expires</td><td style="padding:8px 0;font-size:14px;color:#0F172A">${expires}</td></tr>
+                <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Plan</td><td style="padding:8px 0;font-size:14px;color:#0F172A">Complete (15-day beta)</td></tr>
+              </table>
+              <div style="margin-top:20px;padding:12px 16px;background:#EEF2FF;border-radius:8px;font-size:13px;color:#4338CA">
+                Hit reply to reach ${firstName || 'them'} directly.
+              </div>
+            </div>`,
+        }),
+      });
       const resendBody = await resendRes.json().catch(() => ({}));
-      console.log('Resend beta email status:', resendRes.status, JSON.stringify(resendBody));
+      if (resendRes.ok) {
+        console.log(`✅ Resend beta email sent: ${resendBody.id}`);
+      } else {
+        console.error('Resend beta email error:', resendRes.status, JSON.stringify(resendBody));
+      }
+    } catch (err) {
+      console.error('Resend beta email exception:', err.message);
     }
   } else {
     console.warn('RESEND_API_KEY not set — skipping beta notification email');

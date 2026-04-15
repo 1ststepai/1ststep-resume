@@ -131,7 +131,7 @@ export default async function handler(req, res) {
       firstName: nameParts[0]  || '',
       lastName:  nameParts.slice(1).join(' ') || '',
       tags:      ['free', 'signup'],
-      source:    '1stStep.ai — Free Signup',
+      // source omitted — GHL rejects custom source strings with 400
     });
     const ghlHeaders = {
       'Authorization': `Bearer ${apiKey}`,
