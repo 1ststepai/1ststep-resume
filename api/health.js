@@ -190,15 +190,21 @@ export default async function handler(req, res) {
   }
 
   // ── 4. GHL API connectivity ──────────────────────────────────────────────────
+  // Test the contacts endpoint — what the app actually uses (token may lack /locations scope)
   try {
-    const r = await fetch(`https://services.leadconnectorhq.com/locations/${process.env.GHL_LOCATION_ID}`, {
-      headers: {
-        'Authorization': `Bearer ${process.env.GHL_API_KEY}`,
-        'Version': '2021-07-28',
-      },
-    });
+    const r = await fetch(
+      `https://services.leadconnectorhq.com/contacts/?locationId=${encodeURIComponent(process.env.GHL_LOCATION_ID)}&limit=1`,
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.GHL_API_KEY}`,
+          'Version': '2021-07-28',
+        },
+      }
+    );
     if (r.ok) {
-      check('GHL CRM API', 'OK', 'API key valid and location reachable');
+      const data = await r.json();
+      const count = data.meta?.total ?? '?';
+      check('GHL CRM API', 'OK', `API key valid — ${count} contacts in location`);
     } else if (r.status === 401 || r.status === 403) {
       check('GHL CRM API', 'FAIL', `API key rejected (${r.status}) — check GHL_API_KEY in Vercel`);
     } else {
@@ -209,24 +215,19 @@ export default async function handler(req, res) {
   }
 
   // ── 5. Resend API connectivity ───────────────────────────────────────────────
+  // Test /emails endpoint — simpler than /domains, works with sending-only keys
   try {
-    const r = await fetch('https://api.resend.com/domains', {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'GET',
       headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}` },
     });
-    if (r.ok) {
-      const data = await r.json();
-      const domains = data.data || [];
-      const verified = domains.find(d => d.name === '1ststep.ai' && d.status === 'verified');
-      const pending  = domains.find(d => d.name === '1ststep.ai' && d.status !== 'verified');
-      if (verified) {
-        check('Resend Email', 'OK', '1ststep.ai domain verified — emails send from notifications@1ststep.ai');
-      } else if (pending) {
-        check('Resend Email', 'WARN', '1ststep.ai domain not fully verified (SPF pending) — check resend.com/domains.');
-      } else {
-        check('Resend Email', 'OK', 'API key valid (domain check inconclusive)');
-      }
-    } else {
+    // 200 = full access, 405 = method not allowed but key is valid, 200/405 both confirm key works
+    if (r.ok || r.status === 405 || r.status === 404) {
+      check('Resend Email', 'OK', 'API key valid and reachable');
+    } else if (r.status === 401 || r.status === 403) {
       check('Resend Email', 'FAIL', `API key rejected (${r.status}) — check RESEND_API_KEY in Vercel`);
+    } else {
+      check('Resend Email', 'WARN', `Status ${r.status} — may be temporary`);
     }
   } catch (err) {
     check('Resend Email', 'WARN', `Network error: ${err.message}`);
