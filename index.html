@@ -6730,6 +6730,16 @@ const TEMPLATE_PREVIEWS = {
 
 let _parsedResumeData = null;
 let _historyTemplateResume = null;
+let _pendingTemplateId = null;
+
+const TEMPLATE_CONTACT_KEY = '1ststep_tpl_contact';
+
+function loadTemplateContact() {
+  try { return JSON.parse(localStorage.getItem(TEMPLATE_CONTACT_KEY) || '{}'); } catch { return {}; }
+}
+function saveTemplateContact(obj) {
+  try { localStorage.setItem(TEMPLATE_CONTACT_KEY, JSON.stringify(obj)); } catch {}
+}
 
 function openTemplateFromHistory(id) {
   const entry = getTailorHistory().find(e => e.id === id);
@@ -6795,16 +6805,65 @@ function closeTemplateModal() {
   document.getElementById('templatePickerOverlay').style.display = 'none';
   document.getElementById('templateLoadingMsg').style.display = 'none';
   document.getElementById('templateGrid').style.display = 'grid';
+  const step = document.getElementById('templateContactStep');
+  if (step) step.style.display = 'none';
   _historyTemplateResume = null;
+  _pendingTemplateId = null;
 }
 
-async function applyTemplate(id) {
-  document.getElementById('templateGrid').style.display = 'none';
+function applyTemplate(id) {
+  _pendingTemplateId = id;
+
+  // Populate contact step from saved values
+  const saved = loadTemplateContact();
+  ['Email','Phone','Location','Linkedin','Website'].forEach(f => {
+    const el = document.getElementById('tpl' + f);
+    if (el) el.value = saved[f.toLowerCase()] || '';
+  });
+
+  // Swap grid → contact step
+  const grid = document.getElementById('templateGrid');
+  const step = document.getElementById('templateContactStep');
+  if (grid) grid.style.display = 'none';
+  if (step) step.style.display = 'block';
+  // Keep preview pane visible
+}
+
+function backToTemplateGrid() {
+  const grid = document.getElementById('templateGrid');
+  const step = document.getElementById('templateContactStep');
+  if (grid) grid.style.display = 'grid';
+  if (step) step.style.display = 'none';
+  _pendingTemplateId = null;
+}
+
+async function confirmTemplateContact() {
+  const id = _pendingTemplateId;
+  if (!id) return;
+
+  // Read + save contact fields
+  const contact = {};
+  ['Email','Phone','Location','Linkedin','Website'].forEach(f => {
+    const v = (document.getElementById('tpl' + f)?.value || '').trim();
+    if (v) contact[f.toLowerCase()] = v;
+  });
+  saveTemplateContact(contact);
+
+  // Show loading
+  document.getElementById('templateContactStep').style.display = 'none';
   document.getElementById('templateLoadingMsg').style.display = 'block';
 
   try {
     const resumeText = _historyTemplateResume || results?.resume || document.getElementById('resumeOutput')?.innerText || '';
     const data = await parseResumeForTemplate(resumeText);
+
+    // Merge user-provided contact info over parsed data (user wins if they filled it in)
+    if (contact.email)    data.email    = contact.email;
+    if (contact.phone)    data.phone    = contact.phone;
+    if (contact.location) data.location = contact.location;
+    if (contact.linkedin) data.linkedin = contact.linkedin;
+    if (contact.website)  data.website  = contact.website;
+
     _parsedResumeData = data;
     closeTemplateModal();
     openTemplateWindow(id, data);
@@ -7187,6 +7246,60 @@ ${_PRINT_BTN}
       <div style="flex:1;min-width:0">
         <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">Select a template to apply to your tailored resume. Opens in a new window — use <strong>Print → Save as PDF</strong> to download.</p>
         <div id="templateGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
+
+        <!-- Contact info confirmation step -->
+        <div id="templateContactStep" style="display:none">
+          <p style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:14px">
+            Confirm your contact details — they'll appear in the template header. Fields are saved for next time.
+          </p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+            <div>
+              <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">📧 Email</label>
+              <input id="tplEmail" type="email" placeholder="you@email.com"
+                style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;color:var(--text);background:var(--surface,#fff);outline:none"
+                onfocus="this.style.borderColor='#4338CA'" onblur="this.style.borderColor='var(--border)'">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">📱 Phone</label>
+              <input id="tplPhone" type="tel" placeholder="(555) 000-0000"
+                style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;color:var(--text);background:var(--surface,#fff);outline:none"
+                onfocus="this.style.borderColor='#4338CA'" onblur="this.style.borderColor='var(--border)'">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">📍 Location</label>
+              <input id="tplLocation" placeholder="City, State"
+                style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;color:var(--text);background:var(--surface,#fff);outline:none"
+                onfocus="this.style.borderColor='#4338CA'" onblur="this.style.borderColor='var(--border)'">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">🔗 LinkedIn URL</label>
+              <input id="tplLinkedin" placeholder="linkedin.com/in/yourname"
+                style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;color:var(--text);background:var(--surface,#fff);outline:none"
+                onfocus="this.style.borderColor='#4338CA'" onblur="this.style.borderColor='var(--border)'">
+            </div>
+            <div style="grid-column:1/-1">
+              <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">🌐 Website / Portfolio <span style="font-weight:400;opacity:.65;text-transform:none">(optional)</span></label>
+              <input id="tplWebsite" placeholder="yourportfolio.com"
+                style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;color:var(--text);background:var(--surface,#fff);outline:none"
+                onfocus="this.style.borderColor='#4338CA'" onblur="this.style.borderColor='var(--border)'">
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <button onclick="backToTemplateGrid()"
+              style="padding:9px 16px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:13px;cursor:pointer;color:var(--text);font-weight:500">
+              ← Back
+            </button>
+            <button onclick="confirmTemplateContact()"
+              style="flex:1;padding:10px 16px;border-radius:8px;border:none;background:#4338CA;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s"
+              onmouseenter="this.style.background='#3730a3'" onmouseleave="this.style.background='#4338CA'">
+              Apply Template →
+            </button>
+          </div>
+          <p style="font-size:11px;color:var(--text2);margin-top:10px;line-height:1.5;opacity:.8">
+            💡 Leave any field blank to let the AI pull it from your resume text.
+          </p>
+        </div>
+
         <div id="templateLoadingMsg" style="display:none;text-align:center;padding:32px 20px">
           <div class="spinner" style="margin:0 auto 12px"></div>
           <div style="font-size:13px;color:var(--text2)">Parsing your resume…</div>
