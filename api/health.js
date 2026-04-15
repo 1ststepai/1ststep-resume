@@ -224,6 +224,25 @@ export default async function handler(req, res) {
       return res.status(200).json(results);
     }
 
+    // Test mode — send to a single override address instead of the full list
+    const testTo = req.query.testTo || null;
+    if (testTo) {
+      const r = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from:     fromAddr,
+          to:       testTo,
+          reply_to: 'evan@1ststep.ai',
+          subject:  '[TEST] Your Interview Cheat Sheet just dropped 🎤',
+          html:     buildBlastHtml('Evan'),
+          text:     buildBlastText('Evan'),
+        }),
+      });
+      const data = await r.json();
+      return res.status(r.ok ? 200 : 500).json({ test: true, to: testTo, ok: r.ok, resend: data });
+    }
+
     for (const contact of eligible) {
       try {
         const r = await fetch('https://api.resend.com/emails', {
