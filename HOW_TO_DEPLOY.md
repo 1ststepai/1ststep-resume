@@ -1,81 +1,102 @@
 # How to Deploy 1stStep.ai Resume Tailor
-### With server-side API key (no customer setup required)
-
-This is the production deployment. Customers visit the URL and use the app
-immediately — no API key needed on their end.
 
 ---
 
-## Step 1: Get your Anthropic API key
+## ⚡ QUICK DEPLOY — run this every time you want to push changes
+
+Open **PowerShell** and run this script. It clears stale git locks, commits your changes, and pushes to Vercel automatically.
+
+```powershell
+# ── Safe Push Script ────────────────────────────────────────────────────────
+# Run from anywhere — this script navigates to the right folder automatically.
+
+$repo = "C:\Users\evanp\Documents\Claude\Projects\AI-Powered Job Search Platform\resume-app"
+Set-Location $repo
+
+# 1. Clear any stale git lock files (left over from crashed git processes)
+Remove-Item ".git\index.lock" -ErrorAction SilentlyContinue
+Remove-Item ".git\HEAD.lock"  -ErrorAction SilentlyContinue
+Remove-Item ".git\MERGE_HEAD" -ErrorAction SilentlyContinue
+
+# 2. Stage all changes
+git add -A
+
+# 3. Commit (edit the message as needed)
+git commit -m "update: describe your change here"
+
+# 4. Push — Vercel auto-deploys on push
+git push origin main
+
+Write-Host "`n✅ Done — check https://app.1ststep.ai in ~60 seconds" -ForegroundColor Green
+```
+
+**That's it.** Vercel detects the push and deploys automatically. Live in ~60 seconds.
+
+---
+
+## ⚠️ If git push fails
+
+**"error: cannot lock ref"** or **"Unable to create ... lock file exists"**
+→ Run `Remove-Item ".git\*.lock" -ErrorAction SilentlyContinue` then retry.
+
+**"Updates were rejected because the remote contains work you do not have"**
+→ Run `git pull origin main --rebase` then `git push origin main`.
+
+**Files not showing up in git status**
+→ Make sure you're in `resume-app/`, not the parent folder. All app files live inside `resume-app/`.
+
+---
+
+## Initial Setup (one-time, already done)
+
+### Vercel project is already connected
+- Project: **1ststep-ai** on Vercel
+- Domain: **app.1ststep.ai** → auto-deploys from `resume-app/` on every `git push origin main`
+- No manual deploy steps needed — push = deploy.
+
+### Environment Variables (already set in Vercel)
+These are set in Vercel → Project → Settings → Environment Variables. Do not commit these to git.
+
+| Variable | Purpose |
+|---|---|
+| `ANTHROPIC_API_KEY` | Claude API — resume tailoring + AI features |
+| `TIER_SECRET` | Signs tier tokens for plan gating |
+| `BETA_CODE` | Invite code for beta access gate |
+| `GHL_API_KEY` | GoHighLevel CRM integration |
+| `GHL_LOCATION_ID` | GHL location for contact capture |
+| `GHL_PIPELINE_ID` | GHL pipeline for beta signups |
+| `GHL_STAGE_BETA_SIGNUP` | GHL pipeline stage ID |
+| `RESEND_API_KEY` | Transactional email via Resend |
+| `RESEND_FROM` | Sender address — `notifications@1ststep.ai` |
+| `STRIPE_SECRET_KEY` | Stripe payments |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signature validation |
+| `BETA_MODE` | `"true"` = beta gate on, `"false"` = open to all |
+
+---
+
+## Going Live (flip the beta gate)
+
+When you're ready to open to all users:
+
+1. Vercel → Project → Settings → Environment Variables
+2. Change `BETA_MODE` from `true` → `false`
+3. Click **Redeploy** (no code change needed)
+
+Done — the welcome modal becomes a direct signup, no invite code required.
+
+---
+
+## API key setup (already done — for reference)
 
 1. Go to https://console.anthropic.com → API Keys
-2. Click "Create Key"
-3. Copy it — it starts with `sk-ant-api03-...`
-4. Keep it secret — don't share it or commit it to git
-
----
-
-## Step 2: Deploy to Vercel
-
-### Option A: Drag and Drop (easiest, no account linking needed)
-
-1. Go to https://vercel.com and sign in (or create a free account)
-2. Click "Add New Project"
-3. Click "Browse" and select the `resume-app` folder
-4. Before clicking Deploy, click **"Environment Variables"** and add:
-   - Name: `ANTHROPIC_API_KEY`
-   - Value: `sk-ant-api03-your-key-here`
-5. Click **Deploy** — takes about 60 seconds
-6. You get a URL like `resume-app-xyz.vercel.app`
-
-### Option B: Vercel CLI (for future updates)
-
-```bash
-npm install -g vercel
-cd resume-app
-vercel --prod
-```
-
-Set the env var once:
-```bash
-vercel env add ANTHROPIC_API_KEY
-```
-Paste your key when prompted.
-
----
-
-## Step 3: Test it
-
-1. Visit your Vercel URL
-2. Paste a sample resume in the Resume box
-3. Paste a job description in the Job Description box
-4. Click "Tailor My Resume"
-5. Should work in ~30 seconds — no API key prompt, no setup
-
----
-
-## Step 4: Connect your domain (optional)
-
-1. In Vercel → your project → Settings → Domains
-2. Type `resume.1ststep.ai` and click Add
-3. Add a CNAME record at your DNS provider:
-   - Name: `resume`
-   - Value: `cname.vercel-dns.com`
-4. Wait 10 minutes → resume.1ststep.ai is live
-
----
-
-## Updating the app
-
-When you make changes to `index.html` or `api/claude.js`:
-- Drag the `resume-app` folder to Vercel again (it overwrites the old deployment)
-- Or use `vercel --prod` from the command line
+2. Create key → copy it (starts with `sk-ant-api03-...`)
+3. Add to Vercel env vars as `ANTHROPIC_API_KEY`
 
 ---
 
 ## Cost monitoring
 
 Each resume tailoring run costs ~$0.06–0.18 in Anthropic credits.
-Watch your usage at https://console.anthropic.com → Usage
+Watch usage at https://console.anthropic.com → Usage
 
-At $49/order and $0.15/run in API costs, your margin is ~99.7%.
+At $49/order and ~$0.15/run, margin is ~99.7%.
