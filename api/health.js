@@ -76,6 +76,26 @@ async function getStripePaidCount() {
   } catch { return 0; }
 }
 
+// ── GHL upsert helper (shared by blast backfill) ────────────────────────────
+async function upsertGhlContact(email, tags = [], firstName = '', lastName = '') {
+  const r = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${process.env.GHL_API_KEY}`,
+      'Version': '2021-07-28',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      locationId: process.env.GHL_LOCATION_ID,
+      email, tags,
+      ...(firstName && { firstName }),
+      ...(lastName  && { lastName  }),
+    }),
+  });
+  const data = await r.json().catch(() => ({}));
+  return { ok: r.ok, status: r.status, contactId: data?.contact?.id || data?.id || null, data };
+}
+
 // ── Email blast helpers ──────────────────────────────────────────────────────
 
 async function fetchContactsByTag(tag) {
@@ -268,6 +288,35 @@ export default async function handler(req, res) {
     }
 
     console.log(`Blast complete: ${results.sent} sent, ${results.skipped} skipped`);
+    return res.status(200).json(results);
+  }
+
+  // ── Backfill mode (?action=backfill&emails=a@b.com,c@d.com) ─────────────────
+  // Upserts a comma-separated list of emails into GHL with beta tags.
+  // Use this to manually add existing beta users who were never captured in GHL.
+  if (req.query.action === 'backfill') {
+    const provided = req.headers['x-admin-secret'] || req.query.secret;
+    const expected = process.env.ADMIN_SECRET;
+    if (!expected || provided !== expected) return res.status(401).json({ error: 'Unauthorized' });
+
+    const rawEmails = (req.query.emails || '').split(',').map(e => e.trim().toLowerCase()).filter(e => e.includes('@'));
+    if (!rawEmails.length) return res.status(400).json({ error: 'No valid emails provided. Use ?emails=a@b.com,c@d.com' });
+
+    const tags = (req.query.tags || 'app_user,beta,complete,beta_2026').split(',').map(t => t.trim());
+    const results = { total: rawEmails.length, ok: [], errors: [] };
+
+    for (const email of rawEmails) {
+      const result = await upsertGhlContact(email, tags);
+      if (result.ok && result.contactId) {
+        results.ok.push({ email, contactId: result.contactId });
+        console.log(`✅ Backfilled GHL contact: ${email} (${result.contactId})`);
+      } else {
+        results.errors.push({ email, status: result.status, detail: JSON.stringify(result.data) });
+        console.error(`❌ Backfill failed for ${email}:`, result.status, JSON.stringify(result.data));
+      }
+      await new Promise(r => setTimeout(r, 200));
+    }
+
     return res.status(200).json(results);
   }
 
