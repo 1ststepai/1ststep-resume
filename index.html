@@ -6316,7 +6316,7 @@ function _applySubscriptionTier(tier, notify) {
 // ── Mobile Bottom Nav ─────────────────────────────────────────────────────────
 function setMobileNav(mode) {
   document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
-  const map = { resume: 'mobileNavResume', jobs: 'mobileNavJobs', tailored: 'mobileNavTailored', tracker: 'mobileNavTracker', linkedin: 'mobileNavMore', bulkapply: 'mobileNavMore' };
+  const map = { resume: 'mobileNavResume', jobs: 'mobileNavJobs', tailored: 'mobileNavTailored', tracker: 'mobileNavTracker', linkedin: 'mobileNavLinkedIn', bulkapply: 'mobileNavLinkedIn' };
   const target = document.getElementById(map[mode] || 'mobileNavResume');
   if (target) target.classList.add('active');
 }
@@ -8692,9 +8692,9 @@ async function handleLinkedInPdfUpload(event) {
     Applied
     <span class="mobile-nav-badge" id="mobileNavTrackerBadge" style="display:none">0</span>
   </button>
-  <button class="mobile-nav-item" id="mobileNavMore" onclick="openMobileMoreSheet()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-    More
+  <button class="mobile-nav-item" id="mobileNavLinkedIn" onclick="switchMode('linkedin'); setMobileNav('linkedin')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="3"/><path d="M7 10v7M7 7v.5M12 17v-4a2 2 0 014 0v4M12 10v7"/></svg>
+    LinkedIn
   </button>
 </nav>
 
