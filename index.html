@@ -2359,7 +2359,8 @@
       <button class="btn-modal-cancel" onclick="closeProfileModal()">Cancel</button>
       <button class="btn-modal-save" onclick="saveProfile()" id="profileSaveBtn">Save</button>
     </div>
-    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);text-align:center">
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);text-align:center;display:flex;flex-direction:column;gap:10px">
+      <button onclick="reopenWelcome()" style="background:none;border:none;color:var(--brand);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-family:'Inter',sans-serif">↩ Change my starting path</button>
       <button onclick="signOutAndClear()" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:2px">Sign out &amp; clear all data from this device</button>
     </div>
   </div>
@@ -2787,6 +2788,14 @@ function dismissWelcome(path = false) {
       }
     }, 250);
   }
+}
+
+function reopenWelcome() {
+  closeProfileModal();
+  localStorage.removeItem('1ststep_welcomed');
+  document.getElementById('welcomeOverlay').classList.add('visible');
+  document.body.style.overflow = 'hidden';
+  _setChatWidgetVisible(false);
 }
 
 // ── More dropdown ─────────────────────────────────────────────────────────
