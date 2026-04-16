@@ -562,6 +562,9 @@
         gap: 10px !important;
       }
 
+      /* Hide flow hint bar on mobile — welcome modal covers it anyway */
+      #flowHint { display: none !important; }
+
       /* ── Welcome modal — full screen on mobile ───────────── */
       .welcome-overlay {
         align-items: flex-end !important;
@@ -2551,53 +2554,28 @@
   <div class="welcome-modal">
     <div class="welcome-logo">1stStep<span>.ai</span></div>
 
-    <h2 style="font-size:22px;font-weight:800;color:var(--text);line-height:1.25;margin:0 0 10px">
+    <h2 style="font-size:22px;font-weight:800;color:var(--text);line-height:1.25;margin:0 0 8px">
       See exactly why you're not<br><span style="background:linear-gradient(90deg,#60A5FA,#818CF8);-webkit-background-clip:text;-webkit-text-fill-color:transparent">getting callbacks.</span>
     </h2>
-    <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 18px">
-      1stStep.ai shows your <strong style="color:var(--text)">skill gaps</strong>, rewrites your resume for that exact role, and writes a cover letter — in <strong style="color:var(--text)">30 seconds</strong>.
+    <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 20px">
+      AI-powered skill gap analysis, resume rewrites &amp; cover letters — in <strong style="color:var(--text)">30 seconds</strong>.
     </p>
 
-    <!-- Feature chips -->
-    <div id="welcomeChips" style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-bottom:20px">
-      <span style="padding:5px 12px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#34D399">📊 Skill gap analysis</span>
-      <span style="padding:5px 12px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">🔍 ATS match score</span>
-      <span style="padding:5px 12px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">✍️ Resume rewrite</span>
-      <span style="padding:5px 12px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">✉️ Cover letter</span>
-      <span style="padding:5px 12px;background:rgba(0,119,181,0.1);border:1px solid rgba(0,119,181,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#60A5FA">🔗 LinkedIn import</span>
-      <span style="padding:5px 12px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">📋 Tailored CV</span>
-    </div>
-
-    <!-- Minimal steps — visual only -->
-    <div class="welcome-steps-row" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px;flex-wrap:wrap">
-      <div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--dark);border:1px solid var(--border);border-radius:8px;font-size:12px">
-        <span>📄</span><span>Upload resume</span>
-      </div>
-      <span style="color:var(--dark3);font-size:12px">→</span>
-      <div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--dark);border:1px solid var(--border);border-radius:8px;font-size:12px">
-        <span>📋</span><span>Paste job posting</span>
-      </div>
-      <span style="color:var(--dark3);font-size:12px">→</span>
-      <div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(26,86,219,0.12);border:1px solid rgba(26,86,219,0.3);border-radius:8px;font-size:12px;color:#93C5FD;font-weight:600">
-        <span>📊</span><span>Gap report + tailored resume</span>
-      </div>
-    </div>
-
-    <!-- Two-path onboarding: existing resume vs. build from scratch -->
-    <div class="welcome-path-grid">
+    <!-- Two-path onboarding: existing resume vs. build from scratch — FIRST -->
+    <div class="welcome-path-grid" style="margin-bottom:20px">
       <button onclick="dismissWelcome('upload')" style="
-        padding:13px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;
+        padding:16px;border-radius:14px;font-size:14px;font-weight:700;cursor:pointer;
         background:linear-gradient(135deg,#3B82F6,#6366F1);color:#fff;border:none;
-        line-height:1.35;text-align:center;
+        line-height:1.35;text-align:center;width:100%;
       ">
         📄 I have a resume<br>
         <span style="font-size:11px;font-weight:400;opacity:.85">Upload, paste, or import from LinkedIn</span>
       </button>
       <button onclick="dismissWelcome('build')" style="
-        padding:13px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;
+        padding:16px;border-radius:14px;font-size:14px;font-weight:700;cursor:pointer;
         background:#1E293B;color:#C7D2FE;
-        border:1px solid rgba(99,102,241,0.35);
-        line-height:1.35;text-align:center;
+        border:1.5px solid rgba(99,102,241,0.35);
+        line-height:1.35;text-align:center;width:100%;
       "
       onmouseenter="this.style.borderColor='rgba(99,102,241,0.7)'"
       onmouseleave="this.style.borderColor='rgba(99,102,241,0.35)'"
@@ -2606,8 +2584,37 @@
         <span style="font-size:11px;font-weight:400;opacity:.75">Step-by-step wizard</span>
       </button>
     </div>
-    <p style="font-size:12px;color:var(--dark3);margin-top:12px;margin-bottom:0">Free to try · No credit card · 3 tailors + 5 searches on us</p>
-    <p style="font-size:11px;color:var(--muted);margin-top:8px;margin-bottom:0">
+
+    <!-- Feature tiles — small 3-col grid, below the CTA -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
+      <div style="padding:10px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;text-align:center">
+        <div style="font-size:18px;margin-bottom:3px">📊</div>
+        <div style="font-size:10px;font-weight:600;color:var(--text2);line-height:1.3">Skill gap<br>analysis</div>
+      </div>
+      <div style="padding:10px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;text-align:center">
+        <div style="font-size:18px;margin-bottom:3px">🔍</div>
+        <div style="font-size:10px;font-weight:600;color:var(--text2);line-height:1.3">ATS match<br>score</div>
+      </div>
+      <div style="padding:10px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;text-align:center">
+        <div style="font-size:18px;margin-bottom:3px">✍️</div>
+        <div style="font-size:10px;font-weight:600;color:var(--text2);line-height:1.3">Resume<br>rewrite</div>
+      </div>
+      <div style="padding:10px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;text-align:center">
+        <div style="font-size:18px;margin-bottom:3px">✉️</div>
+        <div style="font-size:10px;font-weight:600;color:var(--text2);line-height:1.3">Cover<br>letter</div>
+      </div>
+      <div style="padding:10px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;text-align:center">
+        <div style="font-size:18px;margin-bottom:3px">🔗</div>
+        <div style="font-size:10px;font-weight:600;color:var(--text2);line-height:1.3">LinkedIn<br>import</div>
+      </div>
+      <div style="padding:10px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;text-align:center">
+        <div style="font-size:18px;margin-bottom:3px">🎤</div>
+        <div style="font-size:10px;font-weight:600;color:var(--text2);line-height:1.3">Interview<br>prep</div>
+      </div>
+    </div>
+
+    <p style="font-size:11px;color:var(--muted);margin:0 0 6px">Free to try · No credit card · 3 tailors + 5 searches on us</p>
+    <p style="font-size:11px;color:var(--muted);margin:0">
       Returning user?
       <button onclick="triggerRestoreBackup()" style="background:none;border:none;color:var(--brand);font-size:11px;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;font-family:'Inter',sans-serif">Restore from backup →</button>
     </p>
@@ -2716,6 +2723,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Show welcome modal on first visit
   if (!localStorage.getItem('1ststep_welcomed')) {
     document.getElementById('welcomeOverlay').classList.add('visible');
+    document.body.style.overflow = 'hidden'; // lock scroll behind modal
   } else {
     // Returning user — show flowHint if they haven't finished first tailor
     if (!localStorage.getItem('1ststep_hint_dismissed') && !localStorage.getItem('1ststep_first_tailor_celebrated')) {
@@ -2729,6 +2737,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ── Welcome / Onboarding ──────────────────────────────────────────────────
 function dismissWelcome(path = false) {
   document.getElementById('welcomeOverlay').classList.remove('visible');
+  document.body.style.overflow = ''; // restore scroll
   localStorage.setItem('1ststep_welcomed', '1');
 
   if (path === 'upload' || path === true) {
