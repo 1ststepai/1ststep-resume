@@ -5,10 +5,15 @@
  * Returns { tier, status, tierToken } where tierToken is a short-lived HMAC
  * proof that claude.js can verify without hitting Stripe on every call.
  *
+ * Also handles LinkedIn OAuth flow:
+ *   GET /api/subscription?action=linkedin-init   — returns the LinkedIn auth URL
+ *   GET /api/subscription?action=linkedin-callback&code=...&state=... — exchanges code for profile
+ *
  * Env vars required:
- *   STRIPE_SECRET_KEY  — sk_live_... (Stripe secret key)
- *   TIER_SECRET        — any random 32+ char string, used to sign tier tokens
- *                        Generate with: openssl rand -hex 32
+ *   STRIPE_SECRET_KEY    — sk_live_... (Stripe secret key)
+ *   TIER_SECRET          — any random 32+ char string, used to sign tier tokens
+ *   LINKEDIN_CLIENT_ID   — LinkedIn OAuth app client ID
+ *   LINKEDIN_CLIENT_SECRET — LinkedIn OAuth app client secret
  */
 
 import Stripe from 'stripe';
@@ -90,6 +95,89 @@ function productToTier(productName = '') {
   return 'free';
 }
 
+// ── LinkedIn popup close page ────────────────────────────────────────────────
+// Rendered inside the OAuth popup — posts profile data to the parent window then closes.
+function popupHtml({ profile, error } = {}) {
+  const payload = JSON.stringify(error ? { error } : { profile });
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Connecting…</title>
+<style>body{margin:0;font-family:system-ui,sans-serif;background:#0F172A;color:#F1F5F9;
+display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:12px}
+.spinner{width:32px;height:32px;border:3px solid #334155;border-top-color:#6366F1;border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}</style></head>
+<body>
+${error
+  ? `<div style="font-size:14px;color:#F87171">Could not connect LinkedIn. You can close this window.</div>`
+  : `<div class="spinner"></div><div style="font-size:14px;color:#94A3B8">Connected! Closing…</div>`}
+<script>
+try {
+  if (window.opener && !window.opener.closed) {
+    window.opener.postMessage({ type: '1ststep_linkedin', payload: ${payload} }, 'https://app.1ststep.ai');
+  }
+} catch(e) {}
+setTimeout(() => window.close(), 800);
+</script>
+</body></html>`;
+}
+
+// ── LinkedIn OAuth helpers ────────────────────────────────────────────────────
+const LINKEDIN_REDIRECT = 'https://app.1ststep.ai/api/subscription?action=linkedin-callback';
+const LINKEDIN_SCOPES   = 'openid profile email';
+
+function linkedinAuthUrl(state) {
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id:     process.env.LINKEDIN_CLIENT_ID || '',
+    redirect_uri:  LINKEDIN_REDIRECT,
+    scope:         LINKEDIN_SCOPES,
+    state,
+  });
+  return `https://www.linkedin.com/oauth/v2/authorization?${params}`;
+}
+
+async function exchangeLinkedInCode(code) {
+  const r = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type:    'authorization_code',
+      code,
+      redirect_uri:  LINKEDIN_REDIRECT,
+      client_id:     process.env.LINKEDIN_CLIENT_ID     || '',
+      client_secret: process.env.LINKEDIN_CLIENT_SECRET || '',
+    }),
+  });
+  if (!r.ok) throw new Error(`LinkedIn token exchange failed: ${r.status}`);
+  return r.json();
+}
+
+async function fetchLinkedInProfile(accessToken) {
+  // OpenID Connect userinfo endpoint — returns sub, name, email, picture
+  const r = await fetch('https://api.linkedin.com/v2/userinfo', {
+    headers: { 'Authorization': `Bearer ${accessToken}` },
+  });
+  if (!r.ok) throw new Error(`LinkedIn userinfo failed: ${r.status}`);
+  return r.json();
+}
+
+// In-memory state store — prevents CSRF. TTL: 10 min. Resets on cold start (fine).
+const linkedInStates = new Map();
+function genState() {
+  const state = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  linkedInStates.set(state, Date.now());
+  if (linkedInStates.size > 500) {
+    const oldest = [...linkedInStates.keys()].slice(0, 50);
+    oldest.forEach(k => linkedInStates.delete(k));
+  }
+  return state;
+}
+function validateState(state) {
+  const ts = linkedInStates.get(state);
+  if (!ts) return false;
+  linkedInStates.delete(state);
+  return Date.now() - ts < 10 * 60 * 1000;
+}
+
 export default async function handler(req, res) {
   const headers = corsHeaders(req);
 
@@ -102,6 +190,52 @@ export default async function handler(req, res) {
 
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const action = req.query.action || '';
+
+  // ── LinkedIn: init — return auth URL ─────────────────────────────────────
+  if (action === 'linkedin-init') {
+    if (!process.env.LINKEDIN_CLIENT_ID) {
+      return res.status(500).json({ error: 'LinkedIn not configured' });
+    }
+    const state = genState();
+    return res.status(200).json({ url: linkedinAuthUrl(state) });
+  }
+
+  // ── LinkedIn: callback — exchange code, return profile ───────────────────
+  if (action === 'linkedin-callback') {
+    const { code, state, error: liError } = req.query;
+
+    if (liError) {
+      // User denied — close popup with error signal
+      return res.status(200).send(popupHtml({ error: 'access_denied' }));
+    }
+
+    if (!validateState(state)) {
+      return res.status(200).send(popupHtml({ error: 'invalid_state' }));
+    }
+
+    try {
+      const tokens  = await exchangeLinkedInCode(code);
+      const profile = await fetchLinkedInProfile(tokens.access_token);
+
+      // profile shape: { sub, name, given_name, family_name, email, picture }
+      const data = {
+        firstName: profile.given_name  || '',
+        lastName:  profile.family_name || '',
+        name:      profile.name        || '',
+        email:     profile.email       || '',
+        picture:   profile.picture     || '',
+        linkedinUrl: profile.sub ? `linkedin.com/in/${profile.sub}` : '',
+      };
+
+      console.log(`✅ LinkedIn auth: ${data.email}`);
+      return res.status(200).send(popupHtml({ profile: data }));
+    } catch (err) {
+      console.error('LinkedIn callback error:', err.message);
+      return res.status(200).send(popupHtml({ error: 'auth_failed' }));
+    }
   }
 
   // Rate limit — prevents probing emails to discover paying customers

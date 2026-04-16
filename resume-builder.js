@@ -327,11 +327,103 @@ function _field(label, inputHtml, hint = '') {
     </div>`;
 }
 
+// ── LinkedIn OAuth popup flow ─────────────────────────────────────────────────
+function _rbLinkedInConnect() {
+  const popup = window.open(
+    'about:blank', 'linkedin_auth',
+    'width=520,height=640,top=' + Math.round((screen.height-640)/2) + ',left=' + Math.round((screen.width-520)/2)
+  );
+
+  fetch('/api/subscription?action=linkedin-init')
+    .then(r => r.json())
+    .then(({ url, error }) => {
+      if (error || !url) { popup.close(); _rbShowToast('LinkedIn not configured'); return; }
+      popup.location.href = url;
+    })
+    .catch(() => { popup.close(); _rbShowToast('Could not reach LinkedIn'); });
+
+  function onMessage(e) {
+    if (e.origin !== window.location.origin) return;
+    if (!e.data || e.data.type !== '1ststep_linkedin') return;
+    window.removeEventListener('message', onMessage);
+
+    const { profile, error } = e.data.payload || {};
+    if (error || !profile) {
+      _rbShowToast(error === 'access_denied' ? 'LinkedIn connection cancelled' : 'LinkedIn sign-in failed');
+      return;
+    }
+
+    // Populate Step 1 fields
+    const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+    set('rb_name',  profile.name);
+    set('rb_email', profile.email);
+
+    // Save into the in-progress resume object
+    const r = _wbResume();
+    if (profile.name)      r.name  = profile.name;
+    if (profile.email)     r.email = profile.email;
+    if (profile.firstName) r._liFirstName = profile.firstName;
+    if (profile.lastName)  r._liLastName  = profile.lastName;
+    _wbSetResume(r);
+
+    // Update button to connected state
+    const btn = document.getElementById('rb_li_btn');
+    if (btn) {
+      btn.innerHTML = `<span style="font-size:15px">✓</span> Connected as ${_esc(profile.firstName || profile.name)}`;
+      btn.style.cssText += ';background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.4);color:#4ADE80';
+      btn.disabled = true;
+    }
+
+    _rbShowToast('LinkedIn connected — fields filled ✓');
+
+    // Focus first empty field
+    setTimeout(() => {
+      const next = ['rb_phone','rb_location','rb_title','rb_summary']
+        .map(id => document.getElementById(id))
+        .find(el => el && !el.value.trim());
+      if (next) next.focus();
+    }, 300);
+  }
+
+  window.addEventListener('message', onMessage);
+  const checkClosed = setInterval(() => {
+    if (popup.closed) { clearInterval(checkClosed); window.removeEventListener('message', onMessage); }
+  }, 1000);
+}
+
+function _rbShowToast(msg) {
+  if (typeof showToast === 'function') { showToast(msg); return; }
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1E293B;color:#F1F5F9;padding:10px 18px;border-radius:8px;font-size:13px;z-index:9999;border:1px solid rgba(255,255,255,0.1)';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
 // ── Step 1: Profile ──────────────────────────────────────────────────────────
 function _rbStep1() {
   const r = _wbResume();
   return `
     <h3 style="margin:0 0 16px;font-size:15px;font-weight:700;color:#F1F5F9">Profile</h3>
+
+    <!-- LinkedIn connect button -->
+    <button id="rb_li_btn" onclick="_rbLinkedInConnect()" style="
+      width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+      padding:11px 16px;border-radius:10px;margin-bottom:20px;cursor:pointer;
+      background:rgba(10,102,194,0.12);border:1.5px solid rgba(10,102,194,0.35);
+      color:#93C5FD;font-size:13.5px;font-weight:600;transition:all 0.15s
+    "
+    onmouseenter="this.style.background='rgba(10,102,194,0.22)'"
+    onmouseleave="this.style.background='rgba(10,102,194,0.12)'">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+      Continue with LinkedIn
+    </button>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+      <div style="flex:1;height:1px;background:rgba(255,255,255,0.08)"></div>
+      <span style="font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:.6px">or fill in manually</span>
+      <div style="flex:1;height:1px;background:rgba(255,255,255,0.08)"></div>
+    </div>
+
     <div style="display:grid;grid-template-columns:${_m2col()};gap:0 16px">
       ${_field('Full Name', `<input id="rb_name" ${_inp} value="${_esc(r.name)}" placeholder="Jane Smith">`)}
       ${_field('Professional Title', `<input id="rb_title" ${_inp} value="${_esc(r.title)}" placeholder="Senior Product Manager">`)}
