@@ -562,13 +562,32 @@
         gap: 10px !important;
       }
 
-      /* ── Welcome modal ───────────────────────────────────── */
+      /* ── Welcome modal — full screen on mobile ───────────── */
+      .welcome-overlay {
+        align-items: flex-end !important;
+        background: rgba(0,0,0,0.5) !important;
+      }
       .welcome-modal {
-        width: calc(100vw - 24px);
-        padding: 24px 18px;
+        width: 100% !important;
+        max-width: 100% !important;
+        border-radius: 24px 24px 0 0 !important;
+        padding: 28px 20px calc(32px + env(safe-area-inset-bottom)) !important;
         max-height: 92vh;
         overflow-y: auto;
+        border-bottom: none !important;
       }
+      /* Drag handle pill */
+      .welcome-modal::before {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 4px;
+        background: var(--border2);
+        border-radius: 100px;
+        margin: 0 auto 20px;
+      }
+      /* Hide the steps flow row on mobile — too cramped */
+      .welcome-steps-row { display: none !important; }
       .welcome-steps {
         grid-template-columns: 1fr !important;
         gap: 8px;
@@ -1095,8 +1114,30 @@
     /* Two-path onboarding grid — stack vertically on phones */
     .welcome-path-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
     @media (max-width: 480px) {
-      .welcome-path-grid { grid-template-columns: 1fr; }
-      .welcome-path-grid button { padding: 12px 14px !important; }
+      /* Stack path cards vertically, make them bigger/tappable */
+      .welcome-path-grid { grid-template-columns: 1fr; gap: 10px; }
+      .welcome-path-grid button {
+        padding: 16px !important;
+        font-size: 14px !important;
+        border-radius: 14px !important;
+      }
+      /* Feature chips: 2-col grid */
+      #welcomeChips {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 7px !important;
+      }
+      #welcomeChips span {
+        text-align: center;
+        justify-content: center;
+        display: flex !important;
+        align-items: center;
+        gap: 4px;
+      }
+      /* Tighten headline */
+      #welcomeOverlay h2 { font-size: 20px !important; }
+      /* Tighten paragraph */
+      #welcomeOverlay > div > p { font-size: 12px !important; margin-bottom: 14px !important; }
     }
 
     /* ── FEEDBACK WIDGET ─────────────────────────────────────────── */
@@ -2518,16 +2559,17 @@
     </p>
 
     <!-- Feature chips -->
-    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-bottom:20px">
-      <span style="padding:4px 10px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#34D399">📊 Skill gap analysis</span>
-      <span style="padding:4px 10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">🔍 ATS match score</span>
-      <span style="padding:4px 10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">✍️ Resume rewrite</span>
-      <span style="padding:4px 10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">✉️ Cover letter</span>
-      <span style="padding:4px 10px;background:rgba(0,119,181,0.1);border:1px solid rgba(0,119,181,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#60A5FA">🔗 LinkedIn import</span>
+    <div id="welcomeChips" style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-bottom:20px">
+      <span style="padding:5px 12px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#34D399">📊 Skill gap analysis</span>
+      <span style="padding:5px 12px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">🔍 ATS match score</span>
+      <span style="padding:5px 12px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">✍️ Resume rewrite</span>
+      <span style="padding:5px 12px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">✉️ Cover letter</span>
+      <span style="padding:5px 12px;background:rgba(0,119,181,0.1);border:1px solid rgba(0,119,181,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#60A5FA">🔗 LinkedIn import</span>
+      <span style="padding:5px 12px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">📋 Tailored CV</span>
     </div>
 
     <!-- Minimal steps — visual only -->
-    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+    <div class="welcome-steps-row" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px;flex-wrap:wrap">
       <div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--dark);border:1px solid var(--border);border-radius:8px;font-size:12px">
         <span>📄</span><span>Upload resume</span>
       </div>
