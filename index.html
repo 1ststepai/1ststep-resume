@@ -81,51 +81,59 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      /* ── Brand — used ONLY on main CTA + status-critical alerts ── */
-      --brand: #4338CA; --brand-dark: #3730A3; --brand-glow: rgba(67,56,202,0.22);
+      /* ── Brand ────────────────────────────────────────────────── */
+      --brand: #4338CA; --brand-dark: #3730A3; --brand-glow: rgba(67,56,202,0.18);
 
-      /* ── Grayscale surface palette ───────────────────────────── */
-      --bg:       #F8FAFC;   /* page background */
+      /* ── Surface palette ──────────────────────────────────────── */
+      --bg:       #F5F7FF;   /* warm-tinted page background */
       --surface:  #FFFFFF;   /* card / panel background */
       --surface2: #F1F5F9;   /* subtle inset / alt surface */
-      --border:   #E2E8F0;   /* dividers — used sparingly */
-      --border2:  #CBD5E1;   /* stronger border if needed */
+      --border:   #E2E8F0;   /* dividers */
+      --border2:  #CBD5E1;   /* stronger border */
 
       /* ── Typography ──────────────────────────────────────────── */
-      --text:     #0F172A;   /* primary text — near-black */
-      --text2:    #475569;   /* secondary text */
+      --text:     #0F172A;   /* primary — near-black */
+      --text2:    #475569;   /* secondary */
       --muted:    #94A3B8;   /* labels, placeholders */
-      --label:    #94A3B8;   /* uppercase guide labels */
+      --label:    #64748B;   /* uppercase guide labels — slightly darker */
 
       /* ── Status colors ───────────────────────────────────────── */
       --green: #059669; --green-light: #ECFDF5;
       --red:   #DC2626; --red-light:   #FEF2F2;
       --amber: #D97706; --amber-light: #FFFBEB;
 
-      /* ── Shadows (replace borders) ───────────────────────────── */
+      /* ── Shadows ──────────────────────────────────────────────── */
       --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
-      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
-      --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+      --shadow-sm: 0 2px 6px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.04);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
 
-      /* ── Aliases for legacy dark-mode var names ──────────────── */
+      /* ── Sidebar dims ─────────────────────────────────────────── */
+      --sidebar-w: 68px;
+      --sidebar-expanded: 220px;
+
+      /* ── Aliases for legacy var names ────────────────────────── */
       --blue: #4338CA; --blue-dark: #3730A3; --blue-light: #EEF2FF;
       --dark: var(--bg); --dark2: var(--surface); --dark3: var(--border2);
       --white: #FFFFFF;
-      /* Legacy dark-mode aliases used in older inline styles */
       --fg: var(--text);
       --input-bg: var(--surface2);
+      --card-bg: var(--surface2);
     }
-    html, body { height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+    html, body { height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; }
 
     /* ── LAYOUT ─────────────────────────────────────────── */
-    .app { display: flex; flex-direction: column; height: 100vh; }
+    .app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+    /* Slim topbar — logo + account only, NO mode tabs */
     .topbar {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 0 24px; height: 56px;
+      padding: 0 20px; height: 52px;
       background: var(--surface); border-bottom: 1px solid var(--border);
-      flex-shrink: 0; box-shadow: var(--shadow-xs);
+      flex-shrink: 0; z-index: 150;
+      box-shadow: 0 1px 0 var(--border), 0 2px 8px rgba(67,56,202,0.04);
     }
-    .logo { font-weight: 800; font-size: 16px; color: var(--brand); letter-spacing: -0.3px; }
+    .logo { font-weight: 800; font-size: 16px; color: var(--brand); letter-spacing: -0.4px; cursor: pointer; }
     .logo span { color: var(--text); }
     .topbar-right { display: flex; align-items: center; gap: 10px; }
     .api-badge {
@@ -138,11 +146,70 @@
     .api-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--red); }
     .api-dot.connected { background: var(--green); }
 
-    /* ── MAIN: single-column centered flow ───────────────── */
+    /* ── CONTENT WRAP: sidebar + main side by side on desktop ── */
+    .content-wrap {
+      display: flex; flex: 1; overflow: hidden;
+    }
+
+    /* ── SIDEBAR NAVIGATION ──────────────────────────────── */
+    .sidebar {
+      display: none; /* hidden on mobile — bottom nav takes over */
+      flex-direction: column;
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      z-index: 100;
+      overflow: hidden;
+      transition: width 0.22s cubic-bezier(.4,0,.2,1);
+      padding: 8px 0;
+    }
+    .sidebar:hover {
+      width: var(--sidebar-expanded);
+      box-shadow: var(--shadow-md);
+    }
+    .sidebar-nav-btn {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px; border: none; background: transparent;
+      width: 100%; cursor: pointer; font-family: 'Inter', sans-serif;
+      color: var(--text2); font-size: 13px; font-weight: 600;
+      border-radius: 0; transition: all 0.15s;
+      white-space: nowrap; text-align: left; position: relative;
+      min-height: 44px;
+    }
+    .sidebar-nav-btn:hover { background: var(--surface2); color: var(--text); }
+    .sidebar-nav-btn.active {
+      background: #EEF2FF; color: var(--brand);
+    }
+    .sidebar-nav-btn.active::before {
+      content: ''; position: absolute; left: 0; top: 6px; bottom: 6px;
+      width: 3px; background: var(--brand); border-radius: 0 3px 3px 0;
+    }
+    .sidebar-nav-icon {
+      width: 36px; height: 36px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 10px; transition: all 0.15s; font-size: 18px;
+    }
+    .sidebar-nav-btn.active .sidebar-nav-icon {
+      background: rgba(67,56,202,0.12);
+    }
+    .sidebar-nav-label { opacity: 0; transition: opacity 0.15s; font-size: 13px; font-weight: 600; }
+    .sidebar:hover .sidebar-nav-label { opacity: 1; }
+    .sidebar-nav-badge {
+      display: none; background: var(--brand); color: white;
+      border-radius: 100px; font-size: 10px; font-weight: 700;
+      padding: 1px 6px; min-width: 18px; text-align: center;
+      margin-left: auto;
+    }
+    .sidebar-nav-badge.show { display: block; }
+    .sidebar-divider { height: 1px; background: var(--border); margin: 6px 12px; }
+    .sidebar-spacer { flex: 1; }
+
+    /* ── MAIN: scrollable content area ──────────────────── */
     .main {
       display: flex; flex-direction: column; align-items: center;
       flex: 1; overflow-y: auto; background: var(--bg);
-      padding: 40px 24px 64px;
+      padding: 36px 24px 64px;
     }
 
     /* ── INPUT PANEL (was "left panel") ──────────────────── */
@@ -154,24 +221,32 @@
 
     /* Each section is a floating card */
     .panel-section {
-      background: var(--surface); border-radius: 18px;
-      padding: 32px; margin-bottom: 12px;
+      background: var(--surface); border-radius: 16px;
+      padding: 28px 28px; margin-bottom: 10px;
       box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(226,232,240,0.8);
+      transition: box-shadow 0.15s;
     }
     .panel-section:last-child { margin-bottom: 0; }
+    .panel-section:focus-within {
+      box-shadow: var(--shadow-md);
+      border-color: rgba(67,56,202,0.15);
+    }
 
-    /* Section labels — small, uppercase, muted — pure guides not content */
+    /* Section labels */
     .panel-label {
-      font-size: 11px; font-weight: 600; letter-spacing: 0.6px;
-      text-transform: uppercase; color: var(--label); margin-bottom: 14px;
-      display: flex; align-items: center; gap: 8px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.7px;
+      text-transform: uppercase; color: var(--label); margin-bottom: 16px;
+      display: flex; align-items: center; gap: 10px;
     }
     .panel-label .num {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 20px; height: 20px; border-radius: 50%; background: var(--brand);
+      width: 22px; height: 22px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--brand), #6366F1);
       color: white; font-size: 11px; font-weight: 700; flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(67,56,202,0.3);
     }
-    .setup-step-row.done .panel-label .num { background: var(--green); }
+    .setup-step-row.done .panel-label .num { background: linear-gradient(135deg, #059669, #10B981); }
 
     /* Inputs: large, high-contrast, shadow-based focus (no border reliance) */
     textarea, input[type="text"], input[type="password"] {
@@ -910,7 +985,8 @@
     }
     .btn-analyze-resume:hover:not(:disabled) { background: #E0E7FF; border-color: var(--brand); transform: translateY(-1px); }
     .btn-analyze-resume:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .btn-analyze-resume.spinning #autoDetectBtnIcon { display: inline-block; animation: spin 0.8s linear infinite; }
+    .btn-analyze-resume.spinning #autoDetectBtnIcon,
+    .js-hero-btn.spinning #autoDetectBtnIcon { display: inline-block; animation: spin 0.8s linear infinite; }
 
     /* Role filter tabs */
     .role-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -1332,6 +1408,48 @@
   .topbar-right .hide-mobile { display: none; }
 }
 
+/* ── DESKTOP TWO-COLUMN LAYOUT ───────────────────────────────────────── */
+@media (min-width: 1024px) {
+  .main {
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    gap: 24px !important;
+    padding: 32px 24px 64px !important;
+  }
+  .left-panel {
+    max-width: 480px !important;
+    width: 100% !important;
+    flex-shrink: 0 !important;
+  }
+  .right-panel {
+    flex: 1 !important;
+    min-width: 0 !important;
+    max-width: 600px !important;
+    margin-top: 0 !important;
+  }
+}
+
+/* ── TOPBAR ICON-ONLY BUTTONS ────────────────────────────────────────── */
+.topbar-right .api-badge .badge-label,
+.topbar-right .btn-feedback .badge-label { display: none; }
+.topbar-right .api-badge { position: relative; }
+.topbar-right .api-badge:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: white;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 100;
+}
+
 /* ── RESUME SOURCE HERO CARDS ────────────────────────────────────────── */
 .resume-source-cards {
   display: flex;
@@ -1425,48 +1543,194 @@
   color: var(--text);
   line-height: 1.3;
 }
+
+  /* ── SIDEBAR: show on desktop ≥ 900px ─────────────────── */
+  @media (min-width: 900px) {
+    .sidebar { display: flex; }
+    /* Hide the old topbar mode-toggle on desktop too */
+    .mode-toggle { display: none !important; }
+  }
+
+  /* ── IMPROVED FLOW HINT BAR ────────────────────────────── */
+  #flowHint {
+    background: linear-gradient(90deg, #EEF2FF, #F0FDF4);
+    border-bottom: 1px solid rgba(67,56,202,0.12);
+  }
+  #flowHint .flow-step-pill {
+    padding: 3px 11px; border-radius: 100px;
+    font-size: 12px; font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  /* ── JOB SEARCH PANEL IMPROVEMENTS ────────────────────── */
+  .js-hero-btn {
+    width: 100%; padding: 15px 18px; border-radius: 14px;
+    background: linear-gradient(135deg, #4338CA 0%, #6366F1 100%);
+    color: white; font-weight: 700; font-size: 14px;
+    border: none; cursor: pointer; font-family: 'Inter', sans-serif;
+    display: flex; align-items: center; gap: 10px;
+    transition: all 0.2s; text-align: left;
+    box-shadow: 0 4px 16px rgba(67,56,202,0.35), 0 1px 0 rgba(255,255,255,0.1) inset;
+    margin-bottom: 16px;
+  }
+  .js-hero-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(67,56,202,0.45);
+  }
+  .js-hero-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .js-hero-btn .btn-icon {
+    font-size: 22px; flex-shrink: 0;
+    width: 40px; height: 40px; background: rgba(255,255,255,0.15);
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  }
+  .js-hero-btn .btn-text strong { display: block; font-size: 14px; font-weight: 700; margin-bottom: 1px; }
+  .js-hero-btn .btn-text span { font-size: 12px; opacity: 0.8; font-weight: 400; }
+  .js-ai-divider {
+    display: flex; align-items: center; gap: 10px; margin: 4px 0 18px;
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--muted);
+  }
+  .js-ai-divider::before, .js-ai-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+  .js-field-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+    text-transform: uppercase; color: var(--label);
+    display: block; margin-bottom: 8px; margin-top: 16px;
+  }
+  .js-field-label:first-child { margin-top: 0; }
+
+  /* ── TAILOR PANEL IMPROVEMENTS ────────────────────────── */
+  .tailor-step-pills {
+    display: flex; gap: 8px; margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .tailor-step-pill {
+    display: flex; align-items: center; gap: 5px;
+    padding: 5px 12px; border-radius: 100px;
+    font-size: 12px; font-weight: 600;
+    background: var(--surface2); color: var(--muted);
+    border: 1.5px solid var(--border);
+    transition: all 0.2s;
+  }
+  .tailor-step-pill.active {
+    background: #EEF2FF; color: var(--brand);
+    border-color: rgba(67,56,202,0.4);
+  }
+  .tailor-step-pill.done {
+    background: var(--green-light); color: var(--green);
+    border-color: rgba(5,150,105,0.3);
+  }
+
+  /* ── SECTION HEADER (cleaner style for JD/notes sections) ── */
+  .section-heading {
+    font-size: 13px; font-weight: 700; color: var(--text);
+    margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-heading-badge {
+    font-size: 10px; font-weight: 600; padding: 2px 7px;
+    background: var(--surface2); color: var(--muted);
+    border-radius: 100px; border: 1px solid var(--border);
+  }
+
+  /* ── RESUME UPLOAD ZONE improvement ─────────────────────── */
+  /* .file-drop is an alias — same styles as .upload-zone */
+  .upload-zone, .file-drop {
+    border: 2px dashed var(--border); border-radius: 14px;
+    padding: 28px 20px; text-align: center; cursor: pointer;
+    transition: all 0.2s; background: var(--surface2);
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.drag-over,
+  .file-drop:hover, .file-drop.drag-over {
+    border-color: var(--brand); background: #EEF2FF;
+    box-shadow: 0 0 0 4px rgba(67,56,202,0.08);
+  }
+  .upload-zone-icon { font-size: 32px; margin-bottom: 10px; }
+  .upload-zone-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .upload-zone-sub { font-size: 12px; color: var(--muted); }
+  .upload-zone strong { color: var(--brand); }
+
+  /* LinkedIn import as a card option */
+  .li-import-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; border-radius: 12px;
+    background: rgba(0,119,181,0.05);
+    border: 1.5px solid rgba(0,119,181,0.2);
+    cursor: pointer; transition: all 0.15s;
+    margin-top: 10px;
+  }
+  .li-import-card:hover {
+    background: rgba(0,119,181,0.09);
+    border-color: rgba(0,119,181,0.4);
+    transform: translateY(-1px);
+  }
+  .li-import-icon {
+    width: 32px; height: 32px; flex-shrink: 0;
+    background: linear-gradient(135deg, #0077B5, #0A66C2);
+    border-radius: 7px; display: flex; align-items: center; justify-content: center;
+  }
+  .li-import-text { flex: 1; }
+  .li-import-text strong { display: block; font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 1px; }
+  .li-import-text span { font-size: 11px; color: var(--muted); }
+  .li-import-arrow { font-size: 14px; color: var(--muted); }
+
+  /* ── TIER TOGGLE improvement ──────────────────────────── */
+  .output-mode-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+    text-transform: uppercase; color: var(--label); margin-bottom: 10px;
+  }
+
+  /* ── MOBILE bottom nav update ──────────────────────────── */
+  @media (max-width: 899px) {
+    .sidebar { display: none !important; }
+    .mode-toggle { display: none !important; }
+  }
   </style>
 </head>
 <body>
 <div class="app">
 
-  <!-- Top Bar -->
+  <!-- Top Bar — slim, logo + account only (nav is now in sidebar) -->
   <div class="topbar">
     <div class="logo" id="logoBtn" title="1stStep.ai">1stStep<span>.ai</span></div>
-    <div class="mode-toggle">
-      <!-- Primary tabs: Resume Tailor · Job Search · My Resumes -->
-      <button class="mode-btn active" id="modeResume" onclick="switchMode('resume')"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11 1H3a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V5l-3-4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M11 1v4h3M5 8h6M5 10.5h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Resume Tailor</button>
-      <button class="mode-btn" id="modeJobs" onclick="switchMode('jobs')"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Job Search</button>
-      <button class="mode-btn" id="modeTailored" onclick="switchMode('tailored')"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M2 4h8a1 1 0 011 1v10a1 1 0 01-1 1H2a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M4 8h5M4 10.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> My Resumes <span id="tailoredBadge" style="display:none;background:rgba(99,102,241,0.3);color:#a5b4fc;border-radius:100px;padding:1px 6px;font-size:10px;margin-left:2px">0</span></button>
-      <!-- More dropdown: Applications · LinkedIn Profile · Bulk Apply -->
-      <div class="mode-more" id="modeMoreWrap">
-        <button class="mode-btn" id="modeMoreBtn" onclick="toggleMoreMenu()" title="More tools">
-          More <span style="font-size:9px;opacity:0.7">▾</span>
-          <span id="moreActiveDot" style="display:none;width:6px;height:6px;border-radius:50%;background:#60A5FA;margin-left:2px"></span>
-        </button>
-        <div class="mode-more-menu" id="moreMenu">
-          <button class="mode-more-item" id="modeTracker" onclick="switchMode('tracker');toggleMoreMenu(false)"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Applications <span id="trackerBadge" style="display:none;background:var(--blue);color:white;border-radius:100px;padding:1px 6px;font-size:10px;margin-left:4px">0</span></button>
-          <button class="mode-more-item" id="modeLinkedIn" onclick="switchMode('linkedin');toggleMoreMenu(false)"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 6.5v5M4 4v.5M7 11.5V9c0-1.1.9-2 2-2s2 .9 2 2v2.5M7 6.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> LinkedIn Profile</button>
-          <button class="mode-more-item" id="modeBulkApply" onclick="switchMode('bulkapply');toggleMoreMenu(false)"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="13" cy="12" r="2.5" fill="currentColor"/><path d="M12 12l.7.7 1.3-1.3" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg> Bulk Apply</button>
-        </div>
-      </div>
+
+    <!-- Hidden stubs: keep IDs for JS switchMode() compatibility -->
+    <!-- These are NOT visible — sidebar buttons carry the active class -->
+    <div style="display:none" aria-hidden="true">
+      <button id="modeResume"></button>
+      <button id="modeJobs"></button>
+      <button id="modeTailored"></button>
+      <button id="modeTracker"></button>
+      <button id="modeLinkedIn"></button>
+      <button id="modeBulkApply"></button>
+      <button id="modeMoreBtn"></button>
+      <span id="moreActiveDot"></span>
+      <span id="tailoredBadge">0</span>
+      <span id="trackerBadge">0</span>
     </div>
+
+    <!-- Keep old mode-toggle hidden for any JS that may reference it -->
+    <div class="mode-toggle" style="display:none !important" id="modeMoreWrap">
+      <div id="moreMenu"></div>
+    </div>
+
     <div class="topbar-right">
-      <!-- Beta chip — shown only when beta is active -->
+      <!-- Beta chip -->
       <div id="betaBadge" style="display:none;align-items:center;gap:5px;padding:5px 10px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);border-radius:8px;font-size:11px;font-weight:600;color:#818CF8;cursor:default" title="Beta access active">
         <span>🧪</span><span id="betaDaysLeft" class="hide-mobile">Beta</span>
       </div>
-      <!-- Feedback button — shown only during beta -->
+      <!-- Feedback button -->
       <button id="feedbackBtn" onclick="openFeedbackForm()" style="display:none;align-items:center;gap:5px;padding:6px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s" onmouseover="this.style.borderColor='var(--brand)';this.style.color='var(--brand)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
-        <span>💬</span><span class="hide-mobile">Feedback</span>
+        <span>💬</span><span class="badge-label hide-mobile">Feedback</span>
       </button>
-      <div class="api-badge" onclick="downloadDataBackup()" title="Download a backup of your resume, history &amp; subscription — restore it on any browser">
+      <div class="api-badge" onclick="downloadDataBackup()" title="Backup your data">
         <span>💾</span>
-        <span class="hide-mobile">Backup</span>
+        <span class="badge-label hide-mobile">Backup</span>
       </div>
       <div class="api-badge" onclick="openProfileModal()">
         <span>👤</span>
-        <span id="profileBadgeText" class="hide-mobile">Account</span>
+        <span id="profileBadgeText" class="badge-label hide-mobile">Account</span>
       </div>
     </div>
   </div>
@@ -1483,6 +1747,55 @@
     <span id="flowStep4" style="padding:3px 10px;border-radius:100px;background:var(--surface2);color:var(--text2)">4 · Download &amp; apply</span>
     <button onclick="document.getElementById('flowHint').style.display='none';localStorage.setItem('1ststep_hint_dismissed','1')" style="margin-left:14px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0;line-height:1;flex-shrink:0">✕</button>
   </div>
+
+  <div class="content-wrap">
+
+  <!-- ── SIDEBAR NAV (desktop ≥ 900px) ──────────────────────────────────── -->
+  <nav class="sidebar" role="navigation" aria-label="Main navigation">
+
+    <button class="sidebar-nav-btn active" id="sbResume" onclick="switchMode('resume');setSidebarActive('resume')" title="Resume Tailor">
+      <span class="sidebar-nav-icon">📄</span>
+      <span class="sidebar-nav-label">Resume Tailor</span>
+    </button>
+
+    <button class="sidebar-nav-btn" id="sbJobs" onclick="switchMode('jobs');setSidebarActive('jobs')" title="Job Search">
+      <span class="sidebar-nav-icon">🔍</span>
+      <span class="sidebar-nav-label">Job Search</span>
+    </button>
+
+    <button class="sidebar-nav-btn" id="sbTailored" onclick="switchMode('tailored');setSidebarActive('tailored')" title="My Resumes">
+      <span class="sidebar-nav-icon">📁</span>
+      <span class="sidebar-nav-label">My Resumes</span>
+      <span class="sidebar-nav-badge" id="sbTailoredBadge">0</span>
+    </button>
+
+    <div class="sidebar-divider"></div>
+
+    <button class="sidebar-nav-btn" id="sbTracker" onclick="switchMode('tracker');setSidebarActive('tracker')" title="Applications">
+      <span class="sidebar-nav-icon">✅</span>
+      <span class="sidebar-nav-label">Applications</span>
+      <span class="sidebar-nav-badge" id="sbTrackerBadge">0</span>
+    </button>
+
+    <button class="sidebar-nav-btn" id="sbLinkedIn" onclick="switchMode('linkedin');setSidebarActive('linkedin')" title="LinkedIn Profile">
+      <span class="sidebar-nav-icon">💼</span>
+      <span class="sidebar-nav-label">LinkedIn Profile</span>
+    </button>
+
+    <button class="sidebar-nav-btn" id="sbBulkApply" onclick="switchMode('bulkapply');setSidebarActive('bulkapply')" title="Bulk Apply">
+      <span class="sidebar-nav-icon">⚡</span>
+      <span class="sidebar-nav-label">Bulk Apply</span>
+    </button>
+
+    <div class="sidebar-spacer"></div>
+    <div class="sidebar-divider"></div>
+
+    <button class="sidebar-nav-btn" onclick="openProfileModal()" title="Account">
+      <span class="sidebar-nav-icon">👤</span>
+      <span class="sidebar-nav-label">Account</span>
+    </button>
+
+  </nav>
 
   <div class="main">
 
@@ -1501,17 +1814,16 @@
           <p style="margin-top:4px;font-size:11px;color:var(--muted)">PDF, Word (.docx), or plain text</p>
         </div>
 
-        <!-- LinkedIn PDF import shortcut -->
-        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px">
-          <div style="height:1px;flex:1;background:var(--border)"></div>
-          <button onclick="openLinkedInPdfModal()"
-            style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--muted);font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:6px;transition:all 0.15s;white-space:nowrap"
-            onmouseenter="this.style.background='rgba(99,102,241,0.08)';this.style.color='#818CF8'"
-            onmouseleave="this.style.background='none';this.style.color='var(--muted)'">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 6.5v5M4 4v.5M7 11.5V9c0-1.1.9-2 2-2s2 .9 2 2v2.5M7 6.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            Import from LinkedIn
-          </button>
-          <div style="height:1px;flex:1;background:var(--border)"></div>
+        <!-- LinkedIn import as a card -->
+        <div class="li-import-card" onclick="openLinkedInPdfModal()" role="button" tabindex="0" onkeydown="if(event.key==='Enter')openLinkedInPdfModal()">
+          <div class="li-import-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="14" rx="2" fill="white" fill-opacity="0.15"/><path d="M4 6.5v5M4 4v.5M7 11.5V9c0-1.1.9-2 2-2s2 .9 2 2v2.5M7 6.5v5" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <div class="li-import-text">
+            <strong>Import from LinkedIn</strong>
+            <span>Export your profile PDF and upload it here</span>
+          </div>
+          <span class="li-import-arrow">→</span>
         </div>
 
         <!-- Privacy trust signal -->
@@ -1533,53 +1845,50 @@
         <textarea id="resumeText" rows="1" style="display:none;height:0;padding:0;border:none;resize:none" placeholder="" aria-hidden="true" tabindex="-1"></textarea>
       </div>
 
-      <!-- JD input — hidden until resume is loaded -->
-      <div class="panel-section" id="jdSection" style="display:none">
+      <!-- JD input — always visible as Step 2 -->
+      <div class="panel-section" id="jdSection">
         <div class="panel-label"><span class="num">2</span> Job Description</div>
         <!-- Job context banner — shown when tailoring from a job card -->
         <div id="jobContextBanner" style="display:none;align-items:center;gap:8px;padding:10px 14px;background:#EEF2FF;border:1.5px solid rgba(67,56,202,0.25);border-radius:10px;margin-bottom:10px;font-size:13px;color:var(--brand);font-weight:500">
           <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="jobContextLabel">💼 Tailoring for: Role at Company</span>
           <button onclick="clearJobContext()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;flex-shrink:0;padding:0">✕</button>
         </div>
-        <textarea id="jobText" rows="8" placeholder="Paste the full job description here — the more detail, the better the result."></textarea>
+        <textarea id="jobText" rows="8" placeholder="Paste the full job description here. The more detail, the better the match."></textarea>
+        <p style="margin-top:8px;font-size:12px;color:var(--muted);line-height:1.5">💡 Tip: Include the full posting — requirements, responsibilities, and company info all help the AI tailor more precisely.</p>
       </div>
 
-      <!-- Notes — collapsed by default, inside its own card -->
-      <div class="panel-section" style="padding-top:20px;padding-bottom:20px">
-        <details id="advancedSection">
-          <summary style="font-size:11px;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;color:var(--label);cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;user-select:none">
-            <span id="advArrow" style="font-size:9px;transition:transform 0.15s;color:var(--muted)">▶</span> Extra Context <span style="font-size:11px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(Optional)</span>
-          </summary>
-          <div style="margin-top:14px">
-            <textarea id="notesText" rows="3" placeholder="e.g. I'm changing careers from finance to tech. Emphasize transferable skills and downplay unrelated experience."></textarea>
-          </div>
-        </details>
-      </div>
-
-      <!-- Output mode + Run — wrapped in a card for visual separation -->
+      <!-- Output mode + Run — wrapped in a card -->
       <div class="panel-section run-section">
-        <!-- Tier / output mode toggle — here so it's seen right before running -->
-        <div class="tier-select" style="margin-bottom:16px">
+        <!-- Output mode toggle -->
+        <div class="output-mode-label">Output</div>
+        <div class="tier-select" style="margin-bottom:18px">
           <button class="tier-btn active" id="tierEssential" onclick="setTier('essential')">
             <strong>Resume Only</strong>
           </button>
-          <button class="tier-btn complete-tier" id="tierComplete" onclick="setTier('complete')" id="tierComplete">
+          <button class="tier-btn complete-tier" id="tierComplete" onclick="setTier('complete')">
             <strong>Resume + Cover Letter</strong><span class="tier-lock" id="clLockIcon"></span>
           </button>
         </div>
+
+        <!-- Extra context — compact ghost button -->
+        <details id="advancedSection" style="margin-bottom:14px">
+          <summary style="list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);user-select:none;transition:all 0.15s" onmouseenter="this.style.borderColor='var(--border2)'" onmouseleave="this.style.borderColor='var(--border)'">
+            <span id="advArrow">＋</span> Add notes <span style="font-weight:400;color:var(--muted)">(optional)</span>
+          </summary>
+          <div style="margin-top:10px">
+            <textarea id="notesText" rows="3" placeholder="e.g. I'm changing careers from finance to tech. Emphasize my transferable project management skills."></textarea>
+          </div>
+        </details>
+
         <button class="btn-run" id="runBtn" onclick="runTailoring()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="runIcon"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           <span id="runBtnLabel">✦ Tailor My Resume</span>
         </button>
-        <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:10px;">Takes 20–45 seconds</p>
-        <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:6px;">
-          Already have a job description? <button onclick="showJdSection();document.getElementById('jobText').focus()" style="background:none;border:none;color:var(--brand);font-size:11px;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;font-family:'Inter',sans-serif">Paste it manually →</button>
-        </p>
-        <!-- Monthly tailor usage meter — always visible for free users -->
+        <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:10px;">Takes 20–45 seconds · AI-powered</p>
+        <!-- Monthly tailor usage meter -->
         <div id="tailorUsageMeter" style="margin-top:14px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
             <span style="font-size:12px;color:var(--text2)" id="tailorUsageLabel">3 free tailors · No card needed</span>
-            <!-- Note: label text is overwritten dynamically by updateUsageLabels() -->
             <span style="font-size:11px;color:var(--muted)" id="tailorUsageReset">resets monthly</span>
           </div>
           <div style="height:5px;background:var(--border);border-radius:100px;overflow:hidden">
@@ -1590,50 +1899,47 @@
 
     </div><!-- /left-panel -->
 
-    <!-- Job Search Left Panel -->
+    <!-- Job Search Left Panel — restructured for clarity -->
     <div class="left-panel js-panel" id="jobSearchLeft">
-
-      <!-- Resume Source -->
       <div class="panel-section">
-        <div class="panel-label"><span class="num">1</span> Your Resume</div>
-        <!-- Loaded from Resume Tailor -->
+        <div class="panel-label">Find Jobs</div>
+
+        <!-- Hero: AI auto-detect (the recommended path) -->
+        <button class="js-hero-btn" id="autoDetectBtn" onclick="analyzeResumeForJobSearch()">
+          <span class="btn-icon" id="autoDetectBtnIcon">🤖</span>
+          <span class="btn-text">
+            <strong id="autoDetectBtnLabel">Auto-detect my best jobs</strong>
+            <span>Reads your resume and finds matching roles</span>
+          </span>
+        </button>
+
+        <!-- Status + suggested titles from AI -->
+        <div id="analyzeStatus" style="display:none;font-size:12px;margin-bottom:8px;padding:8px 12px;border-radius:8px;line-height:1.5"></div>
+        <div id="suggestedTitles" style="display:none;margin-bottom:10px"></div>
+
+        <!-- Resume status row (hidden inputs, JS needs these IDs) -->
         <div id="jsResumeLoaded" class="file-loaded" style="display:none">
           <span id="jsResumeLoadedText">Resume carried over ✓</span>
           <button onclick="clearJsResume()">✕ Clear</button>
         </div>
-        <!-- Paste / upload fallback -->
-        <div id="jsResumePaste">
-          <div class="js-upload-row">
-            <button class="btn-js-upload" onclick="document.getElementById('jsFileInput').click()">📎 Upload file</button>
-            <input type="file" id="jsFileInput" accept=".pdf,.docx,.doc,.txt" style="display:none" onchange="handleJsFileSelect(event)" />
-            <span class="js-upload-hint">PDF, Word, or .txt</span>
-          </div>
-          <div class="or-divider" style="margin:8px 0">— or paste below —</div>
-          <textarea id="jsResumeText" rows="5" placeholder="Paste your resume here, or add it in Resume Tailor mode and come back..."></textarea>
+        <div id="jsResumePaste" style="display:none">
+          <input type="file" id="jsFileInput" accept=".pdf,.docx,.doc,.txt" style="display:none" onchange="handleJsFileSelect(event)" />
+          <textarea id="jsResumeText" rows="1" style="display:none;height:0;padding:0;border:none;resize:none" aria-hidden="true" tabindex="-1"></textarea>
         </div>
-        <!-- AI Analyze button -->
-        <button class="btn-analyze-resume" id="autoDetectBtn" onclick="analyzeResumeForJobSearch()">
-          <span id="autoDetectBtnIcon">🤖</span> <span id="autoDetectBtnLabel">Auto-detect matching jobs from resume</span>
-        </button>
-        <!-- Status message under analyze button -->
-        <div id="analyzeStatus" style="display:none;font-size:11px;margin-top:6px;padding:6px 10px;border-radius:6px;line-height:1.5"></div>
-        <!-- Suggested title pills -->
-        <div id="suggestedTitles" style="display:none;margin-top:10px"></div>
-      </div>
 
-      <!-- Location -->
-      <div class="panel-section">
-        <div class="panel-label"><span class="num">2</span> Your Location</div>
+        <!-- Divider between AI and manual search -->
+        <div class="js-ai-divider">or search manually</div>
+
+        <!-- Location -->
+        <label class="js-field-label">📍 Your Location</label>
         <div class="location-row">
           <input type="text" id="locationInput" placeholder="City, State or ZIP code" />
-          <button class="btn-locate" onclick="detectLocation()" title="Use my location">📍</button>
+          <button class="btn-locate" onclick="detectLocation()" title="Detect my location">🎯</button>
         </div>
-        <div id="locationStatus" style="font-size:11px;color:var(--muted);margin-top:6px;display:none"></div>
-      </div>
+        <div id="locationStatus" style="font-size:11px;color:var(--green);margin-top:6px;display:none"></div>
 
-      <!-- Radius -->
-      <div class="panel-section">
-        <div class="panel-label"><span class="num">3</span> Search Radius</div>
+        <!-- Radius -->
+        <label class="js-field-label">Search Radius</label>
         <div class="radius-options">
           <button class="radius-btn" onclick="setRadius(5)" data-r="5">5 mi</button>
           <button class="radius-btn active" onclick="setRadius(10)" data-r="10">10 mi</button>
@@ -1641,123 +1947,53 @@
           <button class="radius-btn" onclick="setRadius(50)" data-r="50">50 mi</button>
           <button class="radius-btn" onclick="setRadius(100)" data-r="100">100 mi</button>
         </div>
-      </div>
 
-      <!-- Keywords (auto-filled by AI, editable) -->
-      <div class="panel-section">
-        <div class="panel-label" style="justify-content:space-between">
-          <span><span class="num">4</span> Job Keywords</span>
-          <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">Auto-filled by AI ↑</span>
+        <!-- Keywords -->
+        <label class="js-field-label">Job Title / Keywords</label>
+        <input type="text" id="jobKeywords" placeholder="e.g. Product Manager, Software Engineer…" onkeydown="if(event.key==='Enter') searchJobs()" />
+        <div style="margin-top:6px;font-size:12px;color:var(--muted);line-height:1.5">
+          Start with your <strong style="color:var(--text2)">job title</strong>, then add industry or skills — e.g. <em>"UX Designer Figma"</em>.
         </div>
-        <input type="text" id="jobKeywords" placeholder="e.g. Product Manager, Software Engineer React…" onkeydown="if(event.key==='Enter') searchJobs()" />
-        <div style="margin-top:6px;font-size:11.5px;color:var(--muted);line-height:1.5">
-          Start with your <strong style="color:var(--text2)">job title</strong>, then add industry or skills — e.g. <em>"Procurement Manager Supply Chain"</em> or <em>"UX Designer Figma"</em>. One focused phrase works better than a list.
-        </div>
-      </div>
 
-      <!-- Job Type -->
-      <div class="panel-section">
-        <div class="panel-label">Job Type</div>
+        <!-- Job Type -->
+        <label class="js-field-label">Job Type</label>
         <div class="jtype-options">
           <button class="jtype-btn active" onclick="toggleJobType(this, 'full_time')" data-type="full_time">Full-time</button>
           <button class="jtype-btn active" onclick="toggleJobType(this, 'part_time')" data-type="part_time">Part-time</button>
           <button class="jtype-btn active" onclick="toggleJobType(this, 'contract')" data-type="contract">Contract</button>
           <button class="jtype-btn active" onclick="toggleJobType(this, 'remote')" data-type="remote">Remote</button>
         </div>
-      </div>
 
-      <!-- Search -->
-      <div class="run-section">
-        <button class="btn-run" id="searchBtn" onclick="searchJobs()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="searchIcon"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          Find Jobs Near Me
-        </button>
-        <!-- Daily search usage meter -->
-        <div id="searchUsageMeter" style="margin-top:10px;display:none">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-            <span style="font-size:11px;color:var(--muted)" id="searchUsageLabel">0 / 5 searches this month</span>
-            <span style="font-size:10px;color:var(--muted);opacity:0.6">resets monthly</span>
-          </div>
-          <div style="height:4px;background:var(--dark3);border-radius:100px;overflow:hidden">
-            <div id="searchUsageBar" style="height:100%;width:0%;background:var(--green);border-radius:100px;transition:width 0.4s ease,background 0.4s ease"></div>
+        <!-- Search button -->
+        <div style="margin-top:20px">
+          <button class="btn-run" id="searchBtn" onclick="searchJobs()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="searchIcon"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Find Jobs Near Me
+          </button>
+          <!-- Search usage meter -->
+          <div id="searchUsageMeter" style="margin-top:10px;display:none">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+              <span style="font-size:11px;color:var(--muted)" id="searchUsageLabel">0 / 5 searches this month</span>
+              <span style="font-size:10px;color:var(--muted);opacity:0.6">resets monthly</span>
+            </div>
+            <div style="height:4px;background:var(--border);border-radius:100px;overflow:hidden">
+              <div id="searchUsageBar" style="height:100%;width:0%;background:var(--green);border-radius:100px;transition:width 0.4s ease,background 0.4s ease"></div>
+            </div>
           </div>
         </div>
       </div>
-
     </div><!-- /job search left panel -->
 
     <!-- Right Panel: Output -->
     <div class="right-panel">
 
-      <!-- Empty state / Landing hero -->
+      <!-- Empty state -->
       <div class="empty-state" id="emptyState">
-
-        <!-- Hero headline -->
-        <div style="margin-bottom:16px">
-          <h2 style="font-size:clamp(20px,3vw,26px);font-weight:800;color:var(--text);line-height:1.25;margin-bottom:10px">
-            See exactly why you're not<br><span style="background:linear-gradient(90deg,#60A5FA,#818CF8);-webkit-background-clip:text;-webkit-text-fill-color:transparent">getting callbacks.</span>
-          </h2>
-          <p style="font-size:13px;color:var(--muted);line-height:1.6;max-width:340px;margin:0 auto">
-            1stStep.ai shows your skill gaps, rewrites your resume for that exact role, and writes a cover letter — all in 30 seconds.
-          </p>
+        <div style="text-align:center;padding:60px 24px">
+          <div style="font-size:48px;margin-bottom:16px">✨</div>
+          <h3 style="font-size:18px;font-weight:700;color:var(--text);margin:0 0 8px">Your tailored resume will appear here</h3>
+          <p style="font-size:13px;color:var(--muted);margin:0;line-height:1.6;max-width:280px;margin:0 auto">Upload your resume and paste a job description, then hit Tailor Resume.</p>
         </div>
-
-        <!-- Feature chips -->
-        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-bottom:16px">
-          <div style="padding:5px 11px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#34D399">📊 Skill gap analysis</div>
-          <div style="padding:5px 11px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">🔍 ATS keyword match</div>
-          <div style="padding:5px 11px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">✍️ Resume rewrite</div>
-          <div style="padding:5px 11px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">✉️ Cover letter</div>
-          <div style="padding:5px 11px;background:rgba(0,119,181,0.1);border:1px solid rgba(0,119,181,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#60A5FA">🔗 LinkedIn import</div>
-        </div>
-
-        <!-- Trust bar — honest signals only -->
-        <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:18px;flex-wrap:wrap">
-          <div style="font-size:11px;color:var(--muted)">🔒 Resume never leaves your browser</div>
-          <div style="width:1px;height:12px;background:var(--border)"></div>
-          <div style="font-size:11px;color:var(--muted)">✓ 3 free tailors · 5 searches · No card required</div>
-          <div style="width:1px;height:12px;background:var(--border)"></div>
-          <div style="font-size:11px;color:var(--muted)">⚡ Done in 30 seconds</div>
-        </div>
-
-        <!-- Steps -->
-        <div class="setup-steps" id="setupSteps">
-          <div class="setup-step-row" id="setupStep2">
-            <div class="setup-step-num" id="setupNum2">1</div>
-            <div class="setup-step-text">
-              <strong>Upload your resume</strong>
-              <span>PDF, Word, or paste — takes 5 seconds</span>
-            </div>
-            <span class="setup-step-action" onclick="document.getElementById('fileInput').click()">Add resume →</span>
-          </div>
-          <div class="setup-step-row" id="setupStep3">
-            <div class="setup-step-num" id="setupNum3">2</div>
-            <div class="setup-step-text">
-              <strong>Find a job to tailor to</strong>
-              <span>Search jobs or paste a listing directly</span>
-            </div>
-            <span class="setup-step-action" onclick="showJdSection();document.getElementById('jobText').focus()">Add JD →</span>
-          </div>
-        </div>
-
-        <!-- Before / After example -->
-        <div style="margin-top:20px;border:1px solid var(--border);border-radius:12px;overflow:hidden;text-align:left;font-size:12px">
-          <div style="display:grid;grid-template-columns:1fr 1fr">
-            <div style="padding:10px 12px;border-right:1px solid var(--border);background:rgba(239,68,68,0.04)">
-              <div style="font-size:10px;font-weight:700;color:#f87171;letter-spacing:0.06em;margin-bottom:6px">❌ BEFORE</div>
-              <p style="color:var(--muted);margin:0;line-height:1.55;font-size:11.5px">"Managed projects and helped the team meet deadlines."</p>
-            </div>
-            <div style="padding:10px 12px;background:rgba(16,185,129,0.04)">
-              <div style="font-size:10px;font-weight:700;color:#34d399;letter-spacing:0.06em;margin-bottom:6px">✅ AFTER · 1stStep.ai</div>
-              <p style="color:var(--fg);margin:0;line-height:1.55;font-size:11.5px">"Led cross-functional team of 4, delivering 3 enterprise deployments on schedule — reducing client onboarding time by 23%."</p>
-            </div>
-          </div>
-          <div style="padding:7px 12px;background:var(--input-bg);border-top:1px solid var(--border);font-size:10.5px;color:var(--muted);text-align:center">
-            Keywords, quantified impact, ATS phrasing — plus a full skill gap report showing what's missing.
-          </div>
-        </div>
-
-        <p style="font-size:11px;color:var(--dark3);margin-top:14px;">No account required · Results in ~30 seconds · Free — then $19/mo</p>
       </div>
 
       <!-- Progress -->
@@ -2118,7 +2354,8 @@
       </div>
     </div>
 
-  </div>
+  </div><!-- /main -->
+  </div><!-- /content-wrap -->
 
   <!-- Footer -->
   <div id="appFooter" style="display:flex;align-items:center;justify-content:center;gap:20px;padding:10px 20px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0">
@@ -4228,6 +4465,35 @@ let currentRadius = 10; // miles
 let activeJobTypes = new Set(['full_time','part_time','contract','remote']);
 let userCoords = null; // { lat, lon, displayName }
 let currentMode = 'resume';
+
+// ── Sidebar active state helper ───────────────────────────────────────────
+// Called by sidebar buttons to sync their visual active state.
+// The hidden stub buttons (modeResume etc.) get the class from switchMode().
+const _sbMap = {
+  resume:    'sbResume',
+  jobs:      'sbJobs',
+  tailored:  'sbTailored',
+  tracker:   'sbTracker',
+  linkedin:  'sbLinkedIn',
+  bulkapply: 'sbBulkApply',
+};
+function setSidebarActive(mode) {
+  Object.values(_sbMap).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active');
+  });
+  const target = document.getElementById(_sbMap[mode]);
+  if (target) target.classList.add('active');
+}
+
+// Hook into switchMode to also update sidebar
+(function() {
+  const _orig = switchMode;
+  switchMode = function(mode) {
+    _orig(mode);
+    setSidebarActive(mode);
+  };
+})();
 
 // ── Mode Switching ────────────────────────────────────────────────────────
 function switchMode(mode) {
@@ -8406,10 +8672,10 @@ async function handleLinkedInPdfUpload(event) {
   </div>
 </div>
 
-<!-- Mobile Bottom Navigation -->
+<!-- Mobile Bottom Navigation — all 5 primary tools visible, no "More" -->
 <nav class="mobile-bottom-nav">
   <button class="mobile-nav-item active" id="mobileNavResume" onclick="switchMode('resume'); setMobileNav('resume')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
     Tailor
   </button>
   <button class="mobile-nav-item" id="mobileNavJobs" onclick="switchMode('jobs'); setMobileNav('jobs')">
@@ -8417,40 +8683,42 @@ async function handleLinkedInPdfUpload(event) {
     Jobs
   </button>
   <button class="mobile-nav-item" id="mobileNavTailored" onclick="switchMode('tailored'); setMobileNav('tailored')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
     Resumes
     <span class="mobile-nav-badge" id="mobileNavTailoredBadge" style="display:none">0</span>
   </button>
   <button class="mobile-nav-item" id="mobileNavTracker" onclick="switchMode('tracker'); setMobileNav('tracker')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-    Tracker
+    Applied
     <span class="mobile-nav-badge" id="mobileNavTrackerBadge" style="display:none">0</span>
   </button>
   <button class="mobile-nav-item" id="mobileNavMore" onclick="openMobileMoreSheet()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     More
   </button>
 </nav>
 
-<!-- Mobile More Bottom Sheet -->
-<div id="mobileMoreSheet" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.4)" onclick="closeMobileMoreSheet()">
-  <div onclick="event.stopPropagation()" style="position:absolute;bottom:0;left:0;right:0;background:var(--surface);border-radius:20px 20px 0 0;padding:20px 0 calc(24px + env(safe-area-inset-bottom))">
-    <div style="width:36px;height:4px;background:var(--border);border-radius:100px;margin:0 auto 20px"></div>
-    <button onclick="switchMode('linkedin');setMobileNav('linkedin');closeMobileMoreSheet()" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 24px;background:none;border:none;font-family:'Inter',sans-serif;font-size:15px;font-weight:500;color:var(--text);cursor:pointer;text-align:left" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='none'">
-      <svg width="22" height="22" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 6.5v5M4 4v.5M7 11.5V9c0-1.1.9-2 2-2s2 .9 2 2v2.5M7 6.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      LinkedIn Profile
+<!-- Mobile More Bottom Sheet — LinkedIn, Bulk Apply, Account, Backup -->
+<div id="mobileMoreSheet" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.5);backdrop-filter:blur(2px)" onclick="closeMobileMoreSheet()">
+  <div onclick="event.stopPropagation()" style="position:absolute;bottom:0;left:0;right:0;background:var(--surface);border-radius:24px 24px 0 0;padding:8px 0 calc(24px + env(safe-area-inset-bottom))">
+    <div style="width:36px;height:4px;background:var(--border2);border-radius:100px;margin:12px auto 16px"></div>
+    <div style="padding:0 20px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted)">More Tools</div>
+    <button onclick="switchMode('linkedin');setMobileNav('linkedin');closeMobileMoreSheet()" style="width:100%;display:flex;align-items:center;gap:14px;padding:13px 24px;background:none;border:none;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;text-align:left;transition:background 0.1s" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='none'">
+      <span style="font-size:20px;width:28px;text-align:center">💼</span>
+      <span>LinkedIn Profile Optimizer</span>
     </button>
-    <button onclick="switchMode('bulkapply');setMobileNav('bulkapply');closeMobileMoreSheet()" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 24px;background:none;border:none;font-family:'Inter',sans-serif;font-size:15px;font-weight:500;color:var(--text);cursor:pointer;text-align:left" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='none'">
-      <svg width="22" height="22" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="13" cy="12" r="2.5" fill="currentColor"/><path d="M12 12l.7.7 1.3-1.3" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Bulk Apply
+    <button onclick="switchMode('bulkapply');setMobileNav('bulkapply');closeMobileMoreSheet()" style="width:100%;display:flex;align-items:center;gap:14px;padding:13px 24px;background:none;border:none;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;text-align:left;transition:background 0.1s" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='none'">
+      <span style="font-size:20px;width:28px;text-align:center">⚡</span>
+      <span>Bulk Apply <span style="font-size:11px;font-weight:500;color:var(--muted)">· Complete plan</span></span>
     </button>
-    <button onclick="openProfileModal();closeMobileMoreSheet()" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 24px;background:none;border:none;font-family:'Inter',sans-serif;font-size:15px;font-weight:500;color:var(--text);cursor:pointer;text-align:left" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='none'">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      Account
+    <div style="height:1px;background:var(--border);margin:8px 24px"></div>
+    <button onclick="openProfileModal();closeMobileMoreSheet()" style="width:100%;display:flex;align-items:center;gap:14px;padding:13px 24px;background:none;border:none;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:var(--text2);cursor:pointer;text-align:left;transition:background 0.1s" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='none'">
+      <span style="font-size:20px;width:28px;text-align:center">👤</span>
+      <span>Account &amp; Subscription</span>
     </button>
-    <button onclick="downloadDataBackup();closeMobileMoreSheet()" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 24px;background:none;border:none;font-family:'Inter',sans-serif;font-size:15px;font-weight:500;color:var(--text);cursor:pointer;text-align:left" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='none'">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Backup Data
+    <button onclick="downloadDataBackup();closeMobileMoreSheet()" style="width:100%;display:flex;align-items:center;gap:14px;padding:13px 24px;background:none;border:none;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:var(--text2);cursor:pointer;text-align:left;transition:background 0.1s" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='none'">
+      <span style="font-size:20px;width:28px;text-align:center">💾</span>
+      <span>Backup My Data</span>
     </button>
   </div>
 </div>
