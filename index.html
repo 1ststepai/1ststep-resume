@@ -1092,7 +1092,7 @@
     .welcome-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.75);
       display: flex; align-items: center; justify-content: center;
-      z-index: 3000; display: none;
+      z-index: 9998; display: none; /* below 9999 paywall but above everything else */
     }
     .welcome-overlay.visible { display: flex; }
     .welcome-modal {
@@ -5798,7 +5798,7 @@ function signOutAndClear() {
 }
 
 document.getElementById('welcomeOverlay').addEventListener('click', e => {
-  if (e.target === e.currentTarget) dismissWelcome();
+  // Intentionally blocked — user must choose a path to enter the app
 });
 document.getElementById('feedbackModal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeFeedbackModal();
