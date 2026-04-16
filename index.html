@@ -1686,6 +1686,107 @@
     .sidebar { display: none !important; }
     .mode-toggle { display: none !important; }
   }
+
+  /* ── HERO SECTION ────────────────────────────────────────── */
+  .hero {
+    background: linear-gradient(160deg, #F0F0FF 0%, #F8F6FF 30%, #FFFFFF 65%);
+    padding: 64px 32px 56px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 30%, rgba(99,102,241,0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 80% 60%, rgba(67,56,202,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 16px; border-radius: 100px;
+    background: rgba(67,56,202,0.08); border: 1px solid rgba(67,56,202,0.2);
+    font-size: 12px; font-weight: 600; color: var(--brand);
+    margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-size: clamp(28px, 4vw, 52px);
+    font-weight: 900;
+    color: var(--text);
+    line-height: 1.1;
+    letter-spacing: -1.2px;
+    margin-bottom: 18px;
+  }
+  .hero h1 .accent {
+    background: linear-gradient(90deg, #4338CA, #818CF8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero > p {
+    font-size: 16px; color: var(--text2);
+    line-height: 1.7; max-width: 520px;
+    margin: 0 auto 32px;
+  }
+  .hero-actions {
+    display: flex; align-items: center; justify-content: center;
+    gap: 12px; margin-bottom: 14px;
+  }
+  .btn-hero {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 32px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--brand) 0%, #6366F1 100%);
+    border: none; font-family: 'Inter', sans-serif;
+    font-size: 15px; font-weight: 700; color: white; cursor: pointer;
+    box-shadow: 0 6px 24px rgba(67,56,202,0.4), 0 1px 0 rgba(255,255,255,0.15) inset;
+    transition: all 0.2s;
+  }
+  .btn-hero:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(67,56,202,0.5); }
+  .hero-trust { font-size: 12px; color: var(--muted); }
+
+  /* ── FEATURE CHIPS ───────────────────────────────────────── */
+  .feature-chips {
+    display: flex; align-items: center; justify-content: center;
+    gap: 10px; padding: 20px 32px 28px;
+    background: linear-gradient(180deg, #FFFFFF 0%, #FAFBFF 100%);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .chip {
+    display: flex; align-items: center; gap: 7px;
+    padding: 9px 16px; border-radius: 10px;
+    background: white; border: 1.5px solid var(--border);
+    font-size: 13px; font-weight: 600; color: var(--text2);
+    cursor: pointer; transition: all 0.15s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    font-family: 'Inter', sans-serif;
+  }
+  .chip:hover {
+    border-color: var(--brand); color: var(--brand);
+    background: #EEF2FF; transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(67,56,202,0.15);
+  }
+  .chip-icon {
+    display: flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; flex-shrink: 0;
+  }
+  .chip-icon svg { width: 15px; height: 15px; stroke: currentColor; }
+
+  /* ── TOPBAR SVG BUTTONS ──────────────────────────────────── */
+  .topbar-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--surface); font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 600; color: var(--text2);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .topbar-btn:hover { border-color: var(--brand); color: var(--brand); }
+  .topbar-btn svg { width: 15px; height: 15px; stroke: currentColor; flex-shrink: 0; }
+
+  /* Hero section hide when resume loaded */
+  #heroSection { position: relative; z-index: 1; }
   </style>
 </head>
 <body>
@@ -1724,14 +1825,14 @@
       <button id="feedbackBtn" onclick="openFeedbackForm()" style="display:none;align-items:center;gap:5px;padding:6px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s" onmouseover="this.style.borderColor='var(--brand)';this.style.color='var(--brand)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
         <span>💬</span><span class="badge-label hide-mobile">Feedback</span>
       </button>
-      <div class="api-badge" onclick="downloadDataBackup()" title="Backup your data">
-        <span>💾</span>
-        <span class="badge-label hide-mobile">Backup</span>
-      </div>
-      <div class="api-badge" onclick="openProfileModal()">
-        <span>👤</span>
-        <span id="profileBadgeText" class="badge-label hide-mobile">Account</span>
-      </div>
+      <button class="topbar-btn hide-mobile" onclick="downloadDataBackup()" title="Backup your data">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Backup
+      </button>
+      <button class="topbar-btn" onclick="openProfileModal()" title="Account">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span id="profileBadgeText" class="hide-mobile">Account</span>
+      </button>
     </div>
   </div>
 
@@ -1748,23 +1849,77 @@
     <button onclick="document.getElementById('flowHint').style.display='none';localStorage.setItem('1ststep_hint_dismissed','1')" style="margin-left:14px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0;line-height:1;flex-shrink:0">✕</button>
   </div>
 
+  <!-- ── HERO + FEATURE CHIPS (shown until resume is loaded) ── -->
+  <div id="heroSection">
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-badge">✦ AI-Powered Job Search Platform</div>
+      <h1>Land the Job You Deserve — <span class="accent">Faster.</span></h1>
+      <p>Paste your resume. Find a role. Get a tailored resume, ATS keyword report, and cover letter in 30 seconds.</p>
+      <div class="hero-actions">
+        <button class="btn-hero" onclick="document.getElementById('fileInput').click()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Get Started Free
+        </button>
+      </div>
+      <p class="hero-trust">3 free tailors · No credit card required · Results in ~30 seconds</p>
+    </div>
+    <!-- Feature chips -->
+    <div class="feature-chips">
+      <button class="chip" onclick="switchMode('resume')">
+        <span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+        Resume Tailor
+      </button>
+      <button class="chip" onclick="switchMode('jobs')">
+        <span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+        Job Search
+      </button>
+      <button class="chip" onclick="switchMode('resume');setTier('complete')">
+        <span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+        Cover Letter
+      </button>
+      <button class="chip" onclick="switchMode('resume')">
+        <span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+        ATS Analysis
+      </button>
+      <button class="chip" onclick="switchMode('resume')">
+        <span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>
+        Interview Prep
+      </button>
+      <button class="chip" onclick="switchMode('linkedin')">
+        <span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="3"/><path d="M7 10v7M7 7v.5M12 17v-4a2 2 0 014 0v4M12 10v7"/></svg></span>
+        LinkedIn Optimizer
+      </button>
+      <button class="chip" onclick="switchMode('tracker')">
+        <span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span>
+        Application Tracker
+      </button>
+    </div>
+  </div>
+
   <div class="content-wrap">
 
   <!-- ── SIDEBAR NAV (desktop ≥ 900px) ──────────────────────────────────── -->
   <nav class="sidebar" role="navigation" aria-label="Main navigation">
 
     <button class="sidebar-nav-btn active" id="sbResume" onclick="switchMode('resume');setSidebarActive('resume')" title="Resume Tailor">
-      <span class="sidebar-nav-icon">📄</span>
+      <span class="sidebar-nav-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </span>
       <span class="sidebar-nav-label">Resume Tailor</span>
     </button>
 
     <button class="sidebar-nav-btn" id="sbJobs" onclick="switchMode('jobs');setSidebarActive('jobs')" title="Job Search">
-      <span class="sidebar-nav-icon">🔍</span>
+      <span class="sidebar-nav-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
       <span class="sidebar-nav-label">Job Search</span>
     </button>
 
     <button class="sidebar-nav-btn" id="sbTailored" onclick="switchMode('tailored');setSidebarActive('tailored')" title="My Resumes">
-      <span class="sidebar-nav-icon">📁</span>
+      <span class="sidebar-nav-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      </span>
       <span class="sidebar-nav-label">My Resumes</span>
       <span class="sidebar-nav-badge" id="sbTailoredBadge">0</span>
     </button>
@@ -1772,18 +1927,24 @@
     <div class="sidebar-divider"></div>
 
     <button class="sidebar-nav-btn" id="sbTracker" onclick="switchMode('tracker');setSidebarActive('tracker')" title="Applications">
-      <span class="sidebar-nav-icon">✅</span>
+      <span class="sidebar-nav-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      </span>
       <span class="sidebar-nav-label">Applications</span>
       <span class="sidebar-nav-badge" id="sbTrackerBadge">0</span>
     </button>
 
     <button class="sidebar-nav-btn" id="sbLinkedIn" onclick="switchMode('linkedin');setSidebarActive('linkedin')" title="LinkedIn Profile">
-      <span class="sidebar-nav-icon">💼</span>
+      <span class="sidebar-nav-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="3"/><path d="M7 10v7M7 7v.5M12 17v-4a2 2 0 014 0v4M12 10v7"/></svg>
+      </span>
       <span class="sidebar-nav-label">LinkedIn Profile</span>
     </button>
 
     <button class="sidebar-nav-btn" id="sbBulkApply" onclick="switchMode('bulkapply');setSidebarActive('bulkapply')" title="Bulk Apply">
-      <span class="sidebar-nav-icon">⚡</span>
+      <span class="sidebar-nav-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      </span>
       <span class="sidebar-nav-label">Bulk Apply</span>
     </button>
 
@@ -1791,7 +1952,9 @@
     <div class="sidebar-divider"></div>
 
     <button class="sidebar-nav-btn" onclick="openProfileModal()" title="Account">
-      <span class="sidebar-nav-icon">👤</span>
+      <span class="sidebar-nav-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </span>
       <span class="sidebar-nav-label">Account</span>
     </button>
 
@@ -1809,7 +1972,11 @@
         <!-- File upload -->
         <div class="file-drop" id="fileDrop" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
           <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt" onchange="handleFileSelect(event)" />
-          <div class="file-drop-icon">📄</div>
+          <svg style="width:40px;height:40px;stroke:var(--muted);display:block;margin:0 auto 12px" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
           <p><strong>Click to upload</strong> or drag & drop</p>
           <p style="margin-top:4px;font-size:11px;color:var(--muted)">PDF, Word (.docx), or plain text</p>
         </div>
@@ -2918,6 +3085,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       updateCounts();
       refreshSetupSteps();
+      // Hide hero once resume is present
+      const _heroEl = document.getElementById('heroSection');
+      if (_heroEl) _heroEl.style.display = 'none';
     }
   } catch { /* ignore */ }
 
@@ -3288,6 +3458,8 @@ async function processFile(file) {
     document.getElementById('fileName').textContent = file.name;
     document.getElementById('fileLoaded').style.display = 'flex';
     document.getElementById('fileDrop').style.display = 'none';
+    const _heroEl = document.getElementById('heroSection');
+    if (_heroEl) _heroEl.style.display = 'none';
     updateCounts();
     refreshSetupSteps();
     updateRunButton();
