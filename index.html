@@ -565,6 +565,15 @@
       /* Hide flow hint bar on mobile — welcome modal covers it anyway */
       #flowHint { display: none !important; }
 
+      /* Push chat widget above bottom nav so it's never hidden behind it */
+      #chat-widget-container,
+      [id*="leadconnector"],
+      [class*="chat-widget"],
+      iframe[src*="leadconnector"],
+      iframe[src*="widgets.leadconnectorhq"] {
+        bottom: 80px !important;
+      }
+
       /* ── Welcome modal — full screen on mobile ───────────── */
       .welcome-overlay {
         align-items: flex-end !important;
@@ -2724,6 +2733,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!localStorage.getItem('1ststep_welcomed')) {
     document.getElementById('welcomeOverlay').classList.add('visible');
     document.body.style.overflow = 'hidden'; // lock scroll behind modal
+    _setChatWidgetVisible(false); // hide chat bubble so it can't be mis-tapped
   } else {
     // Returning user — show flowHint if they haven't finished first tailor
     if (!localStorage.getItem('1ststep_hint_dismissed') && !localStorage.getItem('1ststep_first_tailor_celebrated')) {
@@ -2735,9 +2745,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // ── Welcome / Onboarding ──────────────────────────────────────────────────
+function _setChatWidgetVisible(visible) {
+  // GHL injects the widget into a shadow host or iframe — target all known selectors
+  const selectors = [
+    '#chat-widget-container',
+    'chat-widget',
+    '[id*="leadconnector"]',
+  ];
+  selectors.forEach(sel => {
+    document.querySelectorAll(sel).forEach(el => {
+      el.style.display = visible ? '' : 'none';
+    });
+  });
+  // Also handle the loader iframe directly
+  document.querySelectorAll('iframe').forEach(el => {
+    if (el.src && (el.src.includes('leadconnector') || el.src.includes('widgets.leadconnectorhq'))) {
+      el.style.display = visible ? '' : 'none';
+    }
+  });
+}
+
 function dismissWelcome(path = false) {
   document.getElementById('welcomeOverlay').classList.remove('visible');
   document.body.style.overflow = ''; // restore scroll
+  _setChatWidgetVisible(true); // restore chat bubble
   localStorage.setItem('1ststep_welcomed', '1');
 
   if (path === 'upload' || path === true) {
