@@ -40,9 +40,12 @@ const ALLOWED_ORIGINS = [
 
 // Allowed events — map to GHL tags
 const EVENT_TAGS = {
-  first_tailor:       ['first_tailor'],
-  first_search:       ['first_search'],
-  first_cover_letter: ['first_cover_letter'],
+  first_tailor:               ['first_tailor'],
+  first_search:               ['first_search'],
+  first_cover_letter:         ['first_cover_letter'],
+  application_saved:          ['used_tracker', 'application_saved'],
+  application_status_changed: ['used_tracker', 'application_status_changed'],
+  tracker_viewed:             ['used_tracker'],
 };
 
 function corsHeaders(req) {

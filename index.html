@@ -4054,6 +4054,7 @@ function switchMode(mode) {
   }
   if (isTracker) {
     renderTracker();
+    _pingTracker('tracker_viewed', { applicationCount: applications.length });
   }
 }
 
@@ -4995,6 +4996,19 @@ function saveApplications() {
   updateTrackerBadge();
 }
 
+// ── Tracker analytics — fire-and-forget GHL tag pings ────────────────────────
+function _pingTracker(event, extra = {}) {
+  try {
+    const email = loadProfile()?.email;
+    if (!email) return;
+    fetch('/api/track-event', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email, event, ...extra }),
+    }).catch(() => {});
+  } catch(e) {}
+}
+
 function isApplied(jobId) {
   return applications.some(a => a.jobId === jobId);
 }
@@ -5048,6 +5062,7 @@ function quickLogApplied(jobId) {
   }
 
   updateTrackerBadge();
+  _pingTracker('application_saved', { jobTitle: entry.title, company: entry.company });
 
   // Undo function — removes the log and resets the button within the toast window
   const undoLog = () => {
@@ -5238,7 +5253,12 @@ function renderTracker() {
 
 function updateStatus(appId, newStatus) {
   const app = applications.find(a => a.id === appId);
-  if (app) { app.status = newStatus; saveApplications(); renderTracker(); }
+  if (app) {
+    app.status = newStatus;
+    saveApplications();
+    renderTracker();
+    _pingTracker('application_status_changed', { status: newStatus, jobTitle: app.title, company: app.company });
+  }
 }
 
 function removeApplication(appId) {
