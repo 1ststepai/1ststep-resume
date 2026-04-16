@@ -111,11 +111,19 @@ ${error
   : `<div class="spinner"></div><div style="font-size:14px;color:#94A3B8">Connected! Closing…</div>`}
 <script>
 try {
+  // Write to localStorage so the parent tab can pick it up (works on mobile where window.opener is null)
+  localStorage.setItem('1ststep_li_auth', JSON.stringify({ ts: Date.now(), payload: ${payload} }));
+  // Also try postMessage for desktop popup flow
   if (window.opener && !window.opener.closed) {
     window.opener.postMessage({ type: '1ststep_linkedin', payload: ${payload} }, 'https://app.1ststep.ai');
   }
 } catch(e) {}
-setTimeout(() => window.close(), 800);
+// On mobile this opened as a new tab — go back to the app instead of closing
+setTimeout(() => {
+  try { window.close(); } catch(e) {}
+  // If close didn't work (mobile new tab), redirect back to app
+  setTimeout(() => { window.location.href = 'https://app.1ststep.ai'; }, 400);
+}, 600);
 </script>
 </body></html>`;
 }

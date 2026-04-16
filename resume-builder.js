@@ -327,74 +327,109 @@ function _field(label, inputHtml, hint = '') {
     </div>`;
 }
 
-// ── LinkedIn OAuth popup flow ─────────────────────────────────────────────────
+// ── LinkedIn OAuth flow — works as popup (desktop) or new tab (mobile) ────────
 function _rbLinkedInConnect() {
-  const popup = window.open(
-    'about:blank', 'linkedin_auth',
-    'width=520,height=640,top=' + Math.round((screen.height-640)/2) + ',left=' + Math.round((screen.width-520)/2)
-  );
+  // Clear any stale auth result before starting
+  localStorage.removeItem('1ststep_li_auth');
 
   fetch('/api/subscription?action=linkedin-init')
     .then(r => r.json())
     .then(({ url, error }) => {
-      if (error || !url) { popup.close(); _rbShowToast('LinkedIn not configured'); return; }
-      popup.location.href = url;
+      if (error || !url) { _rbShowToast('LinkedIn not configured'); return; }
+
+      // Try popup first (desktop). On mobile this opens a new tab.
+      const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+      let popup = null;
+      if (!isMobile) {
+        popup = window.open(url, 'linkedin_auth',
+          'width=520,height=640,top=' + Math.round((screen.height-640)/2) + ',left=' + Math.round((screen.width-520)/2));
+      }
+      // If popup was blocked or mobile — redirect the current tab
+      if (!popup || popup.closed) {
+        window.location.href = url;
+        return;
+      }
+
+      // Desktop popup: listen for postMessage
+      window.addEventListener('message', onMessage);
+      const checkClosed = setInterval(() => {
+        if (popup && popup.closed) {
+          clearInterval(checkClosed);
+          window.removeEventListener('message', onMessage);
+        }
+      }, 800);
     })
-    .catch(() => { popup.close(); _rbShowToast('Could not reach LinkedIn'); });
+    .catch(() => _rbShowToast('Could not reach LinkedIn'));
+
+  // Also poll localStorage — catches the mobile redirect-back case
+  const pollStart = Date.now();
+  const pollInterval = setInterval(() => {
+    const raw = localStorage.getItem('1ststep_li_auth');
+    if (!raw) {
+      if (Date.now() - pollStart > 5 * 60 * 1000) clearInterval(pollInterval); // 5 min timeout
+      return;
+    }
+    try {
+      const { ts, payload } = JSON.parse(raw);
+      if (Date.now() - ts > 5 * 60 * 1000) { localStorage.removeItem('1ststep_li_auth'); return; } // stale
+      localStorage.removeItem('1ststep_li_auth');
+      clearInterval(pollInterval);
+      window.removeEventListener('message', onMessage);
+      _rbHandleLinkedInProfile(payload);
+    } catch(e) { localStorage.removeItem('1ststep_li_auth'); }
+  }, 500);
 
   function onMessage(e) {
     if (e.origin !== window.location.origin) return;
     if (!e.data || e.data.type !== '1ststep_linkedin') return;
     window.removeEventListener('message', onMessage);
+    clearInterval(pollInterval);
+    _rbHandleLinkedInProfile(e.data.payload);
+  }
+}
 
-    const { profile, error } = e.data.payload || {};
-    if (error || !profile) {
-      _rbShowToast(error === 'access_denied' ? 'LinkedIn connection cancelled' : 'LinkedIn sign-in failed');
-      return;
-    }
-
-    // Populate Step 1 fields
-    const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
-    set('rb_name',  profile.name);
-    set('rb_email', profile.email);
-
-    // Save into the in-progress resume object
-    const r = _wbResume();
-    if (profile.name)      r.name  = profile.name;
-    if (profile.email)     r.email = profile.email;
-    if (profile.firstName) r._liFirstName = profile.firstName;
-    if (profile.lastName)  r._liLastName  = profile.lastName;
-    _wbSetResume(r);
-
-    // Update button to connected state
-    const btn = document.getElementById('rb_li_btn');
-    if (btn) {
-      btn.innerHTML = `<span style="font-size:15px">✓</span> Connected as ${_esc(profile.firstName || profile.name)}`;
-      btn.style.cssText += ';background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.4);color:#4ADE80';
-      btn.disabled = true;
-    }
-
-    _rbShowToast('LinkedIn connected — fields filled ✓');
-
-    // Offer LinkedIn PDF resume import
-    setTimeout(() => {
-      const importBanner = document.getElementById('rb_li_import_banner');
-      if (importBanner) importBanner.style.display = 'flex';
-    }, 600);
-
-    // Focus first empty field
-    setTimeout(() => {
-      const next = ['rb_phone','rb_location','rb_title','rb_summary']
-        .map(id => document.getElementById(id))
-        .find(el => el && !el.value.trim());
-      if (next) next.focus();
-    }, 300);
+function _rbHandleLinkedInProfile({ profile, error } = {}) {
+  if (error || !profile) {
+    _rbShowToast(error === 'access_denied' ? 'LinkedIn connection cancelled' : 'LinkedIn sign-in failed');
+    return;
   }
 
-  window.addEventListener('message', onMessage);
-  const checkClosed = setInterval(() => {
-    if (popup.closed) { clearInterval(checkClosed); window.removeEventListener('message', onMessage); }
-  }, 1000);
+  // Populate Step 1 fields
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+  set('rb_name',  profile.name);
+  set('rb_email', profile.email);
+
+  // Save into the in-progress resume object
+  const r = _wbResume();
+  if (profile.name)      r.name  = profile.name;
+  if (profile.email)     r.email = profile.email;
+  if (profile.firstName) r._liFirstName = profile.firstName;
+  if (profile.lastName)  r._liLastName  = profile.lastName;
+  _wbSetResume(r);
+
+  // Update button to connected state
+  const btn = document.getElementById('rb_li_btn');
+  if (btn) {
+    btn.innerHTML = `<span style="font-size:15px">✓</span> Connected as ${_esc(profile.firstName || profile.name)}`;
+    btn.style.cssText += ';background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.4);color:#4ADE80';
+    btn.disabled = true;
+  }
+
+  _rbShowToast('LinkedIn connected — fields filled ✓');
+
+  // Offer LinkedIn PDF resume import
+  setTimeout(() => {
+    const importBanner = document.getElementById('rb_li_import_banner');
+    if (importBanner) importBanner.style.display = 'flex';
+  }, 600);
+
+  // Focus first empty field
+  setTimeout(() => {
+    const next = ['rb_phone','rb_location','rb_title','rb_summary']
+      .map(id => document.getElementById(id))
+      .find(el => el && !el.value.trim());
+    if (next) next.focus();
+  }, 300);
 }
 
 function _rbShowToast(msg) {
