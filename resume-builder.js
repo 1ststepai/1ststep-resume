@@ -376,6 +376,12 @@ function _rbLinkedInConnect() {
 
     _rbShowToast('LinkedIn connected — fields filled ✓');
 
+    // Offer LinkedIn PDF resume import
+    setTimeout(() => {
+      const importBanner = document.getElementById('rb_li_import_banner');
+      if (importBanner) importBanner.style.display = 'flex';
+    }, 600);
+
     // Focus first empty field
     setTimeout(() => {
       const next = ['rb_phone','rb_location','rb_title','rb_summary']
@@ -418,6 +424,33 @@ function _rbStep1() {
       <svg width="18" height="18" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
       Continue with LinkedIn
     </button>
+    <!-- LinkedIn PDF import banner — shown after OAuth success -->
+    <div id="rb_li_import_banner" style="
+      display:none;align-items:flex-start;gap:12px;
+      background:rgba(10,102,194,0.1);border:1.5px solid rgba(10,102,194,0.3);
+      border-radius:10px;padding:14px 16px;margin-bottom:20px
+    ">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="#60A5FA" style="flex-shrink:0;margin-top:1px"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z"/></svg>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:#93C5FD;margin-bottom:4px">Import your resume from LinkedIn</div>
+        <div style="font-size:12px;color:#94A3B8;line-height:1.5;margin-bottom:10px">
+          Don't have a resume file? Download your LinkedIn profile as a PDF and we'll convert it into a formatted resume automatically.
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <a href="https://www.linkedin.com/mypreferences/d/download-my-data" target="_blank" rel="noopener" style="
+            font-size:12px;font-weight:600;color:#93C5FD;text-decoration:none;
+            padding:6px 12px;border-radius:7px;border:1px solid rgba(10,102,194,0.4);
+            background:rgba(10,102,194,0.15);display:inline-flex;align-items:center;gap:5px
+          ">↗ Download LinkedIn PDF</a>
+          <button onclick="openLinkedInPdfModal();closeResumeBuilder?.()" style="
+            font-size:12px;font-weight:600;color:#F1F5F9;cursor:pointer;
+            padding:6px 12px;border-radius:7px;border:1px solid rgba(99,102,241,0.4);
+            background:rgba(99,102,241,0.2)
+          ">Upload & Import →</button>
+        </div>
+      </div>
+    </div>
+
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
       <div style="flex:1;height:1px;background:rgba(255,255,255,0.08)"></div>
       <span style="font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:.6px">or fill in manually</span>

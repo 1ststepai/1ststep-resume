@@ -1299,7 +1299,7 @@
         <!-- LinkedIn PDF import shortcut -->
         <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px">
           <div style="height:1px;flex:1;background:var(--border)"></div>
-          <button onclick="openLinkedInImportModal()"
+          <button onclick="openLinkedInPdfModal()"
             style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--muted);font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:6px;transition:all 0.15s;white-space:nowrap"
             onmouseenter="this.style.background='rgba(99,102,241,0.08)';this.style.color='#818CF8'"
             onmouseleave="this.style.background='none';this.style.color='var(--muted)'">
@@ -6792,6 +6792,130 @@ function openInterviewModalFromHistory(id) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// LINKEDIN PDF IMPORT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function openLinkedInPdfModal() {
+  document.getElementById('linkedInPdfModal').style.display = 'flex';
+  document.getElementById('liPdfInstructions').style.display = 'block';
+  document.getElementById('liPdfProcessing').style.display  = 'none';
+  document.getElementById('liPdfSuccess').style.display     = 'none';
+  document.getElementById('liPdfError').style.display       = 'none';
+}
+
+function closeLinkedInPdfModal() {
+  document.getElementById('linkedInPdfModal').style.display = 'none';
+}
+
+function handleLinkedInPdfDrop(e) {
+  const file = e.dataTransfer.files[0];
+  if (file) processLinkedInPdf(file);
+}
+
+function handleLinkedInPdfSelect(e) {
+  const file = e.target.files[0];
+  if (file) processLinkedInPdf(file);
+}
+
+async function processLinkedInPdf(file) {
+  const errEl = document.getElementById('liPdfError');
+  errEl.style.display = 'none';
+
+  // Validate
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    errEl.textContent = '⚠ Please upload a PDF file (the one downloaded from LinkedIn).';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    errEl.textContent = '⚠ File too large — LinkedIn PDFs are usually under 1 MB.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  // Show processing
+  document.getElementById('liPdfInstructions').style.display = 'none';
+  document.getElementById('liPdfProcessing').style.display   = 'block';
+
+  try {
+    // ── Step 1: Extract text from PDF ──────────────────────────────────────
+    if (!window.pdfjsLib) throw new Error('PDF library not loaded — please try again');
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const arrayBuffer = await file.arrayBuffer();
+
+    // Validate PDF magic bytes
+    const magic = new Uint8Array(arrayBuffer.slice(0, 4));
+    if (magic[0] !== 0x25 || magic[1] !== 0x50 || magic[2] !== 0x44 || magic[3] !== 0x46) {
+      throw new Error('File does not appear to be a valid PDF');
+    }
+
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const pages = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page    = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      pages.push(content.items.map(item => item.str).join(' '));
+    }
+    const rawText = pages.join('\n\n').trim();
+    if (!rawText) throw new Error('No text found in PDF — make sure you saved the LinkedIn PDF correctly');
+
+    // ── Step 2: Claude cleans it into a proper resume ─────────────────────
+    // LinkedIn PDF exports have odd formatting — Claude normalizes it into
+    // clean plain-text resume format ready for the tailoring engine.
+    let tierToken = '';
+    try { tierToken = JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}').tierToken || ''; } catch {}
+
+    const cleanedResume = await callClaude(
+      `You are a resume formatter. The user has exported their LinkedIn profile as a PDF.
+The extracted text may have formatting issues, repeated words, or LinkedIn-specific labels.
+Convert it into a clean, professional plain-text resume with clear sections:
+Summary (if present), Experience (company, title, dates, bullet points), Education, Skills.
+Remove LinkedIn UI text like "Contact", "Connections", "Follow", "Message", "Show all".
+Do not fabricate any information — only use what is in the provided text.
+Output plain text only — no markdown, no asterisks, no hashtags.`,
+      `Here is the extracted LinkedIn profile text:\n\n${sanitizeResumeText(rawText).slice(0, 8000)}`,
+      'claude-haiku-4-5-20251001',
+      2048,
+      'utility'
+    );
+
+    if (!cleanedResume || cleanedResume.length < 100) {
+      throw new Error('Could not parse LinkedIn profile — try uploading again');
+    }
+
+    const finalResume = sanitizeResumeText(cleanedResume);
+
+    // ── Step 3: Load into the main resume textarea ────────────────────────
+    fileContent = '';  // clear any file upload state
+    const resumeTextEl = document.getElementById('resumeText');
+    if (resumeTextEl) resumeTextEl.value = finalResume;
+    saveResume({ source: 'text', text: finalResume, fileName: 'LinkedIn Profile' });
+    updateCounts();
+    refreshSetupSteps();
+    updateRunButton();
+
+    // Show success
+    document.getElementById('liPdfProcessing').style.display = 'none';
+    document.getElementById('liPdfSuccess').style.display    = 'block';
+
+    showToast('LinkedIn profile imported as resume ✓');
+
+  } catch (err) {
+    console.error('LinkedIn PDF import error:', err);
+    document.getElementById('liPdfProcessing').style.display  = 'none';
+    document.getElementById('liPdfInstructions').style.display = 'block';
+    errEl.textContent = `⚠ ${err.message || 'Something went wrong — please try again'}`;
+    errEl.style.display = 'block';
+  }
+
+  // Reset file input so same file can be re-uploaded
+  const input = document.getElementById('liPdfInput');
+  if (input) input.value = '';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // BEFORE / AFTER DIFF VIEWER
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -7831,6 +7955,82 @@ async function handleLinkedInPdfUpload(event) {
     <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
       <button id="diffToggleBtn" class="btn-sm btn-sm-outline" onclick="toggleDiffUnchanged()" style="font-size:12px">Show unchanged lines</button>
       <button class="btn-sm btn-sm-primary" onclick="closeDiffModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── LinkedIn PDF Import Modal ─────────────────────────────────────────────── -->
+<div id="linkedInPdfModal" class="modal-overlay" style="display:none;z-index:1300" onclick="if(event.target===this)closeLinkedInPdfModal()">
+  <div class="modal" style="max-width:520px;width:100%">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+        <h3 style="margin:0;font-size:16px;font-weight:700;color:var(--text)">Import Resume from LinkedIn</h3>
+      </div>
+      <button class="modal-close" onclick="closeLinkedInPdfModal()">×</button>
+    </div>
+
+    <!-- Step: Instructions -->
+    <div id="liPdfInstructions" style="padding:20px">
+      <p style="font-size:13.5px;color:var(--text2);line-height:1.65;margin:0 0 20px">
+        LinkedIn lets you download your profile as a PDF — we'll turn it into a ready-to-tailor resume in seconds.
+      </p>
+
+      <!-- Steps -->
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:22px">
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="min-width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Open your LinkedIn profile</div>
+            <div style="font-size:12px;color:var(--text2)">Go to <a href="https://www.linkedin.com/in/me" target="_blank" style="color:var(--brand)">linkedin.com/in/me</a> and make sure your profile is up to date.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="min-width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Click "More" → "Save to PDF"</div>
+            <div style="font-size:12px;color:var(--text2)">On your profile page, click the <strong>More</strong> button (next to Connect/Follow), then select <strong>Save to PDF</strong>.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="min-width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Upload it here</div>
+            <div style="font-size:12px;color:var(--text2)">Come back and upload the downloaded PDF — we'll handle the rest.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload zone -->
+      <div id="liPdfDrop"
+        onclick="document.getElementById('liPdfInput').click()"
+        ondragover="event.preventDefault();this.style.borderColor='var(--brand)';this.style.background='var(--surface2)'"
+        ondragleave="this.style.borderColor='var(--border)';this.style.background='transparent'"
+        ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='transparent';handleLinkedInPdfDrop(event)"
+        style="border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:all 0.15s;margin-bottom:6px">
+        <div style="font-size:28px;margin-bottom:8px">📄</div>
+        <div style="font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:4px">Drop your LinkedIn PDF here</div>
+        <div style="font-size:12px;color:var(--muted)">or click to browse</div>
+        <input type="file" id="liPdfInput" accept=".pdf" style="display:none" onchange="handleLinkedInPdfSelect(event)">
+      </div>
+      <div id="liPdfError" style="display:none;font-size:12px;color:#EF4444;margin-top:6px;text-align:center"></div>
+    </div>
+
+    <!-- Processing state -->
+    <div id="liPdfProcessing" style="display:none;text-align:center;padding:48px 20px">
+      <div class="spinner" style="margin:0 auto 14px"></div>
+      <div style="font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:4px">Importing your LinkedIn profile…</div>
+      <div style="font-size:12px;color:var(--muted)">Extracting experience, education &amp; skills</div>
+    </div>
+
+    <!-- Success state -->
+    <div id="liPdfSuccess" style="display:none;padding:32px 24px;text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">🎉</div>
+      <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">Resume imported!</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:24px">Your LinkedIn profile has been converted to a resume.<br>Now search for a job and we'll tailor it for you.</div>
+      <button class="btn-sm btn-sm-primary" style="width:100%;padding:12px" onclick="closeLinkedInPdfModal();document.getElementById('jobSearchBtn')?.click()">
+        Search for Jobs →
+      </button>
     </div>
   </div>
 </div>
