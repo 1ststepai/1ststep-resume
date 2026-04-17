@@ -3625,6 +3625,110 @@
       color: var(--text);
       line-height: 1.3;
     }
+
+    /* ── APP SIDEBAR (desktop only) ──────────────────────────────────────── */
+    #appSidebar { display: none; }
+
+    @media (min-width: 769px) {
+      #appSidebar {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        left: 0;
+        top: 56px;
+        bottom: 0;
+        width: 220px;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        z-index: 100;
+        padding: 10px 0 0;
+        overflow-y: auto;
+      }
+      /* Push all main content right to clear sidebar */
+      .main, #heroSection, #flowHint {
+        margin-left: 220px;
+      }
+      /* Tighten top padding on desktop — sidebar removes need for huge breathing room */
+      .main { padding-top: 28px; }
+      /* Sidebar hides the topbar tab strip — sidebar is the nav now */
+      .mode-toggle { display: none !important; }
+      /* Tighten topbar on desktop now that tabs are gone */
+      .topbar { padding: 0 20px; }
+
+      .sb-logo {
+        padding: 4px 16px 14px;
+        font-weight: 800;
+        font-size: 15px;
+        color: var(--brand);
+        letter-spacing: -0.3px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 6px;
+      }
+      .sb-logo span { color: var(--text); }
+
+      .sb-section { flex: 1; padding: 4px 8px; }
+
+      .sb-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 9px 12px;
+        background: none;
+        border: none;
+        border-radius: 8px;
+        color: var(--text2);
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        text-align: left;
+        transition: all 0.12s;
+        position: relative;
+        margin-bottom: 2px;
+      }
+      .sb-item svg { flex-shrink: 0; opacity: 0.7; }
+      .sb-item:hover { background: var(--surface2); color: var(--text); }
+      .sb-item:hover svg { opacity: 1; }
+      .sb-item.active {
+        background: rgba(67,56,202,0.14);
+        color: var(--brand-mid);
+        font-weight: 600;
+      }
+      .sb-item.active svg { opacity: 1; stroke: var(--brand-mid); }
+      .sb-item.active::before {
+        content: '';
+        position: absolute;
+        left: -8px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 20px;
+        background: var(--brand);
+        border-radius: 0 3px 3px 0;
+      }
+      .sb-badge {
+        margin-left: auto;
+        background: var(--brand);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: 100px;
+        min-width: 18px;
+        text-align: center;
+        line-height: 16px;
+      }
+      .sb-divider {
+        height: 1px;
+        background: var(--border);
+        margin: 8px 16px;
+      }
+      .sb-footer {
+        border-top: 1px solid var(--border);
+        padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+      }
+    }
   </style>
 </head>
 
@@ -3735,6 +3839,50 @@
         style="margin-left:14px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0;line-height:1;flex-shrink:0">✕</button>
     </div>
 
+    <!-- ── Desktop Sidebar Nav ── -->
+    <nav id="appSidebar">
+      <div class="sb-logo">1stStep<span>.ai</span></div>
+      <div class="sb-section">
+        <button class="sb-item active" id="sbResume" onclick="switchMode('resume');setMobileNav('resume')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Resume Tailor
+        </button>
+        <button class="sb-item" id="sbJobs" onclick="switchMode('jobs');setMobileNav('jobs')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Job Search
+        </button>
+        <button class="sb-item" id="sbTailored" onclick="switchMode('tailored');setMobileNav('tailored')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/><rect x="2" y="13" width="9" height="9"/><rect x="13" y="13" width="9" height="9"/></svg>
+          My Resumes
+          <span class="sb-badge" id="sbTailoredBadge" style="display:none">0</span>
+        </button>
+        <button class="sb-item" id="sbTracker" onclick="switchMode('tracker');setMobileNav('tracker')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          Tracker
+          <span class="sb-badge" id="sbTrackerBadge" style="display:none">0</span>
+        </button>
+        <button class="sb-item" id="sbLinkedIn" onclick="switchMode('linkedin');setMobileNav('linkedin')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 6.5v5M4 4v.5M7 11.5V9c0-1.1.9-2 2-2s2 .9 2 2v2.5M7 6.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          LinkedIn
+        </button>
+        <button class="sb-item" id="sbBulkApply" onclick="switchMode('bulkapply');setMobileNav('bulkapply')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 10h16M4 14h10"/><circle cx="17" cy="17" r="3"/><path d="M16 17l.7.7 1.3-1.3"/></svg>
+          Bulk Apply
+        </button>
+      </div>
+      <div class="sb-divider"></div>
+      <div class="sb-footer">
+        <button class="sb-item" onclick="downloadDataBackup()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Backup
+        </button>
+        <button class="sb-item" onclick="openProfileModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Account
+        </button>
+      </div>
+    </nav>
+
     <div class="main">
 
       <!-- Left Panel: Inputs -->
@@ -3748,7 +3896,7 @@
           <div class="file-drop" id="fileDrop" onclick="document.getElementById('fileInput').click()"
             ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
             <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt" onchange="handleFileSelect(event)" />
-            <div class="file-drop-icon">📄</div>
+            <div class="file-drop-icon"><svg style="width:40px;height:40px;stroke:var(--muted);display:block;margin:0 auto" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
             <p><strong>Click to upload</strong> or drag & drop</p>
             <p style="margin-top:4px;font-size:11px;color:var(--muted)">PDF, Word (.docx), or plain text</p>
           </div>
@@ -3772,7 +3920,7 @@
 
           <!-- Privacy trust signal -->
           <p style="margin-top:8px;font-size:11px;color:var(--muted);text-align:center;line-height:1.5">
-            🔒 Parsed in your browser — never stored on our servers
+            <svg style="width:12px;height:12px;stroke:var(--muted);display:inline;vertical-align:middle;margin-right:4px;margin-bottom:1px" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Parsed in your browser — never stored on our servers
           </p>
 
           <!-- File parse error -->
@@ -5189,7 +5337,9 @@
         document.body.style.overflow = 'hidden'; // lock scroll behind modal
         _setChatWidgetVisible(false); // hide chat bubble so it can't be mis-tapped
       } else {
-        // Returning user — show flowHint if they haven't finished first tailor
+        // Returning user — collapse hero immediately (they know the product)
+        document.getElementById('heroSection')?.style.setProperty('display', 'none');
+        // Show flowHint if they haven't finished first tailor
         if (!localStorage.getItem('1ststep_hint_dismissed') && !localStorage.getItem('1ststep_first_tailor_celebrated')) {
           const hint = document.getElementById('flowHint');
           if (hint) hint.style.display = 'flex';
@@ -6696,6 +6846,13 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       const isLinkedIn = mode === 'linkedin';
       const isBulkApply = mode === 'bulkapply';
 
+      // ── Sidebar active state ──
+      ['sbResume','sbJobs','sbTailored','sbTracker','sbLinkedIn','sbBulkApply'].forEach(id => {
+        document.getElementById(id)?.classList.remove('active');
+      });
+      const _sbMap = { resume:'sbResume', jobs:'sbJobs', tailored:'sbTailored', tracker:'sbTracker', linkedin:'sbLinkedIn', bulkapply:'sbBulkApply' };
+      document.getElementById(_sbMap[mode] || 'sbResume')?.classList.add('active');
+
       // Toggle nav buttons
       document.getElementById('modeResume').classList.toggle('active', mode === 'resume');
       document.getElementById('modeJobs').classList.toggle('active', isJobs);
@@ -7721,6 +7878,8 @@ ${desc}`;
       badge.textContent = count;
       const mobileBadge = document.getElementById('mobileNavTrackerBadge');
       if (mobileBadge) { mobileBadge.textContent = count; mobileBadge.style.display = count > 0 ? '' : 'none'; }
+      const sbBadge = document.getElementById('sbTrackerBadge');
+      if (sbBadge) { sbBadge.textContent = count; sbBadge.style.display = count > 0 ? '' : 'none'; }
     }
 
     // ── Quick-log applied (no modal — one click from job card) ────────────────
@@ -8034,6 +8193,8 @@ ${desc}`;
       }
       const mobileBadge = document.getElementById('mobileNavTailoredBadge');
       if (mobileBadge) { mobileBadge.textContent = count; mobileBadge.style.display = count > 0 ? '' : 'none'; }
+      const sbBadge = document.getElementById('sbTailoredBadge');
+      if (sbBadge) { sbBadge.textContent = count; sbBadge.style.display = count > 0 ? '' : 'none'; }
     }
 
     function clearTailorHistory() {
