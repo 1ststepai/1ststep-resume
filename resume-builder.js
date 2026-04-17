@@ -329,8 +329,10 @@ function _field(label, inputHtml, hint = '') {
 
 // ── LinkedIn OAuth flow — works as popup (desktop) or new tab (mobile) ────────
 function _rbLinkedInConnect() {
-  // Clear any stale auth result before starting
+  // Clear any stale auth result and cancel any in-flight attempt before starting
   localStorage.removeItem('1ststep_li_auth');
+  if (window._rbLiPollInterval) { clearInterval(window._rbLiPollInterval); window._rbLiPollInterval = null; }
+  if (window._rbLiOnMessage)    { window.removeEventListener('message', window._rbLiOnMessage); window._rbLiOnMessage = null; }
 
   fetch('/api/subscription?action=linkedin-init')
     .then(r => r.json())
@@ -352,10 +354,12 @@ function _rbLinkedInConnect() {
 
       // Desktop popup: listen for postMessage
       window.addEventListener('message', onMessage);
+      window._rbLiOnMessage = onMessage;
       const checkClosed = setInterval(() => {
         if (popup && popup.closed) {
           clearInterval(checkClosed);
           window.removeEventListener('message', onMessage);
+          window._rbLiOnMessage = null;
         }
       }, 800);
     })
@@ -363,18 +367,18 @@ function _rbLinkedInConnect() {
 
   // Also poll localStorage — catches the mobile redirect-back case
   const pollStart = Date.now();
-  const pollInterval = setInterval(() => {
+  window._rbLiPollInterval = setInterval(() => {
     const raw = localStorage.getItem('1ststep_li_auth');
     if (!raw) {
-      if (Date.now() - pollStart > 5 * 60 * 1000) clearInterval(pollInterval); // 5 min timeout
+      if (Date.now() - pollStart > 5 * 60 * 1000) { clearInterval(window._rbLiPollInterval); window._rbLiPollInterval = null; } // 5 min timeout
       return;
     }
     try {
       const { ts, payload } = JSON.parse(raw);
       if (Date.now() - ts > 5 * 60 * 1000) { localStorage.removeItem('1ststep_li_auth'); return; } // stale
       localStorage.removeItem('1ststep_li_auth');
-      clearInterval(pollInterval);
-      window.removeEventListener('message', onMessage);
+      clearInterval(window._rbLiPollInterval); window._rbLiPollInterval = null;
+      if (window._rbLiOnMessage) { window.removeEventListener('message', window._rbLiOnMessage); window._rbLiOnMessage = null; }
       _rbHandleLinkedInProfile(payload);
     } catch(e) { localStorage.removeItem('1ststep_li_auth'); }
   }, 500);
@@ -382,8 +386,8 @@ function _rbLinkedInConnect() {
   function onMessage(e) {
     if (e.origin !== window.location.origin) return;
     if (!e.data || e.data.type !== '1ststep_linkedin') return;
-    window.removeEventListener('message', onMessage);
-    clearInterval(pollInterval);
+    window.removeEventListener('message', onMessage); window._rbLiOnMessage = null;
+    clearInterval(window._rbLiPollInterval); window._rbLiPollInterval = null;
     _rbHandleLinkedInProfile(e.data.payload);
   }
 }
