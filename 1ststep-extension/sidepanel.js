@@ -1,9 +1,8 @@
 /**
  * sidepanel.js
  * Side panel UI for resume tailoring
+ * No ES module imports — uses chrome.runtime APIs
  */
-
-import * as auth from './utils/auth.js';
 
 const APP_URL = 'https://app.1ststep.ai';
 
@@ -20,14 +19,33 @@ const downloadBtn = document.getElementById('downloadBtn');
 const copyBtn = document.getElementById('copyBtn');
 
 let lastTailoredResult = null;
+let currentAuthStatus = null;
+
+// ─── AUTH HELPERS ──────────────────────────────────────────
+
+async function getAuthStatus() {
+  return new Promise((resolve) => {
+    chrome.storage.sync.get(['1ststep_profile', '1ststep_resume'], (data) => {
+      const profile = data['1ststep_profile'];
+      const resume = data['1ststep_resume'];
+      resolve({
+        isAuthenticated: !!(profile && profile.email),
+        email: profile?.email || '',
+        tier: profile?.tier || 'free',
+        tierToken: profile?.tierToken || '',
+        resume: resume || ''
+      });
+    });
+  });
+}
 
 // ─── INITIALIZATION ────────────────────────────────────────
 
 async function init() {
   try {
     // Check if user is authenticated
-    const authStatus = await auth.checkAuth();
-    if (!authStatus.isAuthenticated) {
+    currentAuthStatus = await getAuthStatus();
+    if (!currentAuthStatus.isAuthenticated) {
       showAlert('Please sign in to 1stStep.ai to use this feature.', 'warning');
       tailorBtn.disabled = true;
       return;
@@ -37,7 +55,7 @@ async function init() {
     loadCurrentJob();
     
     // Set up event listeners
-    tailorBtn.addEventListener('click', () => tailorResume(authStatus));
+    tailorBtn.addEventListener('click', () => tailorResume(currentAuthStatus));
     resetBtn.addEventListener('click', resetForm);
     downloadBtn.addEventListener('click', downloadResult);
     copyBtn.addEventListener('click', copyResult);
@@ -80,8 +98,8 @@ async function tailorResume(authStatus) {
     tailorBtn.disabled = true;
     tailorBtn.textContent = '⏳ Tailoring...';
     
-    // Get user resume
-    const resume = await auth.getUserResume();
+    // Get user resume from authStatus
+    const resume = authStatus.resume;
     if (!resume) {
       throw new Error('No resume found. Please add your resume in 1stStep.ai.');
     }
@@ -132,11 +150,13 @@ async function tailorResume(authStatus) {
 function showResult(result) {
   resultCard.classList.add('visible');
   
-  // Display result (could be HTML or plain text)
-  if (result.html) {
-    resultContent.innerHTML = result.html;
+  // Display result - Claude API returns { content: [{type: 'text', text: '...'}], ... }
+  if (result.content && Array.isArray(result.content) && result.content[0]?.text) {
+    resultContent.textContent = result.content[0].text;
   } else if (result.text) {
     resultContent.textContent = result.text;
+  } else if (result.html) {
+    resultContent.innerHTML = result.html;
   } else {
     resultContent.textContent = JSON.stringify(result, null, 2);
   }
@@ -163,7 +183,15 @@ async function copyResult() {
   if (!lastTailoredResult) return;
   
   try {
-    const text = lastTailoredResult.text || resultContent.textContent;
+    let text = '';
+    if (lastTailoredResult.content && Array.isArray(lastTailoredResult.content)) {
+      text = lastTailoredResult.content[0]?.text || '';
+    } else if (lastTailoredResult.text) {
+      text = lastTailoredResult.text;
+    } else {
+      text = resultContent.textContent;
+    }
+    
     await navigator.clipboard.writeText(text);
     showAlert('✓ Copied to clipboard!', 'success');
   } catch (error) {
@@ -194,5 +222,6 @@ function showAlert(message, type = 'warning') {
   }
 }
 
-// Initialize
+// ─── START ─────────────────────────────────────────────────
+
 init();
