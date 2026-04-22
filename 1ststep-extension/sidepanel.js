@@ -94,8 +94,16 @@ async function tailorResume(authStatus) {
         callType: 'tailor',
         resume: resume,
         jobDescription: jobDescription.value,
-        email: authStatus.email,
-        tierToken: authStatus.tierToken
+        userEmail: authStatus.email,
+        tierToken: authStatus.tierToken,
+        model: 'claude-sonnet-4-6',
+        messages: [
+          {
+            role: 'user',
+            content: `Please tailor this resume for this job description:\n\nRESUME:\n${resume}\n\nJOB DESCRIPTION:\n${jobDescription.value}`
+          }
+        ],
+        max_tokens: 2048
       })
     });
     
