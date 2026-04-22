@@ -10,8 +10,8 @@ export default {
   jobTitleSelector: 'h1.topcard__title',
   companySelector: '.topcard__company-name a, .topcard__organization-name',
   
-  // Apply Button
-  applyButtonSelector: 'button[aria-label*="Easy Apply"], button:contains("Easy Apply")',
+  // Apply Button (using only valid CSS selectors)
+  applyButtonSelector: 'button[aria-label*="Easy Apply"]',
   
   // Easy Apply Modal Selectors (for form filling)
   applyModal: '.artdeco-modal__header',

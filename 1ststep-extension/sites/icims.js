@@ -9,7 +9,7 @@ export default {
   jobDescriptionSelector: '.job-description, #JobDescription, [class*="description"]',
   jobTitleSelector: 'h1.job-title, h1[class*="title"]',
   companySelector: '[class*="company"]',
-  applyButtonSelector: 'button[aria-label*="Apply"], button:contains("Apply")',
+  applyButtonSelector: 'button[aria-label*="Apply"]',
   
   formFields: {
     firstName: 'input[name*="first"], input[placeholder*="First"]',
