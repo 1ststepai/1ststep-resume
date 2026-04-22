@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1stStep.ai</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0b0d11;
+      color: #e8ecf4;
+      width: 380px;
+      min-height: 300px;
+    }
+
+    .container {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      border-bottom: 1px solid #252a38;
+      margin-bottom: 12px;
+    }
+
+    .logo {
+      font-weight: 600;
+      font-size: 14px;
+      color: #4fffb0;
+      letter-spacing: 0.5px;
+    }
+
+    .status-badge {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: #1a1e28;
+      border: 1px solid #252a38;
+      color: #6b7591;
+    }
+
+    .status-badge.authenticated {
+      background: rgba(79, 255, 176, 0.1);
+      border-color: #4fffb0;
+      color: #4fffb0;
+    }
+
+    .job-card {
+      background: #13161d;
+      border: 1px solid #252a38;
+      border-radius: 8px;
+      padding: 12px;
+      display: none;
+    }
+
+    .job-card.visible {
+      display: block;
+    }
+
+    .job-title {
+      font-weight: 600;
+      font-size: 13px;
+      color: #e8ecf4;
+      margin-bottom: 4px;
+    }
+
+    .job-meta {
+      font-size: 12px;
+      color: #6b7591;
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .match-score {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px;
+      background: #1a1e28;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .match-score-label {
+      font-size: 11px;
+      color: #6b7591;
+      flex: 1;
+    }
+
+    .score-value {
+      font-weight: 600;
+      font-size: 13px;
+      color: #4fffb0;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      flex: 1;
+      padding: 10px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #4fffb0;
+      color: #0b0d11;
+    }
+
+    .btn-primary:hover {
+      background: #2ee092;
+    }
+
+    .btn-secondary {
+      background: #252a38;
+      color: #e8ecf4;
+      border: 1px solid #252a38;
+    }
+
+    .btn-secondary:hover {
+      background: #1a1e28;
+      border-color: #4fffb0;
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    .empty-state-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    .empty-state-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .empty-state-desc {
+      font-size: 12px;
+      color: #6b7591;
+      line-height: 1.4;
+    }
+
+    .auth-section {
+      background: #1a1e28;
+      border: 1px solid #252a38;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .auth-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .auth-desc {
+      font-size: 12px;
+      color: #6b7591;
+      margin-bottom: 12px;
+    }
+
+    .settings-link {
+      display: inline-block;
+      padding: 2px 6px;
+      color: #4fffb0;
+      text-decoration: none;
+      border-bottom: 1px dotted #4fffb0;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 20px;
+      font-size: 12px;
+      color: #6b7591;
+    }
+
+    .spinner {
+      width: 12px;
+      height: 12px;
+      border: 2px solid #252a38;
+      border-top-color: #4fffb0;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">1stStep.ai</div>
+      <div class="status-badge" id="statusBadge">Checking...</div>
+    </div>
+
+    <div id="loadingState" class="loading">
+      <div class="spinner"></div>
+      <span>Loading...</span>
+    </div>
+
+    <div id="unauthState" class="auth-section" style="display: none;">
+      <div class="auth-title">Sign In Required</div>
+      <div class="auth-desc">
+        Visit <a class="settings-link" id="openAppLink">1stStep.ai</a> to sign in and enable the extension.
+      </div>
+    </div>
+
+    <div id="jobState">
+      <div id="jobCard" class="job-card">
+        <div class="job-title" id="jobTitle">—</div>
+        <div class="job-meta">
+          <span id="company">—</span>
+          <span id="site">—</span>
+        </div>
+        
+        <div class="match-score">
+          <div class="match-score-label">Match Score</div>
+          <div class="score-value" id="matchScore">—</div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn-primary" id="tailorBtn">Tailor Resume</button>
+          <button class="btn-secondary" id="autofillBtn">Auto-fill</button>
+        </div>
+      </div>
+
+      <div id="emptyState" class="empty-state">
+        <div class="empty-state-icon">🔍</div>
+        <div class="empty-state-title">No Job Detected</div>
+        <div class="empty-state-desc">Navigate to a job posting on LinkedIn, Indeed, Greenhouse, Lever, or Workday.</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

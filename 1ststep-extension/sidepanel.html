@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1stStep.ai Resume Tailor</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0b0d11;
+      color: #e8ecf4;
+      padding: 16px;
+      overflow-y: auto;
+      max-width: 420px;
+    }
+
+    .header {
+      margin-bottom: 20px;
+      border-bottom: 1px solid #252a38;
+      padding-bottom: 12px;
+    }
+
+    .logo {
+      font-weight: 600;
+      font-size: 13px;
+      color: #4fffb0;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    h1 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: #6b7591;
+    }
+
+    .section {
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #6b7591;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #252a38;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: #e8ecf4;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #252a38;
+      border-radius: 6px;
+      background: #13161d;
+      color: #e8ecf4;
+      font-size: 12px;
+      font-family: inherit;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #4fffb0;
+      box-shadow: 0 0 0 2px rgba(79, 255, 176, 0.1);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 60px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 11px;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    button {
+      flex: 1;
+      padding: 10px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #4fffb0;
+      color: #0b0d11;
+    }
+
+    .btn-primary:hover {
+      background: #2ee092;
+    }
+
+    .btn-primary:disabled {
+      background: #6b7591;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: #252a38;
+      color: #e8ecf4;
+      border: 1px solid #252a38;
+    }
+
+    .btn-secondary:hover {
+      background: #1a1e28;
+    }
+
+    .result-card {
+      background: #13161d;
+      border: 1px solid #252a38;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .result-card.visible {
+      display: block;
+    }
+
+    .result-title {
+      font-weight: 600;
+      font-size: 12px;
+      margin-bottom: 8px;
+      color: #4fffb0;
+    }
+
+    .alert {
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .alert-warning {
+      background: rgba(255, 193, 7, 0.1);
+      border: 1px solid rgba(255, 193, 7, 0.3);
+      color: #ffc857;
+    }
+
+    .alert-success {
+      background: rgba(79, 255, 176, 0.1);
+      border: 1px solid rgba(79, 255, 176, 0.3);
+      color: #4fffb0;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #6b7591;
+      font-size: 12px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #252a38;
+      border-top-color: #4fffb0;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">1stStep.ai</div>
+    <h1>Resume Tailoring</h1>
+    <div class="subtitle">Customize your resume for this role</div>
+  </div>
+
+  <div id="alert" class="alert" style="display: none;"></div>
+
+  <div id="contentArea">
+    <!-- Job Detection Section -->
+    <div class="section">
+      <div class="section-title">Detected Job</div>
+      <div class="form-group">
+        <label>Job Title</label>
+        <input type="text" id="detectedTitle" readonly>
+      </div>
+      <div class="form-group">
+        <label>Company</label>
+        <input type="text" id="detectedCompany" readonly>
+      </div>
+    </div>
+
+    <!-- Job Description Section -->
+    <div class="section">
+      <div class="section-title">Job Description</div>
+      <div class="form-group">
+        <label>Job Description <span style="color: #6b7591;">(auto-detected or paste)</span></label>
+        <textarea id="jobDescription" placeholder="Job description will appear here or paste manually..."></textarea>
+      </div>
+    </div>
+
+    <!-- Actions Section -->
+    <div class="section">
+      <div class="button-group">
+        <button class="btn-primary" id="tailorBtn">Tailor Resume</button>
+        <button class="btn-secondary" id="resetBtn">Clear</button>
+      </div>
+    </div>
+
+    <!-- Result Section -->
+    <div id="resultCard" class="result-card">
+      <div class="result-title">✓ Tailored Resume</div>
+      <div id="resultContent"></div>
+      <div class="button-group">
+        <button class="btn-primary" id="downloadBtn">Download DOCX</button>
+        <button class="btn-secondary" id="copyBtn">Copy Text</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>
