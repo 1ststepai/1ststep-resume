@@ -4,7 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>1stStep.ai</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
+    :root {
+      --brand: #4338CA;
+      --brand-dark: #3730A3;
+      --brand-glow: rgba(67, 56, 202, 0.22);
+      --bg: #F8FAFC;
+      --surface: #FFFFFF;
+      --surface2: #F1F5F9;
+      --border: #E2E8F0;
+      --border2: #CBD5E1;
+      --text: #0F172A;
+      --text2: #475569;
+      --muted: #94A3B8;
+      --green: #059669;
+      --green-light: #ECFDF5;
+      --red: #DC2626;
+      --red-light: #FEF2F2;
+      --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -12,9 +34,9 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0b0d11;
-      color: #e8ecf4;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       width: 380px;
       min-height: 300px;
     }
@@ -30,39 +52,41 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px;
-      border-bottom: 1px solid #252a38;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
       margin-bottom: 12px;
     }
 
     .logo {
-      font-weight: 600;
+      font-weight: 700;
       font-size: 14px;
-      color: #4fffb0;
-      letter-spacing: 0.5px;
+      color: var(--brand);
+      letter-spacing: -0.3px;
     }
 
     .status-badge {
       font-size: 11px;
-      padding: 4px 8px;
-      border-radius: 4px;
-      background: #1a1e28;
-      border: 1px solid #252a38;
-      color: #6b7591;
+      padding: 6px 12px;
+      border-radius: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      font-weight: 500;
     }
 
     .status-badge.authenticated {
-      background: rgba(79, 255, 176, 0.1);
-      border-color: #4fffb0;
-      color: #4fffb0;
+      background: var(--green-light);
+      border-color: var(--green);
+      color: #065F46;
     }
 
     .job-card {
-      background: #13161d;
-      border: 1px solid #252a38;
-      border-radius: 8px;
-      padding: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
       display: none;
+      box-shadow: var(--shadow-xs);
     }
 
     .job-card.visible {
@@ -71,75 +95,82 @@
 
     .job-title {
       font-weight: 600;
-      font-size: 13px;
-      color: #e8ecf4;
-      margin-bottom: 4px;
+      font-size: 14px;
+      color: var(--text);
+      margin-bottom: 6px;
     }
 
     .job-meta {
-      font-size: 12px;
-      color: #6b7591;
+      font-size: 13px;
+      color: var(--text2);
       display: flex;
-      gap: 8px;
-      margin-bottom: 10px;
+      gap: 12px;
+      margin-bottom: 12px;
     }
 
     .match-score {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 8px;
-      background: #1a1e28;
-      border-radius: 6px;
-      margin-bottom: 10px;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--surface2);
+      border-radius: 8px;
+      margin-bottom: 12px;
     }
 
     .match-score-label {
-      font-size: 11px;
-      color: #6b7591;
+      font-size: 12px;
+      color: var(--text2);
       flex: 1;
+      font-weight: 500;
     }
 
     .score-value {
       font-weight: 600;
-      font-size: 13px;
-      color: #4fffb0;
+      font-size: 14px;
+      color: var(--brand);
     }
 
     .action-buttons {
       display: flex;
-      gap: 8px;
+      gap: 10px;
     }
 
     button {
       flex: 1;
       padding: 10px 12px;
       border: none;
-      border-radius: 6px;
-      font-size: 12px;
+      border-radius: 8px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.15s;
     }
 
     .btn-primary {
-      background: #4fffb0;
-      color: #0b0d11;
+      background: var(--brand);
+      color: white;
     }
 
     .btn-primary:hover {
-      background: #2ee092;
+      background: var(--brand-dark);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-primary:disabled {
+      background: var(--muted);
+      cursor: not-allowed;
     }
 
     .btn-secondary {
-      background: #252a38;
-      color: #e8ecf4;
-      border: 1px solid #252a38;
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
     }
 
     .btn-secondary:hover {
-      background: #1a1e28;
-      border-color: #4fffb0;
+      background: var(--border);
+      border-color: var(--border2);
     }
 
     .empty-state {
@@ -154,49 +185,53 @@
     .empty-state-icon {
       font-size: 32px;
       margin-bottom: 12px;
-      opacity: 0.5;
+      opacity: 0.7;
     }
 
     .empty-state-title {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 600;
       margin-bottom: 6px;
+      color: var(--text);
     }
 
     .empty-state-desc {
-      font-size: 12px;
-      color: #6b7591;
-      line-height: 1.4;
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.5;
     }
 
     .auth-section {
-      background: #1a1e28;
-      border: 1px solid #252a38;
-      border-radius: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 16px;
       text-align: center;
+      box-shadow: var(--shadow-xs);
     }
 
     .auth-title {
       font-weight: 600;
       margin-bottom: 8px;
-      font-size: 13px;
+      font-size: 14px;
+      color: var(--text);
     }
 
     .auth-desc {
-      font-size: 12px;
-      color: #6b7591;
+      font-size: 13px;
+      color: var(--text2);
       margin-bottom: 12px;
     }
 
     .settings-link {
       display: inline-block;
       padding: 2px 6px;
-      color: #4fffb0;
+      color: var(--brand);
       text-decoration: none;
-      border-bottom: 1px dotted #4fffb0;
+      border-bottom: 1px dotted var(--brand);
       cursor: pointer;
-      font-size: 12px;
+      font-size: 13px;
+      font-weight: 500;
     }
 
     .loading {
@@ -205,15 +240,15 @@
       justify-content: center;
       gap: 8px;
       padding: 20px;
-      font-size: 12px;
-      color: #6b7591;
+      font-size: 13px;
+      color: var(--text2);
     }
 
     .spinner {
       width: 12px;
       height: 12px;
-      border: 2px solid #252a38;
-      border-top-color: #4fffb0;
+      border: 2px solid var(--border);
+      border-top-color: var(--brand);
       border-radius: 50%;
       animation: spin 0.6s linear infinite;
     }

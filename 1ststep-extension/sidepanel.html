@@ -4,7 +4,31 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>1stStep.ai Resume Tailor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
+    :root {
+      --brand: #4338CA;
+      --brand-dark: #3730A3;
+      --brand-glow: rgba(67, 56, 202, 0.22);
+      --bg: #F8FAFC;
+      --surface: #FFFFFF;
+      --surface2: #F1F5F9;
+      --border: #E2E8F0;
+      --border2: #CBD5E1;
+      --text: #0F172A;
+      --text2: #475569;
+      --muted: #94A3B8;
+      --green: #059669;
+      --green-light: #ECFDF5;
+      --red: #DC2626;
+      --red-light: #FEF2F2;
+      --amber: #D97706;
+      --amber-light: #FFFBEB;
+      --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -12,9 +36,9 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0b0d11;
-      color: #e8ecf4;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       padding: 16px;
       overflow-y: auto;
       max-width: 420px;
@@ -22,27 +46,29 @@
 
     .header {
       margin-bottom: 20px;
-      border-bottom: 1px solid #252a38;
+      border-bottom: 1px solid var(--border);
       padding-bottom: 12px;
     }
 
     .logo {
-      font-weight: 600;
-      font-size: 13px;
-      color: #4fffb0;
-      letter-spacing: 0.5px;
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--brand);
+      letter-spacing: -0.3px;
       margin-bottom: 6px;
+      text-transform: uppercase;
     }
 
     h1 {
-      font-size: 16px;
-      font-weight: 600;
+      font-size: 18px;
+      font-weight: 700;
       margin-bottom: 4px;
+      color: var(--text);
     }
 
     .subtitle {
-      font-size: 12px;
-      color: #6b7591;
+      font-size: 13px;
+      color: var(--text2);
     }
 
     .section {
@@ -52,12 +78,12 @@
     .section-title {
       font-size: 11px;
       font-weight: 600;
-      letter-spacing: 1px;
+      letter-spacing: 0.6px;
       text-transform: uppercase;
-      color: #6b7591;
-      margin-bottom: 8px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #252a38;
+      color: var(--muted);
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
     }
 
     .form-group {
@@ -66,84 +92,99 @@
 
     label {
       display: block;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 500;
-      margin-bottom: 4px;
-      color: #e8ecf4;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    label span {
+      color: var(--text2);
+      font-weight: 400;
     }
 
     input, textarea, select {
       width: 100%;
-      padding: 8px;
-      border: 1px solid #252a38;
-      border-radius: 6px;
-      background: #13161d;
-      color: #e8ecf4;
-      font-size: 12px;
-      font-family: inherit;
+      padding: 12px 14px;
+      border: 1.5px solid transparent;
+      border-radius: 10px;
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'Inter', inherit;
+      transition: all 0.15s;
+      outline: none;
     }
 
     input:focus, textarea:focus, select:focus {
-      outline: none;
-      border-color: #4fffb0;
-      box-shadow: 0 0 0 2px rgba(79, 255, 176, 0.1);
+      border-color: var(--brand);
+      background: var(--surface);
+      box-shadow: 0 0 0 3px var(--brand-glow);
+    }
+
+    input::placeholder, textarea::placeholder {
+      color: var(--muted);
     }
 
     textarea {
       resize: vertical;
-      min-height: 60px;
-      font-family: 'Monaco', 'Menlo', monospace;
-      font-size: 11px;
+      min-height: 80px;
+      font-family: 'Inter', monospace;
+      font-size: 13px;
+      line-height: 1.6;
     }
 
     .button-group {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       margin-top: 16px;
     }
 
     button {
       flex: 1;
-      padding: 10px 12px;
+      padding: 11px 14px;
       border: none;
-      border-radius: 6px;
-      font-size: 12px;
+      border-radius: 10px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.15s;
     }
 
     .btn-primary {
-      background: #4fffb0;
-      color: #0b0d11;
+      background: var(--brand);
+      color: white;
     }
 
     .btn-primary:hover {
-      background: #2ee092;
+      background: var(--brand-dark);
+      box-shadow: var(--shadow-sm);
     }
 
     .btn-primary:disabled {
-      background: #6b7591;
+      background: var(--muted);
       cursor: not-allowed;
     }
 
     .btn-secondary {
-      background: #252a38;
-      color: #e8ecf4;
-      border: 1px solid #252a38;
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
     }
 
     .btn-secondary:hover {
-      background: #1a1e28;
+      background: var(--border);
+      border-color: var(--border2);
     }
 
     .result-card {
-      background: #13161d;
-      border: 1px solid #252a38;
-      border-radius: 8px;
-      padding: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
       margin-top: 12px;
       display: none;
+      box-shadow: var(--shadow-xs);
     }
 
     .result-card.visible {
@@ -152,43 +193,67 @@
 
     .result-title {
       font-weight: 600;
-      font-size: 12px;
-      margin-bottom: 8px;
-      color: #4fffb0;
+      font-size: 13px;
+      margin-bottom: 10px;
+      color: var(--green);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .result-content {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text);
+      max-height: 300px;
+      overflow-y: auto;
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
     }
 
     .alert {
-      padding: 10px;
-      border-radius: 6px;
-      font-size: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
       margin-bottom: 12px;
+      border: 1.5px solid transparent;
     }
 
     .alert-warning {
-      background: rgba(255, 193, 7, 0.1);
-      border: 1px solid rgba(255, 193, 7, 0.3);
-      color: #ffc857;
+      background: var(--amber-light);
+      border-color: rgba(217, 119, 6, 0.3);
+      color: #92400e;
     }
 
     .alert-success {
-      background: rgba(79, 255, 176, 0.1);
-      border: 1px solid rgba(79, 255, 176, 0.3);
-      color: #4fffb0;
+      background: var(--green-light);
+      border-color: rgba(5, 150, 105, 0.3);
+      color: #065f46;
+    }
+
+    .alert-error {
+      background: var(--red-light);
+      border-color: rgba(220, 38, 38, 0.3);
+      color: #991b1b;
     }
 
     .loading {
       text-align: center;
       padding: 20px;
-      color: #6b7591;
-      font-size: 12px;
+      color: var(--text2);
+      font-size: 13px;
     }
 
     .spinner {
       display: inline-block;
       width: 14px;
       height: 14px;
-      border: 2px solid #252a38;
-      border-top-color: #4fffb0;
+      border: 2px solid var(--border);
+      border-top-color: var(--brand);
       border-radius: 50%;
       animation: spin 0.6s linear infinite;
       margin-right: 6px;
@@ -243,7 +308,7 @@
     <!-- Result Section -->
     <div id="resultCard" class="result-card">
       <div class="result-title">✓ Tailored Resume</div>
-      <div id="resultContent"></div>
+      <div id="resultContent" class="result-content"></div>
       <div class="button-group">
         <button class="btn-primary" id="downloadBtn">Download DOCX</button>
         <button class="btn-secondary" id="copyBtn">Copy Text</button>
