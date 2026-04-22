@@ -1,216 +1,138 @@
 /**
  * content.js - Content Script
- * Runs on job pages. Detects job description, identifies apply forms, enables auto-fill.
- * Dynamically imports site-specific selectors based on detected domain.
+ * Detects job postings and notifies background service worker.
  */
 
-const APP_URL = 'https://app.1ststep.ai';
+// ─── SITE SELECTORS ──────────────────────────────────────────
+
+const SITE_SELECTORS = {
+  linkedin: {
+    jobDescriptionSelector: '.jobs-description__content, .jobs-description-content__text, .job-view-layout .jobs-box__html-content, [class*="jobs-description"], .jobs-details__main-content',
+    jobTitleSelector: '.jobs-unified-top-card__job-title h1, .job-details-jobs-unified-top-card__job-title h1, h1.t-24, h1',
+    companySelector: '.jobs-unified-top-card__company-name a, .job-details-jobs-unified-top-card__company-name a, .jobs-unified-top-card__subtitle-primary-grouping a'
+  },
+  indeed: {
+    jobDescriptionSelector: '#jobDescriptionText, .jobsearch-jobDescriptionText',
+    jobTitleSelector: 'h1.jobsearch-JobInfoHeader-title',
+    companySelector: '[data-testid="inlineHeader-companyName"] a'
+  },
+  greenhouse: {
+    jobDescriptionSelector: '#content .job-post, #app_body',
+    jobTitleSelector: 'h1.app-title',
+    companySelector: '.company-name'
+  },
+  lever: {
+    jobDescriptionSelector: '.section-wrapper, .posting-content',
+    jobTitleSelector: 'h2[data-qa="posting-name"]',
+    companySelector: '.posting-headline .sort-by-team'
+  },
+  workday: {
+    jobDescriptionSelector: '[data-automation-id="jobPostingDescription"]',
+    jobTitleSelector: '[data-automation-id="jobPostingHeader"] h2',
+    companySelector: '[data-automation-id="jobPostingHeader"] [class*="subtitle"]'
+  },
+  icims: {
+    jobDescriptionSelector: '.iCIMS_JobContent, #jobContentArea',
+    jobTitleSelector: '.iCIMS_Header h1',
+    companySelector: '.iCIMS_EmployerInfo'
+  }
+};
+
+const GENERIC_SELECTORS = {
+  jobDescriptionSelector: '#job-description, .job-description, .description, [data-testid="job-details"], main article',
+  jobTitleSelector: 'h1',
+  companySelector: '[data-testid="companyName"], .company-name'
+};
 
 // ─── SITE DETECTION ──────────────────────────────────────────
 
 function detectSite() {
-  const hostname = window.location.hostname;
-  
-  if (hostname.includes('linkedin.com')) return 'linkedin';
-  if (hostname.includes('indeed.com')) return 'indeed';
-  if (hostname.includes('greenhouse.io')) return 'greenhouse';
-  if (hostname.includes('lever.co') || hostname.includes('lever.com')) return 'lever';
-  if (hostname.includes('workday.com')) return 'workday';
-  if (hostname.includes('icims.com')) return 'icims';
-  if (hostname.includes('taleo.net')) return 'taleo';
-  
+  const h = window.location.hostname;
+  if (h.includes('linkedin.com')) return 'linkedin';
+  if (h.includes('indeed.com')) return 'indeed';
+  if (h.includes('greenhouse.io')) return 'greenhouse';
+  if (h.includes('lever.co') || h.includes('lever.com')) return 'lever';
+  if (h.includes('workday.com')) return 'workday';
+  if (h.includes('icims.com')) return 'icims';
   return 'unknown';
 }
 
 const SITE = detectSite();
+const SEL = SITE_SELECTORS[SITE] || GENERIC_SELECTORS;
+console.log(`[1stStep] Loaded on: ${SITE}`);
 
-// ─── DYNAMIC SITE SELECTOR IMPORT ──────────────────────────────
+// ─── EXTRACTION ──────────────────────────────────────────────
 
-let SiteSelectors = null;
-
-async function loadSiteSelectors() {
-  if (SITE === 'unknown') {
-    console.log('[1stStep] Site not recognized, using generic fallback');
-    SiteSelectors = getGenericSelectors();
-    return;
-  }
-  
-  try {
-    // Dynamically import site-specific module
-    const module = await import(chrome.runtime.getURL(`sites/${SITE}.js`));
-    SiteSelectors = module.default;
-    console.log(`[1stStep] Loaded selectors for ${SITE}`);
-  } catch (error) {
-    console.warn(`[1stStep] Failed to load ${SITE} selectors:`, error);
-    SiteSelectors = getGenericSelectors();
-  }
+function extractText(selector) {
+  const el = document.querySelector(selector);
+  return el ? (el.innerText || el.textContent || '').trim() : null;
 }
-
-// ─── JOB DESCRIPTION EXTRACTION ──────────────────────────────
 
 function extractJobDescription() {
-  if (!SiteSelectors || !SiteSelectors.jobDescriptionSelector) {
-    return null;
+  // For LinkedIn, search inside the iframe too
+  if (SITE === 'linkedin') {
+    const iframe = document.querySelector('iframe');
+    if (iframe && iframe.contentDocument) {
+      const iframeEl = iframe.contentDocument.querySelector(SEL.jobDescriptionSelector);
+      if (iframeEl) {
+        const text = (iframeEl.innerText || iframeEl.textContent || '').trim();
+        if (text.length > 100) return text;
+      }
+    }
   }
-  
-  const element = document.querySelector(SiteSelectors.jobDescriptionSelector);
-  if (!element) return null;
-  
-  const text = element.innerText || element.textContent;
-  return text.trim();
+  const text = extractText(SEL.jobDescriptionSelector);
+  return text && text.length > 100 ? text : null;
 }
 
-// ─── JOB METADATA EXTRACTION ────────────────────────────────
-
-function extractJobMetadata() {
-  if (!SiteSelectors) return {};
-  
-  const metadata = {
-    site: SITE,
-    jobId: null,
-    jobTitle: null,
-    company: null,
-    applyUrl: window.location.href
-  };
-  
-  // Try to extract job title
-  if (SiteSelectors.jobTitleSelector) {
-    const titleEl = document.querySelector(SiteSelectors.jobTitleSelector);
-    if (titleEl) metadata.jobTitle = titleEl.innerText?.trim();
-  }
-  
-  // Try to extract company
-  if (SiteSelectors.companySelector) {
-    const companyEl = document.querySelector(SiteSelectors.companySelector);
-    if (companyEl) metadata.company = companyEl.innerText?.trim();
-  }
-  
-  return metadata;
-}
-
-// ─── POLL FOR JOB DETECTION ────────────────────────────────
+// ─── JOB DETECTION ───────────────────────────────────────────
 
 let lastDetectedJD = null;
+let isSending = false;
 
-async function pollForJob() {
+function pollForJob() {
+  // Don't send if extension context is gone
+  if (!chrome.runtime?.id) return;
+  if (isSending) return;
+
   const jd = extractJobDescription();
-  
-  if (jd && jd !== lastDetectedJD) {
-    lastDetectedJD = jd;
-    
-    const metadata = extractJobMetadata();
-    
-    // Notify background script - job detected
-    chrome.runtime.sendMessage({
-      action: 'JOB_DETECTED',
-      site: SITE,
-      jobId: metadata.jobId,
-      jobTitle: metadata.jobTitle,
-      company: metadata.company,
-      jobDescription: jd,
-      applyUrl: window.location.href
-    }, (response) => {
-      if (response?.success) {
-        console.log(`[1stStep] Job detected on ${SITE}: ${metadata.jobTitle || 'Unknown'}`);
-      }
-    });
-  }
-}
+  if (!jd || jd === lastDetectedJD) return;
 
-// ─── AUTO-FILL INJECTION ──────────────────────────────────────
+  lastDetectedJD = jd;
+  isSending = true;
 
-/**
- * Injects auto-fill UI (button or badge) into the page
- * Allows user to trigger the autofill flow without leaving the page
- */
-function injectAutoFillUI() {
-  if (!SiteSelectors || !SiteSelectors.applyButtonSelector) {
-    return;
-  }
-  
-  const applyBtn = document.querySelector(SiteSelectors.applyButtonSelector);
-  if (!applyBtn) return;
-  
-  // Check if we already injected
-  if (document.getElementById('1ststep-autofill-badge')) {
-    return;
-  }
-  
-  // Create badge/button
-  const badge = document.createElement('div');
-  badge.id = '1ststep-autofill-badge';
-  badge.style.cssText = `
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 12px;
-    background: #4fffb0;
-    color: #0b0d11;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-left: 8px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  `;
-  badge.innerText = '✨ Auto-fill with 1stStep';
-  
-  badge.addEventListener('click', () => {
-    chrome.runtime.sendMessage({ action: 'SHOW_AUTOFILL_FLOW' }, (response) => {
-      if (response?.success) {
-        console.log('[1stStep] Autofill flow initiated');
-      }
-    });
-  });
-  
-  applyBtn.parentElement?.appendChild(badge);
-  console.log('[1stStep] Injected auto-fill UI');
-}
+  const jobTitle = extractText(SEL.jobTitleSelector);
+  const company = extractText(SEL.companySelector);
 
-// ─── GENERIC SELECTORS (FALLBACK) ──────────────────────────
+  console.log(`[1stStep] Job detected: "${jobTitle}" at "${company}"`);
 
-function getGenericSelectors() {
-  return {
-    jobDescriptionSelector: [
-      '[data-testid="job-details"]',
-      '.job-description',
-      '.job-details',
-      '[role="main"] article',
-      'main article'
-    ].join(', '),
-    jobTitleSelector: 'h1, [data-testid="jobTitle"]',
-    companySelector: '[data-testid="companyName"], .company-name, [role="heading"]',
-    applyButtonSelector: 'button[aria-label*="pply"], button:contains("Apply")'
-  };
-}
-
-// ─── INITIALIZATION ────────────────────────────────────────
-
-async function init() {
-  console.log(`[1stStep] Content script loaded on ${SITE}`);
-  
-  await loadSiteSelectors();
-  
-  // Poll for job every 2 seconds
-  setInterval(pollForJob, 2000);
-  
-  // Inject auto-fill UI after 1 second (page render)
-  setTimeout(injectAutoFillUI, 1000);
-  
-  // Re-inject UI if DOM changes (SPA navigation)
-  const observer = new MutationObserver(() => {
-    injectAutoFillUI();
-  });
-  
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
+  chrome.runtime.sendMessage({
+    action: 'JOB_DETECTED',
+    site: SITE,
+    jobTitle,
+    company,
+    jobDescription: jd,
+    applyUrl: window.location.href
+  }, (response) => {
+    isSending = false;
+    if (chrome.runtime.lastError) return; // Extension reloaded - ignore
   });
 }
 
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
-}
+// ─── INIT ─────────────────────────────────────────────────────
+
+// Poll on interval only (no MutationObserver spam)
+pollForJob();
+setInterval(() => {
+  if (!chrome.runtime?.id) return; // Stop if extension reloaded
+  pollForJob();
+}, 3000);
+
+// For LinkedIn SPA: re-poll when URL changes (job selection)
+let lastUrl = location.href;
+setInterval(() => {
+  if (location.href !== lastUrl) {
+    lastUrl = location.href;
+    lastDetectedJD = null; // Reset so new job gets detected
+    setTimeout(pollForJob, 1500); // Wait for content to render
+  }
+}, 1000);

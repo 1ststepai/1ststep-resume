@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mockup V5: Navigation Overhaul - 1stStep.ai</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --brand: #4338CA;
+            --brand-mid: #6366F1;
+            --brand-light: #818CF8;
+            --brand-glow: rgba(67, 56, 202, 0.25);
+            --bg: #0F172A;
+            --surface: #1E293B;
+            --surface2: #263548;
+            --border: rgba(255, 255, 255, 0.08);
+            --text: #F8FAFC;
+            --text2: #94A3B8;
+            --muted: #64748B;
+            --red: #EF4444;
+            --green: #10B981;
+            
+            --sidebar-width: 72px;
+            --sidebar-expanded: 240px;
+            --topbar-height: 60px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden; /* App-like feel */
+            height: 100vh;
+        }
+
+        /* --- LAYOUT --- */
+        .app-shell {
+            display: grid;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            grid-template-rows: var(--topbar-height) 1fr;
+            height: 100vh;
+            transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Expand sidebar on hover (Desktop only) */
+        @media (min-width: 1024px) {
+            .app-shell:has(.sidebar:hover) {
+                grid-template-columns: var(--sidebar-expanded) 1fr;
+            }
+        }
+
+        /* --- TOPBAR --- */
+        .topbar {
+            grid-column: 1 / -1;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+        }
+
+        .logo-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--brand-light), var(--brand));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: white;
+        }
+        .logo-text { font-weight: 800; font-size: 18px; letter-spacing: -0.5px; }
+
+        .topbar-actions { display: flex; align-items: center; gap: 16px; }
+        .usage-pill {
+            background: var(--surface2);
+            padding: 6px 12px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid var(--border);
+        }
+        .usage-progress { width: 40px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+        .usage-fill { height: 100%; background: var(--brand-mid); width: 60%; }
+
+        .user-trigger {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            background: #4F46E5;
+            display: flex; align-items: center; justify-content: center; font-weight: 700;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 12px 0;
+            overflow-x: hidden;
+            white-space: nowrap;
+            transition: width 0.3s;
+        }
+
+        .sb-section { margin-bottom: 24px; }
+        .sb-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--muted);
+            padding: 0 26px;
+            margin-bottom: 8px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .sidebar:hover .sb-label { opacity: 1; }
+
+        .sb-item {
+            height: 48px;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            gap: 16px;
+            color: var(--text2);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-family: inherit;
+        }
+        .sb-item:hover { color: var(--text); background: var(--surface2); }
+        .sb-item.active { color: var(--brand-light); background: var(--brand-glow); }
+        .sb-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 20%;
+            bottom: 20%;
+            width: 3px;
+            background: var(--brand-light);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .sb-icon { width: 24px; height: 24px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .sb-text { font-size: 14px; font-weight: 600; opacity: 0; transition: opacity 0.2s; }
+        .sidebar:hover .sb-text { opacity: 1; }
+
+        .premium-tag {
+            font-size: 9px;
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--amber, #F59E0B);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            margin-left: auto;
+            opacity: 0;
+        }
+        .sidebar:hover .premium-tag { opacity: 1; }
+
+        /* --- MAIN CONTENT --- */
+        .main-content {
+            padding: 40px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .placeholder-view {
+            max-width: 800px;
+            width: 100%;
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 60px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .view-title { font-size: 28px; font-weight: 800; margin-bottom: 12px; }
+        .view-desc { color: var(--text2); line-height: 1.6; }
+
+        /* --- MOBILE BOTTOM NAV --- */
+        .bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 72px;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            grid-template-columns: repeat(5, 1fr);
+            padding-bottom: env(safe-area-inset-bottom);
+            z-index: 200;
+        }
+        .bn-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text2);
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .bn-item.active { color: var(--brand-light); }
+        .bn-icon { width: 24px; height: 24px; }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 1023px) {
+            .app-shell {
+                grid-template-columns: 1fr;
+            }
+            .sidebar { display: none; }
+            .bottom-nav { display: grid; }
+            .main-content { padding: 20px; padding-bottom: 100px; }
+            .topbar { padding: 0 16px; }
+        }
+
+        /* Toast Mockup */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--surface2);
+            padding: 12px 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            display: flex; align-items: center; gap: 12px;
+            font-weight: 600; z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+        .toast.visible { transform: translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body>
+
+<div class="app-shell">
+    <header class="topbar">
+        <div class="logo-box">
+            <div class="logo-icon">1</div>
+            <span class="logo-text">1stStep.ai</span>
+        </div>
+        
+        <div class="topbar-actions">
+            <div class="usage-pill">
+                <span>Tailors: 2/3</span>
+                <div class="usage-progress"><div class="usage-fill"></div></div>
+            </div>
+            <div class="user-trigger">E</div>
+        </div>
+    </header>
+
+    <aside class="sidebar">
+        <div class="sb-section">
+            <div class="sb-label">Primary</div>
+            <button class="sb-item active" onclick="switchMode('resume', this)">
+                <div class="sb-icon">📄</div>
+                <span class="sb-text">Resume Tailor</span>
+            </button>
+            <button class="sb-item" onclick="switchMode('jobs', this)">
+                <div class="sb-icon">🔍</div>
+                <span class="sb-text">Job Search</span>
+            </button>
+        </div>
+
+        <div class="sb-section">
+            <div class="sb-label">History & Tracking</div>
+            <button class="sb-item" onclick="switchMode('history', this)">
+                <div class="sb-icon">📋</div>
+                <span class="sb-text">Tailored Resumes</span>
+            </button>
+            <button class="sb-item" onclick="switchMode('tracker', this)">
+                <div class="sb-icon">📅</div>
+                <span class="sb-text">App Tracker</span>
+            </button>
+        </div>
+
+        <div class="sb-section">
+            <div class="sb-label">Growth & Audit</div>
+            <button class="sb-item" onclick="switchMode('coach', this)">
+                <div class="sb-icon">💬</div>
+                <span class="sb-text">Career Coach</span>
+            </button>
+            <button class="sb-item" onclick="switchMode('linkedin', this)">
+                <div class="sb-icon">💼</div>
+                <span class="sb-text">LinkedIn Profile</span>
+            </button>
+            <button class="sb-item" onclick="handleBulkApplyClick(this)">
+                <div class="sb-icon">⚡</div>
+                <span class="sb-text">Bulk Apply</span>
+                <span class="premium-tag">COMPLETE</span>
+            </button>
+            <button class="sb-item" onclick="switchMode('audit', this)">
+                <div class="sb-icon">🔬</div>
+                <span class="sb-text">Profile Audit</span>
+            </button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="placeholder-view" id="viewContainer">
+            <div class="view-title">Resume Tailor</div>
+            <p class="view-desc">
+                This is the primary happy-path view. Notice how the topbar is now completely clean and distraction-free. 
+                All utility modes (Audit, LinkedIn, Coach) are now consolidated in the sidebar.
+            </p>
+            <div style="margin-top: 40px; display: flex; gap: 12px; justify-content: center;">
+                <div style="width: 200px; height: 120px; background: var(--surface2); border: 1.5px dashed var(--border); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--muted);">Upload PDF</div>
+                <div style="width: 200px; height: 120px; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; padding: 12px;">
+                    <div style="height: 10px; width: 80%; background: var(--border); border-radius: 4px; margin-bottom: 8px;"></div>
+                    <div style="height: 8px; width: 60%; background: var(--border); border-radius: 4px; margin-bottom: 8px;"></div>
+                    <div style="height: 8px; width: 70%; background: var(--border); border-radius: 4px; margin-bottom: 8px;"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <div class="bn-item active" onclick="switchMode('resume', null)">
+            <div class="bn-icon">📄</div>
+            <span>Tailor</span>
+        </div>
+        <div class="bn-item" onclick="switchMode('jobs', null)">
+            <div class="bn-icon">🔍</div>
+            <span>Jobs</span>
+        </div>
+        <div class="bn-item" onclick="switchMode('history', null)">
+            <div class="bn-icon">📋</div>
+            <span>Resumes</span>
+        </div>
+        <div class="bn-item" onclick="switchMode('tracker', null)">
+            <div class="bn-icon">📅</div>
+            <span>Tracker</span>
+        </div>
+        <div class="bn-item" onclick="showToast('More tools slide-up sheet would open here')">
+            <div class="bn-icon">•••</div>
+            <span>More</span>
+        </div>
+    </nav>
+</div>
+
+<div id="toast" class="toast">
+    <span id="toastIcon">⚠️</span>
+    <span id="toastMsg">Gating: Complete Plan Required</span>
+</div>
+
+<script>
+    const views = {
+        resume: { title: "Resume Tailor", desc: "The primary happy-path view. Notice how the topbar is now clean and distraction-free." },
+        jobs: { title: "Job Search", desc: "AI-powered job discovery. Integrated directly into the main sidebar flow." },
+        history: { title: "Tailored Resumes", desc: "Previously 'History'. Now a elevated to a top-level management view." },
+        tracker: { title: "App Tracker", desc: "Your system of record. Phase 2 core paid product." },
+        coach: { title: "Career Coach", desc: "AI-powered career advice and interview prep." },
+        linkedin: { title: "LinkedIn Optimizer", desc: "Audit and optimize your LinkedIn presence." },
+        bulkapply: { title: "Bulk Apply", desc: "Mass application tool for Complete subscribers." },
+        audit: { title: "Profile Audit", desc: "Deep dive analysis of your overall market relevancy." }
+    };
+
+    function switchMode(mode, el) {
+        // Update content
+        const view = views[mode];
+        document.getElementById('viewContainer').innerHTML = `
+            <div class="view-title">${view.title}</div>
+            <p class="view-desc">${view.desc}</p>
+        `;
+
+        // Update active states
+        document.querySelectorAll('.sb-item, .bn-item').forEach(item => item.classList.remove('active'));
+        if (el) el.classList.add('active');
+        
+        // Match mobile nav active state
+        const mobileMap = { resume: 0, jobs: 1, history: 2, tracker: 3 };
+        const bnItems = document.querySelectorAll('.bn-item');
+        if (mobileMap[mode] !== undefined) bnItems[mobileMap[mode]].classList.add('active');
+    }
+
+    function handleBulkApplyClick(el) {
+        showToast("Complete subscription required to access Bulk Apply.", "🔐");
+    }
+
+    function showToast(msg, icon = "⚠️") {
+        const t = document.getElementById('toast');
+        document.getElementById('toastMsg').textContent = msg;
+        document.getElementById('toastIcon').textContent = icon;
+        t.classList.add('visible');
+        setTimeout(() => t.classList.remove('visible'), 3000);
+    }
+</script>
+
+</body>
+</html>

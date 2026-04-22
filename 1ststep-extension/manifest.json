@@ -7,7 +7,8 @@
     "storage",
     "scripting",
     "activeTab",
-    "sidePanel"
+    "sidePanel",
+    "tabs"
   ],
   "host_permissions": [
     "https://www.linkedin.com/*",
@@ -20,6 +21,9 @@
     "https://*.taleo.net/*",
     "https://app.1ststep.ai/*"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
   "background": {
     "service_worker": "background.js"
   },
@@ -40,7 +44,12 @@
         "https://*.taleo.net/*"
       ],
       "js": ["content.js"],
-      "run_at": "document_end"
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://app.1ststep.ai/*"],
+      "js": ["auth-bridge.js"],
+      "run_at": "document_idle"
     }
   ],
   "side_panel": {
@@ -51,18 +60,5 @@
       "resources": ["sites/*.js", "utils/*.js"],
       "matches": ["<all_urls>"]
     }
-  ],
-  "icons": {
-    "16": "icons/icon-16.png",
-    "48": "icons/icon-48.png",
-    "128": "icons/icon-128.png"
-  },
-  "theme": {
-    "colors": {
-      "toolbar": "#FFFFFF",
-      "toolbar_text": "#0F172A",
-      "accentcolor": "#4338CA",
-      "textcolor": "#FFFFFF"
-    }
-  }
+  ]
 }

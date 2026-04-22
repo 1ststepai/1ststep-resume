@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "1ststep-vercel-dev",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vercel", "dev", "--listen", "3000", "--yes"],
+      "port": 3000
+    },
+    {
+      "name": "1ststep-static",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "4200", "-s", "."],
+      "port": 4200
+    }
+  ]
+}

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1stStep.ai V5 SVG Interactivity Mockup</title>
+  <style>
+    :root {
+      --bg: #0a0b14;
+      --surface: #121421;
+      --surface2: #1e2133;
+      --border: rgba(255,255,255,0.08);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --indigo: #6366f1;
+      --indigo-bg: rgba(99,102,241,0.1);
+      --green: #10b981;
+      --blue: #3b82f6;
+    }
+
+    * { box-sizing: border-box; }
+    body, html { 
+      margin: 0; padding: 0; 
+      height: 100vh; width: 100vw; 
+      background: var(--bg); 
+      color: var(--text); 
+      font-family: 'Inter', system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    .app { display: flex; flex-direction: column; height: 100vh; }
+
+    /* TOP BAR */
+    .topbar {
+      height: 56px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 20px;
+      gap: 40px; flex-shrink: 0; z-index: 100;
+      background: var(--bg);
+    }
+    .logo { font-weight: 800; font-size: 18px; color: var(--indigo); cursor: pointer; }
+    .logo span { color: var(--text); }
+
+    .mode-toggle { display: flex; gap: 8px; margin: 0 auto; }
+    .mode-btn {
+      background: none; border: none; color: var(--muted);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      padding: 6px 14px; border-radius: 8px; transition: all 0.2s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .mode-btn.active { color: var(--text); background: var(--indigo-bg); }
+    .mode-btn svg { opacity: 0.7; }
+
+    /* LAYOUT BODY */
+    .layout-body { display: flex; flex: 1; min-height: 0; }
+
+    /* SIDEBAR */
+    #appSidebar {
+      width: 220px; border-right: 1px solid var(--border);
+      padding: 24px 12px; display: flex; flex-direction: column;
+      gap: 2px; flex-shrink: 0; background: var(--bg);
+    }
+    .sb-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: 10px; font-size: 14px;
+      font-weight: 500; color: var(--muted); cursor: pointer;
+      border: none; background: none; width: 100%; text-align: left;
+    }
+    .sb-item.active { color: white; background: var(--indigo-bg); }
+    .sb-item svg { width: 16px; height: 16px; opacity: 0.7; stroke-width: 2; }
+
+    /* MAIN AREA */
+    .main { flex: 1; display: flex; overflow: hidden; position: relative; }
+
+    /* VIEW CONTROLLERS */
+    #resumeView { display: flex; width: 100%; height: 100%; }
+    #toolView { display: none; width: 100%; height: 100%; overflow-y: auto; background: var(--bg); }
+
+    .left-panel {
+      width: 520px; height: 100%; border-right: 1px solid var(--border);
+      padding: 24px; overflow-y: auto; background: var(--bg);
+    }
+    .right-panel {
+      flex: 1; height: 100%; padding: 24px; overflow-y: auto; background: var(--bg);
+    }
+
+    .centered-container { max-width: 860px; margin: 0 auto; padding: 40px 20px; }
+
+    /* UI COMPONENTS */
+    .panel-section { margin-bottom: 24px; }
+    .panel-label { 
+      font-size: 11px; font-weight: 700; color: var(--muted); 
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
+    }
+    .step-badge {
+      font-size: 10px; font-weight: 700; color: var(--indigo);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
+    }
+
+    .input-box {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px; color: var(--text);
+      font-family: inherit; font-size: 14px; line-height: 1.6; resize: none;
+    }
+
+    .btn-run {
+      width: 100%; padding: 14px; background: linear-gradient(135deg, var(--indigo), #818cf8);
+      color: white; border: none; border-radius: 12px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+
+    .res-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px; margin-bottom: 24px;
+    }
+
+    /* TABS */
+    .tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .tab-btn {
+      padding: 10px 4px; background: none; border: none; color: var(--muted);
+      font-weight: 600; cursor: pointer; font-size: 14px; position: relative;
+    }
+    .tab-btn.active { color: var(--indigo); }
+    .tab-btn.active::after {
+      content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+      height: 2px; background: var(--indigo);
+    }
+
+    /* METER */
+    .usage-meter { margin-top: 12px; }
+    .meter-bar { height: 5px; background: var(--surface2); border-radius: 10px; overflow: hidden; margin-top: 6px; }
+    .meter-fill { height: 100%; background: var(--green); width: 33%; border-radius: 10px; }
+
+    #tailorHeadline { margin-bottom: 30px; }
+    .headline-main { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .headline-sub { font-size: 13px; color: var(--muted); }
+
+  </style>
+</head>
+<body>
+
+  <div class="app">
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="logo">1stStep<span>.ai</span></div>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="modeResumeTop" onclick="setMode('resume')">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor"><path d="M11 1H3a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V5l-3-4z"/><path d="M11 1v4h3M5 8h6M5 10.5h4"/></svg>
+          Resume Tailor
+        </button>
+        <button class="mode-btn" id="modeJobsTop" onclick="setMode('jobs')">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>
+          Job Search
+        </button>
+        <button class="mode-btn" id="modeTailoredTop" onclick="setMode('tailored')">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor"><path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 01-1-1z"/><path d="M2 4h8a1 1 0 011 1v10a1 1 0 01-1 1H2a1 1 0 01-1-1V5a1 1 0 011-1z"/><path d="M4 8h5M4 10.5h3"/></svg>
+          My Resumes
+        </button>
+      </div>
+    </header>
+
+    <div class="layout-body">
+      <!-- SIDEBAR -->
+      <nav id="appSidebar">
+        <button class="sb-item active" id="sbResume" onclick="setMode('resume')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Resume Tailor
+        </button>
+        <button class="sb-item" id="sbJobs" onclick="setMode('jobs')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Job Search
+        </button>
+        <button class="sb-item" id="sbTailored" onclick="setMode('tailored')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/><rect x="2" y="13" width="9" height="9"/><rect x="13" y="13" width="9" height="9"/></svg>
+          My Resumes
+        </button>
+        <button class="sb-item" id="sbTracker" onclick="setMode('tracker')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          Tracker
+        </button>
+        <button class="sb-item" id="sbLinkedIn" onclick="setMode('linkedin')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M4 6.5v5M4 4v.5M7 11.5V9c0-1.1.9-2 2-2s2 .9 2 2v2.5M7 6.5v5"/></svg>
+          LinkedIn
+        </button>
+        <button class="sb-item" id="sbAiCoach" onclick="setMode('aicoach')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="12" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/></svg>
+          AI Coach
+        </button>
+      </nav>
+
+      <!-- MAIN AREA -->
+      <main class="main" id="mainWrapper">
+        
+        <!-- RESUME/JOB SPLIT VIEW -->
+        <div id="resumeView">
+          <div class="left-panel">
+            <div id="tailorHeadline">
+              <div class="headline-main">Tailor your resume to this job.</div>
+              <div class="headline-sub">Upload your resume, paste a job description, get a tailored output.</div>
+            </div>
+
+            <div class="panel-section">
+              <div class="step-badge">Step 1 of 2</div>
+              <div class="panel-label">Your Resume</div>
+              <div class="input-box" style="height: 120px; border-style: dashed; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                <div style="text-align: center;">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <div style="font-size: 13px; margin-top: 8px; color: var(--muted);">Click to upload or drag & drop</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-section">
+              <div class="step-badge">Step 2 of 2</div>
+              <div class="panel-label">Job Description</div>
+              <textarea class="input-box" rows="8" placeholder="Paste the job posting here..."></textarea>
+            </div>
+
+            <div class="panel-section">
+              <button class="btn-run">✦ Tailor My Resume</button>
+              <div class="usage-meter">
+                <div style="display:flex; justify-content: space-between; font-size: 11px; color: var(--muted);">
+                  <span>3 free tailors left</span>
+                  <span>resets monthly</span>
+                </div>
+                <div class="meter-bar"><div class="meter-fill" id="usageBar"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="right-panel">
+            <div class="tabs">
+              <button class="tab-btn active">Tailored Resume</button>
+              <button class="tab-btn">Keywords</button>
+              <button class="tab-btn">What Changed</button>
+            </div>
+
+            <div class="res-card">
+              <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div style="padding: 6px 14px; background: rgba(16,185,129,0.1); color: var(--green); border-radius: 100px; font-size: 12px; font-weight: 700;">✓ Ready to Download</div>
+                <button style="padding: 8px 16px; background: var(--indigo); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Download .docx</button>
+              </div>
+              <div style="height: 400px; background: rgba(0,0,0,0.1); border-radius: 8px; padding: 20px; font-family: monospace; font-size: 12px; white-space: pre-wrap; color: var(--muted);">
+                Professional Summary...
+                Experience...
+                - Tailored accomplishment 1 (using real SVGs now)
+                - Tailored accomplishment 2
+              </div>
+            </div>
+
+            <div class="res-card">
+              <div class="panel-label">ATS Match Score</div>
+              <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="width: 60px; height: 60px; border-radius: 50%; border: 6px solid var(--green); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px;">85%</div>
+                <div>
+                  <div style="font-size: 14px; font-weight: 700;">High Match</div>
+                  <div style="font-size: 12px; color: var(--muted);">Keywords: 14 found, 3 missing</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SPECIALTY TOOLS VIEW -->
+        <div id="toolView">
+          <div class="centered-container" id="toolContent">
+            <!-- Content Injected via setMode() -->
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const tools = {
+      aicoach: `
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+          <div>
+            <h1 style="font-size: 24px; font-weight: 800; margin: 0;">AI Coach</h1>
+            <p style="font-size: 13px; color: var(--muted); margin: 4px 0 0;">Your personal career advisor.</p>
+          </div>
+          <button style="padding: 8px 16px; border: 1px solid var(--border); background: none; color: var(--muted); border-radius: 8px; font-size: 13px; cursor: pointer;">+ New Chat</button>
+        </div>
+        <div class="res-card" style="height: 540px; display: flex; flex-direction: column;">
+          <div id="chatPlaceholder" style="flex: 1; overflow-y: auto; color: var(--muted); font-size: 14px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.3"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            Ask me about interview strategy, resume gaps, or company culture.
+          </div>
+          <div style="border-top: 1px solid var(--border); padding-top: 20px;">
+            <input type="text" class="input-box" placeholder="Ask anything..." onkeydown="if(event.key==='Enter') sendMessage(event.target)">
+          </div>
+        </div>
+      `,
+      tracker: `
+        <h1 style="font-size: 24px; font-weight: 800; margin-bottom: 8px;">Application Tracker</h1>
+        <p style="font-size: 13px; color: var(--muted); margin-bottom: 30px;">Track your journey from application to offer.</p>
+        <div class="res-card" style="padding: 0; overflow: hidden;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+            <thead style="background: var(--surface2); color: var(--muted); text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em;">
+              <tr>
+                <th style="padding: 16px;">Role</th>
+                <th style="padding: 16px;">Company</th>
+                <th style="padding: 16px;">Status</th>
+                <th style="padding: 16px;">Date</th>
+              </tr>
+            </thead>
+            <tbody style="color: var(--text);">
+              <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 16px; font-weight: 600;">Product Manager</td>
+                <td style="padding: 16px;">Google</td>
+                <td style="padding: 16px;"><span style="padding: 4px 10px; background: rgba(59,130,246,0.1); color: var(--blue); border-radius: 100px; font-size: 11px;">Applied</span></td>
+                <td style="padding: 16px; color: var(--muted);">Apr 12, 2026</td>
+              </tr>
+              <tr>
+                <td style="padding: 16px; font-weight: 600;">Senior Engineer</td>
+                <td style="padding: 16px;">Stripe</td>
+                <td style="padding: 16px;"><span style="padding: 4px 10px; background: rgba(16,185,129,0.1); color: var(--green); border-radius: 100px; font-size: 11px;">Interviewing</span></td>
+                <td style="padding: 16px; color: var(--muted);">Apr 10, 2026</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      `,
+      linkedin: `
+        <h1 style="font-size: 24px; font-weight: 800; margin-bottom: 8px;">LinkedIn Optimizer</h1>
+        <p style="font-size: 13px; color: var(--muted); margin-bottom: 30px;">Sync your profile with your tailored resume.</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+           <div class="res-card">
+              <label class="panel-label">Your Experience</label>
+              <textarea class="input-box" rows="10" placeholder="Paste your profile content..."></textarea>
+              <button class="btn-run" style="margin-top: 20px;">Optimize Profile</button>
+           </div>
+           <div class="res-card" style="background: var(--bg); border-style: dashed;">
+              <div class="panel-label">Optimized Output</div>
+              <div style="color: var(--muted); font-size: 13px; text-align: center; margin-top: 40px;">Results will appear here...</div>
+           </div>
+        </div>
+      `
+    };
+
+    function setMode(mode) {
+      const resumeView = document.getElementById('resumeView');
+      const toolView = document.getElementById('toolView');
+      const toolContent = document.getElementById('toolContent');
+
+      // Update Active Classes
+      document.querySelectorAll('.sb-item, .mode-btn').forEach(el => el.classList.remove('active'));
+      
+      const targetIds = {
+        resume: ['sbResume', 'modeResumeTop'],
+        jobs: ['sbJobs', 'modeJobsTop'],
+        tailored: ['sbTailored', 'modeTailoredTop'],
+        tracker: ['sbTracker'],
+        linkedin: ['sbLinkedIn'],
+        aicoach: ['sbAiCoach']
+      };
+
+      if(targetIds[mode]) {
+        targetIds[mode].forEach(id => {
+          const el = document.getElementById(id);
+          if(el) el.classList.add('active');
+        });
+      }
+
+      // View Switching
+      if (mode === 'resume' || mode === 'jobs' || mode === 'tailored') {
+        resumeView.style.display = 'flex';
+        toolView.style.display = 'none';
+      } else {
+        resumeView.style.display = 'none';
+        toolView.style.display = 'block';
+        
+        // Inject Tool Content
+        if(tools[mode]) {
+          toolContent.innerHTML = tools[mode];
+        } else {
+          toolContent.innerHTML = '<h1 style="text-align:center; padding-top: 100px; opacity:0.3">Coming Soon</h1>';
+        }
+      }
+    }
+
+    function sendMessage(input) {
+      const chat = document.getElementById('chatPlaceholder');
+      if(!input.value.trim()) return;
+      chat.innerHTML = \`<div style="width: 100%; text-align: right; margin-bottom: 20px;"><div style="display:inline-block; background: var(--indigo); color: white; padding: 10px 16px; border-radius: 12px 12px 0 12px; font-size: 14px; text-align: left;">\${input.value}</div></div>\`;
+      chat.innerHTML += \`<div style="width: 100%; text-align: left; animation: fadeIn 0.3s ease;"><div style="display:inline-block; background: var(--surface2); color: var(--text); padding: 10px 16px; border-radius: 12px 12px 12px 0; font-size: 14px;">I'm analyzing your request... I can help you tailor your resume or prepare for a specific interview question.</div></div>\`;
+      chat.style.justifyContent = 'flex-start';
+      chat.style.textAlign = 'left';
+      input.value = '';
+    }
+  </script>
+</body>
+</html>

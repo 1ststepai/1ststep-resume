@@ -8377,8 +8377,15 @@ ${desc}`;
     // then migrates it to sessionStorage and removes the localStorage copy.
     function getResumeStore() { return sessionStorage; }
     function saveResume(data) {
-      sessionStorage.setItem(RESUME_KEY, JSON.stringify(data));
-      localStorage.removeItem(RESUME_KEY); // clean up any old localStorage copy
+      const resumeJson = JSON.stringify(data);
+      sessionStorage.setItem(RESUME_KEY, resumeJson);
+      // Sync to extension: keep temp copy in localStorage for content script to read
+      localStorage.setItem(RESUME_KEY, resumeJson);
+      
+      // Trigger extension sync
+      try {
+        window.postMessage({ source: 'app', action: 'SYNC_PROFILE' }, '*');
+      } catch (e) { /* extension not installed */ }
     }
     function loadResume() {
       const fromSession = sessionStorage.getItem(RESUME_KEY);
@@ -8533,6 +8540,14 @@ ${desc}`;
       showToast('Account saved ✓');
       // Auto-verify Stripe subscription whenever email is saved
       verifySubscription(p.email);
+      
+      // ── Sync profile to Chrome extension ────────────────────────────────────
+      // Tell content script to relay profile to chrome.storage.sync
+      if (window.parent !== window || window === top) {
+        try {
+          window.postMessage({ source: 'app', action: 'SYNC_PROFILE' }, '*');
+        } catch (e) { /* extension not installed */ }
+      }
 
       // ── Notify on new signup ───────────────────────────────────────────────
       if (isNewSignup) {

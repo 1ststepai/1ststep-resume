@@ -1,0 +1,1 @@
+A list of specific assets to "inject" for different industries (e.g., MedSpa, HVAC).

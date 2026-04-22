@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1stStep.ai V4 Full Workflow Mockup</title>
+  <style>
+    :root {
+      --bg: #0a0b14;
+      --surface: #121421;
+      --surface2: #1e2133;
+      --border: rgba(255,255,255,0.08);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --indigo: #6366f1;
+      --indigo-bg: rgba(99,102,241,0.1);
+      --green: #10b981;
+      --blue: #3b82f6;
+    }
+
+    * { box-sizing: border-box; }
+    body, html { 
+      margin: 0; padding: 0; 
+      height: 100vh; width: 100vw; 
+      background: var(--bg); 
+      color: var(--text); 
+      font-family: 'Inter', system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    .app { display: flex; flex-direction: column; height: 100vh; }
+
+    /* TOP BAR (Restored) */
+    .topbar {
+      height: 56px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 20px;
+      gap: 40px; flex-shrink: 0; z-index: 100;
+      background: var(--bg);
+    }
+    .logo { font-weight: 800; font-size: 18px; color: var(--indigo); cursor: pointer; }
+    .logo span { color: var(--text); }
+
+    .mode-toggle { display: flex; gap: 8px; margin: 0 auto; }
+    .mode-btn {
+      background: none; border: none; color: var(--muted);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      padding: 6px 14px; border-radius: 8px; transition: all 0.2s;
+    }
+    .mode-btn.active { color: var(--text); background: var(--indigo-bg); }
+
+    /* LAYOUT BODY */
+    .layout-body { display: flex; flex: 1; min-height: 0; }
+
+    /* SIDEBAR (Locked Fixed) */
+    #appSidebar {
+      width: 220px; border-right: 1px solid var(--border);
+      padding: 24px 12px; display: flex; flex-direction: column;
+      gap: 2px; flex-shrink: 0; background: var(--bg);
+    }
+    .sb-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: 10px; font-size: 14px;
+      font-weight: 500; color: var(--muted); cursor: pointer;
+      border: none; background: none; width: 100%; text-align: left;
+    }
+    .sb-item.active { color: white; background: var(--indigo-bg); }
+    .sb-item-icon { width: 16px; opacity: 0.7; }
+
+    /* MAIN VIEWPORT */
+    .main { flex: 1; display: flex; overflow: hidden; position: relative; }
+
+    /* SPLIT VIEW (Resume/Jobs) */
+    .split-view { display: flex; width: 100%; height: 100%; }
+    .left-panel {
+      width: 520px; height: 100%; border-right: 1px solid var(--border);
+      padding: 24px; overflow-y: auto; background: var(--bg);
+    }
+    .right-panel {
+      flex: 1; height: 100%; padding: 24px; overflow-y: auto; background: var(--bg);
+    }
+
+    /* TOOL VIEW (Full-width Centered) */
+    .tool-view {
+      display: none; width: 100%; height: 100%; overflow-y: auto; background: var(--bg);
+    }
+    .main.mode-tool .split-view { display: none; }
+    .main.mode-tool .tool-view { display: block; }
+
+    .centered-container { max-width: 860px; margin: 0 auto; padding: 40px 20px; }
+
+    /* UI COMPONENTS */
+    .panel-section { margin-bottom: 24px; }
+    .panel-label { 
+      font-size: 11px; font-weight: 700; color: var(--muted); 
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
+    }
+    .step-badge {
+      font-size: 10px; font-weight: 700; color: var(--indigo);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
+    }
+
+    .input-box {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px; color: var(--text);
+      font-family: inherit; font-size: 14px; line-height: 1.6; resize: none;
+    }
+
+    .btn-run {
+      width: 100%; padding: 14px; background: linear-gradient(135deg, var(--indigo), #818cf8);
+      color: white; border: none; border-radius: 12px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+
+    .res-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px; margin-bottom: 20px;
+    }
+
+    /* TABS */
+    .tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .tab-btn {
+      padding: 10px 4px; background: none; border: none; color: var(--muted);
+      font-weight: 600; cursor: pointer; font-size: 14px; position: relative;
+    }
+    .tab-btn.active { color: var(--indigo); }
+    .tab-btn.active::after {
+      content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+      height: 2px; background: var(--indigo);
+    }
+
+    /* METER */
+    .usage-meter { margin-top: 12px; }
+    .meter-bar { height: 5px; background: var(--surface2); border-radius: 10px; overflow: hidden; margin-top: 6px; }
+    .meter-fill { height: 100%; background: var(--green); width: 33%; border-radius: 10px; }
+
+    /* ORIENTING HEADER */
+    #tailorHeadline { margin-bottom: 30px; }
+    .headline-main { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .headline-sub { font-size: 13px; color: var(--muted); }
+
+  </style>
+</head>
+<body>
+
+  <div class="app">
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="logo">1stStep<span>.ai</span></div>
+      <div class="mode-toggle">
+        <button class="mode-btn active" onclick="setMode('resume')">Resume Tailor</button>
+        <button class="mode-btn" onclick="setMode('jobs')">Job Search</button>
+        <button class="mode-btn" onclick="setMode('tailored')">My Resumes</button>
+      </div>
+    </header>
+
+    <div class="layout-body">
+      <!-- SIDEBAR -->
+      <nav id="appSidebar">
+        <button class="sb-item active" onclick="setMode('resume')">
+          <span class="sb-item-icon">📄</span> Resume Tailor
+        </button>
+        <button class="sb-item" onclick="setMode('jobs')">
+          <span class="sb-item-icon">🔍</span> Job Search
+        </button>
+        <button class="sb-item" onclick="setMode('tailored')">
+          <span class="sb-item-icon">📚</span> My Resumes
+        </button>
+        <button class="sb-item" onclick="setMode('tracker')">
+          <span class="sb-item-icon">✔️</span> Tracker
+        </button>
+        <button class="sb-item" onclick="setMode('linkedin')">
+          <span class="sb-item-icon">👔</span> LinkedIn
+        </button>
+        <button class="sb-item" onclick="setMode('aicoach')">
+          <span class="sb-item-icon">💬</span> AI Coach
+        </button>
+      </nav>
+
+      <!-- MAIN AREA -->
+      <main class="main" id="mainWrapper">
+        
+        <!-- SPLIT VIEW AREA -->
+        <div class="split-view">
+          <!-- LEFT PANEL: FULL FORM -->
+          <div class="left-panel">
+            <div id="tailorHeadline">
+              <div class="headline-main">Tailor your resume to this job.</div>
+              <div class="headline-sub">Upload your resume, paste a job description, get a tailored output.</div>
+            </div>
+
+            <div class="panel-section">
+              <div class="step-badge">Step 1 of 2</div>
+              <div class="panel-label">Your Resume</div>
+              <div class="input-box" style="height: 120px; border-style: dashed; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                <div style="text-align: center;">
+                  <span style="font-size: 24px;">⬆️</span>
+                  <div style="font-size: 13px; margin-top: 5px;">Click to upload or drag & drop</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-section">
+              <div class="step-badge">Step 2 of 2</div>
+              <div class="panel-label">Job Description</div>
+              <textarea class="input-box" rows="8" placeholder="Paste the job posting here..."></textarea>
+            </div>
+
+            <div class="panel-section">
+              <button class="btn-run">✦ Tailor My Resume</button>
+              <div class="usage-meter">
+                <div style="display:flex; justify-content: space-between; font-size: 11px; color: var(--muted);">
+                  <span>3 free tailors left</span>
+                  <span>resets monthly</span>
+                </div>
+                <div class="meter-bar"><div class="meter-fill"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT PANEL: FULL RESULTS -->
+          <div class="right-panel">
+            <div class="tabs">
+              <button class="tab-btn active">Tailored Resume</button>
+              <button class="tab-btn">Keywords</button>
+              <button class="tab-btn">What Changed</button>
+            </div>
+
+            <div class="res-card">
+              <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div style="padding: 6px 12px; background: #ecfdf5; color: #065f46; border-radius: 100px; font-size: 12px; font-weight: 700;">✓ Ready to Download</div>
+                <button style="padding: 8px 16px; background: var(--indigo); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Download .docx</button>
+              </div>
+              <div style="height: 400px; background: rgba(0,0,0,0.1); border-radius: 8px; padding: 20px; font-family: monospace; font-size: 12px; white-space: pre-wrap;">
+                Professional Summary...
+                Experience...
+                - Tailored accomplishment 1
+                - Tailored accomplishment 2
+              </div>
+            </div>
+
+            <div class="res-card">
+              <div class="panel-label">ATS Match Score</div>
+              <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="width: 60px; height: 60px; border-radius: 50%; border: 6px solid var(--green); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px;">85%</div>
+                <div>
+                  <div style="font-size: 14px; font-weight: 700;">High Match</div>
+                  <div style="font-size: 12px; color: var(--muted);">Keywords: 14 found, 3 missing</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TOOL VIEW AREA: SPECIALTY TOOLS -->
+        <div class="tool-view">
+          <div class="centered-container" id="toolContent">
+            <!-- Dynamic tool content like AI Coach -->
+            <div id="aiCoachMock">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+                <div>
+                  <h1 style="font-size: 24px; font-weight: 800; margin: 0;">AI Coach</h1>
+                  <p style="font-size: 13px; color: var(--muted); margin: 4px 0 0;">Your personal career advisor.</p>
+                </div>
+                <button style="padding: 8px 16px; border: 1px solid var(--border); background: none; color: var(--muted); border-radius: 8px; font-size: 13px; cursor: pointer;">+ New Chat</button>
+              </div>
+
+              <div class="res-card" style="height: 500px; display: flex; flex-direction: column;">
+                <div style="flex: 1; overflow-y: auto; color: var(--muted); font-size: 14px; text-align: center; display: flex; align-items: center; justify-content: center;">
+                  Ask me about interview strategy, resume gaps, or company culture.
+                </div>
+                <div style="border-top: 1px solid var(--border); padding-top: 20px;">
+                  <input type="text" class="input-box" placeholder="Ask anything...">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    function setMode(mode) {
+      const wrapper = document.getElementById('mainWrapper');
+      const toolView = document.querySelector('.tool-view');
+      const splitView = document.querySelector('.split-view');
+      const aiMock = document.getElementById('aiCoachMock');
+      const toolContent = document.getElementById('toolContent');
+
+      // Reset
+      document.querySelectorAll('.sb-item, .mode-btn').forEach(el => el.classList.remove('active'));
+      
+      // Update Sidebar + Topbar highlights
+      document.querySelectorAll('.sb-item, .mode-btn').forEach(el => {
+        if(el.innerText.toLowerCase().includes(mode.substring(0,4))) el.classList.add('active');
+      });
+
+      if (mode === 'resume' || mode === 'jobs' || mode === 'tailored') {
+        wrapper.classList.remove('mode-tool');
+      } else {
+        wrapper.classList.add('mode-tool');
+        
+        // Mock Tool Content switching
+        if(mode === 'tracker') {
+          toolContent.innerHTML = '<h1 class="h2">Application Tracker</h1><div class="res-card"><p class="p">Real job tracker table would go here...</p></div>';
+        } else if (mode === 'linkedin') {
+          toolContent.innerHTML = '<h1 class="h2">LinkedIn Optimizer</h1><div class="res-card"><div class="panel-label">Optimize Profile</div><textarea class="input-box" rows="5" placeholder="Current headline..."></textarea></div>';
+        } else {
+          // Default back to AI Coach for the mockup demo
+          location.reload(); 
+        }
+      }
+    }
+  </script>
+</body>
+</html>

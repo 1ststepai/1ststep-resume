@@ -2,9 +2,9 @@
 # 1stStep.ai Chrome Extension — Build Status
 
 **Date:** April 22, 2026  
-**Status:** 🚀 MVP Complete (Boilerplate + Core Logic)  
+**Status:** 🚀 MVP + Auth Bridge Fix  
 **Files Created:** 16  
-**Lines of Code:** ~2,000  
+**Lines of Code:** ~2,000
 
 ---
 
@@ -16,6 +16,11 @@
 - ✓ **content.js** (Job detection + UI injection on page)
 - ✓ **popup.html/js** (Quick tailor popup interface)
 - ✓ **sidepanel.html/js** (Detailed tailor workflow panel)
+
+### Auth Bridge (FIXED!) ✓
+- ✓ **auth-bridge.js** (MV3 postMessage relay for app.1ststep.ai → chrome.storage.sync)
+- ✓ **index.html updates** (postMessage sync triggers on profile/resume save)
+- ✓ Proper MV3 isolation: page → postMessage → content script → chrome.storage
 
 ### Job Site Selectors (6 files)
 - ✓ **linkedin.js** (Easy Apply modal selectors)
@@ -37,6 +42,17 @@
 ---
 
 ## 🎯 What Works Now
+
+### Authentication Bridge ✓ (FIXED)
+- `app.1ststep.ai` calls `window.postMessage({ source: 'app', action: 'SYNC_PROFILE' }, '*')`
+- `auth-bridge.js` (content script) listens for `message` event with `source === 'app'`
+- Content script reads `localStorage` and calls `chrome.storage.sync.set()`
+- No direct `chrome.storage` calls from page context (MV3 safe!)
+- Syncs on:
+  - User saves profile (`saveProfile()`)
+  - User uploads resume (`saveResume()`)
+  - localStorage changes (cross-tab sync)
+  - Periodic 3s sync (fallback)
 
 ### Job Detection ✓
 - Content script polls DOM every 2 seconds

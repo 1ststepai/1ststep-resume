@@ -1,0 +1,11 @@
+1. Skill: The "Semantic Matcher" (The Brain)
+Prompt: "Claude, build the 'Semantic Matcher' engine. It should take a job description and a resume, then identify the 'Implicit Needs'—skills not explicitly listed but required by the role's context. Output a JSON object with a Match Score and a list of 'Gaps' for the Writer agent to fix."
+
+2. Skill: The "Side-Panel Pilot" (The Hands)
+Prompt: "Claude, write the boilerplate for a Chrome Extension Side-Panel. It must detect when a user is on a LinkedIn job page, scrape the 'About the job' section, and display a 'Quick Tailor' button that connects to our backend API."
+
+3. Skill: The "A2F" (Agent-to-Form) Logic
+Prompt: "Claude, write a JavaScript function for my Chrome Extension that maps our resume JSON fields to common HTML form attributes (e.g., 'name', 'experience', 'summary'). It should be able to 'inject' text into these fields on third-party sites like Greenhouse or Lever."
+
+4. Skill: The "Viral Audit" (The Growth Hook)
+Prompt: "Claude, design a 'LinkedIn Profile Auditor.' It should take a JSON export of a LinkedIn profile and generate a 3-point 'Roast' and a 3-point 'Fix' list. This will be our $0 lead magnet to get users on the platform."

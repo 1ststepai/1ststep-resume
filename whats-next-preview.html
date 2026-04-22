@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>What's Next Bar — Preview</title>
+  <style>
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: #f1f5f9; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 24px; }
+    .label { font-size: 13px; color: #64748b; font-weight: 500; }
+    .arrow { font-size: 22px; }
+
+    /* ── Simulated results panel top ── */
+    .results-panel { background: #fff; border-radius: 14px; box-shadow: 0 4px 24px rgba(0,0,0,0.10); width: 820px; overflow: hidden; }
+
+    .results-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; border-bottom: 1px solid #e5e7eb; background: #fff;
+    }
+    .match-badge { background: #dcfce7; color: #166534; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; }
+    .topbar-actions { display: flex; align-items: center; gap: 8px; }
+    .btn-sm { padding: 5px 12px; border-radius: 7px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1.5px solid #d1d5db; background: #fff; color: #374151; }
+    .btn-primary { background: #6366f1; color: #fff; border-color: #6366f1; }
+    .tools-btn { display: inline-flex; align-items: center; gap: 5px; }
+
+    /* ── What's Next bar ── */
+    .whats-next {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 20px;
+      background: linear-gradient(90deg, #F0FDF4, #F0F9FF);
+      border-bottom: 1px solid #BBF7D0;
+      flex-wrap: wrap;
+    }
+    .wn-label { font-size: 12px; font-weight: 700; color: #065F46; margin-right: 4px; white-space: nowrap; }
+    .wn-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 11px; border-radius: 20px;
+      border: 1.5px solid #6EE7B7; background: #fff;
+      font-size: 12px; font-weight: 500; cursor: pointer; color: #065F46;
+      transition: background 0.15s;
+    }
+    .wn-btn:hover { background: #ECFDF5; }
+    .wn-btn.highlight {
+      border-color: #4f46e5;
+      background: #eef2ff;
+      color: #4338ca;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
+      font-weight: 700;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
+      50%       { box-shadow: 0 0 0 6px rgba(99,102,241,0.08); }
+    }
+    .wn-dismiss { margin-left: auto; background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 16px; }
+
+    /* resume body placeholder */
+    .resume-body { padding: 32px; min-height: 120px; background: #fafafa; border-top: 1px solid #f3f4f6; color: #94a3b8; font-size: 13px; text-align: center; display: flex; align-items: center; justify-content: center; }
+
+    /* annotation */
+    .annotation {
+      background: #fef3c7; border: 1.5px solid #fcd34d; border-radius: 10px;
+      padding: 10px 16px; font-size: 13px; color: #92400e; font-weight: 500;
+      max-width: 820px; width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="label">↓ This is what users see right after their resume is tailored</div>
+
+  <div class="results-panel">
+
+    <!-- Toolbar -->
+    <div class="results-topbar">
+      <div class="match-badge">✓ Resume Tailored</div>
+      <div class="topbar-actions">
+        <button class="btn-sm tools-btn">🛠 Tools ▾</button>
+        <button class="btn-sm btn-primary">⬇ Download .docx</button>
+        <button class="btn-sm">↺ Re-tailor</button>
+        <button class="btn-sm">🔍 Jobs</button>
+        <button class="btn-sm">📁 History</button>
+      </div>
+    </div>
+
+    <!-- What's Next bar — NEW template button highlighted -->
+    <div class="whats-next">
+      <span class="wn-label">What's next?</span>
+      <button class="wn-btn highlight">🎨 Apply a template</button>
+      <button class="wn-btn">⬇ Download resume</button>
+      <button class="wn-btn">🎤 Prep for interview</button>
+      <button class="wn-btn">📁 Save to history</button>
+      <button class="wn-dismiss">✕</button>
+    </div>
+
+    <!-- Resume output placeholder -->
+    <div class="resume-body">
+      … tailored resume content appears here …
+    </div>
+
+  </div>
+
+  <div class="annotation">
+    🎨 <strong>Apply a template</strong> is now the first pill in the "What's next?" bar — it appears automatically after every tailor, right below the toolbar. Clicking it opens the template picker directly.
+  </div>
+
+</body>
+</html>

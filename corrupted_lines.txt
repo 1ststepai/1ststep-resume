@@ -1,0 +1,514 @@
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+content: ' ??';
+content: '??';
+content: ' ? Recommended';
+content: ' ? Not tailored';
+? Couldn't read that file. Try a different PDF or save your resume as .docx and re-upload.
+<button onclick="clearFile()">? Remove</button>
+<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="jobContextLabel">??
+<span id="runBtnLabel">? Tailor My Resume</span>
+<span id="autoDetectBtnIcon">??</span> <span id="autoDetectBtnLabel">Auto-detect matching jobs from
+<button onclick="clearJsResume()">? Clear</button>
+<button class="btn-locate" onclick="detectLocation()" title="Use my location">??</button>
+<div class="step-icon">??</div>
+<div id="matchBadge" class="match-score-badge good">? Resume Tailored</div>
+<button class="btn-sm btn-sm-outline" onclick="runTailoring()" style="white-space:nowrap">? Re-tailor</button>
+?? <span>Apply Template</span>
+?? <span>Interview Prep</span>
+?? <span>What Changed</span>
+?? <span>Find Jobs</span>
+?? <span>Saved Resumes</span>
+?? Formatted Resume
+?? Prep for interview
+?? Save to history
+Save ?
+?? Tailored Resume
+?? Keywords
+?? What Changed
+?? Cover Letter
+<div class="empty-icon">??</div>
+<p style="font-size:11px;color:var(--dark3);margin-top:12px;">No results? Try the quick links above with your
+<button class="btn-sm btn-sm-outline" onclick="searchJobs()">? Refresh</button>
+<h2 style="font-size:18px;font-weight:700;margin:0 0 4px">?? Tailored Resumes</h2>
+<h2 style="font-size:18px;font-weight:700;margin:0 0 4px">?? LinkedIn Profile Optimizer</h2>
+? Resume from Resume Tailor loaded
+? Optimize My LinkedIn
+<div style="font-size:28px;margin-bottom:8px">??</div>
+?? <strong style="color:var(--fg)">Tips:</strong> Your headline is the #1 thing recruiters search by. The
+<div style="font-size:36px;margin-bottom:12px">??</div>
+<h2 style="font-size:18px;font-weight:700;margin:0">?? LinkedIn Profile Audit</h2>
+<span style="font-size:16px">??</span>
+Tailor My Resume ?
+<div style="font-size:28px;margin-bottom:10px">??</div>
+Unlock ?
+<h2 style="font-size:18px;font-weight:700;margin:0 0 4px">? Bulk Apply</h2>
+style="padding:10px 24px;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">?
+? Tailor All Jobs
+<h2>?? Job Applications</h2>
+title="Re-read localStorage for any external updates">?? Refresh</button>
+<p>Find a job and click <strong>? Applied</strong> to log it here � then track status, notes, and follow-ups
+onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">?? Find Jobs to Apply To
+<a href="mailto:evan@1ststep.ai?subject=Bug Report / Feedback&body=Hi, I found an issue with 1stStep.ai:%0A%0A"
+onmouseover="this.style.color='#FCD34D'" onmouseout="this.style.color='var(--muted)'">? Leave a review</button>
+<h2>? Mark as Applied</h2>
+Get Complete ?
+Get Essential ?
+<li>? <strong style="color:var(--fg)">60</strong> searches / mo</li>
+<li>? <strong style="color:var(--fg)">30</strong> tailors / mo</li>
+<li>? 30 cover letters / mo</li>
+<li>? ATS keyword optimizer</li>
+<li>? Skill gap analysis</li>
+<li>? Resume builder wizard</li>
+<li>? Interview prep</li>
+<li>? <strong style="color:var(--fg)">Unlimited</strong> searches</li>
+<li>? <strong style="color:var(--fg)">Unlimited</strong> tailors</li>
+<li>? Unlimited cover letters</li>
+<li>? <strong style="color:var(--fg)">Resume templates</strong> (4 formats)</li>
+<li>? AI responsibility suggestions</li>
+subscribed? Click to verify</button>
+Open LinkedIn ?
+On your profile page, click <strong style="color:var(--fg)">More</strong> ? <strong
+<span style="font-size:14px">??</span>
+style="background:none;border:none;color:var(--brand);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-family:'Inter',sans-serif">?
+<h2>? Enjoying 1stStep.ai?</h2>
+href="mailto:evan@1ststep.ai?subject=1stStep.ai Feedback&body=Hi Evan,%0A%0AI wanted to share some feedback about 1stStep.ai:%0A%0A"
+<span class="platform-icon">??</span>
+<textarea id="feedbackText" rows="3" placeholder="What could we do better? Any features you wish we had?"
+<div class="sent-icon">??</div>
+Get Started ?
+<p style="font-size:11px;color:var(--muted);margin:14px 0 0">Need an access code? <a href="mailto:evan@1ststep.ai"
+Continue with Complete � $39/mo ?
+style="padding:4px 10px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#34D399">??
+style="padding:4px 10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#818CF8">??
+style="padding:4px 10px;background:rgba(0,119,181,0.1);border:1px solid rgba(0,119,181,0.25);border-radius:100px;font-size:11px;font-weight:600;color:#60A5FA">??
+<li>? <strong style="color:var(--text)">30</strong> resume tailors / mo</li>
+<li>? <strong style="color:var(--text)">60</strong> job searches / mo</li>
+<li>? Cover letter generator</li>
+<li>? <strong style="color:var(--text)">Unlimited</strong> tailors</li>
+<li>? <strong style="color:var(--text)">Unlimited</strong> job searches</li>
+<li>? <strong style="color:var(--text)">Resume templates</strong> (4 formats)</li>
+Already subscribed? Verify access ?
+Restore Access ?
+style="margin-top:14px;background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline">?
+?? I have a resume<br>
+?? I need to build one<br>
+<div style="font-size:18px;margin-bottom:3px">??</div>
+Returning user?
+_jdsub.textContent = len > 0 ? `${len.toLocaleString()} characters` : 'Paste the job posting';
+if (arrow) arrow.style.transform = adv.open ? 'rotate(90deg)' : '';
+el.style.display = visible ? '' : 'none';
+fetch('/api/subscription?action=linkedin-init')
+showToast(error === 'access_denied' ? 'Connection cancelled' : 'LinkedIn sign-in failed', 'warning');
+showToast('? LinkedIn connected � profile auto-filled');
+showToast('? Builder loading� try again in a moment.', 'info');
+numEl.textContent = done ? '?' : String(displayNum);
+if (action) action.style.display = done ? 'none' : '';
+pctEl.className = `profile-completeness-pct ${isFull ? 'full' : 'partial'}`;
+fillEl.className = `profile-progress-fill ${isFull ? 'full' : 'partial'}`;
+/do\s+not\s+(?:follow|obey|use)\s+(your\s+)?(original\s+)?instructions?/gi,
+/reveal\s+(your\s+)?(system\s+)?prompt/gi,
+/print\s+(your\s+)?(system\s+)?prompt/gi,
+/output\s+(your\s+)?(system\s+)?instructions?/gi,
+if (btn) { btn.textContent = '? Reading�'; btn.disabled = true; }
+'utility'  // ? profile parse, not counted
+data = JSON.parse(m ? m[0] : raw.trim());
+showToast(filled > 0 ? `? ${filled} field${filled !== 1 ? 's' : ''} auto-filled from resume` : 'Contact info not found � fill in manually');
+document.getElementById('wrongFileWarning').textContent = '? File too large � please upload a file under 5 MB.';
+document.getElementById('wrongFileWarning').textContent = '? Unsupported file type � please upload a PDF, Word (.docx), or plain text file.';
+document.getElementById('wrongFileWarning').textContent = '? Unexpected file type. Please upload a PDF, Word, or plain text resume.';
+_fszEl.textContent = kb >= 1024 ? `${(kb/1024).toFixed(1)} MB` : `${Math.round(kb)} KB`;
+if (dropIcon) dropIcon.textContent = '??';
+if (dropIcon && dropIcon.textContent === '?') dropIcon.textContent = '??';
+lbl.textContent = '? Upload or paste your resume first';
+lbl.textContent = '?? Find a Job First';
+lbl.textContent = '? Tailor My Resume';
+dd.style.display = isOpen ? 'none' : 'block';
+chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+const display = company ? `?? Tailoring for: ${title} at ${company}` : `?? Tailoring for: ${title}`;
+lockIcon.textContent = currentTier === 'complete' ? '' : ' ??';
+lockIcon.title = currentTier === 'complete' ? '' : 'Requires Complete plan';
+clean = clean.replace(/^(?:(?:sure[,!]?\s+)?here(?:'s| is)(?: your| the)?\s+(?:tailored\s+)?(?:resume|cover letter|result|output)[:\s�\-]*\n+)/i, '');
+// Set your key via: triple-click the logo ? Dev Controls.
+const defaults = { 1: '??', 2: '??', 3: '??', 4: '?', 5: '??' };
+nudge.style.display = hasAccount ? 'none' : 'flex';
+? `${remaining} tailor${remaining !== 1 ? 's' : ''} left this month � save your email so your history doesn't disappear.`
+const history = getTailorHistory ? getTailorHistory() : [];
+showToast('? Resume tailored � explore Job Search and Saved Resumes in the menu', 'success');
+showToast('?? Please enter a valid email');
+showToast('? Results saved � you\'re all set');
+const tier = getCurrentTier ? getCurrentTier() : 'free';
+? `${remaining} of ${limit} free tailor${limit !== 1 ? 's' : ''} remaining`
+bar.style.background = remaining === 0 ? 'var(--red)' : remaining <= 1 ? '#F59E0B' : 'var(--green)';
+if (upgradeBtn) upgradeBtn.style.display = remaining <= 1 ? 'block' : 'none';
+if (!resumeRaw) { showToast('?? Please add your resume first'); return; }
+if (!jobDesc) { showToast('?? Please paste a job description'); return; }
+'tailor'   // ? counted: this is the first call of a tailor flow
+(Array.isArray(arr) ? arr : [])
+typeof s === 'string' ? s.replace(/[<>{}|\\]/g, '').slice(0, max) : '';
+${notes ? `<candidate_context>\n${notes.slice(0, 500)}\n</candidate_context>` : ''}
+'tailor'   // ? Sonnet rewrite; callType must be 'tailor' to pass server-side Sonnet guard
+const changesRaw = parts[1] ? parts[1].trim() : '';
+return m ? { change: m[1].trim(), reason: m[2].trim() } : { change: l.replace(/^[-�*]\s*/, '').trim(), reason: '' };
+TARGET ROLE: ${kwData.job_title} ${kwData.company ? `at ${kwData.company}` : ''}
+${notes ? `CONTEXT: ${notes.slice(0, 500)}` : ''}
+'coverLetter'  // ? counted separately from the tailor
+setTimeout(() => showToast(`Heads up � ${clRem} cover letter${clRem === 1 ? '' : 's'} left this month`, 'warning'), 1200);
+// ? ATS score ring (all tiers)
+renderSkillGapCard(gapData);   // ? skill gap card (free: teaser, paid: full)
+? (window._jobResults || []).find(j => j.id === lastTailoredJobId)
+atsScore: gapData ? {
+const stage = tailorCount === 1 ? 'active_user' : 'power_user';
+setTimeout(() => showToast(`Heads up � ${rem} tailor${rem === 1 ? '' : 's'} left this month`, 'warning'), 1000);
+showToast('? Resume tailored � download below or find it anytime in Saved Resumes');
+<div style="font-size:2rem;margin-bottom:8px">??</div>
+// Score badge � show before?after delta if we have both scores
+const deltaStr = (before && before > 0 && s > before) ? ` (${before}% ? ${s}%)` : ` ${s}%`;
+matchBadge.textContent = `${s >= 75 ? '?' : '~'}${deltaStr} ATS Match`;
+matchBadge.className = `match-score-badge ${s >= 65 ? 'good' : 'ok'}`;
+const cls = after >= 75 ? 'score-high' : after >= 55 ? 'score-mid' : 'score-low';
+<div class="ring-center-val" style="font-size:30px;color:${after >= 75 ? '#10B981' : after >= 55 ? '#F59E0B' : '#EF4444'}">${after}%</div>
+${delta > 0 ? `<div class="score-ring-delta" style="margin-top:6px">+${delta} pts</div>` : ''}
+if (matched.length) kwHTML += `<div class="kw-section"><h3>? Matched Keywords (${matched.length})</h3><div class="kw-pills">${matched.map(k => `<span class="kw-pill match">? ${k}</span>`).join('')}</div></div>`;
+if (gapsReq.length) kwHTML += `<div class="kw-section"><h3>? Missing � Required (${gapsReq.length})</h3><div class="kw-pills">${gapsReq.map(k => `<span class="kw-pill gap-required">? ${k}</span>`).join('')}</div><p style="font-size:12px;color:var(--muted);margin-top:8px;">These are required by the JD but not in your background. Consider addressing in your cover letter or interview prep.</p></div>`;
+if (gapsPref.length) kwHTML += `<div class="kw-section"><h3>?? Missing � Preferred (${gapsPref.length})</h3><div class="kw-pills">${gapsPref.map(k => `<span class="kw-pill gap-preferred">~ ${k}</span>`).join('')}</div></div>`;
+if (keywords.top_strengths?.length) kwHTML += `<div class="kw-section"><h3>?? Your Top Strengths for This Role</h3><div class="kw-pills">${keywords.top_strengths.map(s => `<span class="kw-pill match">${s}</span>`).join('')}</div></div>`;
+let chHTML = changes.length ? changes.map(c => `
+${c.reason ? `<br><span style="color:var(--muted);font-size:12px;margin-top:4px;display:block">Why: ${escHtml(c.reason)}</span>` : ''}
+color: i === 0 ? '0F172A' : '475569'
+spacing: { after: line ? 160 : 80 },
+else if (/^(?|??|error|failed|not found|not loaded|add your|enter a|tailor your|generate)/i.test(msg)) type = 'error';
+else if (/^??|warning/i.test(msg)) type = 'warning';
+t.className = 'toast' + (type ? ` ${type}` : '');
+}, undoFn ? 4500 : 2800);
+const period = isAnnual ? 'annual' : 'monthly';
+mBtn.style.background = isAnnual ? 'transparent' : 'linear-gradient(135deg,#1A56DB,#6366F1)';
+mBtn.style.color = isAnnual ? 'var(--muted)' : 'white';
+aBtn.style.background = isAnnual ? 'linear-gradient(135deg,#1A56DB,#6366F1)' : 'transparent';
+aBtn.style.color = isAnnual ? 'white' : 'var(--muted)';
+if (ep) ep.textContent = '$' + (isAnnual ? '11' : '19');
+if (en) en.textContent = isAnnual ? 'Billed $132/year � save $96' : '';
+if (ec) { ec.href = STRIPE_LINKS.essential[period]; ec.textContent = isAnnual ? 'Get Essential � Annual' : 'Get Essential'; }
+if (cp) cp.textContent = '$' + (isAnnual ? '23' : '39');
+if (cn) cn.textContent = isAnnual ? 'Billed $276/year � save $192' : '';
+if (cc) { cc.href = STRIPE_LINKS.complete[period]; cc.textContent = isAnnual ? 'Get Complete � Annual' : 'Get Complete'; }
+return LIMITS[currentTier]?.[type] ?? LIMITS.free[type];
+? `${count} / ${limit} searches this month`
+label.style.color = remaining === 0 ? 'var(--red)' : remaining <= Math.ceil(limit * 0.15) ? 'var(--amber)' : 'var(--muted)';
+if (btn) btn.style.opacity = count >= limit ? '0.45' : '';
+<p style="color:var(--muted);font-size:13px;margin-bottom:16px">Upgrade to the ${currentTier === 'essential' ? 'Complete' : 'a higher'} plan for ${LIMITS[currentTier === 'essential' ? 'complete' : 'complete'].searches} searches/month, or search directly on job boards in the meantime.</p>
+<button onclick="openUpgradeModal()" style="padding:8px 16px;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;border:none;cursor:pointer">? Upgrade My Plan</button>
+label.textContent = `${remaining} of ${limit} tailor${limit !== 1 ? 's' : ''} remaining this month`;
+label.style.color = remaining <= Math.ceil(limit * 0.2) ? 'var(--amber)' : 'var(--muted)';
+bar.style.background = pct >= 80 ? 'var(--amber)' : 'var(--green)';
+if (btn && !btn.disabled) btn.style.opacity = count >= limit ? '0.45' : '';
+if (moreDot) moreDot.style.display = isMoreMode ? 'inline-block' : 'none';
+el.style.display = (mode === 'resume') ? 'flex' : 'none';
+if (hl) hl.style.display = (mode === 'resume') ? '' : 'none';
+? `Resume file loaded ?`
+if (file.size > 5 * 1024 * 1024) { showToast('? File too large � max 5 MB'); return; }
+if (!allowedExts.some(ext => name.endsWith(ext))) { showToast('? Upload a PDF, Word (.docx), or .txt file'); return; }
+if (btn) btn.textContent = '? Reading...';
+const _jsSzStr = _jsSzKb >= 1024 ? `${(_jsSzKb/1024).toFixed(1)} MB` : `${Math.round(_jsSzKb)} KB`;
+showToast('? Could not read file � try pasting the text instead');
+if (btn) btn.textContent = '?? Upload file';
+setAnalyzeStatus('?? No resume found. Paste your resume above, or go to <strong>Resume Tailor</strong> and add it there first.', 'warning');
+setAnalyzeStatus('?? Your uploaded file couldn\'t be read as text (PDF/DOCX binary content). Please <strong>paste your resume as plain text</strong> into the box above instead of uploading a file.', 'warning');
+setAnalyzeStatus('?? Analyzing your resume...', 'info');
+document.getElementById('jobLoadingText').textContent = '?? Analyzing your resume...';
+'search'  // ? counted: triggers the job search flow
+setAnalyzeStatus(`? Detected: <strong>${bestQuery}</strong>${data.experience_level ? ` � ${data.experience_level}-level` : ''}${data.industry ? ` � ${data.industry}` : ''}`, 'success');
+errMsg = '?? Monthly search limit reached � upgrade to continue searching.';
+setAnalyzeStatus(`? ${escHtml(errMsg)}`, 'error');
+icon.textContent = '??';
+showToast(`?? ${getLimit('searches') - count} searches left this month`, 'warning');
+document.getElementById('jobLoadingText').textContent = `Searching ${allTitles.length} role${allTitles.length > 1 ? 's' : ''} at once...`;
+const pool = merged.sort((a, b) => (a.distanceMiles ?? 999) - (b.distanceMiles ?? 999));
+? `<div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.5;background:var(--dark);padding:8px 10px;border-radius:6px;border:1px solid var(--border)">${escHtml(summary)}</div>`
+? _allJobPool.filter(j => j._roleTag === _activeRoleFilter)
+}).sort((a, b) => (a.distanceMiles ?? 999) - (b.distanceMiles ?? 999));
+statusEl.textContent = '?? Detecting your location...';
+statusEl.textContent = '?? Looking up city name...';
+`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
+const displayName = city && state ? `${city}, ${state}` : data.display_name.split(',').slice(0, 2).join(',').trim();
+statusEl.textContent = `? Location set to ${displayName}`;
+statusEl.textContent = '? Location detected';
+statusEl.textContent = '?? GPS blocked � detecting via network...';
+const displayName = city && state ? `${city}, ${state}` : city || state || data.country_name || '';
+statusEl.textContent = `? Detected via network: ${displayName}`;
+statusEl.textContent = `? Using saved location: ${smartDefault}`;
+statusEl.textContent = '?? Could not auto-detect. Type your city above.';
+const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&addressdetails=1`;
+const indeedUrl = `https://www.indeed.com/jobs?q=${encodeURIComponent(kw)}&l=${encodeURIComponent(loc)}&radius=${currentRadius}`;
+const linkedinUrl = `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(kw)}&location=${encodeURIComponent(loc)}&distance=${currentRadius}`;
+const glassdoorUrl = `https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${encodeURIComponent(kw)}&locT=C&locId=1147401&radius=${currentRadius}`;
+showToast('?? No location set � detecting automatically�', 'info');
+showToast('?? Enter a location first');
+showToast('?? No keywords set � analyzing your resume first...');
+? `${keywords} jobs in ${locationQuery}`
+// Deployed: relative URL ? always same-origin HTTPS (app.1ststep.ai)
+const locationStr = city && state ? `${city}, ${state}` : city || state || job.job_country || '';
+indeed_url: indeedUrl || (primaryIsIndeed ? primaryLink : null),
+const pool = role ? _allJobPool.filter(j => j._roleTag === role) : _allJobPool;
+visibleJobs.length > 0 ? `${visibleJobs.length} jobs near ${locName}` : 'No jobs found';
+`Within ${currentRadius} miles${document.getElementById('jobKeywords').value.trim() ? ' � "' + document.getElementById('jobKeywords').value.trim() + '"' : ''}${hiddenCount > 0 ? ` � ${hiddenCount} already applied hidden` : ''}`;
+<p>${hiddenCount > 0 ? `All ${hiddenCount} matching job${hiddenCount !== 1 ? 's' : ''} in this area ${hiddenCount !== 1 ? 'have' : 'has'} already been applied to � nice work!` : `No jobs found within <strong>${currentRadius} miles</strong> matching your criteria.`}</p>
+<p style="margin-bottom:16px">${hiddenCount > 0 ? 'Try different keywords or expand your search radius to find more.' : 'Try expanding your radius or using different keywords.'}</p>
+'utility'  // ? background enrichment, not counted against user limits
+estimates = JSON.parse(match ? match[0] : result.trim());
+? `$${Math.round(job.salary_min / 1000)}k � $${Math.round(job.salary_max / 1000)}k/yr`
+: job.salary_min ? `From $${Math.round(job.salary_min / 1000)}k/yr` : '';
+? `${job.distanceMiles < 1 ? '< 1' : Math.round(job.distanceMiles)} mi`
+: location ? escHtml(location.split(',')[0]) : 'Nearby';
+const postedDate = job.created ? new Date(job.created).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+? `<div class="job-salary-badge">${salaryStr}</div>`
+? `<div class="job-salary-badge estimated">~${salaryEst} <span style="font-size:10px;opacity:0.7">(est.)</span></div>`
+: `<div class="job-salary-badge unknown" id="sal-${jobId}">?? Estimating...</div>`;
+<div class="job-distance-badge">?? ${dist}</div>
+${location ? `<span class="job-meta-pill">?? ${escHtml(location)}</span>` : ''}
+${isRemote ? `<span class="job-meta-pill remote">?? Remote OK</span>` : ''}
+${postedDate ? `<span class="job-meta-pill">?? ${postedDate}</span>` : ''}
+<span class="freshness-badge freshness-checking" id="fresh-${jobId}">? Verifying�</span>
+${desc ? `<div class="job-desc">${desc}�</div>` : ''}
+<button class="btn-applied-check ${isApplied(job.id) ? 'is-applied' : ''}" id="applied-btn-${jobId}" onclick="event.stopPropagation(); ${isApplied(job.id) ? `openApplyModal('${jobId}')` : `quickLogApplied('${jobId}')`}">${isApplied(job.id) ? '? Applied' : '? Applied?'}</button>
+${jobUrl !== '#' ? `<a class="btn-view-job" href="${escHtml(jobUrl)}" target="_blank" onclick="event.stopPropagation()">View ?</a>` : ''}
+${job.indeed_url ? `<a class="btn-indeed ${job.indeed_easy_apply ? 'easy' : ''}" href="${escHtml(job.indeed_url)}" target="_blank" onclick="event.stopPropagation()" title="${job.indeed_easy_apply ? 'Indeed Easy Apply � apply without leaving Indeed' : 'Apply on Indeed'}">Indeed ${job.indeed_easy_apply ? '? Easy Apply' : '?'}</a>` : ''}
+<button class="btn-tailor-job" onclick="event.stopPropagation(); tailorForJob('${jobId}')">?? Tailor Resume</button>
+? `Salary: $${Math.round(job.salary_min / 1000)}k�$${Math.round(job.salary_max / 1000)}k/yr`
+const jobDescription = `${title}${company ? ` at ${company}` : ''}
+${location ? `Location: ${location}` : ''}
+showToast('? Job loaded � tailoring now�');
+showToast('? Job loaded � add your resume above and click Tailor');
+badge.style.display = count > 0 ? '' : 'none';
+if (mobileBadge) { mobileBadge.textContent = count; mobileBadge.style.display = count > 0 ? '' : 'none'; }
+if (sbBadge) { sbBadge.textContent = count; sbBadge.style.display = count > 0 ? '' : 'none'; }
+? `$${Math.round(job.salary_min / 1000)}k�$${Math.round(job.salary_max / 1000)}k/yr`
+// Flip the button to "? Applied" immediately
+btn.textContent = '? Applied';
+b.textContent = '? Applied?';
+showToast('? Logged!', 'success', undoLog);
+if (btn) { btn.classList.add('is-applied'); btn.textContent = '? Applied'; }
+{ value: 'applied', label: '?? Applied (manual)', cls: 'status-applied' },
+{ value: 'screening', label: '?? Screening', cls: 'status-screening' },
+{ value: 'interview', label: '?? Interview', cls: 'status-interview' },
+{ value: 'offer', label: '?? Offer', cls: 'status-offer' },
+{ value: 'rejected', label: '? Rejected', cls: 'status-rejected' },
+? `${todayCount} applied today � ${applications.length} total`
+: `${applications.length} application${applications.length !== 1 ? 's' : ''} tracked`;
+let followUpLabel = followUp ? `Follow up: ${followUp}` : 'No follow-up set';
+if (followUp < today) { followUpCls += ' overdue'; followUpLabel = `? Overdue: ${followUp}`; }
+`<option value="${s.value}" ${s.value === app.status ? 'selected' : ''}>${s.label}</option>`
+${app.location ? `<span class="job-meta-pill">?? ${escHtml(app.location)}</span>` : ''}
+${app.salary ? `<span class="job-meta-pill" style="color:#6EE7B7;border-color:rgba(14,159,110,0.3);background:rgba(14,159,110,0.07)">?? ${escHtml(app.salary)}</span>` : ''}
+<span class="job-meta-pill">?? ${app.appliedDate}</span>
+${app.contactName ? `<span class="job-meta-pill">?? ${escHtml(app.contactName)}${app.contactEmail ? ` � <a href="mailto:${escHtml(app.contactEmail)}" style="color:var(--blue)">${escHtml(app.contactEmail)}</a>` : ''}</span>` : ''}
+${app.notes ? `<span class="job-meta-pill" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(app.notes)}">?? ${escHtml(app.notes)}</span>` : ''}
+${app.resumeSource ? (() => {
+tailored: { cls: 'tailored', icon: '??', label: 'Tailored resume' + (app.resumeTailoredFor ? ` for "${escHtml(app.resumeTailoredFor)}"` : '') },
+tailored_other: { cls: 'tailored-other', icon: '??', label: 'Tailored resume (different job)' + (app.resumeTailoredFor ? ` � "${escHtml(app.resumeTailoredFor)}"` : '') },
+base: { cls: 'base', icon: '??', label: 'Base resume (not tailored)' },
+${app.jobUrl ? `<a class="btn-view-job" href="${escHtml(app.jobUrl)}" target="_blank" style="font-size:11px;padding:3px 8px">View ?</a>` : ''}
+<button onclick="editApplication('${app.id}')" class="btn-view-job" style="font-size:11px;padding:3px 8px">? Edit</button>
+if (!confirm('Remove this tailored resume? This cannot be undone.')) return;
+`<span style="display:inline-block;padding:1px 7px;border-radius:100px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);color:#34D399;font-size:10px;white-space:nowrap">? ${escHtml(k)}</span>`
+`<span style="display:inline-block;padding:1px 7px;border-radius:100px;background:rgba(250,204,21,0.08);border:1px solid rgba(250,204,21,0.25);color:#FCD34D;font-size:10px;white-space:nowrap">? ${escHtml(k)}</span>`
+? `<span style="display:inline-block;padding:1px 7px;border-radius:100px;background:rgba(250,204,21,0.08);border:1px solid rgba(250,204,21,0.2);color:#FCD34D;font-size:10px">+${s.missing.length - 3} gaps</span>`
+? `<span style="font-size:10px;color:var(--muted);margin-right:4px">${s.before}% ? <strong style="color:${badgeColor}">${score}%</strong></span>`
+${entry.jobUrl ? ` &nbsp;<a href="${escHtml(entry.jobUrl)}" target="_blank" style="color:var(--blue);font-size:11px;text-decoration:none">View job ?</a>` : ''}
+<button class="btn-tailor-dl primary" onclick="openTemplateFromHistory('${entry.id}')">?? Formatted Resume</button>
+<button class="btn-tailor-dl" onclick="downloadTailorEntryDocx('${entry.id}')" title="Plain text � best for uploading to job boards &amp; ATS systems">? ATS Plain Text (.docx)</button>
+<button class="btn-tailor-dl" onclick="copyTailorEntryResume('${entry.id}')">?? Copy Text</button>
+${hasCover ? `<button class="btn-tailor-dl" onclick="downloadTailorEntryCoverLetter('${entry.id}')">? Cover Letter (.docx)</button><button class="btn-tailor-dl" onclick="copyTailorEntryCoverLetter('${entry.id}')">?? Copy Cover Letter</button>` : ''}
+<button class="btn-tailor-dl" onclick="openInterviewModalFromHistory('${entry.id}')" title="Generate a personalized interview cheat sheet for this role" style="border-color:#6EE7B7;color:#065F46">?? Interview Prep</button>
+? `<span class="btn-tailor-applied-badge">? Applied</span>`
+: `<button class="btn-tailor-dl apply-now" onclick="applyNowFromHistory('${entry.id}')">${entry.jobUrl ? '?? Apply Now' : '? Mark Applied'}</button>`}
+<div class="tailor-card-date" style="margin-top:${atsBadgeHtml ? '4px' : '0'}">${date}</div>
+showToast(entry.jobUrl ? '?? Opening job + logged as applied ?' : '? Marked as applied');
+renderTailoredHistory(); // refresh so button flips to "? Applied"
+const appliedDate = a.dateAdded ? new Date(a.dateAdded) : null;
+const more  = overdue.length > 2 ? ` (+${overdue.length - 2} more)` : '';
+`Follow up with ${names}${more} � ${overdue.length === 1 ? 'it\'s' : 'they\'re'} ready for a nudge.`;
+if (banner) banner.style.display = (resume && (!firstName || !email)) ? 'flex' : 'none';
+// ? Replace the PLACEHOLDER in the Google review link with your actual
+//   Find it at: https://business.google.com ? Get more reviews ? Copy link
+const subject = encodeURIComponent(`1stStep.ai Feedback${stars ? ` � ${stars} star${stars !== 1 ? 's' : ''}` : ''}`);
+window.open(`mailto:evan@1ststep.ai?subject=${subject}&body=${body}`, '_blank');
+avatarEl.textContent = first && last ? first + last : first || '?';
+sbAvatarEl.textContent = first && last ? first + last : first || '?';
+sbNameEl.textContent = p.firstName ? ${p.firstName} .trim() : 'Account';
+const usage = getMonthlyUsage ? getMonthlyUsage() : {};
+const limit = getLimit ? getLimit('tailors') : 3;
+planEl.textContent = remaining > 0 ? `Free � ${remaining} tailor${remaining !== 1 ? 's' : ''} left` : 'Free � limit reached';
+const resp = await fetch(`/api/subscription?email=${encodeURIComponent(email)}`);
+currentTier = tier; // ? update in-memory variable so gates take effect immediately
+const label = tier === 'complete' ? 'Complete' : 'Essential';
+showToast(`? ${label} plan activated � limits updated!`);
+statusEl.textContent = `? Using saved location: ${savedLocation}`;
+statusEl.textContent = `? Using: ${val}`;
+${keywords ? `TARGET KEYWORDS/INDUSTRY: ${keywords.slice(0, 300)}` : ''}
+'linkedin'  // ? counted against linkedin monthly limit
+showToast('? LinkedIn profile optimized!');
+document.getElementById('liEmpty').textContent = '?? Monthly limit reached � upgrade to continue.';
+document.getElementById('liEmpty').textContent = '?? This feature requires a paid plan.';
+${targetRole ? `Target Role: ${targetRole.slice(0, 200)}` : ''}
+<span style="font-size:11px;font-weight:700;color:${c.score >= 75 ? '#34D399' : c.score >= 55 ? '#FBBF24' : '#F87171'}">${c.score}/100</span>
+<div style="height:100%;width:${c.score}%;background:${c.score >= 75 ? '#34D399' : c.score >= 55 ? '#FBBF24' : '#F87171'};border-radius:2px;transition:width 0.8s ease"></div>
+${wins.length ? `<div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px">? Quick Wins</div>${winItems}` : ''}
+showToast('? Profile scored!');
+const scoreLabel = data.scoreLabel || (score < 31 ? 'Needs Work' : score < 56 ? 'Decent Foundation' : score < 76 ? 'Solid Profile' : 'Stand-Out Profile');
+label.style.color = score < 31 ? '#F87171' : score < 56 ? '#FBBF24' : score < 76 ? '#60A5FA' : '#34D399';
+`<li style="padding:12px 20px;${i < data.roast.length - 1 ? 'border-bottom:1px solid rgba(239,68,68,0.1);' : ''}font-size:13px;line-height:1.5;display:flex;gap:10px;align-items:flex-start">
+`<li style="padding:12px 20px;${i < data.fixes.length - 1 ? 'border-bottom:1px solid rgba(52,211,153,0.1);' : ''}font-size:13px;line-height:1.5;display:flex;gap:10px;align-items:flex-start">
+document.getElementById('bulkUpgradeGate').style.display = isComplete ? 'none' : 'block';
+document.getElementById('bulkApplyMain').style.display = isComplete ? 'block' : 'none';
+document.getElementById('bulkTierBadge').style.display = isComplete ? 'inline-block' : 'none';
+document.getElementById('bulkAddBtn').style.display = count >= 5 ? 'none' : 'block';
+showToast(`Only ${remaining} tailor${remaining === 1 ? '' : 's'} left this month � reduce batch or upgrade`, 'warning');
+if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = '?? Processing...'; }
+'tailor'   // ? first call per job counts as a tailor
+const safeKeywords = (Array.isArray(kw.keywords) ? kw.keywords : [])
+? kw.job_title.replace(/[<>{}|\\]/g, '').slice(0, 200)
+'tailor'  // ? Sonnet rewrite step; must match Sonnet guard allowlist
+if (statusEl) { statusEl.textContent = '? Done'; statusEl.style.color = '#6ee7b7'; }
+<button onclick="downloadBulkResult('${entry.id}')" style="padding:6px 12px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:6px;font-size:12px;color:#a5b4fc;cursor:pointer;font-weight:600">? Download</button>
+if (statusEl) { statusEl.textContent = '? Failed � try again'; statusEl.style.color = '#f87171'; }
+showToast(`? Bulk tailoring complete � ${jobs.length} resume${jobs.length === 1 ? '' : 's'} ready`);
+if (profile.firstName) lines.push(`User: ${profile.firstName}${profile.lastName ? ' ' + profile.lastName : ''}`);
+return lines.length ? `[Career context � use to personalise advice:\n${lines.join('\n')}]\n\n` : '';
+div.className = role === 'user' ? 'coach-bubble-user' : 'coach-bubble-ai';
+if (typing) typing.style.display = on ? 'block' : 'none';
+label.style.color = remaining <= 5 ? 'var(--amber)' : 'var(--muted)';
+banner.style.display = msg ? 'block' : 'none';
+const userContent = isFirstTurn ? _coachBuildContext() + raw : raw;
+_coachAppendBubble('assistant', '?? AI Coach requires an Essential or Complete plan. Upgrade to unlock it.');
+_coachAppendBubble('assistant', `?? ${msg}`);
+_coachAppendBubble('assistant', '?? Network error � check your connection and try again.');
+count.style.color = len > COACH_INPUT_MAX * 0.9 ? 'var(--amber)' : 'var(--muted)';
+if (navBtn) navBtn.style.display = isPaid ? '' : 'none';
+<div style="font-size:32px;margin-bottom:12px">??</div>
+document.getElementById('sbAiCoach')?.style && (document.getElementById('sbAiCoach').style.display = isPaid ? '' : 'none');
+//   2. No token / expired ? show betaGate overlay
+//   3. User enters email + code ? submitBetaCode() ? POST /api/beta
+//   4. Valid ? store token in sub cache, grant Complete tier, hide gate
+// In Tally: add a Hidden Field named "email" ? it auto-populates from the URL param.
+? `${TALLY_FEEDBACK_FORM_URL}?email=${encodeURIComponent(email)}`
+const interval = msLeft < 60 * 60 * 1000 ? 30000 : 60000;
+_appConfig = { betaMode: true }; // offline / error ? stay in beta mode
+// No subscription ? show paywall
+// No beta token at all ? show beta gate
+// Token expired ? show expired screen
+const r = await fetch('/api/beta?action=refresh', {
+console.log('? Beta tierToken refreshed silently');
+showToast(`? ${tier === 'complete' ? 'Complete' : 'Essential'} plan restored � welcome back!`, 'success');
+const color = tier === 'complete' ? 'rgba(99,102,241,0.12)' : 'rgba(26,86,219,0.1)';
+const border = tier === 'complete' ? 'rgba(99,102,241,0.3)' : 'rgba(26,86,219,0.25)';
+const text = tier === 'complete' ? '#818CF8' : '#60A5FA';
+daysEl.textContent = `? ${label}`;
+showToast('?? Beta access unlocked � welcome! You have Complete plan for 15 days.', 'success');
+const src = _interviewEntry || (results?.resume ? {
+const askCards = askThem.length ? `
+<div style="font-size:13px;font-weight:700;color:var(--text)">?? Questions to Ask Them</div>
+const watchCards = watchOut.length ? `
+<div style="font-size:13px;font-weight:700;color:var(--text)">??? Get Ahead Of</div>
+<span style="font-size:16px;flex-shrink:0;margin-top:1px">??</span>
+body.style.display = isOpen ? 'none' : 'block';
+errEl.textContent = '? Please upload a PDF file (the one downloaded from LinkedIn).';
+errEl.textContent = '? File too large � LinkedIn PDFs are usually under 1 MB.';
+errEl.textContent = `? ${err.message || 'Something went wrong � please try again'}`;
+? dp[i - 1][j - 1] + 1
+const lines = _diffShowAll ? diff : diff.filter(l => l.type !== 'same');
+document.getElementById('diffToggleBtn').textContent = _diffShowAll ? 'Hide unchanged lines' : 'Show unchanged lines';
+<div style="font-size:4px;color:rgba(255,255,255,0.8);margin-bottom:1.5px">?? email@example.com</div>
+<div style="font-size:4px;color:rgba(255,255,255,0.8);margin-bottom:1.5px">?? 555-000-0000</div>
+<div style="font-size:4px;color:rgba(255,255,255,0.8);margin-bottom:5px">?? City, State</div>
+?? Unlock Formatted Templates ?
+// Swap grid ? contact step
+const href = /^https?:\/\//i.test(url) ? url : 'https://' + url;
+${e.location ? `<div style="font-size:11.5px;color:#555;flex-shrink:0">${_e(e.location)}</div>` : ''}
+${(e.bullets || []).length ? `<ul style="margin:5px 0 0 16px;padding:0">${(e.bullets || []).map(b => `<li style="font-size:12.5px;line-height:1.55;margin-bottom:2px;color:#1a1a1a">${_e(b)}</li>`).join('')}</ul>` : ''}
+<div style="font-size:12.5px;color:#333">${_e([e.degree, e.field].filter(Boolean).join(', '))}${e.gpa ? ` � GPA: ${_e(e.gpa)}` : ''}</div>
+${e.location ? `<div style="font-size:11.5px;color:#555">${_e(e.location)}</div>` : ''}
+d.email ? _e(d.email) : '',
+d.phone ? _e(d.phone) : '',
+d.location ? _e(d.location) : '',
+d.linkedin ? _link(d.linkedin, 'LinkedIn: My Profile', '#1E3A5F') : '',
+d.website ? _link(d.website, d.website, '#1E3A5F') : '',
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+${d.title ? `<div style="font-size:13px;color:#4B5563;margin-top:2px">${_e(d.title)}</div>` : ''}
+${d.summary ? `<div style="font-size:12.5px;color:#333;line-height:1.6;margin-bottom:4px">${_e(d.summary)}</div>` : ''}
+${expHtml ? `<div class="sec-head">Experience</div>${expHtml}` : ''}
+${eduHtml ? `<div class="sec-head">Education</div>${eduHtml}` : ''}
+${(d.skills || []).length ? `<div class="sec-head">Skills</div><div style="font-size:12.5px;color:#1a1a1a;line-height:1.6">${_e((d.skills || []).join(' � '))}</div>` : ''}
+${(d.certifications || []).length ? `<div class="sec-head">Certifications</div><div style="font-size:12.5px;color:#1a1a1a">${(d.certifications || []).map(_e).join(' � ')}</div>` : ''}
+${e.location ? `<div style="font-size:11.5px;color:#94A3B8;margin-top:1px">${_e(e.location)}</div>` : ''}
+${(e.bullets || []).length ? `<ul style="margin:5px 0 0 15px;padding:0">${(e.bullets || []).map(b => `<li style="font-size:12.5px;line-height:1.55;margin-bottom:2px;color:#1e1e2e">${_e(b)}</li>`).join('')}</ul>` : ''}
+d.email ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.8);margin-bottom:4px;word-break:break-all">? ${_e(d.email)}</div>` : '',
+d.phone ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.8);margin-bottom:4px">? ${_e(d.phone)}</div>` : '',
+d.location ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.8);margin-bottom:4px">? ${_e(d.location)}</div>` : '',
+d.linkedin ? `<div style="font-size:11px;margin-bottom:4px">?? ${_link(d.linkedin, 'My Profile', 'rgba(255,255,255,0.85)')}</div>` : '',
+d.website ? `<div style="font-size:11px;margin-bottom:4px;word-break:break-all">?? ${_link(d.website, d.website, 'rgba(255,255,255,0.85)')}</div>` : '',
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.2);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:22px;color:rgba(255,255,255,0.8)">??</div>
+${d.title ? `<div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:3px">${_e(d.title)}</div>` : ''}
+${skillTags ? `<div class="sidebar-head">Skills</div><div style="line-height:1">${skillTags}</div>` : ''}
+${eduHtml ? `<div class="sidebar-head">Education</div>${eduHtml}` : ''}
+${(d.certifications || []).length ? `<div class="sidebar-head">Certifications</div>${(d.certifications || []).map(c => `<div style="font-size:11px;color:rgba(255,255,255,0.8);margin-bottom:3px">${_e(c)}</div>`).join('')}` : ''}
+${d.summary ? `<div style="font-size:13px;color:#475569;line-height:1.65;margin-bottom:4px;padding:14px 16px;background:#EEF2FF;border-radius:8px;border-left:3px solid #4338CA">${_e(d.summary)}</div>` : ''}
+${e.location ? `<div style="font-size:11.5px;color:#9CA3AF;flex-shrink:0">${_e(e.location)}</div>` : ''}
+${(e.bullets || []).length ? `<ul style="margin:6px 0 0 16px;padding:0">${(e.bullets || []).map(b => `<li style="font-size:12.5px;line-height:1.6;margin-bottom:2px;color:#374151">${_e(b)}</li>`).join('')}</ul>` : ''}
+d.title ? _e(d.title) : '',
+d.linkedin ? _link(d.linkedin, 'LinkedIn: My Profile', '#6B7280') : '',
+d.website ? _link(d.website, d.website, '#6B7280') : '',
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+${d.summary ? `<div style="font-size:13px;color:#4B5563;line-height:1.65;margin-bottom:4px;text-align:center;max-width:680px;margin:0 auto 4px">${_e(d.summary)}</div><div class="divider">` : ''}
+${(d.skills || []).length ? `<div class="divider"></div><div class="sec-head">Skills</div><div style="font-size:12.5px;color:#374151;line-height:1.7">${_e((d.skills || []).join('  �  '))}</div>` : ''}
+${(d.certifications || []).length ? `<div class="divider"></div><div class="sec-head">Certifications</div><div style="font-size:12.5px;color:#374151">${(d.certifications || []).map(_e).join('  �  ')}</div>` : ''}
+${e.location ? `<div style="font-size:11.5px;color:#94A3B8;flex-shrink:0">${_e(e.location)}</div>` : ''}
+${(e.bullets || []).length ? `<ul style="margin:6px 0 0 16px;padding:0">${(e.bullets || []).map(b => `<li style="font-size:12.5px;line-height:1.55;margin-bottom:2px;color:#1e293b">${_e(b)}</li>`).join('')}</ul>` : ''}
+<div style="font-size:12.5px;color:#475569">${_e([e.degree, e.field].filter(Boolean).join(', '))}${e.gpa ? ` &nbsp;�&nbsp; GPA: ${_e(e.gpa)}` : ''}</div>
+<div>${col1.map(s => `<div style="font-size:12.5px;color:#1e293b;padding:2px 0;border-bottom:1px solid #F1F5F9">? ${_e(s)}</div>`).join('')}</div>
+<div>${col2.map(s => `<div style="font-size:12.5px;color:#1e293b;padding:2px 0;border-bottom:1px solid #F1F5F9">? ${_e(s)}</div>`).join('')}</div>
+d.linkedin ? _link(d.linkedin, 'LinkedIn: My Profile', '#94A3B8') : '',
+d.website ? _link(d.website, d.website, '#94A3B8') : '',
+${d.title ? `<div style="font-size:13px;color:#94A3B8;margin-top:4px;font-weight:500">${_e(d.title)}</div>` : ''}
+${d.summary ? `<div style="font-size:12.5px;color:#475569;line-height:1.65;margin-top:4px;padding:12px 16px;border-left:3px solid #0F172A;background:#F8FAFC;border-radius:0 6px 6px 0">${_e(d.summary)}</div>` : ''}
+${expHtml ? `${secHead('Professional Experience')}${expHtml}` : ''}
+${eduHtml ? `${secHead('Education')}${eduHtml}` : ''}
+${skillCols ? `${secHead('Core Competencies')}${skillCols}` : ''}
+${(d.certifications || []).length ? `${secHead('Certifications')}<div style="font-size:12.5px;color:#1e293b">${(d.certifications || []).map(_e).join('&ensp;�&ensp;')}</div>` : ''}
+showToast('? Backup downloaded � keep this file safe to restore on any browser.', 'success');
+showToast(`? ${restored} items restored � reloading�`, 'success');
+showToast('? Couldn\'t read that file � make sure it\'s a 1stStep backup.', 'error');
+${matched.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${matched.map(s => _sgPill('? ' + s, 'green')).join('')}</div>` : ''}
+${missing.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${missing.slice(0, 2).map(s => _sgPill('? ' + s, 'red')).join('')}${missing.length > 2 ? _sgPill(`+${missing.length - 2} gaps`, 'red') : ''}</div>` : ''}
+const section = (title, pills, color) => pills.length ? `
+<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">?? Skill Gap Analysis</div>
+${missing.length > 0 ? `Missing: <span style="filter:blur(4px);user-select:none;pointer-events:none">${missing.slice(0, 3).join(', ')}</span>` : 'Great coverage!'}
+Unlock Full Analysis ?
+<div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:12px;">?? Skill Breakdown</div>
+${section('? Skills You Have (required)', matched, 'green')}
+${section('?? Skills You Have (preferred)', matchedP.slice(0, 6), 'green')}
+${section('?? Missing � Required', missing, 'red')}
+${section('?? Missing � Nice to Have', missingP.slice(0, 5), 'yellow')}
+${section('?? Your Top Strengths', strengths, 'green')}
+${missing.length > 0 ? `
+<strong style="color:#FCD34D">?? Pro tip:</strong> If you have experience with ${missing[0]}${missing[1] ? ` or ${missing[1]}` : ''}, add it to your resume notes and re-tailor. A keyword can make the difference between ATS pass and auto-reject.
+showToast('? Reading your LinkedIn PDF�', 'info');
+showToast('?? Could not extract text from this PDF. Try a different file.', 'error');
+showToast('? LinkedIn profile imported! Now paste a job description.', 'success');
+showToast('? Could not read that PDF. Make sure it\'s a LinkedIn-exported file.', 'error');
+<h3 style="margin:0;font-size:16px;font-weight:700;color:var(--text)">?? Interview Cheat Sheet</h3>
+<div style="font-size:32px;margin-bottom:10px">??</div>
+<h3 style="margin:0;font-size:16px;font-weight:700;color:var(--text)">?? What Changed</h3>
+<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Click "More" ? "Save to
+<div style="font-size:40px;margin-bottom:12px">??</div>
+Search for Jobs ?
+<h3 style="margin:0;font-size:16px;font-weight:700;color:var(--text)">?? Choose a Resume Template</h3>
+your tailored resume. Opens in a new window � use <strong>Print ? Save as PDF</strong> to download.</p>
+style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">??
+? Back
+Apply Template ?
+?? Leave any field blank to let the AI pull it from your resume text.
+<div style="font-size:32px;margin-bottom:10px">???</div>
+<!-- inner wrapper: 104�134 scaled �2.5 ? 260�335 -->
+<span style="font-size:20px;width:28px;text-align:center">??</span>
+<span>Bulk Apply <span style="font-size:11px;font-weight:500;color:var(--muted)">? Complete plan</span></span>

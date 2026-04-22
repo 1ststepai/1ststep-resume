@@ -1,0 +1,2152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1stStep.ai — Architecture Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0d11;
+    --surface: #13161d;
+    --surface2: #1a1e28;
+    --border: #252a38;
+    --accent: #4fffb0;
+    --accent2: #ff6b6b;
+    --accent3: #ffc857;
+    --accent4: #6b8cff;
+    --text: #e8ecf4;
+    --muted: #6b7591;
+    --danger: #ff4757;
+    --warn: #ffc107;
+    --ok: #4fffb0;
+  }
+ 
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+ 
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+ 
+  /* Grid noise texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(79,255,176,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79,255,176,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+ 
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+ 
+  /* Header */
+  .header {
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+ 
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+ 
+  h1 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+  }
+ 
+  .subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: 4px;
+  }
+ 
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+ 
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+  }
+ 
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+ 
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 32px;
+    background: var(--surface);
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    width: fit-content;
+  }
+ 
+  .tab {
+    padding: 8px 20px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+ 
+  .tab.active {
+    background: var(--surface2);
+    color: var(--text);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  }
+ 
+  .tab:hover:not(.active) { color: var(--text); }
+ 
+  /* Panel */
+  .panel { display: none; }
+  .panel.active { display: block; }
+ 
+  /* ── ARCHITECTURE DIAGRAM ── */
+  .arch-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+ 
+  .arch-layer {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    position: relative;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+ 
+  .arch-layer:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .arch-layer.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 4px 20px rgba(79,255,176,0.1); }
+ 
+  .arch-layer.warn { border-color: rgba(255,193,7,0.4); }
+  .arch-layer.warn:hover, .arch-layer.warn.selected { border-color: var(--warn); box-shadow: 0 0 0 1px var(--warn), 0 4px 20px rgba(255,193,7,0.1); }
+ 
+  .arch-layer.danger { border-color: rgba(255,71,87,0.4); }
+  .arch-layer.danger:hover, .arch-layer.danger.selected { border-color: var(--danger); box-shadow: 0 0 0 1px var(--danger), 0 4px 20px rgba(255,71,87,0.1); }
+ 
+  .arch-layer.span2 { grid-column: span 2; }
+  .arch-layer.span3 { grid-column: span 3; }
+ 
+  .layer-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+ 
+  .layer-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+ 
+  .layer-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+ 
+  .badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+ 
+  .badge-danger { background: rgba(255,71,87,0.15); color: var(--danger); border: 1px solid rgba(255,71,87,0.3); }
+  .badge-warn { background: rgba(255,193,7,0.12); color: var(--warn); border: 1px solid rgba(255,193,7,0.3); }
+  .badge-ok { background: rgba(79,255,176,0.1); color: var(--accent); border: 1px solid rgba(79,255,176,0.25); }
+  .badge-info { background: rgba(107,140,255,0.12); color: var(--accent4); border: 1px solid rgba(107,140,255,0.3); }
+ 
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 8px;
+  }
+ 
+  .tag {
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 7px;
+    color: var(--muted);
+  }
+ 
+  /* Detail drawer */
+  .detail-drawer {
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 12px;
+    display: none;
+    animation: slideIn 0.2s ease;
+  }
+ 
+  .detail-drawer.open { display: block; }
+ 
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+ 
+  .detail-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+ 
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+ 
+  @media(max-width: 600px) { .detail-grid { grid-template-columns: 1fr; } }
+ 
+  .detail-section h4 {
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+  }
+ 
+  .detail-section ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+ 
+  .detail-section li {
+    font-size: 13px;
+    color: var(--text);
+    padding-left: 14px;
+    position: relative;
+    line-height: 1.4;
+  }
+ 
+  .detail-section li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-size: 11px;
+  }
+ 
+  .detail-section li.issue::before { color: var(--danger); content: '✗'; }
+  .detail-section li.warn::before { color: var(--warn); content: '!'; }
+ 
+  /* Flow arrows between layers */
+  .flow-arrow {
+    text-align: center;
+    color: var(--muted);
+    font-size: 18px;
+    padding: 2px 0;
+    line-height: 1;
+  }
+ 
+  /* ── ISSUES PANEL ── */
+  .issues-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+ 
+  .issue-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items: start;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+ 
+  .issue-card:hover { border-color: var(--accent); }
+ 
+  .issue-sev {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+ 
+  .sev-critical { background: rgba(255,71,87,0.15); }
+  .sev-high { background: rgba(255,193,7,0.12); }
+  .sev-medium { background: rgba(107,140,255,0.12); }
+ 
+  .issue-body h3 { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+  .issue-body p { font-size: 12px; color: var(--muted); line-height: 1.5; }
+ 
+  .issue-fix {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    white-space: nowrap;
+    align-self: center;
+  }
+ 
+  .issue-detail {
+    grid-column: 1 / -1;
+    display: none;
+    background: var(--surface2);
+    border-radius: 7px;
+    padding: 12px 14px;
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+ 
+  .issue-detail.open { display: block; }
+ 
+  code {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    background: rgba(79,255,176,0.08);
+    border: 1px solid rgba(79,255,176,0.15);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+ 
+  /* ── ROADMAP PANEL ── */
+  .roadmap-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+ 
+  @media(max-width: 700px) { .roadmap-cols { grid-template-columns: 1fr; } }
+ 
+  .roadmap-col h3 {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+ 
+  .col-done h3 { color: var(--accent); }
+  .col-next h3 { color: var(--warn); }
+  .col-future h3 { color: var(--accent4); }
+ 
+  .roadmap-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 13px;
+    margin-bottom: 7px;
+    font-size: 13px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+ 
+  .roadmap-item .ri-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .roadmap-item.retired { opacity: 0.5; text-decoration: line-through; border-color: rgba(255,71,87,0.2); }
+ 
+  .roadmap-item p { line-height: 1.4; }
+  .roadmap-item small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+ 
+  /* ── API MAP PANEL ── */
+  .api-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+ 
+  .api-table th {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+ 
+  .api-table td {
+    padding: 11px 14px;
+    border-bottom: 1px solid rgba(37,42,56,0.6);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+ 
+  .api-table tr:hover td { background: var(--surface); }
+ 
+  .fn-name {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+  }
+ 
+  .fn-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+ 
+  .fn-action {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 7px;
+    color: var(--muted);
+  }
+ 
+  .fn-dur {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent3);
+  }
+ 
+  .fn-count-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+ 
+  .count-visual {
+    display: flex;
+    gap: 3px;
+  }
+ 
+  .count-dot {
+    width: 7px; height: 7px;
+    border-radius: 2px;
+    background: var(--accent);
+    opacity: 0.7;
+  }
+ 
+  .count-dot.used { opacity: 1; }
+  .count-dot.alert { background: var(--danger); }
+ 
+  .fn-limit-note {
+    font-size: 11px;
+    color: var(--danger);
+    font-family: 'Space Mono', monospace;
+    margin-top: 4px;
+  }
+ 
+  .section-note {
+    background: rgba(255,193,7,0.07);
+    border: 1px solid rgba(255,193,7,0.2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--warn);
+    margin-bottom: 16px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+ 
+  .close-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .close-btn:hover { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="container">
+ 
+  <div class="header">
+    <div>
+      <div class="logo">Architecture Map</div>
+      <h1>1stStep.ai</h1>
+      <div class="subtitle">app.1ststep.ai — Vercel Hobby · Serverless · No-DB</div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div>Critical issue</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--warn)"></div>Warning / constraint</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Healthy</div>
+    </div>
+  </div>
+ 
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('arch')">Architecture</button>
+    <button class="tab" onclick="switchTab('issues')">Issues & Fixes</button>
+    <button class="tab" onclick="switchTab('api')">API Function Map</button>
+    <button class="tab" onclick="switchTab('roadmap')">Roadmap</button>
+    <button class="tab" onclick="switchTab('ext')" style="color:var(--accent4)">🧩 Extension</button>
+    <button class="tab" onclick="switchTab('landing')" style="color:var(--danger)">🌐 Landing Page</button>
+    <button class="tab" onclick="switchTab('ux')" style="color:var(--accent3)">✨ UX Polish</button>
+    <button class="tab" onclick="switchTab('aivisibility')" style="color:var(--accent)">🤖 AI Visibility</button>
+  </div>
+ 
+  <!-- ══════════════════════════════════
+       TAB 1: ARCHITECTURE
+  ══════════════════════════════════ -->
+  <div id="tab-arch" class="panel active">
+ 
+    <div id="detail-drawer" class="detail-drawer"></div>
+ 
+    <!-- USER -->
+    <div class="arch-grid">
+      <div class="arch-layer span3" onclick="showDetail('browser')" id="node-browser">
+        <div class="layer-label">Client</div>
+        <div class="layer-title">
+          Browser / User
+          <span class="badge badge-warn">localStorage only</span>
+        </div>
+        <div class="layer-desc">All UI state, auth, and user data lives in the browser. No accounts, no sync, no server-side session.</div>
+        <div class="tag-row">
+          <span class="tag">index.html (~8k lines)</span>
+          <span class="tag">resume-builder.js</span>
+          <span class="tag">PDF.js (CDN)</span>
+          <span class="tag">localStorage (7 keys)</span>
+        </div>
+      </div>
+    </div>
+ 
+    <div class="flow-arrow">↕</div>
+ 
+    <!-- VERCEL EDGE -->
+    <div class="arch-grid">
+      <div class="arch-layer danger span3" onclick="showDetail('vercel')" id="node-vercel">
+        <div class="layer-label">Deployment</div>
+        <div class="layer-title">
+          Vercel Hobby — Serverless Functions
+          <span class="badge badge-danger">AT LIMIT: 12/12 functions</span>
+        </div>
+        <div class="layer-desc">12 API route files. _alert.js is exempt (underscore prefix). Zero headroom for new endpoints.</div>
+        <div class="tag-row">
+          <span class="tag">claude.js</span><span class="tag">jobs.js</span><span class="tag">subscription.js</span>
+          <span class="tag">health.js</span><span class="tag">notify-signup.js</span><span class="tag">track-event.js</span>
+          <span class="tag">ghl-stage.js</span><span class="tag">stripe-webhook.js</span><span class="tag">tally-webhook.js</span>
+          <span class="tag">beta.js</span><span class="tag">beta-expiry-check.js</span><span class="tag">app-config.js</span>
+        </div>
+      </div>
+    </div>
+ 
+    <div class="flow-arrow">↕</div>
+ 
+    <!-- EXTERNAL SERVICES -->
+    <div class="arch-grid">
+      <div class="arch-layer" onclick="showDetail('anthropic')" id="node-anthropic">
+        <div class="layer-label">AI</div>
+        <div class="layer-title">Anthropic Claude <span class="badge badge-ok">OK</span></div>
+        <div class="layer-desc">Sonnet for paid features, Haiku for utility/free.</div>
+        <div class="tag-row"><span class="tag">claude.js proxy</span><span class="tag">60s max</span></div>
+      </div>
+      <div class="arch-layer warn" onclick="showDetail('storage')" id="node-storage">
+        <div class="layer-label">Persistence</div>
+        <div class="layer-title">localStorage <span class="badge badge-warn">No DB</span></div>
+        <div class="layer-desc">All user data client-side only. No sync, no recovery, no multi-device.</div>
+        <div class="tag-row"><span class="tag">7 storage keys</span><span class="tag">no backup</span></div>
+      </div>
+      <div class="arch-layer" onclick="showDetail('stripe')" id="node-stripe">
+        <div class="layer-label">Payments</div>
+        <div class="layer-title">Stripe <span class="badge badge-ok">OK</span></div>
+        <div class="layer-desc">Subscriptions. HMAC tierToken (20 min TTL) avoids per-call Stripe lookups.</div>
+        <div class="tag-row"><span class="tag">2 tiers: free / complete</span><span class="tag">webhooks</span></div>
+      </div>
+    </div>
+ 
+    <div class="flow-arrow">↕</div>
+ 
+    <div class="arch-grid">
+      <div class="arch-layer" onclick="showDetail('ghl')" id="node-ghl">
+        <div class="layer-label">CRM</div>
+        <div class="layer-title">GoHighLevel <span class="badge badge-warn">Quirks</span></div>
+        <div class="layer-desc">Contacts, tags, pipeline stages. Known bugs with PUT and tag-query endpoints.</div>
+        <div class="tag-row"><span class="tag">POST upsert (not PUT)</span><span class="tag">tag filter client-side</span></div>
+      </div>
+      <div class="arch-layer" onclick="showDetail('jobs')" id="node-jobs">
+        <div class="layer-label">Job Data</div>
+        <div class="layer-title">Adzuna + Indeed <span class="badge badge-info">Scraper</span></div>
+        <div class="layer-desc">Adzuna API + Indeed scraper. Scraper is fragile and likely to break on DOM changes.</div>
+        <div class="tag-row"><span class="tag">jobs.js</span><span class="tag">30s max</span></div>
+      </div>
+      <div class="arch-layer" onclick="showDetail('comms')" id="node-comms">
+        <div class="layer-label">Comms</div>
+        <div class="layer-title">Resend + LinkedIn OAuth <span class="badge badge-ok">OK</span></div>
+        <div class="layer-desc">Transactional email via Resend. LinkedIn OpenID for profile import only. LinkedIn Optimizer demoted from bottom nav → "More Tools".</div>
+        <div class="tag-row"><span class="tag">welcome emails</span><span class="tag">blasts</span><span class="tag">beta expiry</span><span class="tag" style="border-color:rgba(255,193,7,0.4);color:var(--warn)">linkedin: demoted</span></div>
+      </div>
+    </div>
+ 
+  </div>
+ 
+  <!-- ══════════════════════════════════
+       TAB 5: CHROME EXTENSION
+  ══════════════════════════════════ -->
+  <div id="tab-ext" class="panel">
+ 
+    <div class="section-note" style="border-color:rgba(107,140,255,0.3);background:rgba(107,140,255,0.07);color:var(--accent4)">
+      🧩 New feature design — 1-click apply on LinkedIn, Indeed, Greenhouse, Lever, Workday, and more. Click any block to expand.
+    </div>
+ 
+    <!-- EXT ARCH DIAGRAM -->
+    <div style="margin-bottom:8px">
+      <div class="arch-grid" style="grid-template-columns:1fr 1fr">
+        <div class="arch-layer" style="border-color:rgba(107,140,255,0.4)" onclick="showExtDetail('ext-popup')" id="ext-node-popup">
+          <div class="layer-label">Extension UI</div>
+          <div class="layer-title">Popup <span class="badge badge-info">popup.html</span></div>
+          <div class="layer-desc">Mini dashboard. Shows detected job, resume match score, one-click apply button. Opens from browser toolbar.</div>
+          <div class="tag-row"><span class="tag">popup.html</span><span class="tag">popup.js</span></div>
+        </div>
+        <div class="arch-layer" style="border-color:rgba(107,140,255,0.4)" onclick="showExtDetail('ext-sidebar')" id="ext-node-sidebar">
+          <div class="layer-label">Extension UI</div>
+          <div class="layer-title">Sidebar Panel <span class="badge badge-info">side_panel</span></div>
+          <div class="layer-desc">Persistent side panel on job pages — shows parsed fields, lets user edit before submitting.</div>
+          <div class="tag-row"><span class="tag">sidepanel.html</span><span class="tag">sidepanel.js</span></div>
+        </div>
+      </div>
+ 
+      <div class="flow-arrow">↕ chrome.runtime.sendMessage</div>
+ 
+      <div class="arch-grid" style="grid-template-columns:1fr">
+        <div class="arch-layer warn" onclick="showExtDetail('ext-content')" id="ext-node-content">
+          <div class="layer-label">Core Logic — runs on every job page</div>
+          <div class="layer-title">Content Scripts <span class="badge badge-warn">per-site selectors</span></div>
+          <div class="layer-desc">Injected into job pages. Detects apply forms, extracts JD text, fills form fields. Needs a selector map per job site — the hardest maintenance surface.</div>
+          <div class="tag-row">
+            <span class="tag">content.js (shared)</span>
+            <span class="tag">sites/linkedin.js</span>
+            <span class="tag">sites/indeed.js</span>
+            <span class="tag">sites/greenhouse.js</span>
+            <span class="tag">sites/lever.js</span>
+            <span class="tag">sites/workday.js</span>
+          </div>
+        </div>
+      </div>
+ 
+      <div class="flow-arrow">↕ fetch → app.1ststep.ai/api</div>
+ 
+      <div class="arch-grid" style="grid-template-columns:1fr 1fr 1fr">
+        <div class="arch-layer" onclick="showExtDetail('ext-api')" id="ext-node-api">
+          <div class="layer-label">Backend (existing)</div>
+          <div class="layer-title">claude.js <span class="badge badge-ok">extend</span></div>
+          <div class="layer-desc">Add <code>callType: 'autofill'</code> — takes JD + resume, returns structured field map.</div>
+          <div class="tag-row"><span class="tag">?callType=autofill</span></div>
+        </div>
+        <div class="arch-layer warn" onclick="showExtDetail('ext-sync')" id="ext-node-sync">
+          <div class="layer-label">State Sync</div>
+          <div class="layer-title">Profile Bridge <span class="badge badge-warn">needs cloud</span></div>
+          <div class="layer-desc">Extension needs resume + profile data. Currently only in localStorage — extension can't read that.</div>
+          <div class="tag-row"><span class="tag">chrome.storage.sync</span><span class="tag">or Supabase</span></div>
+        </div>
+        <div class="arch-layer" onclick="showExtDetail('ext-tracker')" id="ext-node-tracker">
+          <div class="layer-label">CRM</div>
+          <div class="layer-title">track-event.js <span class="badge badge-ok">reuse</span></div>
+          <div class="layer-desc">Fire <code>extension_apply</code> GHL tag on every 1-click apply for funnel tracking.</div>
+          <div class="tag-row"><span class="tag">extension_apply</span><span class="tag">extension_install</span></div>
+        </div>
+      </div>
+    </div>
+ 
+    <div id="ext-detail-drawer" class="detail-drawer" style="border-color:var(--accent4)"></div>
+ 
+    <!-- FILE STRUCTURE -->
+    <div style="margin-top:24px">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Extension File Structure</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;font-family:'Space Mono',monospace;font-size:12px;line-height:2">
+        <div style="color:var(--accent4)">1ststep-extension/</div>
+        <div style="color:var(--muted)">├── <span style="color:var(--text)">manifest.json</span> &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--muted);font-size:10px">// MV3 — permissions, host_permissions, content_scripts</span></div>
+        <div style="color:var(--muted)">├── <span style="color:var(--text)">background.js</span> &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--muted);font-size:10px">// Service worker — auth token, message routing</span></div>
+        <div style="color:var(--muted)">├── <span style="color:var(--text)">content.js</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--muted);font-size:10px">// Shared detector — fires on all matched URLs</span></div>
+        <div style="color:var(--muted)">├── <span style="color:var(--text)">popup.html/js</span> &nbsp;&nbsp;&nbsp;<span style="color:var(--muted);font-size:10px">// Toolbar popup</span></div>
+        <div style="color:var(--muted)">├── <span style="color:var(--text)">sidepanel.html/js</span> <span style="color:var(--muted);font-size:10px">// Chrome Side Panel API (MV3)</span></div>
+        <div style="color:var(--muted)">├── sites/</div>
+        <div style="color:var(--muted)">│ &nbsp;&nbsp;├── <span style="color:var(--accent)">linkedin.js</span> &nbsp;&nbsp;<span style="color:var(--muted);font-size:10px">// Easy Apply modal selectors</span></div>
+        <div style="color:var(--muted)">│ &nbsp;&nbsp;├── <span style="color:var(--accent)">indeed.js</span> &nbsp;&nbsp;&nbsp;<span style="color:var(--muted);font-size:10px">// Indeed Apply flow</span></div>
+        <div style="color:var(--muted)">│ &nbsp;&nbsp;├── <span style="color:var(--accent)">greenhouse.js</span> <span style="color:var(--muted);font-size:10px">// boards.greenhouse.io — stable selectors</span></div>
+        <div style="color:var(--muted)">│ &nbsp;&nbsp;├── <span style="color:var(--accent)">lever.js</span> &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--muted);font-size:10px">// jobs.lever.co — stable selectors</span></div>
+        <div style="color:var(--muted)">│ &nbsp;&nbsp;└── <span style="color:var(--accent3)">workday.js</span> &nbsp;&nbsp;<span style="color:var(--warn);font-size:10px">// ⚠ Shadow DOM — hardest to maintain</span></div>
+        <div style="color:var(--muted)">└── utils/</div>
+        <div style="color:var(--muted)">&nbsp;&nbsp;&nbsp;&nbsp;├── <span style="color:var(--text)">auth.js</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--muted);font-size:10px">// tierToken fetch + cache in chrome.storage</span></div>
+        <div style="color:var(--muted)">&nbsp;&nbsp;&nbsp;&nbsp;└── <span style="color:var(--text)">filler.js</span> &nbsp;&nbsp;&nbsp;<span style="color:var(--muted);font-size:10px">// Generic field fill (input, select, textarea, file)</span></div>
+      </div>
+    </div>
+ 
+    <!-- SITE SUPPORT TABLE -->
+    <div style="margin-top:24px">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Site Support Complexity</div>
+      <table class="api-table">
+        <thead><tr><th>Site</th><th>Apply Type</th><th>Difficulty</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td class="fn-name">LinkedIn</td><td>Easy Apply modal</td><td><span class="badge badge-warn">Medium</span></td><td>Multi-step modal, dynamic — selectors change often</td></tr>
+          <tr><td class="fn-name">Indeed</td><td>Indeed Apply popup</td><td><span class="badge badge-warn">Medium</span></td><td>iframe-based, requires cross-frame messaging</td></tr>
+          <tr><td class="fn-name">Greenhouse</td><td>Native form</td><td><span class="badge badge-ok">Easy</span></td><td>Stable selector structure across all companies</td></tr>
+          <tr><td class="fn-name">Lever</td><td>Native form</td><td><span class="badge badge-ok">Easy</span></td><td>Stable, predictable HTML</td></tr>
+          <tr><td class="fn-name">Workday</td><td>SPA modal</td><td><span class="badge badge-danger">Hard</span></td><td>Shadow DOM, requires MutationObserver + retries</td></tr>
+          <tr><td class="fn-name">iCIMS / Taleo</td><td>Legacy forms</td><td><span class="badge badge-warn">Medium</span></td><td>Older ATS, inconsistent markup</td></tr>
+          <tr><td class="fn-name">Company-direct</td><td>Varies</td><td><span class="badge badge-danger">Hard</span></td><td>No standard — AI fallback heuristic needed</td></tr>
+        </tbody>
+      </table>
+    </div>
+ 
+  </div>
+ 
+  <!-- ══════════════════════════════════
+       TAB 2: ISSUES
+  ══════════════════════════════════ -->
+  <div id="tab-issues" class="panel">
+    <div class="issues-list" id="issues-list"></div>
+  </div>
+ 
+  <!-- ══════════════════════════════════
+       TAB 3: API MAP
+  ══════════════════════════════════ -->
+  <div id="tab-api" class="panel">
+    <div class="section-note">
+      ⚠ You are at the Vercel Hobby 12-function hard limit. Any new <code>/api/*.js</code> file (without <code>_</code> prefix) will break deployment. Add new features via <code>?action=</code> params on existing endpoints, or upgrade to Vercel Pro.
+    </div>
+    <table class="api-table">
+      <thead>
+        <tr>
+          <th>File</th>
+          <th>Purpose</th>
+          <th>Actions / Routes</th>
+          <th>Max Duration</th>
+        </tr>
+      </thead>
+      <tbody id="api-tbody"></tbody>
+    </table>
+  </div>
+ 
+  <!-- ══════════════════════════════════
+       TAB 4: ROADMAP
+  ══════════════════════════════════ -->
+  <div id="tab-roadmap" class="panel">
+    <div class="roadmap-cols">
+      <div class="col-done">
+        <h3>✓ Shipped</h3>
+        <div id="roadmap-done"></div>
+      </div>
+      <div class="col-next">
+        <h3>→ Fix First</h3>
+        <div id="roadmap-next"></div>
+      </div>
+      <div class="col-future">
+        <h3>◈ Next Features</h3>
+        <div id="roadmap-future"></div>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- ══════════════════════════════════
+       TAB 6: LANDING PAGE AUDIT
+  ══════════════════════════════════ -->
+  <div id="tab-landing" class="panel">
+ 
+    <div class="section-note" style="border-color:rgba(255,71,87,0.3);background:rgba(255,71,87,0.07);color:var(--danger)">
+      🌐 Landing page at <strong>resume.1ststep.ai</strong> is out of sync with the new Free / Complete model and cut features. Everything below needs updating before the new tier structure goes live.
+    </div>
+ 
+    <!-- PRICING SECTION -->
+    <div style="margin-bottom:24px">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--danger);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">💳 Pricing Section — needs full rewrite</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+ 
+        <div class="arch-layer danger">
+          <div class="layer-label">Current (wrong)</div>
+          <div class="layer-title">Essential — $49/mo</div>
+          <div class="layer-desc">40 job searches/mo · 25 tailors/mo · 25 cover letters/mo · ATS optimizer</div>
+          <div class="tag-row">
+            <span class="tag" style="color:var(--danger);border-color:rgba(255,71,87,0.3)">✕ tier being removed</span>
+            <span class="tag" style="color:var(--danger);border-color:rgba(255,71,87,0.3)">✕ job search being cut</span>
+            <span class="tag" style="color:var(--danger);border-color:rgba(255,71,87,0.3)">✕ wrong price</span>
+          </div>
+        </div>
+ 
+        <div class="arch-layer danger">
+          <div class="layer-label">Current (wrong)</div>
+          <div class="layer-title">Complete — $99/mo</div>
+          <div class="layer-desc">80 job searches/mo · Unlimited tailors · LinkedIn optimizer · Bulk apply mode · Priority support</div>
+          <div class="tag-row">
+            <span class="tag" style="color:var(--danger);border-color:rgba(255,71,87,0.3)">✕ job search being cut</span>
+            <span class="tag" style="color:var(--danger);border-color:rgba(255,71,87,0.3)">✕ bulk apply being cut</span>
+            <span class="tag" style="color:var(--danger);border-color:rgba(255,71,87,0.3)">✕ wrong price anchor</span>
+          </div>
+        </div>
+ 
+        <div class="arch-layer" style="border-color:rgba(79,255,176,0.4)">
+          <div class="layer-label">Replace with — Free</div>
+          <div class="layer-title" style="color:var(--accent)">Free — $0</div>
+          <div class="layer-desc">3 tailored resumes total · ATS-ready DOCX download · See the value before you pay. No credit card required.</div>
+          <div class="tag-row">
+            <span class="tag">3 tailors lifetime</span>
+            <span class="tag">Haiku model</span>
+            <span class="tag">no cover letter</span>
+          </div>
+        </div>
+ 
+        <div class="arch-layer" style="border-color:rgba(79,255,176,0.4)">
+          <div class="layer-label">Replace with — Complete</div>
+          <div class="layer-title" style="color:var(--accent)">Complete — $19/mo <span class="badge badge-ok">recommended price</span></div>
+          <div class="layer-desc">Unlimited tailors · Cover letters · Interview Cheat Sheet · AI Career Chat · ATS downloads. Everything a serious job seeker needs.</div>
+          <div class="tag-row">
+            <span class="tag">unlimited tailors</span>
+            <span class="tag">cover letters</span>
+            <span class="tag">interview prep</span>
+            <span class="tag">AI chat</span>
+            <span class="tag">Sonnet model</span>
+          </div>
+        </div>
+ 
+      </div>
+      <div style="margin-top:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.7;color:var(--text)">
+        <strong style="color:var(--warn)">⚠ Price note:</strong> Current CTAs link to <code>buy.stripe.com/28E00k7OFfCXd0E1MPfIs01</code> at $49/mo. This Stripe link will need to be replaced with the new Complete tier product link. Audit all buy buttons on the page — the hero CTA and pricing section both point to the same link.
+      </div>
+    </div>
+ 
+    <!-- HERO + MESSAGING -->
+    <div style="margin-bottom:24px">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--warn);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">✍ Hero & Messaging — update framing</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+ 
+        <div class="arch-layer warn">
+          <div class="layer-label">Current hero CTA</div>
+          <div class="layer-title">"Start for $49/mo →"</div>
+          <div class="layer-desc">Leads with price in the hero CTA. High friction for cold traffic — nobody clicks a price they haven't been sold on yet.</div>
+          <div class="tag-row"><span class="tag" style="color:var(--accent)">→ Replace with: "Tailor your first resume free →" or "Try free — no card needed →"</span></div>
+        </div>
+ 
+        <div class="arch-layer warn">
+          <div class="layer-label">Current headline</div>
+          <div class="layer-title">"Stop Sending the Same Resume to Every Job"</div>
+          <div class="layer-desc">Strong hook — keep it. The subhead "1stStep.ai rewrites your resume for every application" is also solid. No changes needed here.</div>
+          <div class="tag-row"><span class="tag badge-ok" style="color:var(--accent)">✓ keep</span></div>
+        </div>
+ 
+        <div class="arch-layer warn">
+          <div class="layer-label">Current positioning</div>
+          <div class="layer-title">"AI Resume Tailoring SaaS"</div>
+          <div class="layer-desc">The page title and meta still frame this as a "resume tailoring SaaS." Shift framing to "job search co-pilot" to differentiate from pure resume builders (Rezi, Kickresume, Teal).</div>
+          <div class="tag-row"><span class="tag" style="color:var(--accent)">→ "Your AI co-pilot for the entire job search"</span></div>
+        </div>
+ 
+      </div>
+    </div>
+ 
+    <!-- FEATURES SECTION -->
+    <div style="margin-bottom:24px">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--warn);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">🔧 Features Section — remove cut features, add new ones</div>
+      <table class="api-table">
+        <thead><tr><th>Current feature on page</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td class="fn-name">ATS keyword alignment</td><td><span class="badge badge-ok">Keep</span></td><td>Core value prop — keep prominent</td></tr>
+          <tr><td class="fn-name">Role-specific bullet rewrites</td><td><span class="badge badge-ok">Keep</span></td><td>Core value prop — keep prominent</td></tr>
+          <tr><td class="fn-name">Tailored summaries & headlines</td><td><span class="badge badge-ok">Keep</span></td><td>Core value prop — keep prominent</td></tr>
+          <tr><td class="fn-name">Consistent formatting</td><td><span class="badge badge-ok">Keep</span></td><td>Reassurance point — keep</td></tr>
+          <tr><td class="fn-name">Job searches / month (40 or 80)</td><td><span class="badge badge-danger">Remove</span></td><td>Feature being cut — remove from all pricing cards and feature lists</td></tr>
+          <tr><td class="fn-name">LinkedIn optimizer</td><td><span class="badge badge-warn">Demote</span></td><td>Remove from pricing card features. Can stay as a footnote under "More Tools" if needed</td></tr>
+          <tr><td class="fn-name">Bulk apply mode</td><td><span class="badge badge-danger">Remove</span></td><td>Feature being cut — remove from pricing card and all copy</td></tr>
+          <tr><td class="fn-name">Cover letter generation</td><td><span class="badge badge-ok">Keep</span></td><td>Complete tier — already on page, keep</td></tr>
+          <tr><td class="fn-name">Interview Cheat Sheet</td><td><span class="badge badge-info">Add</span></td><td>Not currently on landing page — add to Complete tier features. High-value differentiator.</td></tr>
+          <tr><td class="fn-name">AI Career Chat</td><td><span class="badge badge-info">Add (coming soon)</span></td><td>Add as "coming soon" to Complete tier card to justify value at launch</td></tr>
+          <tr><td class="fn-name">Application Tracker</td><td><span class="badge badge-info">Add</span></td><td>Not currently on landing page — add. It's a retention hook and a real differentiator vs pure resume tools</td></tr>
+        </tbody>
+      </table>
+    </div>
+ 
+    <!-- HOW IT WORKS -->
+    <div style="margin-bottom:24px">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--warn);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">⚙ "How It Works" Steps — minor updates</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="arch-layer">
+          <div class="layer-label">Step 1 — current</div>
+          <div class="layer-title">"Drop in the job link or JD" <span class="badge badge-ok">Keep</span></div>
+          <div class="layer-desc">Copy says "Paste the job description or URL from LinkedIn, Indeed, or any ATS." This is still accurate and correct. No change needed.</div>
+        </div>
+        <div class="arch-layer warn">
+          <div class="layer-label">Step 1 — note</div>
+          <div class="layer-title">Remove mention of Indeed as a source <span class="badge badge-warn">Edit</span></div>
+          <div class="layer-desc">The job search tab is being cut. Don't promise LinkedIn/Indeed integration in the how-it-works flow — users paste or input the JD directly. Rephrase to "Paste the job description or URL from any job board."</div>
+        </div>
+        <div class="arch-layer">
+          <div class="layer-label">Steps 2 & 3</div>
+          <div class="layer-title">"Upload resume" + "Get tailored resume" <span class="badge badge-ok">Keep</span></div>
+          <div class="layer-desc">Both steps are accurate and well-written. No changes needed.</div>
+        </div>
+      </div>
+    </div>
+ 
+    <!-- FAQS -->
+    <div style="margin-bottom:24px">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--warn);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">❓ FAQs — fix incorrect statements</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+ 
+        <div class="arch-layer danger">
+          <div class="layer-label">FAQ — wrong</div>
+          <div class="layer-title">"Is 1stStep.ai free to try?" <span class="badge badge-danger">Fix</span></div>
+          <div class="layer-desc">Current answer says "3 tailored resumes per month on the Starter plan." There is no Starter plan — it's Free. And it's 3 lifetime, not per month. Fix both.</div>
+          <div class="tag-row"><span class="tag" style="color:var(--accent)">→ "Yes. The Free plan gives you 3 tailored resumes to try before you commit. No credit card required."</span></div>
+        </div>
+ 
+        <div class="arch-layer warn">
+          <div class="layer-label">FAQ — missing</div>
+          <div class="layer-title">"Do you search for jobs too?" <span class="badge badge-warn">Add</span></div>
+          <div class="layer-desc">Since job search is being cut and the old page implied it, add a FAQ that pre-empts the question. "No — we focus on what happens after you find a job you want. Paste the JD from any job board and we handle the rest."</div>
+        </div>
+ 
+        <div class="arch-layer">
+          <div class="layer-label">FAQ — accurate</div>
+          <div class="layer-title">Formatting, privacy, file types, AI difference <span class="badge badge-ok">Keep</span></div>
+          <div class="layer-desc">All four remaining FAQs are accurate and well-written. No changes needed.</div>
+        </div>
+ 
+      </div>
+    </div>
+ 
+    <!-- SOCIAL PROOF -->
+    <div style="margin-bottom:24px">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">💬 Social Proof</div>
+      <div class="arch-layer warn">
+        <div class="layer-label">Current testimonial</div>
+        <div class="layer-title">"I applied to 14 roles with 1stStep.ai and got 6 interviews in two weeks." – Sara, PM <span class="badge badge-warn">Verify</span></div>
+        <div class="layer-desc">This is good copy but only one data point. As users come through beta, collect 2–3 more real quotes — especially any that mention the tracker, interview prep, or cover letters, not just tailoring. Diversity of use case = broader appeal.</div>
+      </div>
+    </div>
+ 
+    <!-- CHECKLIST -->
+    <div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">✅ Update Checklist</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;font-size:13px;line-height:2.2;font-family:'Space Mono',monospace">
+        <div>☐ &nbsp;Replace both Stripe buy links ($49 → new Complete product link)</div>
+        <div>☐ &nbsp;Update hero CTA: "Start for $49/mo" → "Tailor your first resume free →"</div>
+        <div>☐ &nbsp;Replace Essential + Complete pricing cards with Free + Complete</div>
+        <div>☐ &nbsp;Remove job search counts (40/mo, 80/mo) from all pricing copy</div>
+        <div>☐ &nbsp;Remove "Bulk apply mode" from Complete card</div>
+        <div>☐ &nbsp;Remove "LinkedIn optimizer" from Complete card (or demote to footnote)</div>
+        <div>☐ &nbsp;Add Interview Cheat Sheet to Complete card features</div>
+        <div>☐ &nbsp;Add Application Tracker to Complete card features</div>
+        <div>☐ &nbsp;Add AI Career Chat as "coming soon" to Complete card</div>
+        <div>☐ &nbsp;Update page title/meta: "resume tailoring SaaS" → "job search co-pilot"</div>
+        <div>☐ &nbsp;Step 1 copy: remove "LinkedIn, Indeed" → "any job board"</div>
+        <div>☐ &nbsp;Fix FAQ: "Starter plan, 3/month" → "Free plan, 3 lifetime"</div>
+        <div>☐ &nbsp;Add FAQ: "Do you search for jobs?" with honest answer</div>
+        <div>☐ &nbsp;Collect 2–3 more real testimonials (tracker, interview prep, cover letter)</div>
+      </div>
+    </div>
+ 
+  </div>
+ 
+  <!-- ══════════════════════════════════
+       TAB 7: UX POLISH
+  ══════════════════════════════════ -->
+  <div id="tab-ux" class="panel">
+ 
+    <div class="section-note" style="border-color:rgba(255,200,87,0.3);background:rgba(255,200,87,0.07);color:var(--accent3)">
+      ✨ No blank areas, no broken states. Every screen a new user sees should feel intentional. These are the polish items — small fixes, large impact on trust.
+    </div>
+ 
+    <!-- BLANK AREA FIXES -->
+    <div style="margin-bottom:24px">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent3);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">🕳 Blank Area & Empty State Fixes</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+ 
+        <div class="arch-layer danger">
+          <div class="layer-label">App — on load</div>
+          <div class="layer-title">No resume yet — blank tailor screen <span class="badge badge-danger">Fix</span></div>
+          <div class="layer-desc">First-time users who haven't uploaded a resume see the tailor interface with empty inputs and no guidance. There's no onboarding prompt, no "start here" arrow, nothing. The screen just sits blank.</div>
+          <div class="tag-row"><span class="tag" style="color:var(--accent)">→ Show a guided empty state: "Step 1: Add your resume" with a prominent upload CTA and a sample resume option to try immediately</span></div>
+        </div>
+ 
+        <div class="arch-layer danger">
+          <div class="layer-label">App — tracker tab</div>
+          <div class="layer-title">Empty tracker with no prompt to add first application <span class="badge badge-danger">Fix</span></div>
+          <div class="layer-desc">The application tracker is empty until a user manually adds something. New users see a blank table/list with no call to action. The fix is auto-populating a tracker entry the moment a tailor is completed.</div>
+          <div class="tag-row"><span class="tag" style="color:var(--accent)">→ Auto-create tracker entry on tailor complete: "Added to your tracker →"</span></div>
+          <div class="tag-row"><span class="tag" style="color:var(--accent)">→ Empty state illustration + "Your applications will appear here" copy when truly empty</span></div>
+        </div>
+ 
+        <div class="arch-layer warn">
+          <div class="layer-label">App — tailor history</div>
+          <div class="layer-title">No empty state for tailor history tab <span class="badge badge-warn">Fix</span></div>
+          <div class="layer-desc">Before the first tailor, the history tab is empty with no context. User doesn't know what will appear here or why it matters.</div>
+          <div class="tag-row"><span class="tag" style="color:var(--accent)">→ "Your tailored resumes will be saved here. Complete your first tailor to get started."</span></div>
+        </div>
+ 
+        <div class="arch-layer warn">
+          <div class="layer-label">App — free tier limit reached</div>
+          <div class="layer-title">No paywall screen after 3rd tailor — likely silent block <span class="badge badge-warn">Fix</span></div>
+          <div class="layer-desc">When a free user hits their 3-tailor limit, what happens? If the button just stops working or throws a generic error, that's a conversion-killing moment. This needs to be a designed upgrade prompt, not a dead end.</div>
+          <div class="tag-row"><span class="tag" style="color:var(--accent)">→ Full-screen upgrade modal: "You've used your 3 free tailors — you're clearly serious about this job search. Unlock unlimited with Complete →"</span></div>
+        </div>
+ 
+        <div class="arch-layer warn">
+          <div class="layer-label">App — interview prep</div>
+          <div class="layer-title">Interview Cheat Sheet likely shows blank until JD is entered <span class="badge badge-warn">Fix</span></div>
+          <div class="layer-desc">If a user navigates to interview prep without a job description context, the screen will be empty or confusing. Needs a prompt to paste a JD or select from their tailor history.</div>
+          <div class="tag-row"><span class="tag" style="color:var(--accent)">→ "Paste the job description you're preparing for, or pick from a recent tailor →"</span></div>
+        </div>
+ 
+        <div class="arch-layer warn">
+          <div class="layer-label">App — cover letter tab</div>
+          <div class="layer-title">Cover letter shown to free users with no upgrade prompt context <span class="badge badge-warn">Fix</span></div>
+          <div class="layer-desc">If the cover letter tab is visible to free users but locked, the lock state needs to clearly communicate the value — not just a generic "upgrade required" message.</div>
+          <div class="tag-row"><span class="tag" style="color:var(--accent)">→ "Personalised cover letters in 30 seconds — Complete feature. See an example →" with a preview of sample output</span></div>
+        </div>
+ 
+      </div>
+    </div>
+ 
+    <!-- LOADING & TRANSITION STATES -->
+    <div style="margin-bottom:24px">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent3);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">⏳ Loading & Transition States</div>
+      <table class="api-table">
+        <thead><tr><th>Moment</th><th>Current state</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td class="fn-name">Tailor in progress (0–5s)</td><td>Progress animation plays</td><td>✓ Good — keep. Add step labels: "Reading job description… Matching your experience… Rewriting bullets…"</td></tr>
+          <tr><td class="fn-name">Tailor in progress (5–30s)</td><td>Same animation continues</td><td>Add a rotating "did you know" tip below the animation to fill dead time and reduce perceived wait</td></tr>
+          <tr><td class="fn-name">Tailor in progress (30s+)</td><td>No change — user assumes it broke</td><td><span class="badge badge-danger">Fix</span> Show: "Still working — Claude is reading the full JD. Usually done in under 60s."</td></tr>
+          <tr><td class="fn-name">Tailor complete</td><td>Result appears</td><td>Add a subtle success animation + "✓ Resume tailored for [Job Title] at [Company]" confirmation header</td></tr>
+          <tr><td class="fn-name">API error / timeout</td><td>Likely raw error or silent fail</td><td><span class="badge badge-danger">Fix</span> Friendly error: "Something went wrong — your inputs are saved. Try again →" with one-click retry</td></tr>
+          <tr><td class="fn-name">PDF parse in progress</td><td>Unknown — likely no indicator</td><td>Add spinner + "Reading your resume…" while PDF.js processes the upload</td></tr>
+          <tr><td class="fn-name">Page first load (cold start)</td><td>Likely blank flash before JS loads</td><td>Add a minimal loading skeleton or logo splash for the first 1–2s to prevent white flash</td></tr>
+        </tbody>
+      </table>
+    </div>
+ 
+    <!-- MICRO-COPY & TRUST SIGNALS -->
+    <div style="margin-bottom:24px">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent3);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">✍ Micro-Copy & Trust Signals</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+ 
+        <div class="arch-layer">
+          <div class="layer-label">Tailor button</div>
+          <div class="layer-title">CTA copy on the tailor button</div>
+          <div class="layer-desc">If it currently says "Tailor Resume" or "Submit" — change to something more active and outcome-oriented.</div>
+          <div class="tag-row"><span class="tag" style="color:var(--accent)">→ "Tailor My Resume →" or "Generate Tailored Resume →"</span></div>
+        </div>
+ 
+        <div class="arch-layer">
+          <div class="layer-label">Resume upload area</div>
+          <div class="layer-title">Drag-and-drop dropzone copy</div>
+          <div class="layer-desc">Generic "Drop file here" copy doesn't communicate what's accepted or what happens next.</div>
+          <div class="tag-row"><span class="tag" style="color:var(--accent)">→ "Drop your resume here (PDF or DOCX) — or click to browse. We'll never share it."</span></div>
+        </div>
+ 
+        <div class="arch-layer">
+          <div class="layer-label">Below every AI call</div>
+          <div class="layer-title">Add "your data is private" micro-reassurance</div>
+          <div class="layer-desc">Resume data is personal. Users hesitate. A single line below the tailor button reduces friction for first-time users.</div>
+          <div class="tag-row"><span class="tag" style="color:var(--accent)">→ "🔒 Your resume is processed securely and never stored on our servers."</span></div>
+        </div>
+ 
+        <div class="arch-layer">
+          <div class="layer-label">Download button</div>
+          <div class="layer-title">DOCX download confirmation</div>
+          <div class="layer-desc">After download, users wonder "did it work?" Especially on mobile where the download is invisible.</div>
+          <div class="tag-row"><span class="tag" style="color:var(--accent)">→ Toast: "✓ Tailored resume downloaded — check your Downloads folder"</span></div>
+        </div>
+ 
+      </div>
+    </div>
+ 
+    <!-- MOBILE SPECIFIC -->
+    <div style="margin-bottom:24px">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent3);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">📱 Mobile-Specific Fixes</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+ 
+        <div class="arch-layer danger">
+          <div class="layer-label">Mobile — critical bug (existing)</div>
+          <div class="layer-title">LinkedIn PDF dropzone leaking raw HTML attributes as visible text <span class="badge badge-danger">Already documented</span></div>
+          <div class="layer-desc">Every new iPhone user sees raw code on every tab. Fix documented in Issues & Fixes tab — flagged here as the #1 mobile blocker.</div>
+        </div>
+ 
+        <div class="arch-layer warn">
+          <div class="layer-label">Mobile — keyboard</div>
+          <div class="layer-title">JD textarea pushes layout when keyboard opens <span class="badge badge-warn">Fix</span></div>
+          <div class="layer-desc">On iOS, when the soft keyboard opens on the JD textarea, the viewport shifts and the tailor button often scrolls off-screen. Users can't see the CTA while typing.</div>
+          <div class="tag-row"><span class="tag" style="color:var(--accent)">→ Add a sticky "Tailor →" button that stays fixed at the bottom of the viewport on mobile</span></div>
+        </div>
+ 
+        <div class="arch-layer warn">
+          <div class="layer-label">Mobile — file download</div>
+          <div class="layer-title">DOCX download on iOS goes to Files app — invisible to most users <span class="badge badge-warn">Fix</span></div>
+          <div class="layer-desc">iOS Safari doesn't show a "download complete" notification. Most users don't know their resume downloaded. They tap the button multiple times thinking it didn't work.</div>
+          <div class="tag-row"><span class="tag" style="color:var(--accent)">→ On mobile, offer "Copy resume text" as an alternative to DOCX — immediately usable without navigating Files app</span></div>
+          <div class="tag-row"><span class="tag" style="color:var(--accent)">→ Add: "On iPhone? Tap and hold to save, or check your Files app"</span></div>
+        </div>
+ 
+        <div class="arch-layer warn">
+          <div class="layer-label">Mobile — nav</div>
+          <div class="layer-title">Bottom nav restructure (already documented) <span class="badge badge-warn">Cross-reference</span></div>
+          <div class="layer-desc">Full details in Issues & Fixes tab. New nav: Tailor · Tracker · Interview · Account. LinkedIn + Backup move to Account → More Tools.</div>
+        </div>
+ 
+      </div>
+    </div>
+ 
+    <!-- UX POLISH CHECKLIST -->
+    <div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">✅ UX Polish Checklist</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;font-size:13px;line-height:2.2;font-family:'Space Mono',monospace">
+        <div>☐ &nbsp;Empty state: first-time tailor screen → "Add your resume to get started"</div>
+        <div>☐ &nbsp;Empty state: tracker → auto-create entry on tailor complete</div>
+        <div>☐ &nbsp;Empty state: tailor history → add placeholder copy</div>
+        <div>☐ &nbsp;Paywall moment: 3rd tailor used → designed upgrade modal (not a silent block)</div>
+        <div>☐ &nbsp;Interview prep: prompt to add JD context if none exists</div>
+        <div>☐ &nbsp;Cover letter lock state: show value preview, not just "upgrade required"</div>
+        <div>☐ &nbsp;Tailor progress: add step labels to animation ("Reading JD… Matching…")</div>
+        <div>☐ &nbsp;Tailor 30s+ timeout: add "still working" reassurance message</div>
+        <div>☐ &nbsp;API error state: friendly retry message — preserve inputs</div>
+        <div>☐ &nbsp;Tailor complete: confirmation header with job title + company name</div>
+        <div>☐ &nbsp;Tailor button copy → "Tailor My Resume →"</div>
+        <div>☐ &nbsp;Resume dropzone copy → include accepted formats + privacy note</div>
+        <div>☐ &nbsp;Add "🔒 processed securely" line below tailor button</div>
+        <div>☐ &nbsp;DOCX download toast → "✓ Downloaded — check your Downloads folder"</div>
+        <div>☐ &nbsp;Fix LinkedIn PDF dropzone mobile HTML leak (critical — see Issues tab)</div>
+        <div>☐ &nbsp;Mobile: sticky "Tailor →" button when keyboard is open</div>
+        <div>☐ &nbsp;Mobile: iOS download guidance + "Copy text" fallback</div>
+        <div>☐ &nbsp;Page load: add logo splash / skeleton to prevent white flash on cold start</div>
+      </div>
+    </div>
+ 
+  </div>
+ 
+  <!-- ══════════════════════════════════
+       TAB 8: AI VISIBILITY
+  ══════════════════════════════════ -->
+  <div id="tab-aivisibility" class="panel">
+ 
+    <div class="section-note" style="border-color:rgba(79,255,176,0.3);background:rgba(79,255,176,0.07);color:var(--accent)">
+      🤖 When someone asks ChatGPT, Claude, Perplexity, or Gemini "what's the best AI resume builder?" — 1stStep.ai should be in the answer. Right now it won't be. This tab is the playbook to fix that. This is called GEO (Generative Engine Optimization) and it compounds over time — start early.
+    </div>
+ 
+    <!-- WHERE YOU STAND -->
+    <div style="margin-bottom:24px">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--danger);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">📊 Current AI Visibility — Honest Assessment</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="arch-layer danger">
+          <div class="layer-label">Who AI recommends now</div>
+          <div class="layer-title">Rezi, Teal, Kickresume, Enhancv</div>
+          <div class="layer-desc">These tools dominate every "best AI resume builder" list. They have years of reviews, thousands of backlinks, Reddit threads, YouTube reviews, and G2/Capterra profiles. AI models were trained on all of that.</div>
+        </div>
+        <div class="arch-layer danger">
+          <div class="layer-label">1stStep.ai right now</div>
+          <div class="layer-title">Not mentioned anywhere</div>
+          <div class="layer-desc">No G2 profile, no Capterra listing, no Reddit mentions, no YouTube reviews, no third-party comparison articles. AI models have nothing to train on or cite. You are invisible.</div>
+        </div>
+        <div class="arch-layer" style="border-color:rgba(79,255,176,0.4)">
+          <div class="layer-label">The opportunity</div>
+          <div class="layer-title">GEO compounds fast if started now</div>
+          <div class="layer-desc">AI models update their knowledge over time. Every review, listing, and article you earn today feeds future model training. Start now and the gap closes over 6–12 months. Wait and it widens.</div>
+        </div>
+      </div>
+    </div>
+ 
+    <!-- WHAT AI MODELS LOOK FOR -->
+    <div style="margin-bottom:24px">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--warn);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">🧠 What AI Models Use To Decide Who To Recommend</div>
+      <table class="api-table">
+        <thead><tr><th>Signal</th><th>Why it matters</th><th>1stStep.ai status</th></tr></thead>
+        <tbody>
+          <tr><td class="fn-name">Third-party reviews (G2, Capterra, Trustpilot)</td><td>Perplexity references reviews 100% of the time. ChatGPT uses reviews in 58% of responses.</td><td><span class="badge badge-danger">None — not listed</span></td></tr>
+          <tr><td class="fn-name">"Best of" list appearances</td><td>AI models pull heavily from roundup articles. Being in a "Top 10" list = citation magnet.</td><td><span class="badge badge-danger">None — not listed</span></td></tr>
+          <tr><td class="fn-name">Reddit / Quora / community mentions</td><td>Reddit is heavily indexed by AI. A genuine mention in r/jobs or r/resumes is worth more than most ads.</td><td><span class="badge badge-danger">None</span></td></tr>
+          <tr><td class="fn-name">Structured data (schema.org)</td><td>Organization, Product, FAQ, and Review schemas let AI extract info directly without parsing prose.</td><td><span class="badge badge-danger">Not implemented</span></td></tr>
+          <tr><td class="fn-name">llms.txt file</td><td>Emerging standard — explicitly tells AI crawlers what your site is about and which pages matter.</td><td><span class="badge badge-danger">Not created</span></td></tr>
+          <tr><td class="fn-name">Clear differentiator copy</td><td>AI recommends tools for specific use cases. "Best for active job seekers who apply to 10+ roles" beats "great AI resume tool."</td><td><span class="badge badge-warn">Weak — too generic</span></td></tr>
+          <tr><td class="fn-name">YouTube / video reviews</td><td>AI models cite video content. A genuine tutorial or review on YouTube creates a reference path.</td><td><span class="badge badge-danger">None</span></td></tr>
+          <tr><td class="fn-name">Backlinks from authoritative domains</td><td>ChatGPT favors domain rating. Being cited by career advice sites, HR blogs, or university career pages matters.</td><td><span class="badge badge-danger">Unknown — likely low</span></td></tr>
+          <tr><td class="fn-name">Consistent NAP / brand info</td><td>Name, URL, and description must match exactly across every platform to build AI confidence.</td><td><span class="badge badge-warn">Inconsistent — "resume.1ststep.ai" vs "1stStep.ai" vs "app.1ststep.ai"</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+ 
+    <!-- THE PLAYBOOK -->
+    <div style="margin-bottom:24px">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">🗺 The GEO Playbook — In Priority Order</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+ 
+        <div class="arch-layer" style="border-color:rgba(255,71,87,0.4)">
+          <div class="layer-label">Week 1 — Free, 2 hours total</div>
+          <div class="layer-title">🔴 Create review platform profiles</div>
+          <div class="layer-desc">Claim your listings on G2, Capterra, and Trustpilot. Fill out every field completely — description, features, pricing, screenshots. These pages get indexed fast and AI models reference them constantly. Do this before anything else.</div>
+          <div class="tag-row">
+            <span class="tag">g2.com — create free vendor profile</span>
+            <span class="tag">capterra.com — free listing</span>
+            <span class="tag">trustpilot.com — free business profile</span>
+            <span class="tag">producthunt.com — launch post</span>
+          </div>
+        </div>
+ 
+        <div class="arch-layer" style="border-color:rgba(255,71,87,0.4)">
+          <div class="layer-label">Week 1 — Technical, 1 hour</div>
+          <div class="layer-title">🔴 Add schema markup + llms.txt to landing page</div>
+          <div class="layer-desc">Add Organization, Product, and FAQPage schema to resume.1ststep.ai. Then create /llms.txt in the root. GHL allows custom HTML injection in the page head — use it.</div>
+          <div class="tag-row">
+            <span class="tag">Organization schema — name, url, description, foundingDate</span>
+            <span class="tag">Product schema — name, description, offers (price, priceCurrency)</span>
+            <span class="tag">FAQPage schema — wrap every FAQ answer</span>
+            <span class="tag">llms.txt — list key pages + one-line descriptions</span>
+          </div>
+        </div>
+ 
+        <div class="arch-layer warn">
+          <div class="layer-label">Week 2 — Outreach</div>
+          <div class="layer-title">🟡 Get into comparison articles and "best of" lists</div>
+          <div class="layer-desc">Email the authors of existing "best AI resume builder" roundup articles and ask to be considered for inclusion. Most are updated regularly. A single placement in a high-DA article creates a citation path AI models follow. Target: career blogs, HR publications, job search subreddits.</div>
+          <div class="tag-row">
+            <span class="tag">Target: rezi.ai/posts/best-ai-resume-builders (ironically, Rezi runs comparison articles)</span>
+            <span class="tag">Target: The Muse, Zety, Resume.io comparison pages</span>
+            <span class="tag">Target: university career center "tools" pages</span>
+          </div>
+        </div>
+ 
+        <div class="arch-layer warn">
+          <div class="layer-label">Week 2–3 — Community</div>
+          <div class="layer-title">🟡 Seed genuine mentions on Reddit and Quora</div>
+          <div class="layer-desc">Be helpful first. Answer questions in r/resumes, r/jobs, r/cscareerquestions, and r/jobsearchhacks. Build karma. Then, when genuinely relevant, mention 1stStep.ai. Never spam — Reddit buries promotional accounts fast. One genuine, helpful mention in a top-voted thread is worth 100 backlinks.</div>
+          <div class="tag-row">
+            <span class="tag">r/resumes — 800k members</span>
+            <span class="tag">r/jobs — 600k members</span>
+            <span class="tag">r/cscareerquestions — tech job seekers</span>
+            <span class="tag">Quora: "What's the best tool to tailor a resume?"</span>
+          </div>
+        </div>
+ 
+        <div class="arch-layer warn">
+          <div class="layer-label">Week 3–4 — Content</div>
+          <div class="layer-title">🟡 Create a blog with AI-optimised content</div>
+          <div class="layer-desc">AI models cite pages that definitively answer specific questions. Create 3–5 cornerstone articles: "How to tailor a resume for an ATS," "What keywords do hiring managers search for," "Resume tailoring vs resume building — what's the difference." Host on blog.1ststep.ai or as a /blog path. These become citation magnets for AI when users ask related questions.</div>
+          <div class="tag-row">
+            <span class="tag">Target queries: "how to tailor resume to job description"</span>
+            <span class="tag">Target queries: "best resume for ATS 2025"</span>
+            <span class="tag">Target queries: "AI resume tailoring tool"</span>
+          </div>
+        </div>
+ 
+        <div class="arch-layer">
+          <div class="layer-label">Month 2 — Social proof</div>
+          <div class="layer-title">◈ Actively collect and display reviews</div>
+          <div class="layer-desc">Ask every beta user for a review via GHL email sequence 7 days after signup. Direct them to your G2 or Trustpilot profile. AI models weight volume + recency of reviews heavily. Even 20 real reviews puts you ahead of tools with zero. Display review count + rating prominently on the landing page with Review schema markup.</div>
+          <div class="tag-row">
+            <span class="tag">GHL automation: day 7 email → "How's it going? Leave us a review →"</span>
+            <span class="tag">Target: 25+ reviews in first 90 days</span>
+          </div>
+        </div>
+ 
+        <div class="arch-layer">
+          <div class="layer-label">Month 2–3 — Video</div>
+          <div class="layer-title">◈ One genuine YouTube walkthrough video</div>
+          <div class="layer-desc">A 3–5 minute screen recording of a real resume being tailored. Title: "How I tailored my resume to a job description in 60 seconds with AI." AI models cite YouTube content. One honest tutorial does more for visibility than 10 backlinks from generic directories.</div>
+          <div class="tag-row">
+            <span class="tag">Target: rank for "AI resume tailoring demo" on YouTube</span>
+            <span class="tag">Share in Reddit threads naturally when relevant</span>
+          </div>
+        </div>
+ 
+      </div>
+    </div>
+ 
+    <!-- DIFFERENTIATION COPY -->
+    <div style="margin-bottom:24px">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">🎯 How To Position for AI Recommendations — The Niche Angle</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;font-size:13px;line-height:1.8;color:var(--text)">
+        <p style="margin-bottom:12px">AI models recommend tools for <strong style="color:var(--accent)">specific use cases</strong>, not general categories. "Best AI resume builder" is dominated by Rezi and Teal. You won't win that broad query for 12+ months. But you can win narrower queries much faster:</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--accent);margin-bottom:6px">WIN THIS QUERY FIRST</div>
+            <div style="font-size:13px">"Best tool to <strong>tailor a resume to a job description</strong>"</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">Your exact use case. No one else leads with tailoring as the primary action.</div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--accent);margin-bottom:6px">THEN WIN THIS</div>
+            <div style="font-size:13px">"AI resume builder for <strong>active job seekers applying to multiple roles</strong>"</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">Your ICP exactly. Differentiated from "resume builder for first-time job seekers."</div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--accent3);margin-bottom:6px">MEDIUM-TERM</div>
+            <div style="font-size:13px">"Best AI tool to <strong>get more job interviews</strong>"</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">Outcome-based. Your testimonial ("6 interviews in 2 weeks") is proof. Build content around outcomes.</div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--accent3);margin-bottom:6px">MEDIUM-TERM</div>
+            <div style="font-size:13px">"Teal alternative" / "Rezi alternative"</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">Comparison searches are high-intent. A dedicated "1stStep.ai vs Teal" page captures users already considering tools.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+ 
+    <!-- AI VISIBILITY CHECKLIST -->
+    <div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">✅ AI Visibility Checklist</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;font-size:13px;line-height:2.2;font-family:'Space Mono',monospace">
+        <div style="color:var(--danger);margin-bottom:4px">── Week 1 (free, fast) ──────────────────────</div>
+        <div>☐ &nbsp;Create G2 vendor profile — fill every field completely</div>
+        <div>☐ &nbsp;Create Capterra listing</div>
+        <div>☐ &nbsp;Create Trustpilot business profile</div>
+        <div>☐ &nbsp;Launch on Product Hunt</div>
+        <div>☐ &nbsp;Add Organization + Product + FAQPage schema to landing page</div>
+        <div>☐ &nbsp;Create /llms.txt at site root listing key pages</div>
+        <div>☐ &nbsp;Add OG / Twitter card meta tags (see Landing Page tab)</div>
+        <div>☐ &nbsp;Standardise brand name: always "1stStep.ai" — consistent across all platforms</div>
+        <div style="color:var(--warn);margin-top:8px;margin-bottom:4px">── Week 2–3 ─────────────────────────────────</div>
+        <div>☐ &nbsp;Email 5 "best AI resume builder" roundup authors for inclusion</div>
+        <div>☐ &nbsp;Post genuinely helpful answers in r/resumes + r/jobs (no spam)</div>
+        <div>☐ &nbsp;Answer 3+ Quora questions about resume tailoring tools</div>
+        <div>☐ &nbsp;Write first blog post: "How to tailor a resume for ATS in 2025"</div>
+        <div>☐ &nbsp;Create "1stStep.ai vs Teal" comparison page on site</div>
+        <div style="color:var(--accent4);margin-top:8px;margin-bottom:4px">── Month 2 ──────────────────────────────────</div>
+        <div>☐ &nbsp;Set up GHL day-7 review request email to all users</div>
+        <div>☐ &nbsp;Target 25 reviews across G2 + Trustpilot + Capterra</div>
+        <div>☐ &nbsp;Display review count + star rating on landing page with Review schema</div>
+        <div>☐ &nbsp;Record 1 YouTube walkthrough video — real resume, real result</div>
+        <div>☐ &nbsp;Submit to SaaS directories: AlternativeTo, SaaSHub, Slant</div>
+        <div>☐ &nbsp;Reach out to 2–3 career coaches / LinkedIn influencers for honest reviews</div>
+      </div>
+    </div>
+ 
+  </div>
+ 
+ 
+// ── DATA ──────────────────────────────────────────────
+ 
+const DETAILS = {
+  browser: {
+    title: '🖥 Browser Client',
+    status: 'warn',
+    sections: [
+      { title: 'What lives here', items: [
+        'All UI: index.html (~8,000+ lines) — single file SPA',
+        'Resume builder wizard: resume-builder.js',
+        'PDF parsing: PDF.js loaded from CDN',
+        'All user state in localStorage (7 keys)',
+      ]},
+      { title: 'Risks', items: [
+        { text: '8,000-line HTML file is unmaintainable at scale', type: 'issue' },
+        { text: 'localStorage can be cleared by browser — user loses all data', type: 'issue' },
+        { text: 'No multi-device access or data recovery', type: 'issue' },
+        { text: 'CDN PDF.js dependency — if CDN goes down, PDF import breaks', type: 'warn' },
+      ]},
+    ]
+  },
+  vercel: {
+    title: '☁ Vercel Serverless',
+    status: 'danger',
+    sections: [
+      { title: 'Current state', items: [
+        '12 function files in /api/ — exactly at Hobby plan limit',
+        '_alert.js exempt due to underscore prefix (not a route)',
+        'New /api/*.js files without _ prefix will break deployment',
+      ]},
+      { title: 'How to add features safely', items: [
+        { text: 'Use ?action= query params on existing endpoints', type: 'ok' },
+        { text: 'Consolidate related endpoints (e.g. beta.js + beta-expiry-check.js)', type: 'ok' },
+        { text: 'Upgrade to Vercel Pro for unlimited functions', type: 'ok' },
+      ]},
+    ]
+  },
+  anthropic: {
+    title: '🤖 Anthropic Claude API',
+    status: 'ok',
+    sections: [
+      { title: 'Usage', items: [
+        'claude.js proxies all AI calls (maxDuration: 60s)',
+        'Free tier: Haiku only — 3 tailors lifetime, no cover letter, no download',
+        'Complete tier: Sonnet — unlimited tailor, cover letter, interview prep, AI chat',
+        'callTypes: tailor, cover_letter, interview, utility, chat',
+        '⚠ linkedin callType kept in code but feature demoted to More Tools — not a selling point',
+        '✕ bulk_apply callType — remove entirely, do not build further',
+        '✕ jobs search (Adzuna/Indeed) — retire jobs.js, replace with URL/paste input field',
+      ]},
+      { title: 'Planned: AI Career Chat (Complete tier)', items: [
+        'callType: "chat" — conversational assistant with resume + JD as context',
+        'Complete tier only — Sonnet model',
+        'Token throttle: hard cap per session (e.g. 2,000 tokens/day) enforced in claude.js via tierToken payload or Upstash counter',
+        'System prompt seeds resume + active JD so answers are always job-specific',
+        { text: 'Do NOT use streaming without a token budget guard — chat is the highest abuse surface', type: 'warn' },
+        { text: 'Track chat_message GHL tag for engagement analytics', type: 'ok' },
+      ]},
+      { title: 'Recommendations', items: [
+        { text: 'tierToken HMAC (20 min TTL) prevents per-call Stripe hits — good pattern', type: 'ok' },
+        { text: 'Consider streaming responses for long resume tailoring calls', type: 'warn' },
+      ]},
+    ]
+  },
+  storage: {
+    title: '💾 Storage (localStorage)',
+    status: 'danger',
+    sections: [
+      { title: 'Keys in use', items: [
+        '1ststep_profile — name, email, title',
+        '1ststep_resume — resume builder JSON',
+        '1ststep_tailor_history — array of tailored resumes',
+        '1ststep_applications — application tracker entries',
+        '1ststep_jobs_cache — job search cache',
+      ]},
+      { title: 'Critical gaps', items: [
+        { text: 'Browser clear / private mode wipes all user data permanently', type: 'issue' },
+        { text: 'No cross-device access — users can\'t use phone + laptop', type: 'issue' },
+        { text: 'No backup or recovery path for lost data', type: 'issue' },
+        { text: 'Path to fix: add optional cloud backup to a lightweight DB (Supabase, PlanetScale free tier)', type: 'ok' },
+      ]},
+    ]
+  },
+  stripe: {
+    title: '💳 Stripe Payments',
+    status: 'ok',
+    sections: [
+      { title: 'Flow', items: [
+        '/api/subscription?email= returns { tier, status, tierToken }',
+        'tierToken = HMAC signed with TIER_SECRET, 20 min TTL',
+        'claude.js verifies tierToken locally — no Stripe call per AI request',
+        '3 tiers: free, essential, complete → SIMPLIFIED to 2 tiers: free / complete',
+        'Remove essential tier from Stripe products + subscription.js tier check logic',
+      ]},
+      { title: 'Notes', items: [
+        { text: 'tierToken expiry handled gracefully — frontend re-fetches before AI call', type: 'ok' },
+        { text: 'stripe-webhook.js handles checkout.session.completed, subscription events', type: 'ok' },
+      ]},
+    ]
+  },
+  ghl: {
+    title: '📊 GoHighLevel CRM',
+    status: 'warn',
+    sections: [
+      { title: 'Integration points', items: [
+        'notify-signup.js: upserts contact on signup',
+        'track-event.js: fires tags on milestones (first_tailor, application_saved…)',
+        'ghl-stage.js: moves contacts to active_user / power_user stages',
+        'health.js: email blasts via GHL + Resend',
+      ]},
+      { title: 'Known bugs (already fixed)', items: [
+        { text: 'Upsert must be POST /contacts/upsert, NOT PUT — fixed', type: 'ok' },
+        { text: 'Tag filter via query param returns 422 — fetch all, filter client-side — fixed', type: 'ok' },
+        { text: 'GHL API can be slow — fire-and-forget pattern recommended for tag events', type: 'warn' },
+      ]},
+    ]
+  },
+  jobs: {
+    title: '🔍 Job Search',
+    status: 'warn',
+    sections: [
+      { title: 'Data sources', items: [
+        'Adzuna API — official, stable',
+        'Indeed scraper — unofficial, brittle',
+        'jobs.js handles both, maxDuration: 30s',
+      ]},
+      { title: 'Risks', items: [
+        { text: 'Indeed scraper will break when Indeed changes DOM — no warning', type: 'issue' },
+        { text: 'No fallback if both sources fail', type: 'warn' },
+        { text: 'Consider adding Indeed official API or JSearch (RapidAPI) as backup', type: 'ok' },
+      ]},
+    ]
+  },
+  comms: {
+    title: '✉ Comms (Resend + LinkedIn)',
+    status: 'ok',
+    sections: [
+      { title: 'Email (Resend)', items: [
+        'Welcome email on signup (notify-signup.js)',
+        'Beta expiry warning (beta-expiry-check.js)',
+        'Product update blasts (health.js?action=blast)',
+        'From: 1stStep.ai <noreply@1ststep.ai>',
+      ]},
+      { title: 'LinkedIn OAuth', items: [
+        'Popup flow → linkedin-init → linkedin-callback → postMessage',
+        'Scopes: openid profile email only',
+        'Full work history NOT available via API — uses PDF export + PDF.js',
+        { text: 'Redirect URI must stay: app.1ststep.ai/api/subscription?action=linkedin-callback', type: 'warn' },
+      ]},
+    ]
+  }
+};
+ 
+const ISSUES = [
+  {
+    sev: 'critical',
+    icon: '🚨',
+    title: 'Vercel function limit at capacity (12/12)',
+    summary: 'Zero headroom for new serverless functions. Any new /api/*.js file will break deployment.',
+    fix: 'Consolidate or upgrade',
+    detail: `You have 12 function files and are at the Hobby plan hard limit. <code>_alert.js</code> is exempt only because of its underscore prefix — don't rename it.<br><br>
+<strong>Options:</strong><br>
+1. <strong>Consolidate:</strong> Merge <code>beta.js</code> + <code>beta-expiry-check.js</code> into one file using <code>?action=</code> routing (saves 1 slot).<br>
+2. <strong>Consolidate:</strong> Move <code>app-config.js</code> logic into <code>subscription.js</code> (saves 1 slot).<br>
+3. <strong>Upgrade to Vercel Pro</strong> (~$20/mo) — removes the limit entirely and gives you longer function timeouts.`
+  },
+  {
+    sev: 'critical',
+    icon: '💾',
+    title: 'localStorage-only persistence — data loss risk',
+    summary: 'Users who clear their browser, switch devices, or use private mode permanently lose all their data (resumes, applications, history).',
+    fix: 'Add optional cloud backup',
+    detail: `All user state is in <code>localStorage</code>. This is a product-killing UX risk as you grow.<br><br>
+<strong>Minimal fix (no full DB rewrite):</strong><br>
+1. Add a <strong>Supabase free-tier table</strong> with columns: <code>email, key, value, updated_at</code>.<br>
+2. After each localStorage write, fire a background sync to a new <code>/api/sync.js</code> (you'll need to free a function slot first).<br>
+3. On load, if localStorage is empty, pull from Supabase.<br>
+This keeps the existing architecture but adds a safety net. Users don't need passwords — email is the key (already collected via Stripe/LinkedIn).`
+  },
+  {
+    sev: 'high',
+    icon: '⚠️',
+    title: 'Indeed scraper is fragile',
+    summary: 'The Indeed job scraper in jobs.js will silently break whenever Indeed updates their DOM or blocks the scraper. No alerting exists.',
+    fix: 'Add fallback source',
+    detail: `Scrapers against major job sites break every few weeks with no warning.<br><br>
+<strong>Recommended fix:</strong><br>
+1. Add <strong>JSearch API (RapidAPI)</strong> or <strong>SerpAPI Jobs</strong> as a fallback inside <code>jobs.js</code>.<br>
+2. Wrap the Indeed scraper in a try/catch and fall through to the backup source.<br>
+3. Add a simple alert to <code>_alert.js</code> when the scraper returns 0 results so you know immediately.`
+  },
+  {
+    sev: 'high',
+    icon: '📄',
+    title: 'index.html is ~8,000+ lines',
+    summary: 'All UI, state, and client logic in one file. This becomes a merge conflict nightmare and bug-breeding ground as features are added.',
+    fix: 'Incrementally modularize',
+    detail: `You don't need to rewrite everything — just stop adding to the monolith.<br><br>
+<strong>Incremental approach:</strong><br>
+1. New features go into separate <code>.js</code> modules loaded via <code>&lt;script type="module"&gt;</code>.<br>
+2. Extract the application tracker into <code>tracker.js</code> (it's self-contained).<br>
+3. Extract the tier/subscription logic into <code>auth.js</code>.<br>
+4. Long-term: migrate to a simple build tool (Vite) so you can properly split the file.<br><br>
+This doesn't require changing any API or backend logic — it's purely a frontend refactor.`
+  },
+  {
+    sev: 'high',
+    icon: '🔒',
+    title: 'No server-side rate limiting on AI endpoints',
+    summary: 'claude.js relies on tierToken for authorization but has no per-user rate limiting. A free user can spam the endpoint with valid-looking requests.',
+    fix: 'Add lightweight rate limiting',
+    detail: `The tierToken HMAC prevents tier spoofing, but doesn't limit call volume.<br><br>
+<strong>Quick fix inside claude.js:</strong><br>
+Use Vercel's built-in <code>x-forwarded-for</code> header + an in-memory Map to track calls per IP per minute (resets on cold start — acceptable for a small app).<br><br>
+<strong>Better fix:</strong> Use <a href="https://upstash.com" style="color:var(--accent)">Upstash Redis</a> (free tier) for a persistent sliding window counter. ~10 lines of code to add to <code>claude.js</code>.`
+  },
+  {
+    sev: 'medium',
+    icon: '📧',
+    title: 'Email blast infrastructure needs dry-run discipline',
+    summary: 'health.js?action=blast can send emails to all users. The dryRun=true flag is the only safety net — no staging list, no preview.',
+    fix: 'Document the blast checklist',
+    detail: `Before every blast: <br>
+1. Always run <code>GET /api/health?action=blast&tag=beta&dryRun=true</code> first and verify recipient count.<br>
+2. Send to a test tag (e.g. <code>tag=internal</code>) before the real tag.<br>
+3. Check Resend dashboard for bounce rates after sending.<br><br>
+Consider adding a <code>maxRecipients</code> guard in <code>health.js</code> that throws if the resolved list exceeds an expected ceiling — prevents accidental blasts to the wrong segment.`
+  },
+  {
+    sev: 'critical',
+    icon: '👻',
+    title: 'LinkedIn PDF dropzone renders raw HTML attributes as visible text on mobile',
+    summary: 'On mobile, inline event handler attributes (onclick=, ondragover=, style=...) from the LinkedIn PDF dropzone div appear as plain visible text across every section of the page when scrolling.',
+    fix: 'Fix malformed innerHTML or unclosed container',
+    detail: `This is the same phantom element appearing in every scroll position — Tailor tab, Jobs tab, footer, LinkedIn Optimizer section. It's the LinkedIn PDF import dropzone leaking its own attribute text.<br><br>
+<strong>The exact block to find — search index.html for:</strong><br>
+<code>ondragover="event.preventDefault();this.style.borderColor=</code><br><br>
+<strong>Two likely causes:</strong><br>
+1. <strong>innerHTML string construction bug</strong> — if this div is built via a JS template literal and written with <code>.innerHTML</code>, a broken quote or unescaped character causes the browser to close the tag early and treat the rest of the attributes as a text node. Check for mismatched single/double quotes in the style attribute values (e.g. <code>style="...var(--border)..."</code> where inner quotes break the outer string).<br><br>
+2. <strong>Unclosed parent container</strong> — the dropzone div is inside a modal or section whose closing <code>&lt;/div&gt;</code> tag is missing or mismatched, so the element escapes to body level and renders at a fixed/absolute position visible everywhere.<br><br>
+<strong>Fix:</strong><br>
+1. Run the page through the <a href="https://validator.w3.org" style="color:var(--accent)">W3C HTML Validator</a> — it will immediately flag unclosed tags.<br>
+2. In Chrome DevTools on desktop, inspect the dropzone element and check its computed position and which parent it actually belongs to in the DOM tree.<br>
+3. If built via innerHTML: move this dropzone to a static <code>&lt;div id="liPdfDropzone"&gt;</code> in the HTML and wire up the events in JS separately via <code>addEventListener</code> — never put complex inline handlers with CSS variable references in innerHTML strings.<br><br>
+<strong>This is the #1 visible mobile bug and should be fixed immediately</strong> — every new user who opens the app on iPhone sees raw code instead of a clean UI.`
+  },
+  {
+    sev: 'high',
+    icon: '🎯',
+    title: 'Selected job overrides manually pasted JD',
+    summary: 'When a job from the search results is highlighted/selected and the user pastes a different job description manually, the tailoring still uses the selected search result — not the pasted JD.',
+    fix: 'Clear selection on manual paste',
+    detail: `This is a state management bug in <code>index.html</code>. The selected job from the search panel sets some shared state (likely a variable like <code>selectedJob</code> or similar) that <code>claude.js</code> picks up when the tailor button is hit, overriding the manually pasted JD.<br><br>
+<strong>Fix:</strong><br>
+1. Find the variable that holds the "active" job description (e.g. <code>currentJobDescription</code>, <code>activeJobTitle</code>, etc.).<br>
+2. Add an <code>oninput</code> / <code>onpaste</code> listener to the manual JD textarea that clears the selected job state and removes the "Tailoring for: X at Y" banner.<br>
+3. The "Tailoring for: Role at Company" label (Step 2) should only appear when a job was explicitly chosen from search — not when the user typed/pasted manually.<br><br>
+<strong>UX note:</strong> The "✕" dismiss button on that banner is the right pattern — make sure clearing it also clears the underlying state variable, not just hides the label.`
+  },
+  {
+    sev: 'critical',
+    icon: '📂',
+    title: 'No backup.json restore / import UI',
+    summary: 'The app warns users to download a backup and shows a "Backup →" button — but there is no visible UI to upload and restore from a backup.json file.',
+    fix: 'Add restore flow on landing + settings',
+    detail: `The onboarding screen has "Returning user? Restore from backup →" text but it\'s unclear if this actually works or where it leads. There\'s no dedicated restore dropzone anywhere obvious.<br><br>
+<strong>Fix — two touchpoints:</strong><br>
+1. <strong>Landing/onboarding screen:</strong> "Returning user? Restore from backup →" should open a modal with a file dropzone accepting <code>.json</code> files. On upload, parse and write back to the correct localStorage keys, then reload.<br>
+2. <strong>Account / Backup section (nav):</strong> Add a two-button row: <code>[💾 Download Backup]</code> &nbsp; <code>[📂 Restore from Backup]</code> — symmetric, always visible together.<br>
+3. Validate the JSON before writing — check for expected keys (<code>1ststep_profile</code>, <code>1ststep_resume</code>, etc.) and show an error if the file is wrong or corrupted.<br>
+4. Show a success toast: "✓ Data restored — X resumes, Y applications loaded."`
+  },
+  {
+    sev: 'high',
+    icon: '📱',
+    title: 'Mobile nav is buried — key actions hard to reach',
+    summary: 'On mobile, the nav collapses into a hamburger/More menu. Job Search, Tracker, and Bulk Apply are hidden under "More ▾" — extra taps for core workflows.',
+    fix: 'Promote 3 core actions to mobile tab bar',
+    detail: `The mobile nav shows: Tailor · Jobs · Resumes · Tracker · More ▾. That\'s already 5 items and "More" hides LinkedIn, Bulk Apply, Account, Backup.<br><br>
+<strong>Recommended fix — nav restructure:</strong><br>
+1. Implement a proper bottom tab bar for mobile (fixed, 4–5 icons max): <strong>Tailor · Jobs · Tracker · Backup · Account</strong>.<br>
+2. <strong>Remove LinkedIn Optimizer from the bottom nav entirely</strong> — it\'s a one-time feature, not part of the active job search session loop. Bury it in a "More Tools" section under Account. It\'s already built so keep it, but don\'t give it prime real estate.<br>
+3. Reclaim the freed nav slot for <strong>Backup</strong> — it currently has no permanent home but is critical (localStorage-only = data loss risk). A persistent Backup tab makes the risk visible and recoverable.<br>
+4. Move Bulk Apply to "More Tools" alongside LinkedIn Optimizer — same reasoning, secondary workflow.<br>
+5. The current top nav on mobile takes up too much vertical space — the "How it works" step indicator and double-rendered nav waste ~120px above the fold.<br>
+6. Test the tailor flow on a 390px viewport — the two-column Step 1/Step 2 layout likely stacks awkwardly.<br><br>
+<strong>Nav priority rule:</strong> Bottom nav slots should only contain features a user needs <em>during an active job search session</em>. LinkedIn optimization is pre-session prep, not in-session action.`
+  },
+  {
+    sev: 'high',
+    icon: '📐',
+    title: 'Step 2 JD textarea has no character / token feedback',
+    summary: 'Users paste job descriptions of wildly different lengths with no guidance. Very long JDs eat tokens and slow the response; very short ones produce poor output.',
+    fix: 'Add live character count + quality hint',
+    detail: `<strong>Fix:</strong><br>
+1. Add a live character counter below the JD textarea: <code>1,240 chars · good length</code>, turning yellow at &lt;200 chars ("too short — add more detail") and orange at &gt;4,000 chars ("very long — consider trimming the requirements section").<br>
+2. Optionally, add a "Trim JD" micro-button that calls Claude Haiku to strip boilerplate ("Equal opportunity employer…", benefits paragraphs) from the JD before the main tailor call — saves tokens and improves output quality.`
+  },
+  {
+    sev: 'high',
+    icon: '🖥️',
+    title: 'Desktop layout wastes horizontal space on wide screens',
+    summary: 'The two-column layout (resume left, JD right) doesn\'t use a max-width container well above ~1400px. The output panel also appears inline below, making the flow feel disconnected.',
+    fix: 'Cap layout width and use 3-column on large screens',
+    detail: `<strong>Fix:</strong><br>
+1. Wrap the main content in a <code>max-width: 1200px; margin: 0 auto</code> container if not already — prevents content from sprawling on ultrawide monitors.<br>
+2. On screens ≥1280px, consider a 3-column layout: <strong>[Resume input] [Job Description + Tailor button] [Output / Result]</strong> — this keeps the full workflow visible without scrolling.<br>
+3. The output section currently requires scrolling past the inputs to see results — on desktop this should be side-by-side or at least sticky.`
+  },
+  {
+    sev: 'medium',
+    icon: '🔔',
+    title: 'No feedback when tailor is running on slow connections',
+    summary: 'The 4-step progress animation plays during tailoring, but if the serverless function cold-starts or is slow, there\'s no timeout messaging — users assume it broke.',
+    fix: 'Add timeout message after 30s',
+    detail: `<strong>Fix:</strong><br>
+1. After 30 seconds, show a reassurance message below the progress steps: "Still working — this can take up to 45s on first run."<br>
+2. After 60 seconds (the maxDuration), show: "Taking longer than expected. <u>Try again →</u>" with a retry button that re-submits the same inputs.<br>
+3. Consider adding a streaming response from <code>claude.js</code> — the output would start appearing word-by-word, which feels much faster even if total time is the same.`
+  },
+  {
+    sev: 'medium',
+    icon: '🔗',
+    title: 'GHL tag fetching is inefficient',
+    summary: 'The GHL tag query param is broken, so the app fetches all contacts and filters client-side inside the serverless function. This will slow down as contacts grow.',
+    fix: 'Monitor contact list size',
+    detail: `Currently working but not scalable. At ~1,000+ contacts the serverless function may hit memory limits.<br><br>
+<strong>Mitigation:</strong><br>
+1. Add pagination to the GHL fetch loop in the relevant function.<br>
+2. Cache the filtered list in memory (Map with a 5-min TTL) to avoid redundant fetches on burst traffic.<br>
+3. Long-term: if GHL fixes their tag endpoint, switch to it — add a comment in code to check periodically.`
+  },
+  {
+    sev: 'critical',
+    icon: '🔐',
+    title: 'No onboarding gate — free users can attempt unlimited AI calls client-side',
+    summary: 'The 3-tailor lifetime limit for free users is enforced by the frontend reading a localStorage counter. A user who knows to clear localStorage or open DevTools can reset their count and make unlimited calls.',
+    fix: 'Move tailor count to server-side',
+    detail: `Client-side enforcement of usage limits is never a real limit — it\'s a suggestion.<br><br>
+<strong>Current risk:</strong> Free users increment <code>1ststep_tailor_count</code> (or similar) in localStorage. Clearing it resets the limit. The AI call still hits <code>claude.js</code> with a valid free-tier tierToken — nothing server-side stops it.<br><br>
+<strong>Fix:</strong><br>
+1. Once Supabase is added (already planned), store <code>tailor_count</code> server-side keyed by email.<br>
+2. In <code>claude.js</code>, before processing a free-tier tailor request, query the count. Reject with 429 if over limit.<br>
+3. Short-term bridge: include the count inside the signed tierToken payload so it can\'t be tampered with client-side. Reissue the token after each use.<br><br>
+<strong>Priority:</strong> Low risk during beta (small user base), but becomes a real cost exposure at scale — Sonnet calls are not free.`
+  },
+  {
+    sev: 'critical',
+    icon: '📄',
+    title: 'Landing page has no "Sign In" destination — nav link goes nowhere',
+    summary: 'The landing page nav has a "Sign in" link pointing to #signin — a hash anchor that doesn\'t exist on the page. Returning users who land on resume.1ststep.ai have no way to get into the app.',
+    fix: 'Point Sign In to app.1ststep.ai',
+    detail: `The landing page nav item <code>[Sign in](#signin)</code> is a broken anchor. There is no <code>id="signin"</code> section on the page and no redirect to the app.<br><br>
+<strong>Fix:</strong><br>
+1. Change the Sign In link href to <code>https://app.1ststep.ai</code> (or wherever the app lives).<br>
+2. Consider adding a subtle "Already a member? Sign in →" line below the hero CTA too — returning users shouldn\'t have to hunt for the login path.<br><br>
+<strong>Impact:</strong> Any returning user who bookmarks or revisits the landing page is stuck. This is a direct revenue leak — churned users who want to re-subscribe can\'t get back in easily.`
+  },
+  {
+    sev: 'high',
+    icon: '📱',
+    title: 'Landing page has no mobile nav — links collapse with no hamburger menu',
+    summary: 'The landing page nav (How it works · Features · Pricing · FAQs · Sign in) has no visible mobile collapse behaviour. On small screens the links likely overflow or disappear.',
+    fix: 'Add mobile hamburger or stack nav links',
+    detail: `The landing page is hosted on GHL (LeadConnector CDN) and the nav is a standard horizontal list. On viewports below ~768px this will either overflow horizontally or wrap awkwardly depending on GHL\'s theme.<br><br>
+<strong>Fix:</strong><br>
+1. In GHL\'s page builder, enable the mobile nav hamburger toggle if available in the theme settings.<br>
+2. If using custom CSS/HTML: add a media query that hides the nav links at &lt;768px and shows a ☰ toggle button instead.<br>
+3. At minimum, ensure the CTA button ("Start for $49/mo") is full-width and prominently visible on mobile — it\'s the only thing that matters on a small screen.`
+  },
+  {
+    sev: 'high',
+    icon: '🔁',
+    title: 'No post-payment redirect or onboarding flow',
+    summary: 'After a user pays via Stripe, there is no confirmed onboarding path. The Stripe buy link goes to Stripe Checkout — but what happens after payment completes is unclear.',
+    fix: 'Add success redirect + welcome email trigger',
+    detail: `Stripe Checkout supports a <code>success_url</code> parameter. Without it, users land on a generic Stripe confirmation page with no clear next step.<br><br>
+<strong>Fix:</strong><br>
+1. Set <code>success_url</code> on the Stripe Checkout session to redirect to <code>app.1ststep.ai?welcome=1</code>.<br>
+2. On app load, detect <code>?welcome=1</code> and show a one-time onboarding modal: "You\'re on Complete — here\'s what to do first."<br>
+3. The <code>stripe-webhook.js</code> <code>checkout.session.completed</code> event should trigger the GHL welcome sequence and the Resend welcome email immediately — verify this is actually wired up and not just planned.<br>
+4. Without this flow, paid users land in a confusing state and may not understand what they just unlocked — leading to immediate churn.`
+  },
+  {
+    sev: 'high',
+    icon: '🍪',
+    title: 'No privacy/cookie consent banner — potential GDPR/CCPA exposure',
+    summary: 'The landing page and app collect email, resume data, and fire tracking events (GHL CRM tags) with no visible cookie consent or privacy notice presented to users before data collection begins.',
+    fix: 'Add consent banner and review data practices',
+    detail: `The landing page footer has a "Privacy" link pointing to <code>#privacy</code> — another broken anchor with no actual privacy policy page.<br><br>
+<strong>Minimum viable compliance fix:</strong><br>
+1. Write a real Privacy Policy page (can use a generator like Termly or Iubenda for a first draft) covering: what data is collected, why, who it\'s shared with (Stripe, GHL, Anthropic), and how to request deletion.<br>
+2. Add a simple cookie/consent banner on the landing page — GHL has a built-in cookie banner in settings.<br>
+3. The app itself should display a "By continuing you agree to our Privacy Policy" line at the email capture / sign-up step.<br>
+4. The "Terms" and "Contact" footer links are also broken anchors — fix or remove them.<br><br>
+<strong>Note:</strong> If any EU or California users sign up, GDPR and CCPA apply. Resume data (containing work history, personal details) is considered sensitive personal data.`
+  },
+  {
+    sev: 'high',
+    icon: '⚡',
+    title: 'Vercel cold starts will kill the first tailor attempt for new users',
+    summary: 'On the Hobby plan, serverless functions spin down after inactivity. A new user\'s very first tailor call — the most important moment in the product — may timeout waiting for a cold start on claude.js.',
+    fix: 'Add a keepalive ping + expectation setting',
+    detail: `Vercel Hobby functions have no "keep warm" option. After ~10 minutes of inactivity, the next request takes 2–5s just to boot before any actual processing happens. Combined with a 60s Claude API call, the first experience can feel broken.<br><br>
+<strong>Fix options:</strong><br>
+1. <strong>Keepalive cron:</strong> Add a scheduled ping (via GHL workflow, Upstash QStash, or a free cron service like cron-job.org) that hits <code>/api/health</code> every 5 minutes during business hours — keeps the function warm.<br>
+2. <strong>UX expectation setting:</strong> Show a "warming up..." message for the first 3 seconds of any AI call so users don\'t rage-click the button.<br>
+3. <strong>Long-term:</strong> Vercel Pro removes cold start latency concerns and gives 300s max duration vs 60s — worth it once revenue supports it.`
+  },
+  {
+    sev: 'medium',
+    icon: '🧪',
+    title: 'No error boundary or fallback UI for failed AI calls',
+    summary: 'If claude.js returns a 500, times out, or the Anthropic API is down, the app likely shows a silent failure or a raw error object — not a user-friendly retry state.',
+    fix: 'Add global error handling for AI calls',
+    detail: `<strong>Fix:</strong><br>
+1. Wrap every <code>fetch</code> to <code>/api/claude</code> in a try/catch with explicit error state handling.<br>
+2. On failure, show a friendly message: "Something went wrong — your inputs are saved. <u>Try again →</u>" with a retry button that re-submits without the user having to re-paste anything.<br>
+3. Log failures to <code>_alert.js</code> (Resend alert to yourself) when the error rate spikes — right now you have no visibility into how often AI calls fail in production.<br>
+4. Differentiate error types in the UI: "Our AI is busy — try again in 30s" (429/503) vs "Something went wrong on our end" (500) vs "Your session expired — refresh the page" (401).`
+  },
+  {
+    sev: 'medium',
+    icon: '🔍',
+    title: 'No SEO meta tags, OG image, or structured data on landing page',
+    summary: 'The landing page title is "AI Resume Tailoring SaaS for Job Seekers | 1stStep.ai" but there are no Open Graph tags, no Twitter card, no meta description, and no schema markup. Social shares and Google previews will look broken.',
+    fix: 'Add basic SEO and OG meta tags',
+    detail: `<strong>Fix — add to landing page &lt;head&gt;:</strong><br>
+1. <code>&lt;meta name="description" content="1stStep.ai rewrites your resume for every job application — ATS-optimised, tailored to the JD, downloaded in seconds."&gt;</code><br>
+2. Open Graph tags: <code>og:title</code>, <code>og:description</code>, <code>og:image</code> (create a 1200×630 card), <code>og:url</code>.<br>
+3. Twitter card: <code>twitter:card</code>, <code>twitter:title</code>, <code>twitter:description</code>, <code>twitter:image</code>.<br>
+4. GHL has a built-in SEO settings panel per page — use it rather than editing raw HTML.<br><br>
+<strong>Why it matters:</strong> Every time a beta user shares the link, it previews as a blank card. Word-of-mouth is your best early growth channel and broken link previews kill click-through.`
+  },
+  {
+    sev: 'medium',
+    icon: '💳',
+    title: 'Stripe Checkout has no trial period or money-back framing',
+    summary: 'The current pricing goes straight to a $49 charge with no trial, no money-back guarantee messaging, and no friction reduction for first-time buyers. Conversion rate will suffer.',
+    fix: 'Add 7-day trial or money-back guarantee',
+    detail: `Cold traffic converting to a $49/mo subscription with zero risk reversal is a hard ask.<br><br>
+<strong>Options (pick one):</strong><br>
+1. <strong>7-day free trial:</strong> Stripe Checkout supports <code>trial_period_days</code>. The card is captured upfront but not charged for 7 days. Send a reminder email on day 5 (via GHL/Resend). This is the highest-converting pattern for SaaS.<br>
+2. <strong>Money-back guarantee:</strong> Add "7-day money-back guarantee — no questions asked" below every CTA button. No code change needed — just copy and a commitment to honour refunds via Stripe Dashboard.<br>
+3. <strong>With the new Free tier:</strong> The 3 free tailors already serve as a trial. Make sure this is the primary CTA: "Try free first" → upgrade prompt after tailor #2 (not #3 — catch them while momentum is high).`
+  },
+];
+ 
+ 
+const API_FUNCTIONS = [
+  { name: 'claude.js', purpose: 'Main AI proxy — tailor (free: Haiku 3x lifetime / complete: Sonnet unlimited), cover letter, interview prep, AI career chat (complete only, token-throttled). linkedin callType kept but deprioritised. bulk_apply + jobs search removed.', actions: ['tailor','cover_letter','interview','utility','chat'], dur: '60s', count: true },
+  { name: 'jobs.js', purpose: '⚠ RETIRING — replace with URL/paste JD input. Frees 1 Vercel function slot. Remove Adzuna API key dependency and fragile Indeed scraper.', actions: [], dur: '30s', count: true },
+  { name: 'subscription.js', purpose: 'Stripe tier lookup + LinkedIn OAuth flow. Simplify tier check: only "free" vs "complete" — remove essential branch.', actions: ['linkedin-init','linkedin-callback'], dur: '15s', count: true },
+  { name: 'health.js', purpose: 'Admin/cron — daily email blasts + GHL backfill', actions: ['blast','backfill'], dur: '—', count: true },
+  { name: 'notify-signup.js', purpose: 'New user signup — upserts GHL contact, sends welcome email', actions: [], dur: '—', count: true },
+  { name: 'track-event.js', purpose: 'CRM event tracking — fires GHL tags on product milestones', actions: [], dur: '—', count: true },
+  { name: 'ghl-stage.js', purpose: 'Moves GHL contact to active_user / power_user pipeline stage', actions: [], dur: '—', count: true },
+  { name: 'stripe-webhook.js', purpose: 'Handles Stripe subscription events (checkout, cancel, etc.)', actions: [], dur: '—', count: true },
+  { name: 'tally-webhook.js', purpose: 'Handles Tally form submissions (beta signups)', actions: [], dur: '—', count: true },
+  { name: 'beta.js', purpose: 'Beta access management', actions: [], dur: '—', count: true },
+  { name: 'beta-expiry-check.js', purpose: 'Daily cron (10:00 UTC) — expires beta users', actions: [], dur: '—', count: true },
+  { name: 'app-config.js', purpose: 'Returns public config (feature flags, tier limits) to frontend', actions: [], dur: '—', count: true },
+  { name: '_alert.js', purpose: 'Shared Resend alert helper (NOT a route — underscore exempt)', actions: [], dur: '—', count: false },
+];
+ 
+const ROADMAP_DONE = [
+  { icon: '✓', text: 'Resume tailoring (ATS + DOCX)', note: 'Free: 3x Haiku · Complete: unlimited Sonnet' },
+  { icon: '✓', text: 'Cover letter generation', note: 'Complete tier only' },
+  { icon: '✓', text: 'Application tracker', note: 'With status + follow-up dates' },
+  { icon: '✓', text: 'Interview Cheat Sheet v2', note: 'Complete tier only' },
+  { icon: '✓', text: 'LinkedIn OAuth sign-in', note: 'Profile auto-fill on signup' },
+  { icon: '✓', text: 'LinkedIn PDF import', note: 'Resume import via PDF.js — keep' },
+  { icon: '✓', text: 'GHL CRM integration', note: 'Contacts, tags, pipeline' },
+  { icon: '✓', text: 'Beta email blast infra', note: '' },
+  { icon: '✓', text: 'Application event tracking', note: '' },
+  { icon: '✕', text: 'Job Search (Adzuna + Indeed)', note: 'Retiring — replace with paste/URL input' },
+  { icon: '✕', text: 'Bulk Apply', note: 'Removing — undermines brand + no retention value' },
+  { icon: '✕', text: 'Essential tier', note: 'Collapsing to Free / Complete only' },
+];
+ 
+const ROADMAP_NEXT = [
+  { icon: '🔴', text: 'Retire jobs.js + free function slot', note: 'Replace job search tab with URL/paste JD input — kills scraper fragility too' },
+  { icon: '🔴', text: 'Collapse essential → free/complete in Stripe + code', note: 'Remove essential branch from subscription.js, claude.js tier checks, and UI' },
+  { icon: '🔴', text: 'Remove Bulk Apply from nav + codebase', note: 'Dead weight — no retention, wrong brand signal' },
+  { icon: '🔴', text: 'Add localStorage cloud backup', note: 'Supabase free tier — email-keyed sync' },
+  { icon: '🟡', text: 'Nav restructure — demote LinkedIn', note: 'Remove from bottom nav → More Tools; reclaim slot for Backup' },
+  { icon: '🟡', text: 'Auto-create tracker entry on tailor', note: 'Zero-friction path to 5+ applications = retention hook' },
+  { icon: '🟡', text: 'Rate limiting on claude.js', note: 'Upstash Redis sliding window' },
+  { icon: '🟡', text: 'Split index.html', note: 'Extract tracker.js + auth.js' },
+];
+ 
+const ROADMAP_FUTURE = [
+  { icon: '◈', text: 'AI Career Chat', note: 'Complete tier only · Sonnet · token throttle (2k/day) · resume+JD context' },
+  { icon: '◈', text: 'Chrome Extension — 1-click apply', note: 'Greenhouse + Lever first, then LinkedIn' },
+  { icon: '◈', text: 'Interview Prep promotion', note: 'Surface more prominently — high-intent repeat visit driver' },
+  { icon: '◈', text: 'Notification engine', note: 'Follow-up nudges, application decay alerts' },
+  { icon: '◈', text: 'Market Relevancy Score', note: 'Resume vs. current job market — Complete tier upsell hook' },
+  { icon: '◈', text: 'Multi-device sync', note: 'Requires cloud persistence first' },
+  { icon: '◈', text: 'Streaming AI responses', note: 'Better UX for long tailoring calls — add token guard first' },
+];
+ 
+// ── RENDER ────────────────────────────────────────────
+ 
+function switchTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+ 
+let selectedNode = null;
+ 
+function showDetail(key) {
+  const d = DETAILS[key];
+  const drawer = document.getElementById('detail-drawer');
+ 
+  if (selectedNode === key) {
+    drawer.classList.remove('open');
+    drawer.innerHTML = '';
+    if (selectedNode) document.getElementById('node-' + selectedNode)?.classList.remove('selected');
+    selectedNode = null;
+    return;
+  }
+ 
+  if (selectedNode) document.getElementById('node-' + selectedNode)?.classList.remove('selected');
+  document.getElementById('node-' + key)?.classList.add('selected');
+  selectedNode = key;
+ 
+  let html = `<div class="detail-title">${d.title} <button class="close-btn" onclick="showDetail('${key}')">✕</button></div>`;
+  html += '<div class="detail-grid">';
+  d.sections.forEach(sec => {
+    html += `<div class="detail-section"><h4>${sec.title}</h4><ul>`;
+    sec.items.forEach(item => {
+      if (typeof item === 'string') {
+        html += `<li>${item}</li>`;
+      } else {
+        const cls = item.type === 'issue' ? 'issue' : item.type === 'warn' ? 'warn' : '';
+        html += `<li class="${cls}">${item.text}</li>`;
+      }
+    });
+    html += '</ul></div>';
+  });
+  html += '</div>';
+ 
+  drawer.innerHTML = html;
+  drawer.classList.add('open');
+  drawer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+ 
+// Render issues
+const issuesList = document.getElementById('issues-list');
+ISSUES.forEach((issue, i) => {
+  const sevClass = issue.sev === 'critical' ? 'sev-critical' : issue.sev === 'high' ? 'sev-high' : 'sev-medium';
+  issuesList.innerHTML += `
+    <div class="issue-card" onclick="toggleIssue(${i})">
+      <div class="issue-sev ${sevClass}">${issue.icon}</div>
+      <div class="issue-body">
+        <h3>${issue.title}</h3>
+        <p>${issue.summary}</p>
+        <div class="issue-detail" id="issue-${i}">${issue.detail}</div>
+      </div>
+      <div class="issue-fix">${issue.fix}</div>
+    </div>
+  `;
+});
+ 
+function toggleIssue(i) {
+  const el = document.getElementById('issue-' + i);
+  el.classList.toggle('open');
+}
+ 
+// Render API table
+const tbody = document.getElementById('api-tbody');
+let fnCount = 0;
+API_FUNCTIONS.forEach(fn => {
+  if (fn.count) fnCount++;
+  const actionsHtml = fn.actions.length
+    ? fn.actions.map(a => `<span class="fn-action">?action=${a}</span>`).join('')
+    : '<span style="color:var(--muted);font-size:11px">—</span>';
+  tbody.innerHTML += `
+    <tr>
+      <td><div class="fn-name">${fn.name}</div>${!fn.count ? '<div style="font-size:10px;color:var(--accent);margin-top:3px">exempt (_prefix)</div>' : ''}</td>
+      <td>${fn.purpose}</td>
+      <td><div class="fn-actions">${actionsHtml}</div></td>
+      <td><span class="fn-dur">${fn.dur}</span></td>
+    </tr>
+  `;
+});
+ 
+// Count bar
+const countRow = document.createElement('tr');
+countRow.innerHTML = `
+  <td colspan="4" style="padding:14px;">
+    <div class="fn-count-bar">
+      <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);margin-right:4px">FUNCTION SLOTS</span>
+      <div class="count-visual">
+        ${Array.from({length:12},(_,i)=>`<div class="count-dot used ${i>=11?'alert':''}"></div>`).join('')}
+        ${Array.from({length:0},()=>`<div class="count-dot"></div>`).join('')}
+      </div>
+      <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--danger)">12/12 — AT LIMIT</span>
+    </div>
+  </td>
+`;
+tbody.parentElement.appendChild(countRow);
+ 
+// Render roadmap
+function renderRoadmapCol(id, items) {
+  const el = document.getElementById(id);
+  items.forEach(item => {
+    const retired = item.icon === '✕';
+    el.innerHTML += `
+      <div class="roadmap-item${retired ? ' retired' : ''}">
+        <span class="ri-icon">${item.icon}</span>
+        <div><p>${item.text}</p>${item.note ? `<small>${item.note}</small>` : ''}</div>
+      </div>
+    `;
+  });
+}
+ 
+renderRoadmapCol('roadmap-done', ROADMAP_DONE);
+renderRoadmapCol('roadmap-next', ROADMAP_NEXT);
+renderRoadmapCol('roadmap-future', ROADMAP_FUTURE);
+ 
+// ── EXTENSION DETAILS ─────────────────────────────────
+const EXT_DETAILS = {
+  'ext-popup': {
+    title: '🔲 Toolbar Popup',
+    sections: [
+      { title: 'What it does', items: [
+        'Detects if current tab is a supported job page',
+        'Shows job title + company parsed from the page',
+        'Displays resume match score (via claude.js autofill call)',
+        'One "Fill & Review" button — triggers content script form fill',
+        'Login state: checks chrome.storage for email + tierToken',
+      ]},
+      { title: 'Implementation notes', items: [
+        { text: 'Popup closes on blur — use Side Panel for persistent UX instead', type: 'warn' },
+        { text: 'Keep popup.js lightweight — heavy logic goes in background.js or content.js', type: 'ok' },
+      ]},
+    ]
+  },
+  'ext-sidebar': {
+    title: '📋 Side Panel',
+    sections: [
+      { title: 'What it does', items: [
+        'Persistent panel beside the job page (Chrome Side Panel API, MV3)',
+        'Shows all parsed form fields with editable values before submitting',
+        'User can override any field, then hit "Apply" to fill + submit',
+        'Saves applied job to 1stStep.ai tracker via track-event.js',
+      ]},
+      { title: 'Implementation notes', items: [
+        { text: 'Side Panel API requires Chrome 114+ — covers ~95% of users', type: 'ok' },
+        { text: 'Use chrome.sidePanel.setOptions() to only show panel on job pages', type: 'ok' },
+        { text: 'Panel communicates with content.js via chrome.runtime.sendMessage', type: 'ok' },
+      ]},
+    ]
+  },
+  'ext-content': {
+    title: '⚙ Content Scripts',
+    sections: [
+      { title: 'Responsibilities', items: [
+        'Detect if page has an apply form / apply button',
+        'Extract job description text from the page',
+        'Map AI-returned field values to real DOM inputs',
+        'Handle multi-step forms (LinkedIn Easy Apply has 3–6 steps)',
+        'Fire MutationObserver for SPAs that load forms dynamically',
+      ]},
+      { title: 'The hard parts', items: [
+        { text: 'Workday uses Shadow DOM — querySelector won\'t reach inputs', type: 'issue' },
+        { text: 'LinkedIn Easy Apply modal changes selectors frequently', type: 'issue' },
+        { text: 'File upload fields (resume PDF) need special handling', type: 'warn' },
+        { text: 'React/Vue inputs need dispatchEvent(new Event("input")) not just .value=', type: 'warn' },
+        { text: 'Start with Greenhouse + Lever — stable, predictable, high-ROI', type: 'ok' },
+      ]},
+    ]
+  },
+  'ext-api': {
+    title: '🤖 claude.js — autofill callType',
+    sections: [
+      { title: 'New callType to add', items: [
+        'callType: "autofill" — takes resume + jobDescription',
+        'Returns structured JSON: { firstName, lastName, email, phone, linkedin, coverLetter, workAuth, salary, customAnswers[] }',
+        'Runs on Claude Haiku for Essential, Sonnet for Complete tier',
+        'Add to existing claude.js — no new function slot needed',
+      ]},
+      { title: 'Prompt design', items: [
+        { text: 'Return ONLY valid JSON — no markdown, no preamble', type: 'ok' },
+        { text: 'Include "customAnswers" array for open-ended screening questions', type: 'ok' },
+        { text: 'Cap at 1000 tokens — field values are short', type: 'ok' },
+      ]},
+    ]
+  },
+  'ext-sync': {
+    title: '🔗 Profile Sync — the Blocking Dependency',
+    sections: [
+      { title: 'The problem', items: [
+        { text: 'Extension cannot read app.1ststep.ai localStorage — different origin', type: 'issue' },
+        { text: 'Without the user\'s resume, the autofill AI call has nothing to work from', type: 'issue' },
+        { text: 'This is why the localStorage-only architecture is a blocker for the extension', type: 'issue' },
+      ]},
+      { title: 'Solutions (pick one)', items: [
+        { text: 'Option A: User pastes resume into extension popup (lowest effort, worst UX)', type: 'warn' },
+        { text: 'Option B: Add a "Copy to Extension" button in the web app that writes to chrome.storage via deep link', type: 'warn' },
+        { text: 'Option C: Add Supabase sync (the right fix) — extension reads from cloud by email+token', type: 'ok' },
+        { text: 'Recommendation: build Option B as a bridge now, migrate to Option C with the Supabase work', type: 'ok' },
+      ]},
+    ]
+  },
+  'ext-tracker': {
+    title: '📊 CRM — New Extension Events',
+    sections: [
+      { title: 'New GHL tags to add', items: [
+        'extension_install — fired on chrome.runtime.onInstalled',
+        'extension_apply — fired on every successful 1-click apply',
+        'extension_autofill — fired when AI fills a form (even if not submitted)',
+        'Add these to EVENT_TAGS map in track-event.js',
+      ]},
+      { title: 'Notes', items: [
+        { text: 'Extension calls track-event.js directly — same API as web app', type: 'ok' },
+        { text: 'Include email + site (linkedin, greenhouse, etc.) in event payload for analytics', type: 'ok' },
+      ]},
+    ]
+  },
+};
+ 
+let selectedExtNode = null;
+ 
+function showExtDetail(key) {
+  const d = EXT_DETAILS[key];
+  const drawer = document.getElementById('ext-detail-drawer');
+ 
+  if (selectedExtNode === key) {
+    drawer.classList.remove('open');
+    drawer.innerHTML = '';
+    if (selectedExtNode) document.getElementById('ext-node-' + selectedExtNode.replace('ext-',''))?.classList.remove('selected');
+    selectedExtNode = null;
+    return;
+  }
+ 
+  if (selectedExtNode) document.getElementById('ext-node-' + selectedExtNode.replace('ext-',''))?.classList.remove('selected');
+  const nodeId = 'ext-node-' + key.replace('ext-', '');
+  document.getElementById(nodeId)?.classList.add('selected');
+  selectedExtNode = key;
+ 
+  let html = `<div class="detail-title">${d.title} <button class="close-btn" onclick="showExtDetail('${key}')">✕</button></div>`;
+  html += '<div class="detail-grid">';
+  d.sections.forEach(sec => {
+    html += `<div class="detail-section"><h4>${sec.title}</h4><ul>`;
+    sec.items.forEach(item => {
+      if (typeof item === 'string') {
+        html += `<li>${item}</li>`;
+      } else {
+        const cls = item.type === 'issue' ? 'issue' : item.type === 'warn' ? 'warn' : '';
+        html += `<li class="${cls}">${item.text}</li>`;
+      }
+    });
+    html += '</ul></div>';
+  });
+  html += '</div>';
+ 
+  drawer.innerHTML = html;
+  drawer.classList.add('open');
+  drawer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+</script>
+</body>
+</html>

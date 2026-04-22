@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(where vercel *)",
+      "Bash(where npx *)",
+      "Bash(where python *)",
+      "Bash(npx --version)",
+      "Bash(vercel --version)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(awk -F'id=\"' '{print $2}')",
+      "WebSearch",
+      "WebFetch(domain:jobright.ai)",
+      "WebFetch(domain:www.adzuna.co.uk)",
+      "WebFetch(domain:jobhire.ai)",
+      "WebFetch(domain:www.usesprout.com)",
+      "WebFetch(domain:skywork.ai)",
+      "WebFetch(domain:www.remotejobassistant.com)",
+      "WebFetch(domain:jobcopilot.com)",
+      "WebFetch(domain:apps.apple.com)",
+      "WebFetch(domain:resumehog.com)",
+      "WebFetch(domain:play.google.com)",
+      "WebFetch(domain:chromewebstore.google.com)",
+      "WebFetch(domain:www.techraisal.com)",
+      "WebFetch(domain:www.revoyant.com)"
+    ]
+  }
+}
