@@ -37,10 +37,7 @@
 These block the next phase of the product. Complete in order.
 
 ### 1. Retire jobs.js + free the Vercel slot
-- Remove job search tab from UI
-- Delete `api/jobs.js`
-- Replace with URL/paste JD input field
-- Remove `ADZUNA_API_KEY` env var
+- **STATUS:** ✅ SHIPPED. `api/jobs.js` deleted. Next: Remove job search tab from UI and replace with JD input.
 - **Why now:** Frees 1 of 12 Vercel function slots. Nothing else can be built without this.
 - **See:** BUG-001, BUG-002
 
