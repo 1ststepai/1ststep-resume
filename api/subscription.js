@@ -97,33 +97,72 @@ function productToTier(productName = '') {
 
 // ── LinkedIn popup close page ────────────────────────────────────────────────
 // Rendered inside the OAuth popup — posts profile data to the parent window then closes.
-function popupHtml({ profile, error } = {}) {
+function handlePopupAuth({ profile, error } = {}) {
   const payload = JSON.stringify(error ? { error } : { profile });
+  const appUrl = 'https://app.1ststep.ai'; // Use a constant for the app URL
+
+  // On mobile, this might open as a new tab. Redirect back to the app.
+  // On desktop, it's a popup. Try to close it.
+  const closeOrRedirect = () => {
+    try { window.close(); } catch(e) { window.location.href = appUrl; } // If close fails, redirect
+    setTimeout(() => { window.location.href = appUrl; }, 400); // Fallback redirect
+  };
+
+  // Use localStorage as a reliable fallback for parent communication
+  try { localStorage.setItem('1ststep_li_auth', JSON.stringify({ ts: Date.now(), payload })); } catch(e) { console.error("localStorage error:", e); }
+
+  // Attempt to use postMessage for desktop popup flow
+  if (window.opener && !window.opener.closed) {
+    window.opener.postMessage({ type: '1ststep_linkedin', payload }, appUrl);
+  }
+
+  // Schedule closing or redirecting after a short delay
+  setTimeout(closeOrRedirect, 600);
+}
+
+function renderPopupHtml({ profile, error } = {}) {
+  const title = error ? "LinkedIn Connection Failed" : "Connecting LinkedIn...";
+  const message = error
+    ? "Could not connect LinkedIn. You can close this window."
+    : "Connected! Closing this window...";
+  const errorStyle = error ? "color: #F87171;" : ""; // Red for errors
+
   return `<!DOCTYPE html><html><head><meta charset="UTF-8">
-<title>Connecting…</title>
+<title>${title}</title>
 <style>body{margin:0;font-family:system-ui,sans-serif;background:#0F172A;color:#F1F5F9;
 display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:12px}
 .spinner{width:32px;height:32px;border:3px solid #334155;border-top-color:#6366F1;border-radius:50%;animation:spin 0.7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}</style></head>
 <body>
 ${error
-  ? `<div style="font-size:14px;color:#F87171">Could not connect LinkedIn. You can close this window.</div>`
-  : `<div class="spinner"></div><div style="font-size:14px;color:#94A3B8">Connected! Closing…</div>`}
+  ? `<div style="font-size:14px; ${errorStyle}">${message}</div>`
+  : `<div class="spinner"></div><div style="font-size:14px;color:#94A3B8">${message}</div>`}
 <script>
-try {
-  // Write to localStorage so the parent tab can pick it up (works on mobile where window.opener is null)
-  localStorage.setItem('1ststep_li_auth', JSON.stringify({ ts: Date.now(), payload: ${payload} }));
-  // Also try postMessage for desktop popup flow
+  // Logic to communicate with the parent window and close/redirect
+  const payload = ${JSON.stringify({ profile, error })};
+  const appUrl = '${'https://app.1ststep.ai'}'; // Ensure this is the correct app URL
+
+  // Use localStorage as a reliable fallback for parent communication
+  try {
+    localStorage.setItem('1ststep_li_auth', JSON.stringify({ ts: Date.now(), payload }));
+  } catch(e) { console.error("localStorage error:", e); }
+
+  // Attempt to use postMessage for desktop popup flow
   if (window.opener && !window.opener.closed) {
-    window.opener.postMessage({ type: '1ststep_linkedin', payload: ${payload} }, 'https://app.1ststep.ai');
+    window.opener.postMessage({ type: '1ststep_linkedin', payload }, appUrl);
   }
-} catch(e) {}
-// On mobile this opened as a new tab — go back to the app instead of closing
-setTimeout(() => {
-  try { window.close(); } catch(e) {}
-  // If close didn't work (mobile new tab), redirect back to app
-  setTimeout(() => { window.location.href = 'https://app.1ststep.ai'; }, 400);
-}, 600);
+
+  // Schedule closing or redirecting after a short delay
+  setTimeout(() => {
+    try {
+      window.close();
+    } catch(e) {
+      // If close fails (e.g., opened as a new tab), redirect to the app
+      window.location.href = appUrl;
+    }
+    // Fallback redirect if window.close() was not called or failed
+    setTimeout(() => { window.location.href = appUrl; }, 400);
+  }, 600);
 </script>
 </body></html>`;
 }

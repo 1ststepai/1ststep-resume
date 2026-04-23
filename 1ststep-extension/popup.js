@@ -105,7 +105,11 @@ function showJobCard(job, auth) {
 async function getCurrentJob() {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage({ action: 'GET_CURRENT_JOB' }, (response) => {
-      if (chrome.runtime.lastError) { resolve(null); return; }
+      if (chrome.runtime.lastError) {
+        console.error('[1stStep] Error getting current job:', chrome.runtime.lastError.message);
+        resolve(null);
+        return;
+      }
       resolve(response?.job || null);
     });
   });
@@ -120,6 +124,7 @@ async function tailorResume(job, auth) {
   }
 
   if (auth.tier === 'free') {
+    // Ensure the user is prompted to upgrade on the correct URL
     if (!confirm('Resume tailoring requires a paid subscription. Open 1stStep.ai to upgrade?')) return;
     chrome.tabs.create({ url: APP_URL });
     return;
@@ -133,6 +138,9 @@ async function tailorResume(job, auth) {
     const subRes = await fetch(
       `${APP_URL}/api/subscription?email=${encodeURIComponent(auth.email)}`
     );
+    if (!subRes.ok) { // Added check for subscription API call failure
+      throw new Error(`Failed to fetch subscription status: ${subRes.statusText}`);
+    }
     const subData = await subRes.json();
     const tierToken = subData.tierToken || auth.tierToken;
 
@@ -141,7 +149,7 @@ async function tailorResume(job, auth) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model:     'claude-sonnet-4-6',
+        model:     'claude-sonnet-4-6', // Ensure correct model is used
         callType:  'tailor',
         userEmail: auth.email,
         tierToken: tierToken,
@@ -163,15 +171,18 @@ async function tailorResume(job, auth) {
 
     await navigator.clipboard.writeText(text);
     tailorBtn.textContent = '✓ Copied!';
-    setTimeout(() => { tailorBtn.textContent = 'Tailor Resume'; }, 2000);
+    setTimeout(() => {
+      tailorBtn.textContent = 'Tailor Resume';
+      tailorBtn.disabled = false; // Re-enable button after successful copy
+    }, 2000);
 
   } catch (err) {
     console.error('[1stStep] Tailor error:', err);
     alert('Tailoring failed: ' + err.message);
-    tailorBtn.textContent = 'Tailor Resume';
-  } finally {
-    tailorBtn.disabled = false;
+    tailorBtn.textContent = 'Tailor Resume'; // Reset button text on error
+    tailorBtn.disabled = false; // Re-enable button on error
   }
+  // 'finally' block removed as disabling/enabling is handled within try/catch
 }
 
 // ─── START ───────────────────────────────────────────────────
