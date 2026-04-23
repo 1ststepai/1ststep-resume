@@ -194,7 +194,11 @@ async function exchangeLinkedInCode(code) {
       client_secret: process.env.LINKEDIN_CLIENT_SECRET || '',
     }),
   });
-  if (!r.ok) throw new Error(`LinkedIn token exchange failed: ${r.status}`);
+  if (!r.ok) {
+    const errorBody = await r.text(); // Get more details from the response
+    console.error(`LinkedIn token exchange failed: ${r.status} - ${errorBody}`);
+    throw new Error(`LinkedIn token exchange failed: ${r.status}`);
+  }
   return r.json();
 }
 
@@ -203,7 +207,11 @@ async function fetchLinkedInProfile(accessToken) {
   const r = await fetch('https://api.linkedin.com/v2/userinfo', {
     headers: { 'Authorization': `Bearer ${accessToken}` },
   });
-  if (!r.ok) throw new Error(`LinkedIn userinfo failed: ${r.status}`);
+  if (!r.ok) {
+    const errorBody = await r.text();
+    console.error(`LinkedIn userinfo failed: ${r.status} - ${errorBody}`);
+    throw new Error(`LinkedIn userinfo failed: ${r.status}`);
+  }
   return r.json();
 }
 
@@ -229,11 +237,14 @@ export default async function handler(req, res) {
   const headers = corsHeaders(req);
 
   if (req.method === 'OPTIONS') {
-    return res.status(204).set(headers).end();
+    // Apply CORS headers for OPTIONS requests
+    Object.entries(headers).forEach(([k, v]) => res.setHeader(k, v));
+    return res.status(204).end();
   }
 
+  // Apply CORS headers for all responses
   Object.entries(headers).forEach(([k, v]) => res.setHeader(k, v));
-  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Cache-Control', 'no-store'); // Prevent caching of sensitive info
 
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -244,7 +255,8 @@ export default async function handler(req, res) {
   // ── LinkedIn: init — return auth URL ─────────────────────────────────────
   if (action === 'linkedin-init') {
     if (!process.env.LINKEDIN_CLIENT_ID) {
-      return res.status(500).json({ error: 'LinkedIn not configured' });
+      console.error('LINKEDIN_CLIENT_ID not configured.');
+      return res.status(500).json({ error: 'LinkedIn integration not configured.' });
     }
     const state = genState();
     return res.status(200).json({ url: linkedinAuthUrl(state) });
@@ -254,13 +266,21 @@ export default async function handler(req, res) {
   if (action === 'linkedin-callback') {
     const { code, state, error: liError } = req.query;
 
+    // Strict origin check for LinkedIn callback to prevent CSRF
+    const origin = req.headers['origin'] || '';
+    if (!ALLOWED_ORIGINS.includes(origin) && !origin.endsWith('.vercel.app')) {
+      console.error(`Invalid origin for LinkedIn callback: ${origin}`);
+      return res.status(403).send(renderPopupHtml({ error: 'invalid_origin' }));
+    }
+
     if (liError) {
       // User denied — close popup with error signal
-      return res.status(200).send(popupHtml({ error: 'access_denied' }));
+      return res.status(200).send(renderPopupHtml({ error: 'access_denied' }));
     }
 
     if (!validateState(state)) {
-      return res.status(200).send(popupHtml({ error: 'invalid_state' }));
+      console.error('Invalid state parameter for LinkedIn callback.');
+      return res.status(200).send(renderPopupHtml({ error: 'invalid_state' }));
     }
 
     try {
@@ -274,34 +294,36 @@ export default async function handler(req, res) {
         name:      profile.name        || '',
         email:     profile.email       || '',
         picture:   profile.picture     || '',
-        linkedinUrl: profile.sub ? `linkedin.com/in/${profile.sub}` : '',
+        linkedinUrl: profile.sub ? `linkedin.com/in/${profile.sub}` : '', // Construct URL if sub is available
       };
 
-      console.log(`✅ LinkedIn auth: ${data.email}`);
-      return res.status(200).send(popupHtml({ profile: data }));
+      console.log(`✅ LinkedIn auth success for email: ${data.email}`);
+      return res.status(200).send(renderPopupHtml({ profile: data }));
     } catch (err) {
       console.error('LinkedIn callback error:', err.message);
-      return res.status(200).send(popupHtml({ error: 'auth_failed' }));
+      return res.status(200).send(renderPopupHtml({ error: 'auth_failed' }));
     }
   }
 
-  // Rate limit — prevents probing emails to discover paying customers
+  // Rate limit — prevents email enumeration / customer probing
   const ip = req.headers['x-real-ip']
-           || (req.headers['x-forwarded-for'] || '').split(',').pop().trim()
+           || (req.headers['x-forwarded-for'] || '').split(',').pop()?.trim() // Use optional chaining and trim
            || req.socket?.remoteAddress
            || 'unknown';
+
   if (isSubCheckRateLimited(ip)) {
+    alertOnAbuse('rate_limited', ip, `action:${action || 'check'}`); // More context in alert
     return res.status(429).json({ tier: 'free', error: 'Too many requests' });
   }
 
   const email = (req.query.email || '').trim().toLowerCase();
   if (!email || !email.includes('@')) {
-    return res.status(400).json({ error: 'Valid email required', tier: 'free' });
+    return res.status(400).json({ error: 'A valid email address is required.', tier: 'free' });
   }
 
   if (!process.env.STRIPE_SECRET_KEY) {
-    console.error('STRIPE_SECRET_KEY not set');
-    return res.status(200).json({ tier: 'free', error: 'Subscription check unavailable' });
+    console.error('STRIPE_SECRET_KEY not set. Subscription check unavailable.');
+    return res.status(200).json({ tier: 'free', error: 'Subscription check unavailable.' });
   }
 
   try {
@@ -319,19 +341,22 @@ export default async function handler(req, res) {
     for (const customer of customers.data) {
       const subscriptions = await stripe.subscriptions.list({
         customer: customer.id,
-        status:   'active',
+        status:   'active', // Only consider active subscriptions
         limit:    5,
         expand:   ['data.items.data.price.product'],
       });
 
       for (const sub of subscriptions.data) {
         for (const item of sub.items.data) {
-          const product = item.price.product;
-          const tier = productToTier(product.name);
-          if (tier !== 'free') {
-            // Only expose tier and status — no subscriptionId, productName, or billing dates.
-            // Include a short-lived HMAC tierToken so claude.js can verify without re-hitting Stripe.
-            return res.status(200).json({ tier, status: sub.status, tierToken: signTierToken(email, tier) });
+          // Ensure product is defined before accessing its properties
+          const product = item.price?.product;
+          if (product?.name) {
+            const tier = productToTier(product.name);
+            if (tier !== 'free') {
+              // Only expose tier and status — no subscriptionId, productName, or billing dates.
+              // Include a short-lived HMAC tierToken so claude.js can verify without re-hitting Stripe.
+              return res.status(200).json({ tier, status: sub.status, tierToken: signTierToken(email, tier) });
+            }
           }
         }
       }
@@ -339,28 +364,30 @@ export default async function handler(req, res) {
       // Also check trialing subscriptions
       const trialing = await stripe.subscriptions.list({
         customer: customer.id,
-        status:   'trialing',
+        status:   'trialing', // Consider trialing subscriptions as active for feature access
         limit:    3,
         expand:   ['data.items.data.price.product'],
       });
 
       for (const sub of trialing.data) {
         for (const item of sub.items.data) {
-          const product = item.price.product;
-          const tier = productToTier(product.name);
-          if (tier !== 'free') {
-            return res.status(200).json({ tier, status: 'trialing', tierToken: signTierToken(email, tier) });
+          const product = item.price?.product;
+          if (product?.name) {
+            const tier = productToTier(product.name);
+            if (tier !== 'free') {
+              return res.status(200).json({ tier, status: 'trialing', tierToken: signTierToken(email, tier) });
+            }
           }
         }
       }
     }
 
-    // Customer exists but no active paid subscription
+    // Customer exists but no active paid or trialing subscription found
     return res.status(200).json({ tier: 'free', status: 'no_active_subscription' });
 
   } catch (err) {
-    console.error('Stripe subscription check error:', err.message);
-    // Fail open — don't block the user if Stripe is down
-    return res.status(200).json({ tier: 'free', error: 'Subscription check failed' });
+    console.error('Stripe subscription check error:', err.message, { email }); // Log email for context
+    // Fail open — don't block the user if Stripe is temporarily down or an unexpected error occurs
+    return res.status(200).json({ tier: 'free', error: 'Subscription check failed.' });
   }
 }
