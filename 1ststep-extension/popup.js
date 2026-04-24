@@ -96,8 +96,8 @@ function showJobCard(job, auth) {
     tailorBtn.title = 'Tailor Resume requires an active subscription';
   }
 
-  tailorBtn.onclick  = () => tailorResume(job, auth);
-  autofillBtn.onclick = () => alert('Auto-fill coming soon!');
+  tailorBtn.onclick   = () => tailorResume(job, auth);
+  autofillBtn.onclick = () => autofillPage(auth);
 }
 
 // ─── JOB ─────────────────────────────────────────────────────
@@ -124,7 +124,6 @@ async function tailorResume(job, auth) {
   }
 
   if (auth.tier === 'free') {
-    // Ensure the user is prompted to upgrade on the correct URL
     if (!confirm('Resume tailoring requires a paid subscription. Open 1stStep.ai to upgrade?')) return;
     chrome.tabs.create({ url: APP_URL });
     return;
@@ -138,18 +137,17 @@ async function tailorResume(job, auth) {
     const subRes = await fetch(
       `${APP_URL}/api/subscription?email=${encodeURIComponent(auth.email)}`
     );
-    if (!subRes.ok) { // Added check for subscription API call failure
+    if (!subRes.ok) {
       throw new Error(`Failed to fetch subscription status: ${subRes.statusText}`);
     }
     const subData = await subRes.json();
     const tierToken = subData.tierToken || auth.tierToken;
 
-    // Call claude.js with the correct format it expects
     const response = await fetch(`${APP_URL}/api/claude`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model:     'claude-sonnet-4-6', // Ensure correct model is used
+        model:     'claude-sonnet-4-6',
         callType:  'tailor',
         userEmail: auth.email,
         tierToken: tierToken,
@@ -173,16 +171,75 @@ async function tailorResume(job, auth) {
     tailorBtn.textContent = '✓ Copied!';
     setTimeout(() => {
       tailorBtn.textContent = 'Tailor Resume';
-      tailorBtn.disabled = false; // Re-enable button after successful copy
+      tailorBtn.disabled = false;
     }, 2000);
 
   } catch (err) {
     console.error('[1stStep] Tailor error:', err);
     alert('Tailoring failed: ' + err.message);
-    tailorBtn.textContent = 'Tailor Resume'; // Reset button text on error
-    tailorBtn.disabled = false; // Re-enable button on error
+    tailorBtn.textContent = 'Tailor Resume';
+    tailorBtn.disabled = false;
   }
-  // 'finally' block removed as disabling/enabling is handled within try/catch
+}
+
+// ─── AUTOFILL ────────────────────────────────────────────────
+
+async function autofillPage(auth) {
+  if (!auth.email) {
+    alert('Please sign in to 1stStep.ai first.');
+    return;
+  }
+
+  autofillBtn.disabled    = true;
+  autofillBtn.textContent = 'Filling...';
+
+  try {
+    // Refresh tierToken (free tier is allowed for autofill; we still send one for rate-limit context)
+    let tierToken = auth.tierToken;
+    try {
+      const subRes = await fetch(
+        `${APP_URL}/api/subscription?email=${encodeURIComponent(auth.email)}`
+      );
+      if (subRes.ok) {
+        const subData = await subRes.json();
+        if (subData.tierToken) tierToken = subData.tierToken;
+      }
+    } catch (_) { /* soft fail — autofill does not hard-require tierToken */ }
+
+    // Target the active tab (where the job application form lives)
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) throw new Error('No active tab found.');
+
+    // Ask the content script to scan + fill
+    const response = await new Promise((resolve) => {
+      chrome.tabs.sendMessage(
+        tab.id,
+        { action: 'AUTOFILL', email: auth.email, tierToken },
+        (r) => {
+          if (chrome.runtime.lastError) {
+            resolve({ success: false, error: chrome.runtime.lastError.message });
+          } else {
+            resolve(r);
+          }
+        }
+      );
+    });
+
+    if (!response?.success) {
+      throw new Error(response?.error || 'Autofill failed.');
+    }
+
+    autofillBtn.textContent = `✓ ${response.filled}/${response.total}`;
+    setTimeout(() => {
+      autofillBtn.textContent = 'Auto-fill';
+      autofillBtn.disabled    = false;
+    }, 3000);
+  } catch (err) {
+    console.error('[1stStep] Autofill error:', err);
+    alert('Autofill failed: ' + err.message);
+    autofillBtn.textContent = 'Auto-fill';
+    autofillBtn.disabled    = false;
+  }
 }
 
 // ─── START ───────────────────────────────────────────────────

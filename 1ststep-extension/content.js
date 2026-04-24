@@ -136,3 +136,235 @@ setInterval(() => {
     setTimeout(pollForJob, 1500); // Wait for content to render
   }
 }, 1000);
+
+// ─── AUTOFILL — FIELD SCAN + FILL ─────────────────────────────
+
+function getFieldLabel(el) {
+  try {
+    if (el.labels && el.labels.length) {
+      return (el.labels[0].innerText || el.labels[0].textContent || '').trim();
+    }
+    const aria = el.getAttribute('aria-label');
+    if (aria) return aria.trim();
+    if (el.id) {
+      const lbl = document.querySelector(`label[for="${CSS.escape(el.id)}"]`);
+      if (lbl) return (lbl.innerText || lbl.textContent || '').trim();
+    }
+    const parentLabel = el.closest('label');
+    if (parentLabel) return (parentLabel.innerText || parentLabel.textContent || '').trim();
+    const placeholder = el.getAttribute('placeholder');
+    if (placeholder) return placeholder.trim();
+  } catch (_) {}
+  return '';
+}
+
+function isVisible(el) {
+  if (el.tagName === 'SELECT') return true; // selects can be offscreen but still fillable
+  const style = window.getComputedStyle(el);
+  if (style.display === 'none' || style.visibility === 'hidden') return false;
+  const rect = el.getBoundingClientRect();
+  return rect.width > 0 || rect.height > 0 || el.offsetParent !== null;
+}
+
+function scanFormFields() {
+  const fields = [];
+  const seen = new Set();
+  const selector =
+    'input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=image]):not([type=reset]):not([type=password]), ' +
+    'select, textarea';
+  const elements = document.querySelectorAll(selector);
+
+  for (const el of elements) {
+    if (!isVisible(el)) continue;
+
+    // Build a stable key — id > name > label > type
+    const label = getFieldLabel(el);
+    const key = el.id || el.name || label || (el.type + ':' + fields.length);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+
+    const field = {
+      id:       el.id || '',
+      name:     el.name || '',
+      key:      key,
+      type:     el.type || el.tagName.toLowerCase(),
+      label:    label.slice(0, 120),
+      required: !!el.required
+    };
+
+    if (el.tagName === 'SELECT') {
+      field.options = Array.from(el.options)
+        .map(o => (o.text || o.value || '').trim())
+        .filter(Boolean)
+        .slice(0, 50);
+    }
+
+    fields.push(field);
+  }
+
+  return fields.slice(0, 80); // cap to control token usage
+}
+
+function findElementByKey(key) {
+  if (!key) return null;
+  // Try id, name, aria-label, then iterate inputs matching the key as label
+  try {
+    let el = document.getElementById(key);
+    if (el) return el;
+  } catch (_) {}
+  try {
+    let el = document.querySelector(`[name="${CSS.escape(key)}"]`);
+    if (el) return el;
+  } catch (_) {}
+  try {
+    let el = document.querySelector(`[aria-label="${CSS.escape(key)}"]`);
+    if (el) return el;
+  } catch (_) {}
+  // Fallback: scan for a field whose label matches
+  const all = document.querySelectorAll('input, select, textarea');
+  for (const el of all) {
+    if (!isVisible(el)) continue;
+    if ((el.id || el.name) === key) return el;
+    const lbl = getFieldLabel(el);
+    if (lbl && lbl.toLowerCase() === String(key).toLowerCase()) return el;
+  }
+  return null;
+}
+
+function fillField(el, value) {
+  if (!el || value === null || value === undefined || value === '') return false;
+  try {
+    const inputSetter    = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,    'value')?.set;
+    const textareaSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+    const selectSetter   = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype,   'value')?.set;
+    const checkedSetter  = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,    'checked')?.set;
+
+    if (el.tagName === 'SELECT') {
+      const str = String(value).trim().toLowerCase();
+      const opt =
+        Array.from(el.options).find(o => (o.text || '').trim().toLowerCase() === str) ||
+        Array.from(el.options).find(o => (o.value || '').trim().toLowerCase() === str) ||
+        Array.from(el.options).find(o => (o.text || '').trim().toLowerCase().includes(str)) ||
+        Array.from(el.options).find(o => str.includes((o.text || '').trim().toLowerCase()));
+      if (!opt) return false;
+      if (selectSetter) selectSetter.call(el, opt.value); else el.value = opt.value;
+    } else if (el.tagName === 'TEXTAREA') {
+      const v = String(value);
+      if (textareaSetter) textareaSetter.call(el, v); else el.value = v;
+    } else if (el.type === 'checkbox' || el.type === 'radio') {
+      const v = String(value).toLowerCase();
+      const checked = v === 'true' || v === 'yes' || v === '1' || v === 'on';
+      if (checkedSetter) checkedSetter.call(el, checked); else el.checked = checked;
+    } else {
+      const v = String(value);
+      if (inputSetter) inputSetter.call(el, v); else el.value = v;
+    }
+
+    // React/Vue/Angular synthetic event dispatch
+    el.dispatchEvent(new Event('input',  { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    el.dispatchEvent(new Event('blur',   { bubbles: true }));
+    return true;
+  } catch (err) {
+    console.warn('[1stStep] fillField error:', err);
+    return false;
+  }
+}
+
+function applyFillMap(fillMap) {
+  let filled = 0;
+  let total  = 0;
+  for (const [key, value] of Object.entries(fillMap || {})) {
+    if (value === null || value === undefined || value === '') continue;
+    total++;
+    const el = findElementByKey(key);
+    if (!el) continue;
+    if (fillField(el, value)) filled++;
+  }
+  return { filled, total };
+}
+
+function parseClaudeAutofillResponse(data) {
+  // Anthropic response shape: { content: [{type: 'text', text: '...'}], ... }
+  const text = data?.content?.[0]?.text || '';
+  // Strip optional markdown fences
+  const cleaned = text
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```\s*$/i, '')
+    .trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch (err) {
+    // Last-ditch: extract first {...} block
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (match) {
+      try { return JSON.parse(match[0]); } catch (_) {}
+    }
+    throw new Error('AI response was not valid JSON.');
+  }
+}
+
+// ─── AUTOFILL MESSAGE HANDLER ─────────────────────────────────
+
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg?.action !== 'AUTOFILL') return;
+
+  (async () => {
+    try {
+      const fields = scanFormFields();
+      if (fields.length === 0) {
+        sendResponse({ success: false, error: 'No form fields detected on this page.' });
+        return;
+      }
+
+      // Read profile + resume from chrome.storage.sync (written by auth-bridge.js)
+      const storage = await new Promise((resolve) =>
+        chrome.storage.sync.get(['1ststep_profile', '1ststep_resume'], resolve)
+      );
+      const profile = storage['1ststep_profile'] || {};
+      const resume  = storage['1ststep_resume']  || '';
+
+      // Ask background service worker to POST /api/claude (callType: autofill)
+      const response = await new Promise((resolve) =>
+        chrome.runtime.sendMessage(
+          {
+            action:    'GET_AUTOFILL_MAP',
+            profile,
+            resume,
+            fields,
+            email:     msg.email,
+            tierToken: msg.tierToken
+          },
+          (r) => {
+            if (chrome.runtime.lastError) {
+              resolve({ success: false, error: chrome.runtime.lastError.message });
+            } else {
+              resolve(r);
+            }
+          }
+        )
+      );
+
+      if (!response?.success) {
+        sendResponse({ success: false, error: response?.error || 'Autofill request failed.' });
+        return;
+      }
+
+      let fillMap;
+      try {
+        fillMap = parseClaudeAutofillResponse(response.data);
+      } catch (err) {
+        sendResponse({ success: false, error: err.message });
+        return;
+      }
+
+      const { filled, total } = applyFillMap(fillMap);
+      sendResponse({ success: true, filled, total, scanned: fields.length });
+    } catch (err) {
+      console.error('[1stStep] AUTOFILL error:', err);
+      sendResponse({ success: false, error: err.message });
+    }
+  })();
+
+  return true; // keep channel open for async sendResponse
+});

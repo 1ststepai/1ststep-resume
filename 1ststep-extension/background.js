@@ -16,15 +16,15 @@ async function fetchTierToken(email) {
   try {
     const response = await fetch(`${APP_URL}/api/subscription?email=${encodeURIComponent(email)}`);
     if (!response.ok) throw new Error(`Subscription lookup failed: ${response.status}`);
-    
+
     const data = await response.json();
     // data = { tier, status, tierToken, expiresAt }
-    
+
     authTokenCache = {
       ...data,
       fetchedAt: Date.now()
     };
-    
+
     return data;
   } catch (error) {
     console.error('[1stStep] Tier token fetch failed:', error);
@@ -44,7 +44,7 @@ async function getTierToken(email) {
       return authTokenCache;
     }
   }
-  
+
   // Fetch fresh token
   return fetchTierToken(email);
 }
@@ -85,24 +85,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     try {
       switch (request.action) {
         // ─── AUTH ──────────────────────────────────
-        case 'GET_TIER_TOKEN':
+        case 'GET_TIER_TOKEN': {
           const tierData = await getTierToken(request.email);
           sendResponse({ success: !!tierData, data: tierData });
           break;
+        }
 
         // ─── USER DATA ──────────────────────────────
-        case 'GET_USER_DATA':
+        case 'GET_USER_DATA': {
           const userData = await getUserData();
           sendResponse({ success: true, data: userData });
           break;
+        }
 
-        case 'SAVE_USER_DATA':
+        case 'SAVE_USER_DATA': {
           await saveUserData(request.profile, request.resume);
           sendResponse({ success: true });
           break;
+        }
 
         // ─── JOB DETECTION ──────────────────────────
-        case 'JOB_DETECTED':
+        case 'JOB_DETECTED': {
           // Content script found a job page - extract JD, pass to popup/sidepanel
           await chrome.storage.session.set({
             'current_job': {
@@ -117,14 +120,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           });
           sendResponse({ success: true });
           break;
+        }
 
-        case 'GET_CURRENT_JOB':
+        case 'GET_CURRENT_JOB': {
           const jobs = await chrome.storage.session.get(['current_job']);
           sendResponse({ success: true, job: jobs.current_job });
           break;
+        }
 
         // ─── TAILOR REQUEST ──────────────────────────
-        case 'TAILOR_RESUME':
+        case 'TAILOR_RESUME': {
           // Forward to 1stStep.ai backend claude.js
           const tailorResponse = await fetch(`${APP_URL}/api/claude`, {
             method: 'POST',
@@ -137,40 +142,52 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
               tierToken: request.tierToken
             })
           });
-          
+
           if (!tailorResponse.ok) {
             throw new Error(`Tailor failed: ${tailorResponse.status}`);
           }
-          
+
           const tailored = await tailorResponse.json();
           sendResponse({ success: true, data: tailored });
           break;
+        }
 
         // ─── AUTOFILL REQUEST ──────────────────────
-        case 'GET_AUTOFILL_MAP':
-          // Call backend to generate field map for this JD + resume
+        case 'GET_AUTOFILL_MAP': {
+          // Ask claude.js (autofill callType) to produce a {field_id: value} map
+          // based on the candidate's profile+resume and the detected page fields.
           const fillResponse = await fetch(`${APP_URL}/api/claude`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              callType: 'autofill',
-              resume: request.resume,
-              jobDescription: request.jobDescription,
-              email: request.email,
-              tierToken: request.tierToken
+              callType:  'autofill',
+              model:     'claude-haiku-4-5-20251001',
+              userEmail: request.email,
+              tierToken: request.tierToken,
+              max_tokens: 2048,
+              messages: [{
+                role: 'user',
+                content:
+                  '<profile>\n' + JSON.stringify(request.profile || {}) + '\n</profile>\n\n' +
+                  '<resume>\n' + (request.resume || '') + '\n</resume>\n\n' +
+                  '<form_fields>\n' + JSON.stringify(request.fields || [], null, 2) + '\n</form_fields>\n\n' +
+                  'Return the JSON fill map. Keys must match each field id exactly.'
+              }]
             })
           });
-          
+
           if (!fillResponse.ok) {
-            throw new Error(`Autofill mapping failed: ${fillResponse.status}`);
+            const err = await fillResponse.json().catch(() => ({}));
+            throw new Error(err.error || `Autofill mapping failed: ${fillResponse.status}`);
           }
-          
+
           const fillMap = await fillResponse.json();
           sendResponse({ success: true, data: fillMap });
           break;
+        }
 
         // ─── TRACKING ──────────────────────────────
-        case 'TRACK_EVENT':
+        case 'TRACK_EVENT': {
           // Fire GHL tag via backend track-event.js
           await fetch(`${APP_URL}/api/track-event`, {
             method: 'POST',
@@ -182,6 +199,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           });
           sendResponse({ success: true });
           break;
+        }
 
         default:
           sendResponse({ success: false, error: 'Unknown action' });
