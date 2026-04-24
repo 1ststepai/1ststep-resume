@@ -16,6 +16,11 @@
  */
 async function syncToExtension() {
   try {
+    // Guard: check if extension context is still valid
+    if (typeof chrome === 'undefined' || !chrome.storage) {
+      console.warn('[1stStep] Extension context invalidated - skipping sync');
+      return;
+    }
     // Read profile data from localStorage (try multiple key variants)
     const profileRaw = localStorage.getItem('1ststep_profile')
                     || localStorage.getItem('user')
@@ -62,6 +67,12 @@ async function syncToExtension() {
 
     console.log('[1stStep] Syncing profile for email:', profile.email);
 
+    // Check if chrome API is still available (guard against extension reload)
+    if (typeof chrome === 'undefined' || !chrome.storage) {
+      console.warn('[1stStep] Chrome API unavailable - extension may have been reloaded');
+      return;
+    }
+
     // Fetch fresh tier token from /api/subscription
     try {
       const response = await fetch(`/api/subscription?email=${encodeURIComponent(profile.email)}`);
@@ -81,24 +92,33 @@ async function syncToExtension() {
       }
 
       // Write to chrome.storage.sync (content script has access)
-      chrome.storage.sync.set(syncData, () => {
-        if (chrome.runtime.lastError) {
-          console.error('[1stStep] Sync failed:', chrome.runtime.lastError);
-        } else {
-          console.log('[1stStep] ✓ Synced to extension:', profile.email, 'tier:', sub.tier);
-        }
-      });
+      // Guard against invalidated context
+      try {
+        chrome.storage.sync.set(syncData, () => {
+          if (chrome.runtime.lastError) {
+            console.error('[1stStep] Sync failed:', chrome.runtime.lastError);
+          } else {
+            console.log('[1stStep] ✓ Synced to extension:', profile.email, 'tier:', sub.tier);
+          }
+        });
+      } catch (apiErr) {
+        console.error('[1stStep] Chrome API error (extension reloaded?):', apiErr);
+      }
     } catch (subErr) {
       console.warn('[1stStep] Tier token fetch failed, syncing without token:', subErr);
       // Fallback: sync without tier token
-      chrome.storage.sync.set({
-        '1ststep_profile': {
-          email: profile.email,
-          name:  profile.name || '',
-          tier:  profile.tier || 'free',
-          tierToken: ''
-        }
-      });
+      try {
+        chrome.storage.sync.set({
+          '1ststep_profile': {
+            email: profile.email,
+            name:  profile.name || '',
+            tier:  profile.tier || 'free',
+            tierToken: ''
+          }
+        });
+      } catch (apiErr) {
+        console.error('[1stStep] Chrome API error:', apiErr);
+      }
     }
 
   } catch(err) {
@@ -110,6 +130,9 @@ async function syncToExtension() {
  * Listen for postMessage from page context (MV3 pattern)
  * Page calls: window.postMessage({ source: 'app', action: 'SYNC_PROFILE' }, '*')
  */
+let lastSyncTime = 0;
+const SYNC_THROTTLE = 5000; // Throttle syncs to 5s minimum
+
 window.addEventListener('message', async (event) => {
   // Only accept messages from this page (not other frames/extensions)
   if (event.source !== window) return;
@@ -120,7 +143,13 @@ window.addEventListener('message', async (event) => {
   console.log('[1stStep] Received postMessage:', msg.action);
 
   if (msg.action === 'SYNC_PROFILE') {
-    await syncToExtension();
+    const now = Date.now();
+    if (now - lastSyncTime > SYNC_THROTTLE) {
+      lastSyncTime = now;
+      await syncToExtension();
+    } else {
+      console.log('[1stStep] Sync throttled - too soon since last sync');
+    }
   }
 });
 
@@ -129,16 +158,12 @@ window.addEventListener('message', async (event) => {
 // Sync on page load
 syncToExtension();
 
-// Sync when localStorage changes (from same window or other tabs in same domain)
+// Sync when localStorage changes (cross-tab sync)
 window.addEventListener('storage', async (event) => {
   if (event.key === '1ststep_profile' || event.key === '1ststep_resume' || event.key === '1ststep_li_auth') {
     console.log('[1stStep] Storage changed, re-syncing:', event.key);
     await syncToExtension();
   }
 });
-
-// Also run periodic sync in case localStorage was updated without firing storage event
-// (this can happen if updates come from background scripts or workers)
-setInterval(syncToExtension, 3000);
 
 console.log('[1stStep] Auth bridge loaded on app.1ststep.ai');
