@@ -13,12 +13,16 @@
   "host_permissions": [
     "https://www.linkedin.com/*",
     "https://www.indeed.com/*",
-    "https://boards.greenhouse.io/*",
-    "https://jobs.lever.co/*",
-    "https://jobs.lever.com/*",
+    "https://*.greenhouse.io/*",
+    "https://*.lever.co/*",
+    "https://*.lever.com/*",
     "https://*.workday.com/*",
+    "https://*.myworkdayjobs.com/*",
     "https://*.icims.com/*",
     "https://*.taleo.net/*",
+    "https://*.ashbyhq.com/*",
+    "https://*.jobvite.com/*",
+    "https://*.smartrecruiters.com/*",
     "https://app.1ststep.ai/*"
   ],
   "content_security_policy": {
@@ -36,12 +40,16 @@
       "matches": [
         "https://www.linkedin.com/*",
         "https://www.indeed.com/*",
-        "https://boards.greenhouse.io/*",
-        "https://jobs.lever.co/*",
-        "https://jobs.lever.com/*",
+        "https://*.greenhouse.io/*",
+        "https://*.lever.co/*",
+        "https://*.lever.com/*",
         "https://*.workday.com/*",
+        "https://*.myworkdayjobs.com/*",
         "https://*.icims.com/*",
-        "https://*.taleo.net/*"
+        "https://*.taleo.net/*",
+        "https://*.ashbyhq.com/*",
+        "https://*.jobvite.com/*",
+        "https://*.smartrecruiters.com/*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"
