@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>1stStep.ai — Promo Tile 440x280</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1e1e1e;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    font-family: 'Inter', sans-serif;
+    gap: 40px;
+    flex-direction: column;
+  }
+  .instructions {
+    color: #aaa;
+    font-size: 13px;
+    max-width: 440px;
+    text-align: center;
+    line-height: 1.5;
+  }
+  .instructions code {
+    background: #333;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+  }
+
+  /* === THE TILE — exactly 440 × 280 === */
+  .tile {
+    width: 440px;
+    height: 280px;
+    background: linear-gradient(135deg, #4338CA 0%, #3730A3 100%);
+    border-radius: 12px;
+    padding: 28px 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(67, 56, 202, 0.4);
+    color: #fff;
+  }
+
+  /* Subtle dot grid pattern */
+  .tile::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+    background-size: 22px 22px;
+    pointer-events: none;
+  }
+
+  .tile-logo {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tile-logo-mark {
+    width: 28px;
+    height: 28px;
+    background: #fff;
+    color: #4338CA;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: -1px;
+  }
+
+  .tile-headline {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: 34px;
+    line-height: 1.05;
+    letter-spacing: -1px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tile-headline .accent {
+    color: #A5B4FC;
+  }
+
+  .tile-footer {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.85);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tile-footer .sparkle {
+    font-size: 15px;
+  }
+
+  /* Frame that shows pixel-exact bounds for screenshotting */
+  .frame-hint {
+    position: relative;
+  }
+  .frame-hint::after {
+    content: '440 × 280';
+    position: absolute;
+    top: -24px;
+    right: 0;
+    color: #666;
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+  }
+</style>
+</head>
+<body>
+
+  <div class="instructions">
+    <strong style="color:#fff">1stStep.ai Small Promo Tile</strong><br>
+    Open this file in Chrome, then either:<br>
+    1. Right-click the tile → <em>Inspect</em> → right-click the <code>&lt;div class="tile"&gt;</code> element → <em>Capture node screenshot</em>, or<br>
+    2. Use Chrome DevTools device toolbar (<code>Ctrl+Shift+M</code>) at exactly <code>440 × 280</code> and screenshot.
+  </div>
+
+  <div class="frame-hint">
+    <div class="tile">
+
+      <div class="tile-logo">
+        <div class="tile-logo-mark">1st</div>
+        1stStep.ai
+      </div>
+
+      <div class="tile-headline">
+        Apply to more jobs.<br>
+        <span class="accent">In fewer clicks.</span>
+      </div>
+
+      <div class="tile-footer">
+        <span class="sparkle">✨</span>
+        Tailored resume + auto-fill in 1 click
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>
