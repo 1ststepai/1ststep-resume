@@ -83,6 +83,8 @@
   <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { corePlugins: { preflight: false }, theme: { extend: {} } }</script>
   <style>
     *,
     *::before,
@@ -4146,23 +4148,44 @@
       box-shadow: 0 7px 24px rgba(99,102,241,0.55);
     }
 
-    /* ── Quick Sidebar: fixed right on wide screens ── */
-    #quickSidebar {
-      display: none;
+    /* ── Resume Grid: 12-col dashboard layout ── */
+    #resumeGrid {
+      width: 100%;
+      max-width: 1100px;
+      display: grid; /* hidden via JS when switching to other modes */
+      grid-template-columns: 1fr;
+      gap: 16px;
+      align-items: start;
     }
-    @media (min-width: 1360px) {
-      #quickSidebar {
-        position: fixed;
-        right: 20px;
-        top: 60px;
-        width: 204px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        z-index: 50;
-        max-height: calc(100vh - 80px);
-        overflow-y: auto;
+    @media (min-width: 900px) {
+      #resumeGrid {
+        grid-template-columns: minmax(0, 1fr) 220px;
       }
+    }
+    #resumeMainCol {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+    }
+    #resumeMainCol .left-panel,
+    #resumeMainCol .right-panel {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+
+    /* ── Quick Sidebar: sticky in grid column ── */
+    #quickSidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: sticky;
+      top: 20px;
+      max-height: calc(100vh - 80px);
+      overflow-y: auto;
+    }
+    @media (max-width: 899px) {
+      #quickSidebar { display: none; }
     }
 
     /* ── Topbar desktop override ── */
@@ -4321,6 +4344,10 @@
 
     <div class="main">
 
+      <!-- Resume Mode: 12-column dashboard grid -->
+      <div id="resumeGrid">
+        <div id="resumeMainCol">
+
       <!-- Left Panel: Hero + Inputs -->
       <div class="left-panel">
 
@@ -4439,169 +4466,7 @@
 
       </div><!-- /left-panel -->
 
-      <!-- ── Quick Actions Sidebar (desktop fixed, hidden on mobile) ── -->
-      <aside id="quickSidebar" style="display:none">
-
-        <div class="qs-card">
-          <div class="qs-title">Quick Actions</div>
-          <button class="qs-btn qs-btn-primary" onclick="window.scrollTo({top:0,behavior:'smooth'});document.getElementById('fileInput').click()">
-            <span class="qs-icon">✦</span> Generate Another
-          </button>
-          <button class="qs-btn" onclick="runTailoring()">
-            <span class="qs-icon">🔄</span> Re-optimize Resume
-          </button>
-          <button class="qs-btn" onclick="switchMode('tracker');setMobileNav('tracker')">
-            <span class="qs-icon">📋</span> Track Applications
-          </button>
-          <button class="qs-btn" onclick="switchMode('jobs');setMobileNav('jobs')">
-            <span class="qs-icon">🔍</span> Search Jobs
-          </button>
-          <button class="qs-btn" disabled>
-            <span class="qs-icon">🎤</span> Interview Prep
-            <span class="qs-coming-soon">Soon</span>
-          </button>
-        </div>
-
-        <div class="qs-card">
-          <div class="qs-title">Your Stats</div>
-          <div class="qs-stat-row">
-            <span class="qs-stat-label">Tailors this month</span>
-            <span class="qs-stat-value" id="qsStatTailors">—</span>
-          </div>
-          <div class="qs-stat-row">
-            <span class="qs-stat-label">Best match score</span>
-            <span class="qs-stat-value" id="qsStatScore">—</span>
-          </div>
-          <div class="qs-stat-row">
-            <span class="qs-stat-label">Applications</span>
-            <span class="qs-stat-value" id="qsStatApps">—</span>
-          </div>
-        </div>
-
-        <div class="qs-card" style="background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(139,92,246,0.08));border-color:rgba(99,102,241,0.2)">
-          <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px">Upgrade for Unlimited</div>
-          <p style="font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:10px">60 tailors/mo · Cover letters · Templates · Priority AI</p>
-          <button class="qs-btn qs-btn-primary" onclick="openProfileModal()" style="margin-bottom:0;font-size:12px">
-            <span class="qs-icon">⚡</span> View Plans
-          </button>
-        </div>
-
-      </aside><!-- /quickSidebar -->
-
-      <!-- Job Search Left Panel -->
-      <div class="left-panel js-panel" id="jobSearchLeft">
-
-        <!-- Single consolidated card -->
-        <div class="panel-section">
-          <div class="panel-label">Find Jobs Near You</div>
-
-          <!-- AI Analyze (uses resume from Resume Tailor) -->
-          <button class="btn-analyze-resume" id="autoDetectBtn" onclick="analyzeResumeForJobSearch()">
-            <span id="autoDetectBtnIcon">🤖</span> <span id="autoDetectBtnLabel">Auto-detect matching jobs from
-              resume</span>
-          </button>
-          <!-- Status message under analyze button -->
-          <div id="analyzeStatus"
-            style="display:none;font-size:11px;margin-top:6px;padding:6px 10px;border-radius:6px;line-height:1.5"></div>
-          <!-- Suggested title pills -->
-          <div id="suggestedTitles" style="display:none;margin-top:10px"></div>
-
-          <!-- Hidden inputs (still needed by JS) -->
-          <div id="jsResumeLoaded" class="file-loaded" style="display:none">
-            <span id="jsResumeLoadedText">Resume carried over ✓</span>
-            <button onclick="clearJsResume()">✕ Clear</button>
-          </div>
-          <div id="jsResumePaste" style="display:none">
-            <input type="file" id="jsFileInput" accept=".pdf,.docx,.doc,.txt" style="display:none"
-              onchange="handleJsFileSelect(event)" />
-            <textarea id="jsResumeText" rows="1" style="display:none;height:0;padding:0;border:none;resize:none"
-              aria-hidden="true" tabindex="-1"></textarea>
-          </div>
-
-          <!-- Location -->
-          <div style="margin-top:16px">
-            <label
-              style="font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--label);display:block;margin-bottom:8px">Location</label>
-            <div class="location-row">
-              <input type="text" id="locationInput" placeholder="City, State or ZIP code" />
-              <button class="btn-locate" onclick="detectLocation()" title="Use my location">📍</button>
-            </div>
-            <div id="locationStatus" style="font-size:11px;color:var(--muted);margin-top:6px;display:none"></div>
-          </div>
-
-          <!-- Radius -->
-          <div style="margin-top:16px">
-            <label
-              style="font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--label);display:block;margin-bottom:8px">Search
-              Radius</label>
-            <div class="radius-options">
-              <button class="radius-btn" onclick="setRadius(5)" data-r="5">5 mi</button>
-              <button class="radius-btn active" onclick="setRadius(10)" data-r="10">10 mi</button>
-              <button class="radius-btn" onclick="setRadius(25)" data-r="25">25 mi</button>
-              <button class="radius-btn" onclick="setRadius(50)" data-r="50">50 mi</button>
-              <button class="radius-btn" onclick="setRadius(100)" data-r="100">100 mi</button>
-            </div>
-          </div>
-
-          <!-- Keywords -->
-          <div style="margin-top:16px">
-            <label
-              style="font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--label);display:block;margin-bottom:8px">Job
-              Keywords <span
-                style="font-size:10px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(Auto-filled
-                by AI above)</span></label>
-            <input type="text" id="jobKeywords" placeholder="e.g. Product Manager, Software Engineer React…"
-              onkeydown="if(event.key==='Enter') searchJobs()" />
-            <div style="margin-top:6px;font-size:11.5px;color:var(--muted);line-height:1.5">
-              Start with your <strong style="color:var(--text2)">job title</strong>, then add industry or skills.
-            </div>
-          </div>
-
-          <!-- Job Type -->
-          <div style="margin-top:16px">
-            <label
-              style="font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--label);display:block;margin-bottom:8px">Job
-              Type</label>
-            <div class="jtype-options">
-              <button class="jtype-btn active" onclick="toggleJobType(this, 'full_time')"
-                data-type="full_time">Full-time</button>
-              <button class="jtype-btn active" onclick="toggleJobType(this, 'part_time')"
-                data-type="part_time">Part-time</button>
-              <button class="jtype-btn active" onclick="toggleJobType(this, 'contract')"
-                data-type="contract">Contract</button>
-              <button class="jtype-btn active" onclick="toggleJobType(this, 'remote')"
-                data-type="remote">Remote</button>
-            </div>
-          </div>
-
-          <!-- Search button -->
-          <div style="margin-top:20px">
-            <button class="btn-run" id="searchBtn" onclick="searchJobs()">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                id="searchIcon">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.35-4.35" />
-              </svg>
-              Find Jobs Near Me
-            </button>
-            <!-- Daily search usage meter -->
-            <div id="searchUsageMeter" style="margin-top:10px;display:none">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-                <span style="font-size:11px;color:var(--muted)" id="searchUsageLabel">0 / 5 searches this month</span>
-                <span style="font-size:10px;color:var(--muted);opacity:0.6">resets monthly</span>
-              </div>
-              <div style="height:4px;background:var(--dark3);border-radius:100px;overflow:hidden">
-                <div id="searchUsageBar"
-                  style="height:100%;width:0%;background:var(--green);border-radius:100px;transition:width 0.4s ease,background 0.4s ease">
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div><!-- /job search left panel -->
-
-      <!-- Right Panel: Output -->
+      <!-- Right Panel: Output (adjacent to left-panel inside resumeMainCol) -->
       <div class="right-panel">
 
         <!-- Empty state -->
@@ -4793,6 +4658,173 @@
         </div>
 
       </div><!-- /right-panel -->
+
+        </div><!-- /resumeMainCol -->
+
+        <!-- Sidebar: sticky col -->
+        <div>
+          <aside id="quickSidebar">
+
+        <div class="qs-card">
+          <div class="qs-title">Quick Actions</div>
+          <button class="qs-btn qs-btn-primary" onclick="window.scrollTo({top:0,behavior:'smooth'});document.getElementById('fileInput').click()">
+            <span class="qs-icon">✦</span> Generate Another
+          </button>
+          <button class="qs-btn" onclick="runTailoring()">
+            <span class="qs-icon">🔄</span> Re-optimize Resume
+          </button>
+          <button class="qs-btn" onclick="switchMode('tracker');setMobileNav('tracker')">
+            <span class="qs-icon">📋</span> Track Applications
+          </button>
+          <button class="qs-btn" onclick="switchMode('jobs');setMobileNav('jobs')">
+            <span class="qs-icon">🔍</span> Search Jobs
+          </button>
+          <button class="qs-btn" disabled>
+            <span class="qs-icon">🎤</span> Interview Prep
+            <span class="qs-coming-soon">Soon</span>
+          </button>
+        </div>
+
+        <div class="qs-card">
+          <div class="qs-title">Your Stats</div>
+          <div class="qs-stat-row">
+            <span class="qs-stat-label">Tailors this month</span>
+            <span class="qs-stat-value" id="qsStatTailors">—</span>
+          </div>
+          <div class="qs-stat-row">
+            <span class="qs-stat-label">Best match score</span>
+            <span class="qs-stat-value" id="qsStatScore">—</span>
+          </div>
+          <div class="qs-stat-row">
+            <span class="qs-stat-label">Applications</span>
+            <span class="qs-stat-value" id="qsStatApps">—</span>
+          </div>
+        </div>
+
+        <div class="qs-card" style="background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(139,92,246,0.08));border-color:rgba(99,102,241,0.2)">
+          <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px">Upgrade for Unlimited</div>
+          <p style="font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:10px">60 tailors/mo · Cover letters · Templates · Priority AI</p>
+          <button class="qs-btn qs-btn-primary" onclick="openProfileModal()" style="margin-bottom:0;font-size:12px">
+            <span class="qs-icon">⚡</span> View Plans
+          </button>
+        </div>
+
+          </aside><!-- /quickSidebar -->
+        </div>
+      </div><!-- /resumeGrid -->
+
+      <!-- Job Search Left Panel -->
+      <div class="left-panel js-panel" id="jobSearchLeft">
+
+        <!-- Single consolidated card -->
+        <div class="panel-section">
+          <div class="panel-label">Find Jobs Near You</div>
+
+          <!-- AI Analyze (uses resume from Resume Tailor) -->
+          <button class="btn-analyze-resume" id="autoDetectBtn" onclick="analyzeResumeForJobSearch()">
+            <span id="autoDetectBtnIcon">🤖</span> <span id="autoDetectBtnLabel">Auto-detect matching jobs from
+              resume</span>
+          </button>
+          <!-- Status message under analyze button -->
+          <div id="analyzeStatus"
+            style="display:none;font-size:11px;margin-top:6px;padding:6px 10px;border-radius:6px;line-height:1.5"></div>
+          <!-- Suggested title pills -->
+          <div id="suggestedTitles" style="display:none;margin-top:10px"></div>
+
+          <!-- Hidden inputs (still needed by JS) -->
+          <div id="jsResumeLoaded" class="file-loaded" style="display:none">
+            <span id="jsResumeLoadedText">Resume carried over ✓</span>
+            <button onclick="clearJsResume()">✕ Clear</button>
+          </div>
+          <div id="jsResumePaste" style="display:none">
+            <input type="file" id="jsFileInput" accept=".pdf,.docx,.doc,.txt" style="display:none"
+              onchange="handleJsFileSelect(event)" />
+            <textarea id="jsResumeText" rows="1" style="display:none;height:0;padding:0;border:none;resize:none"
+              aria-hidden="true" tabindex="-1"></textarea>
+          </div>
+
+          <!-- Location -->
+          <div style="margin-top:16px">
+            <label
+              style="font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--label);display:block;margin-bottom:8px">Location</label>
+            <div class="location-row">
+              <input type="text" id="locationInput" placeholder="City, State or ZIP code" />
+              <button class="btn-locate" onclick="detectLocation()" title="Use my location">📍</button>
+            </div>
+            <div id="locationStatus" style="font-size:11px;color:var(--muted);margin-top:6px;display:none"></div>
+          </div>
+
+          <!-- Radius -->
+          <div style="margin-top:16px">
+            <label
+              style="font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--label);display:block;margin-bottom:8px">Search
+              Radius</label>
+            <div class="radius-options">
+              <button class="radius-btn" onclick="setRadius(5)" data-r="5">5 mi</button>
+              <button class="radius-btn active" onclick="setRadius(10)" data-r="10">10 mi</button>
+              <button class="radius-btn" onclick="setRadius(25)" data-r="25">25 mi</button>
+              <button class="radius-btn" onclick="setRadius(50)" data-r="50">50 mi</button>
+              <button class="radius-btn" onclick="setRadius(100)" data-r="100">100 mi</button>
+            </div>
+          </div>
+
+          <!-- Keywords -->
+          <div style="margin-top:16px">
+            <label
+              style="font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--label);display:block;margin-bottom:8px">Job
+              Keywords <span
+                style="font-size:10px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(Auto-filled
+                by AI above)</span></label>
+            <input type="text" id="jobKeywords" placeholder="e.g. Product Manager, Software Engineer React…"
+              onkeydown="if(event.key==='Enter') searchJobs()" />
+            <div style="margin-top:6px;font-size:11.5px;color:var(--muted);line-height:1.5">
+              Start with your <strong style="color:var(--text2)">job title</strong>, then add industry or skills.
+            </div>
+          </div>
+
+          <!-- Job Type -->
+          <div style="margin-top:16px">
+            <label
+              style="font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--label);display:block;margin-bottom:8px">Job
+              Type</label>
+            <div class="jtype-options">
+              <button class="jtype-btn active" onclick="toggleJobType(this, 'full_time')"
+                data-type="full_time">Full-time</button>
+              <button class="jtype-btn active" onclick="toggleJobType(this, 'part_time')"
+                data-type="part_time">Part-time</button>
+              <button class="jtype-btn active" onclick="toggleJobType(this, 'contract')"
+                data-type="contract">Contract</button>
+              <button class="jtype-btn active" onclick="toggleJobType(this, 'remote')"
+                data-type="remote">Remote</button>
+            </div>
+          </div>
+
+          <!-- Search button -->
+          <div style="margin-top:20px">
+            <button class="btn-run" id="searchBtn" onclick="searchJobs()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                id="searchIcon">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              Find Jobs Near Me
+            </button>
+            <!-- Daily search usage meter -->
+            <div id="searchUsageMeter" style="margin-top:10px;display:none">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+                <span style="font-size:11px;color:var(--muted)" id="searchUsageLabel">0 / 5 searches this month</span>
+                <span style="font-size:10px;color:var(--muted);opacity:0.6">resets monthly</span>
+              </div>
+              <div style="height:4px;background:var(--dark3);border-radius:100px;overflow:hidden">
+                <div id="searchUsageBar"
+                  style="height:100%;width:0%;background:var(--green);border-radius:100px;transition:width 0.4s ease,background 0.4s ease">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /job search left panel -->
 
       <!-- Job Search Right Panel -->
       <div class="right-panel js-panel" id="jobSearchRight">
@@ -7342,14 +7374,9 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       if (moreBtn) moreBtn.classList.toggle('active', isMoreMode);
       if (moreDot) moreDot.style.display = isMoreMode ? 'inline-block' : 'none';
 
-      // Resume panels
-      document.querySelectorAll('.left-panel:not(.js-panel), .right-panel:not(.js-panel)').forEach(el => {
-        el.style.display = (mode === 'resume') ? '' : 'none';
-      });
-
-      // Quick actions sidebar (visible only in resume mode on wide screens)
-      const _qs = document.getElementById('quickSidebar');
-      if (_qs) _qs.style.display = (mode === 'resume') ? '' : 'none';
+      // Resume grid (contains left-panel, right-panel, sidebar)
+      const _rg = document.getElementById('resumeGrid');
+      if (_rg) _rg.style.display = (mode === 'resume') ? 'grid' : 'none';
 
       // Dynamic page title in topbar center
       const _titleMap = { resume: 'Resume Tailor', jobs: 'Job Search', tailored: 'My Resumes', tracker: 'Applications', linkedin: 'LinkedIn Profile', bulkapply: 'Bulk Apply' };
