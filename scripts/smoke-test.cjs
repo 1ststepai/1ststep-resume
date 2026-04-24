@@ -148,6 +148,34 @@ if (js) {
   });
 }
 
+// ── 5b. addEventListener bare-reference check ─────────────────────────────────
+// Catches the exact bug that broke the welcome buttons: a bare function name
+// passed to addEventListener that doesn't exist in the file.
+// Pattern: .addEventListener('event', someName) — where someName is NOT a =>/{/function
+section('addEventListener reference check');
+
+if (js) {
+  // Extract bare function names passed as the second arg to addEventListener
+  // Matches: .addEventListener('type', fnName) or .addEventListener("type", fnName)
+  // Excludes: arrow functions, anonymous functions, method calls (fn.method), chained ?.
+  const bareRefs = [...js.matchAll(/\.addEventListener\(\s*['"][^'"]+['"]\s*,\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\)/g)]
+    .map(m => m[1])
+    .filter(name => !['true','false','null','undefined'].includes(name));
+
+  const uniqueRefs = [...new Set(bareRefs)];
+  const missing = uniqueRefs.filter(name => {
+    // Check if the name is declared as a function somewhere in app.js
+    const declPattern = new RegExp(
+      '(?:^|\\n)\\s*(?:async\\s+)?function\\s+' + name + '\\s*\\(' +
+      '|(?:^|\\n)\\s*(?:var|let|const)\\s+' + name + '\\s*='
+    );
+    return !declPattern.test(js);
+  });
+
+  if (missing.length === 0) pass('All addEventListener bare references resolve to declared functions');
+  else missing.forEach(name => fail('addEventListener references "' + name + '" which is not declared in app.js'));
+}
+
 // ── 6. Inline handler audit ───────────────────────────────────────────────────
 section('Inline event handler audit');
 

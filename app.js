@@ -225,7 +225,7 @@
 
       // Mobile quick bar
       document.getElementById('mqbRetailorBtn')?.addEventListener('click', runTailoring);
-      document.getElementById('mqbDownloadBtn')?.addEventListener('click', downloadResume);
+      document.getElementById('mqbDownloadBtn')?.addEventListener('click', downloadDocx);
 
       // Mobile bottom nav
       document.getElementById('mobileNavResume')?.addEventListener('click', () => { switchMode('resume'); setMobileNav('resume'); });
