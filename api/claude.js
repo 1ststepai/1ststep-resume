@@ -191,7 +191,14 @@ function getOriginHeader(req, res) {
   // Require an Origin header — rejects direct curl/server-to-server calls that have no browser context.
   // All legitimate calls come from a browser and will always include Origin.
   if (!origin) return false;
-  const allowed = ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.vercel.app');
+  // Allowed: production/staging origins, Vercel previews, AND any chrome-extension:// origin
+  // (the extension's fetches from background.js send Origin: chrome-extension://<id>).
+  // Extension calls are still gated by tierToken (HMAC) for paid types and by per-IP monthly caps.
+  const allowed =
+    ALLOWED_ORIGINS.includes(origin) ||
+    origin.endsWith('.vercel.app') ||
+    origin.startsWith('chrome-extension://') ||
+    origin.startsWith('moz-extension://');
   if (allowed) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
@@ -207,7 +214,12 @@ export default async function handler(req, res) {
   // CORS preflight
   if (req.method === 'OPTIONS') {
     const origin = req.headers['origin'] || '';
-    if (ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.vercel.app')) {
+    if (
+      ALLOWED_ORIGINS.includes(origin) ||
+      origin.endsWith('.vercel.app') ||
+      origin.startsWith('chrome-extension://') ||
+      origin.startsWith('moz-extension://')
+    ) {
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
