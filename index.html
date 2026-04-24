@@ -139,6 +139,50 @@
       --card-bg: var(--surface2);
     }
 
+    /* ── Light theme overrides ──────────────────────────────── */
+    [data-theme="light"] {
+      --bg: #F5F7FF;
+      --surface: #FFFFFF;
+      --surface2: #EEF0FA;
+      --border: rgba(0, 0, 0, 0.08);
+      --border2: rgba(0, 0, 0, 0.14);
+      --text: #1A1E2E;
+      --text2: #4B5563;
+      --muted: #9CA3AF;
+      --label: #9CA3AF;
+      --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.08);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0,0,0,0.04);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0,0,0,0.05);
+      --card-bg: #FFFFFF;
+      --input-bg: #FFFFFF;
+      --brand-glow: rgba(99, 102, 241, 0.18);
+      --green-light: rgba(16, 185, 129, 0.1);
+      --red-light: rgba(248, 113, 113, 0.1);
+      --amber-light: rgba(251, 191, 36, 0.1);
+      --blue-light: rgba(99, 102, 241, 0.1);
+    }
+
+    /* Theme toggle button */
+    #themeToggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      cursor: pointer;
+      color: var(--text2);
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    #themeToggle:hover {
+      border-color: var(--brand);
+      color: var(--brand);
+      background: var(--blue-light);
+    }
+
     html,
     body {
       height: 100%;
@@ -4262,6 +4306,12 @@
         <button class="topbar-upgrade hide-mobile" id="topbarUpgradeBtn" onclick="openProfileModal()" title="Upgrade your plan">
           <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 5h5l-4 3 1.5 5L8 11l-4.5 3L5 9 1 6h5z"/></svg>
           Upgrade
+        </button>
+
+        <!-- Theme toggle -->
+        <button id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark mode" aria-label="Toggle theme">
+          <svg id="themeIconMoon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"/></svg>
+          <svg id="themeIconSun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
         </button>
 
         <!-- Backup -->
@@ -11323,6 +11373,28 @@ ${_PRINT_BTN}
       // Reset input so same file can be re-selected if needed
       event.target.value = '';
     }
+
+    // ── Theme toggle (light / dark) ──────────────────────────────────────────
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      const moon = document.getElementById('themeIconMoon');
+      const sun  = document.getElementById('themeIconSun');
+      if (moon) moon.style.display = theme === 'light' ? 'none'  : '';
+      if (sun)  sun.style.display  = theme === 'light' ? ''      : 'none';
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('1ststep_theme', next);
+      applyTheme(next);
+    }
+
+    // Restore saved theme on load
+    (function() {
+      const saved = localStorage.getItem('1ststep_theme') || 'dark';
+      applyTheme(saved);
+    })();
 
   </script>
 
