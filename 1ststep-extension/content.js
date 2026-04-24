@@ -59,7 +59,7 @@ function detectSite() {
 
 const SITE = detectSite();
 const SEL = SITE_SELECTORS[SITE] || GENERIC_SELECTORS;
-console.log(`[1stStep] Loaded on: ${SITE}`);
+console.log(`[1stStep] Loaded on: ${SITE} | host=${location.hostname} | topFrame=${window === window.top}`);
 
 // ─── EXTRACTION ──────────────────────────────────────────────
 
