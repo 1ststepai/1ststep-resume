@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Screenshot 3 — Works Where You Apply (1280×800)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1e1e1e;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    font-family: 'Inter', sans-serif;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .instructions {
+    color: #aaa;
+    font-size: 13px;
+    max-width: 720px;
+    text-align: center;
+    line-height: 1.5;
+  }
+  .instructions code {
+    background: #333;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     THE SCREENSHOT — exactly 1280 × 800
+     ═══════════════════════════════════════════════════════════════ */
+  .screenshot {
+    width: 1280px;
+    height: 800px;
+    background: #F8FAFC;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    color: #0F172A;
+  }
+
+  /* Top brand strip */
+  .brand-strip {
+    height: 6px;
+    background: linear-gradient(90deg, #4338CA 0%, #7C3AED 100%);
+    flex-shrink: 0;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 72px 60px 48px;
+  }
+
+  .eyebrow {
+    font-size: 14px;
+    font-weight: 600;
+    color: #4338CA;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .headline {
+    font-size: 56px;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    line-height: 1.05;
+    color: #0F172A;
+    margin-bottom: 20px;
+  }
+
+  .subhead {
+    font-size: 20px;
+    font-weight: 500;
+    color: #475569;
+    max-width: 720px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+
+  /* ATS grid */
+  .grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 20px;
+    padding: 0 100px 40px;
+  }
+
+  .ats-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.6px;
+    color: #0F172A;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+    position: relative;
+    transition: all 0.2s;
+  }
+
+  .ats-card::before {
+    content: '';
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #059669;
+    box-shadow: 0 0 0 3px #ECFDF5;
+  }
+
+  .ats-card .mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .ats-card .mark-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: #4338CA;
+  }
+
+  /* Specific ATS accent colors (subtle — just a dot in brand color) */
+  .linkedin  .mark-dot { background: #0A66C2; }
+  .indeed    .mark-dot { background: #003A9B; }
+  .greenhouse .mark-dot { background: #1C8D46; }
+  .lever     .mark-dot { background: #5F40EF; }
+  .workday   .mark-dot { background: #F38F1E; }
+  .icims     .mark-dot { background: #009AC7; }
+  .ashby     .mark-dot { background: #000000; }
+  .jobvite   .mark-dot { background: #F47920; }
+  .smartrec  .mark-dot { background: #00ADB5; }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 0 60px 64px;
+    font-size: 18px;
+    font-weight: 500;
+    color: #64748B;
+  }
+
+  .footer .count {
+    color: #4338CA;
+    font-weight: 700;
+  }
+
+  /* Frame label */
+  .frame-hint { position: relative; }
+  .frame-hint::after {
+    content: '1280 × 800';
+    position: absolute;
+    top: -28px;
+    right: 0;
+    color: #666;
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+  }
+</style>
+</head>
+<body>
+
+  <div class="instructions">
+    <strong style="color:#fff">Screenshot 3 — "Works Where You Apply"</strong><br>
+    Open this file in Chrome, open DevTools device toolbar (<code>Ctrl+Shift+M</code>), set the viewport to <code>1280 × 800</code>, then take a full-viewport screenshot.<br>
+    Or: right-click the screenshot frame → Inspect → right-click the <code>&lt;div class="screenshot"&gt;</code> node → <em>Capture node screenshot</em>.
+  </div>
+
+  <div class="frame-hint">
+    <div class="screenshot">
+
+      <div class="brand-strip"></div>
+
+      <div class="header">
+        <div class="eyebrow">One extension · Every job board</div>
+        <h1 class="headline">Works where you apply</h1>
+        <p class="subhead">Auto-fill your profile across every major Applicant Tracking System — no more retyping the same details into every form.</p>
+      </div>
+
+      <div class="grid">
+        <div class="ats-card linkedin"><span class="mark"><span class="mark-dot"></span>LinkedIn</span></div>
+        <div class="ats-card indeed"><span class="mark"><span class="mark-dot"></span>Indeed</span></div>
+        <div class="ats-card greenhouse"><span class="mark"><span class="mark-dot"></span>Greenhouse</span></div>
+        <div class="ats-card lever"><span class="mark"><span class="mark-dot"></span>Lever</span></div>
+        <div class="ats-card workday"><span class="mark"><span class="mark-dot"></span>Workday</span></div>
+        <div class="ats-card icims"><span class="mark"><span class="mark-dot"></span>iCIMS</span></div>
+        <div class="ats-card ashby"><span class="mark"><span class="mark-dot"></span>Ashby</span></div>
+        <div class="ats-card jobvite"><span class="mark"><span class="mark-dot"></span>Jobvite</span></div>
+        <div class="ats-card smartrec"><span class="mark"><span class="mark-dot"></span>SmartRecruiters</span></div>
+      </div>
+
+      <div class="footer">
+        <span class="count">9 platforms supported</span> — and more added every month
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>
