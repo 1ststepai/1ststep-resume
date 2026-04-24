@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Screenshot 5 — How It Works (1280×800)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1e1e1e;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    font-family: 'Inter', sans-serif;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .instructions {
+    color: #aaa;
+    font-size: 13px;
+    max-width: 720px;
+    text-align: center;
+    line-height: 1.5;
+  }
+  .instructions code {
+    background: #333;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     THE SCREENSHOT — exactly 1280 × 800
+     ═══════════════════════════════════════════════════════════════ */
+  .screenshot {
+    width: 1280px;
+    height: 800px;
+    background: #F8FAFC;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    color: #0F172A;
+  }
+
+  .brand-strip {
+    height: 6px;
+    background: linear-gradient(90deg, #4338CA 0%, #7C3AED 100%);
+    flex-shrink: 0;
+  }
+
+  .header {
+    text-align: center;
+    padding: 56px 60px 36px;
+  }
+
+  .eyebrow {
+    font-size: 14px;
+    font-weight: 600;
+    color: #4338CA;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .headline {
+    font-size: 52px;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    line-height: 1.05;
+    color: #0F172A;
+    margin-bottom: 14px;
+  }
+
+  .subhead {
+    font-size: 18px;
+    font-weight: 500;
+    color: #475569;
+  }
+
+  /* Steps row */
+  .steps {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 40px 1fr 40px 1fr;
+    gap: 0;
+    padding: 0 60px 40px;
+    align-items: stretch;
+  }
+
+  .step {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+    position: relative;
+  }
+
+  .step-num {
+    position: absolute;
+    top: -18px;
+    left: 24px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4338CA 0%, #3730A3 100%);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(67, 56, 202, 0.35);
+  }
+
+  .step-title {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    margin: 8px 0 8px;
+    color: #0F172A;
+  }
+
+  .step-desc {
+    font-size: 13px;
+    color: #64748B;
+    line-height: 1.5;
+    margin-bottom: 18px;
+  }
+
+  .step-visual {
+    flex: 1;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 260px;
+  }
+
+  /* Arrow between steps */
+  .arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4338CA;
+  }
+  .arrow svg { width: 28px; height: 28px; }
+
+  /* === Step 1 visual — profile form mock === */
+  .form-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .form-input {
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
+    color: #0F172A;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .form-input .check {
+    margin-left: auto;
+    color: #059669;
+    font-weight: 700;
+  }
+  .form-row { display: flex; flex-direction: column; gap: 4px; }
+
+  /* === Step 2 visual — job posting + popup === */
+  .job-frame {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 14px;
+    flex: 1;
+    position: relative;
+  }
+  .browser-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+  .browser-bar span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .browser-bar span:nth-child(1) { background: #FC6058; }
+  .browser-bar span:nth-child(2) { background: #FCBB40; }
+  .browser-bar span:nth-child(3) { background: #34C84A; }
+  .job-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 4px;
+  }
+  .job-company {
+    font-size: 10px;
+    color: #64748B;
+    margin-bottom: 10px;
+  }
+  .job-body-line {
+    height: 4px;
+    background: #E2E8F0;
+    border-radius: 2px;
+    margin-bottom: 5px;
+  }
+  .job-body-line:nth-child(even) { width: 85%; }
+  .job-body-line:nth-child(3n) { width: 70%; }
+  .popup-float {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: #FFFFFF;
+    border: 1px solid #4338CA;
+    border-radius: 8px;
+    padding: 8px 10px;
+    box-shadow: 0 6px 20px rgba(67, 56, 202, 0.22);
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #0F172A;
+  }
+  .popup-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #059669;
+  }
+
+  /* === Step 3 visual — filled form + success === */
+  .filled-field {
+    background: #FFFFFF;
+    border: 1px solid #A5B4FC;
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 11px;
+    color: #0F172A;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .filled-field.green {
+    border-color: #6EE7B7;
+    background: #ECFDF5;
+  }
+  .filled-value {
+    font-weight: 500;
+    color: #0F172A;
+  }
+  .field-label-inline {
+    color: #64748B;
+    font-size: 10px;
+  }
+  .success-pill {
+    background: linear-gradient(135deg, #4338CA 0%, #3730A3 100%);
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: auto;
+  }
+
+  .footer {
+    text-align: center;
+    padding: 0 60px 56px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #64748B;
+  }
+  .footer strong { color: #0F172A; font-weight: 700; }
+
+  .frame-hint { position: relative; }
+  .frame-hint::after {
+    content: '1280 × 800';
+    position: absolute;
+    top: -28px;
+    right: 0;
+    color: #666;
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+  }
+</style>
+</head>
+<body>
+
+  <div class="instructions">
+    <strong style="color:#fff">Screenshot 5 — "How It Works"</strong><br>
+    Open in Chrome → DevTools device toolbar (<code>Ctrl+Shift+M</code>) → viewport <code>1280 × 800</code> → screenshot.<br>
+    Or: right-click the frame → Inspect → right-click <code>&lt;div class="screenshot"&gt;</code> → <em>Capture node screenshot</em>.
+  </div>
+
+  <div class="frame-hint">
+    <div class="screenshot">
+
+      <div class="brand-strip"></div>
+
+      <div class="header">
+        <div class="eyebrow">From profile to submitted — in under a minute</div>
+        <h1 class="headline">How it works</h1>
+        <p class="subhead">Build your profile once. Apply to every job with one click.</p>
+      </div>
+
+      <div class="steps">
+
+        <!-- STEP 1 -->
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-title">Build your profile once</div>
+          <div class="step-desc">Add your resume, work history, and contact info at 1ststep.ai. Takes about 5 minutes.</div>
+          <div class="step-visual">
+            <div class="form-row">
+              <div class="form-label">Full name</div>
+              <div class="form-input">Evan Pancis <span class="check">✓</span></div>
+            </div>
+            <div class="form-row">
+              <div class="form-label">Email</div>
+              <div class="form-input">evan@example.com <span class="check">✓</span></div>
+            </div>
+            <div class="form-row">
+              <div class="form-label">Years of experience</div>
+              <div class="form-input">8 <span class="check">✓</span></div>
+            </div>
+            <div class="form-row">
+              <div class="form-label">Resume</div>
+              <div class="form-input">resume.pdf <span class="check">✓</span></div>
+            </div>
+            <div class="form-row">
+              <div class="form-label">LinkedIn</div>
+              <div class="form-input">linkedin.com/in/… <span class="check">✓</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ARROW -->
+        <div class="arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </div>
+
+        <!-- STEP 2 -->
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-title">Open any job posting</div>
+          <div class="step-desc">1stStep detects the job automatically and reads the description to personalize your resume.</div>
+          <div class="step-visual">
+            <div class="job-frame">
+              <div class="browser-bar"><span></span><span></span><span></span></div>
+              <div class="job-title">Senior Product Designer</div>
+              <div class="job-company">Airbnb · San Francisco, CA</div>
+              <div class="job-body-line"></div>
+              <div class="job-body-line"></div>
+              <div class="job-body-line"></div>
+              <div class="job-body-line"></div>
+              <div class="job-body-line"></div>
+              <div class="job-body-line"></div>
+              <div class="job-body-line"></div>
+              <div class="popup-float">
+                <span class="popup-dot"></span>
+                Job detected
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ARROW -->
+        <div class="arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </div>
+
+        <!-- STEP 3 -->
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-title">Click to tailor &amp; fill</div>
+          <div class="step-desc">One click rewrites your resume and fills every field on the application form. Review, attach, submit.</div>
+          <div class="step-visual">
+            <div class="filled-field green">
+              <span class="field-label-inline">First name</span>
+              <span class="filled-value">Evan ✓</span>
+            </div>
+            <div class="filled-field green">
+              <span class="field-label-inline">Last name</span>
+              <span class="filled-value">Pancis ✓</span>
+            </div>
+            <div class="filled-field green">
+              <span class="field-label-inline">Email</span>
+              <span class="filled-value">evan@… ✓</span>
+            </div>
+            <div class="filled-field green">
+              <span class="field-label-inline">Phone</span>
+              <span class="filled-value">+1 (555) … ✓</span>
+            </div>
+            <div class="filled-field green">
+              <span class="field-label-inline">LinkedIn</span>
+              <span class="filled-value">linkedin.com/… ✓</span>
+            </div>
+            <div class="filled-field green">
+              <span class="field-label-inline">Years of experience</span>
+              <span class="filled-value">8 ✓</span>
+            </div>
+            <div class="success-pill">
+              ✓ 12 of 12 fields filled
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="footer">
+        <strong>Built on Claude AI</strong> · Your data stays in your 1stStep.ai account
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>
