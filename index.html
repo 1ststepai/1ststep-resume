@@ -12,7 +12,7 @@
   <meta name="keywords"
     content="AI resume tailor, ATS resume optimizer, resume keyword tool, skill gap analysis, AI cover letter generator, job search platform, resume builder AI, LinkedIn resume import" />
   <link rel="canonical" href="https://app.1ststep.ai/" />
-  <meta name="theme-color" content="#F8FAFC" />
+  <meta name="theme-color" content="#0D0F18" />
   <meta name="robots" content="noindex, follow" />
 
   <!-- ── Open Graph (Facebook, LinkedIn, Slack previews) ─────────── -->
@@ -83,6 +83,8 @@
   <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { corePlugins: { preflight: false }, theme: { extend: {} } }</script>
   <style>
     *,
     *::before,
@@ -93,57 +95,92 @@
     }
 
     :root {
-      /* ── Brand — used ONLY on main CTA + status-critical alerts ── */
-      --brand: #4338CA;
-      --brand-dark: #3730A3;
-      --brand-glow: rgba(67, 56, 202, 0.22);
+      /* ── Brand ───────────────────────────────────────────────── */
+      --brand: #6366F1;
+      --brand-dark: #4F46E5;
+      --brand-glow: rgba(99, 102, 241, 0.28);
 
-      /* ── Grayscale surface palette ───────────────────────────── */
-      --bg: #F8FAFC;
-      /* page background */
-      --surface: #FFFFFF;
-      /* card / panel background */
-      --surface2: #F1F5F9;
-      /* subtle inset / alt surface */
-      --border: #E2E8F0;
-      /* dividers — used sparingly */
-      --border2: #CBD5E1;
-      /* stronger border if needed */
+      /* ── Dark surface palette ────────────────────────────────── */
+      --bg: #0D0F18;
+      --surface: #151722;
+      --surface2: #1C1F2E;
+      --border: rgba(255, 255, 255, 0.07);
+      --border2: rgba(255, 255, 255, 0.13);
 
       /* ── Typography ──────────────────────────────────────────── */
-      --text: #0F172A;
-      /* primary text — near-black */
-      --text2: #475569;
-      /* secondary text */
-      --muted: #94A3B8;
-      /* labels, placeholders */
-      --label: #94A3B8;
-      /* uppercase guide labels */
+      --text: #E4E7F0;
+      --text2: #8892B0;
+      --muted: #50577A;
+      --label: #50577A;
 
       /* ── Status colors ───────────────────────────────────────── */
-      --green: #059669;
-      --green-light: #ECFDF5;
-      --red: #DC2626;
-      --red-light: #FEF2F2;
-      --amber: #D97706;
-      --amber-light: #FFFBEB;
+      --green: #10B981;
+      --green-light: rgba(16, 185, 129, 0.14);
+      --red: #F87171;
+      --red-light: rgba(248, 113, 113, 0.14);
+      --amber: #FBBF24;
+      --amber-light: rgba(251, 191, 36, 0.14);
 
-      /* ── Shadows (replace borders) ───────────────────────────── */
-      --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
-      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+      /* ── Shadows ─────────────────────────────────────────────── */
+      --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.5);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255,255,255,0.04);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.04);
 
-      /* ── Aliases for legacy dark-mode var names ──────────────── */
-      --blue: #4338CA;
-      --blue-dark: #3730A3;
-      --blue-light: #EEF2FF;
+      /* ── Aliases ─────────────────────────────────────────────── */
+      --blue: #6366F1;
+      --blue-dark: #4F46E5;
+      --blue-light: rgba(99, 102, 241, 0.15);
       --dark: var(--bg);
       --dark2: var(--surface);
       --dark3: var(--border2);
-      --white: #FFFFFF;
-      /* Legacy dark-mode aliases used in older inline styles */
+      --white: #E4E7F0;
       --fg: var(--text);
       --input-bg: var(--surface2);
+      --card-bg: var(--surface2);
+    }
+
+    /* ── Light theme overrides ──────────────────────────────── */
+    [data-theme="light"] {
+      --bg: #F5F7FF;
+      --surface: #FFFFFF;
+      --surface2: #EEF0FA;
+      --border: rgba(0, 0, 0, 0.08);
+      --border2: rgba(0, 0, 0, 0.14);
+      --text: #1A1E2E;
+      --text2: #4B5563;
+      --muted: #9CA3AF;
+      --label: #9CA3AF;
+      --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.08);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0,0,0,0.04);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0,0,0,0.05);
+      --card-bg: #FFFFFF;
+      --input-bg: #FFFFFF;
+      --brand-glow: rgba(99, 102, 241, 0.18);
+      --green-light: rgba(16, 185, 129, 0.1);
+      --red-light: rgba(248, 113, 113, 0.1);
+      --amber-light: rgba(251, 191, 36, 0.1);
+      --blue-light: rgba(99, 102, 241, 0.1);
+    }
+
+    /* Theme toggle button */
+    #themeToggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      cursor: pointer;
+      color: var(--text2);
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    #themeToggle:hover {
+      border-color: var(--brand);
+      color: var(--brand);
+      background: var(--blue-light);
     }
 
     html,
@@ -166,12 +203,13 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 24px;
-      height: 56px;
+      padding: 0 20px;
+      height: 52px;
       background: var(--surface);
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
       box-shadow: var(--shadow-xs);
+      position: relative;
     }
 
     .logo {
@@ -230,13 +268,13 @@
       flex: 1;
       overflow-y: auto;
       background: var(--bg);
-      padding: 40px 24px 64px;
+      padding: 20px 20px 48px;
     }
 
     /* ── INPUT PANEL (was "left panel") ──────────────────── */
     .left-panel {
       width: 100%;
-      max-width: 720px;
+      max-width: 800px;
       display: flex;
       flex-direction: column;
       background: transparent;
@@ -246,10 +284,11 @@
     /* Each section is a floating card */
     .panel-section {
       background: var(--surface);
-      border-radius: 18px;
-      padding: 32px;
-      margin-bottom: 12px;
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 10px;
       box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
     }
 
     .panel-section:last-child {
@@ -293,13 +332,13 @@
     input[type="password"] {
       width: 100%;
       background: var(--surface2);
-      border: 1.5px solid transparent;
+      border: 1.5px solid var(--border);
       border-radius: 10px;
       color: var(--text);
       font-family: 'Inter', sans-serif;
-      font-size: 15px;
+      font-size: 14px;
       line-height: 1.7;
-      padding: 14px 16px;
+      padding: 11px 14px;
       resize: vertical;
       transition: all 0.15s;
       outline: none;
@@ -308,14 +347,14 @@
     textarea:focus,
     input:focus {
       border-color: var(--brand);
-      background: var(--surface);
+      background: rgba(99, 102, 241, 0.05);
       box-shadow: 0 0 0 3px var(--brand-glow);
     }
 
     textarea::placeholder,
     input::placeholder {
       color: var(--muted);
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .char-count {
@@ -339,7 +378,7 @@
     .file-drop:hover,
     .file-drop.drag-over {
       border-color: var(--brand);
-      background: #EEF2FF;
+      background: rgba(99, 102, 241, 0.08);
     }
 
     .file-drop input {
@@ -364,26 +403,29 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 10px 14px;
+      padding: 8px 12px;
       background: var(--green-light);
+      border: 1px solid rgba(16,185,129,0.25);
       border-radius: 8px;
-      margin-top: 10px;
+      margin-top: 8px;
     }
 
     .file-loaded span {
-      font-size: 13px;
-      color: #065F46;
+      font-size: 12px;
+      color: var(--green);
       font-weight: 500;
       flex: 1;
     }
 
     .file-loaded button {
       font-size: 11px;
-      color: #065F46;
+      color: var(--green);
       background: none;
       border: none;
       cursor: pointer;
+      opacity: 0.7;
     }
+    .file-loaded button:hover { opacity: 1; }
 
     .or-divider {
       text-align: center;
@@ -619,7 +661,7 @@
 
     .step-item.active {
       border-color: var(--brand);
-      background: #EEF2FF;
+      background: rgba(99, 102, 241, 0.1);
     }
 
     .step-item.done {
@@ -718,12 +760,12 @@
 
     .match-score-badge.good {
       background: var(--green-light);
-      color: #065F46;
+      color: var(--green);
     }
 
     .match-score-badge.ok {
       background: var(--amber-light);
-      color: #78350F;
+      color: var(--amber);
     }
 
     .topbar-actions {
@@ -807,7 +849,7 @@
 
     .tab-badge.green {
       background: var(--green-light);
-      color: #065F46;
+      color: var(--green);
     }
 
     .tab-badge.red {
@@ -894,7 +936,7 @@
 
     .kw-pill.match {
       background: var(--green-light);
-      color: #065F46;
+      color: var(--green);
     }
 
     .kw-pill.gap-required {
@@ -1148,7 +1190,7 @@
     }
 
     .toast.success {
-      background: #065F46;
+      background: var(--green);
     }
 
     .toast.error {
@@ -1633,7 +1675,7 @@
     }
 
     .mode-more-item.active {
-      background: #EEF2FF;
+      background: rgba(99, 102, 241, 0.12);
       color: var(--brand);
     }
 
@@ -1738,7 +1780,7 @@
     }
 
     .btn-tailor-dl.primary {
-      background: #EEF2FF;
+      background: rgba(99, 102, 241, 0.12);
       border-color: rgba(99, 102, 241, 0.35);
       color: var(--brand);
     }
@@ -1754,7 +1796,7 @@
     }
 
     .btn-tailor-dl.apply-now:hover {
-      background: #D1FAE5;
+      background: var(--green-light);
     }
 
     .btn-tailor-applied-badge {
@@ -1842,7 +1884,7 @@
 
     .radius-btn.active {
       border-color: var(--brand);
-      background: #EEF2FF;
+      background: rgba(99, 102, 241, 0.12);
       color: var(--brand);
     }
 
@@ -1993,7 +2035,7 @@
       border-radius: 100px;
       font-size: 11px;
       font-weight: 700;
-      background: #EEF2FF;
+      background: rgba(99, 102, 241, 0.12);
       color: var(--brand);
       white-space: nowrap;
     }
@@ -2024,7 +2066,7 @@
     .job-meta-pill.remote {
       color: var(--brand);
       border-color: rgba(67, 56, 202, 0.25);
-      background: #EEF2FF;
+      background: rgba(99, 102, 241, 0.12);
     }
 
     .job-desc {
@@ -2201,7 +2243,7 @@
     .btn-js-upload:hover {
       border-color: var(--brand);
       color: var(--brand);
-      background: #EEF2FF;
+      background: rgba(99, 102, 241, 0.12);
     }
 
     .js-upload-hint {
@@ -2215,7 +2257,7 @@
       margin-top: 12px;
       padding: 12px 14px;
       border-radius: 10px;
-      background: #EEF2FF;
+      background: rgba(99, 102, 241, 0.12);
       border: 1.5px solid rgba(67, 56, 202, 0.3);
       color: var(--brand);
       font-size: 13px;
@@ -2276,7 +2318,7 @@
     }
 
     .role-tab.active {
-      background: #EEF2FF;
+      background: rgba(99, 102, 241, 0.12);
       border-color: var(--brand);
       color: var(--brand);
     }
@@ -2482,7 +2524,7 @@
     }
 
     .status-applied {
-      background: #EEF2FF;
+      background: rgba(99, 102, 241, 0.12);
       color: var(--brand);
     }
 
@@ -2684,7 +2726,7 @@
 
     .resume-choice-btn:hover {
       border-color: var(--brand);
-      background: #EEF2FF;
+      background: rgba(99, 102, 241, 0.12);
     }
 
     .resume-choice-btn strong {
@@ -3081,7 +3123,7 @@
 
     .btn-review-platform:hover {
       border-color: var(--brand);
-      background: #EEF2FF;
+      background: rgba(99, 102, 241, 0.12);
     }
 
     .btn-review-platform .platform-icon {
@@ -3139,7 +3181,7 @@
       padding: 12px 16px;
       border-radius: 12px;
       margin-bottom: 20px;
-      background: #EEF2FF;
+      background: rgba(99, 102, 241, 0.12);
       border: 1.5px solid rgba(67, 56, 202, 0.25);
     }
 
@@ -3521,7 +3563,7 @@
 
     .resume-source-card.active {
       border-color: var(--brand);
-      background: #EEF2FF;
+      background: rgba(99, 102, 241, 0.12);
       box-shadow: 0 0 0 3px var(--brand-glow);
     }
 
@@ -3635,7 +3677,7 @@
         flex-direction: column;
         position: fixed;
         left: 0;
-        top: 56px;
+        top: 52px;
         bottom: 0;
         width: 220px;
         background: var(--surface);
@@ -3648,8 +3690,8 @@
       .main, #heroSection, #flowHint {
         margin-left: 220px;
       }
-      /* Tighten top padding on desktop — sidebar removes need for huge breathing room */
-      .main { padding-top: 28px; }
+      /* Tighten top padding on desktop */
+      .main { padding-top: 20px; }
       /* Sidebar hides the topbar tab strip — sidebar is the nav now */
       .mode-toggle { display: none !important; }
       /* Tighten topbar on desktop now that tabs are gone */
@@ -3729,98 +3771,565 @@
         padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
       }
     }
+
+    /* ═══════════════════════════════════════════════════════════
+       REDESIGN 2.0 — DARK SAAS DASHBOARD
+    ══════════════════════════════════════════════════════════════ */
+
+    /* ── Topbar: 3-column logo | title | actions ── */
+    .topbar-center {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text2);
+      letter-spacing: 0.1px;
+      pointer-events: none;
+    }
+    .topbar-upgrade {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 14px;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.18s;
+      box-shadow: 0 2px 10px rgba(99,102,241,0.45);
+      letter-spacing: 0.2px;
+    }
+    .topbar-upgrade:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(99,102,241,0.55);
+    }
+    .topbar-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 1.5px solid var(--border2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .topbar-avatar:hover {
+      border-color: var(--brand);
+    }
+
+    /* ── Hero action panel: 2-column card ── */
+    .hero-action-panel {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 0;
+      background: var(--surface);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      margin-bottom: 10px;
+      animation: fadeScaleIn 0.35s ease both;
+    }
+    .hero-left {
+      padding: 28px 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: linear-gradient(145deg, rgba(99,102,241,0.06) 0%, rgba(139,92,246,0.04) 100%);
+      border-right: 1px solid var(--border);
+    }
+    .hero-ai-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #A5B4FC;
+      letter-spacing: 0.3px;
+      margin-bottom: 14px;
+      width: fit-content;
+    }
+    .hero-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.25;
+      letter-spacing: -0.5px;
+      margin-bottom: 10px;
+    }
+    .hero-subtitle {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    .hero-trust-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .hero-trust-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text2);
+    }
+    .hero-trust-item svg {
+      flex-shrink: 0;
+      color: var(--green);
+    }
+    .hero-right {
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: var(--surface);
+    }
+    .hero-input-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--label);
+      margin-bottom: 6px;
+    }
+
+    /* ── Quick Actions Sidebar ── */
+    .resume-dashboard-wrap {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      gap: 14px;
+      width: 100%;
+      max-width: 1060px;
+      align-items: start;
+    }
+    .resume-main-col {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .quick-actions-sidebar {
+      position: sticky;
+      top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .qs-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      animation: fadeScaleIn 0.3s ease both;
+    }
+    .qs-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .qs-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 9px 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--text2);
+      font-size: 12px;
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: left;
+      margin-bottom: 6px;
+    }
+    .qs-btn:last-child { margin-bottom: 0; }
+    .qs-btn:hover:not(:disabled) {
+      background: rgba(99,102,241,0.1);
+      border-color: rgba(99,102,241,0.3);
+      color: var(--text);
+    }
+    .qs-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .qs-btn .qs-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    .qs-btn-primary {
+      background: linear-gradient(135deg, #4F46E5, #6366F1);
+      border-color: transparent;
+      color: #fff;
+      font-weight: 600;
+    }
+    .qs-btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, #4338CA, #4F46E5);
+      border-color: transparent;
+      color: #fff;
+    }
+    .qs-coming-soon {
+      font-size: 10px;
+      color: var(--muted);
+      background: var(--surface2);
+      border-radius: 4px;
+      padding: 1px 5px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .qs-stat-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .qs-stat-row:last-child { border-bottom: none; }
+    .qs-stat-label { color: var(--text2); }
+    .qs-stat-value { color: var(--text); font-weight: 600; }
+
+    /* ── Trust pill badges ── */
+    .trust-pill-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .trust-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      font-size: 11px;
+      color: var(--text2);
+      font-weight: 500;
+    }
+    .trust-pill svg { flex-shrink: 0; opacity: 0.7; }
+
+    /* ── Match Score + Insights (3-col) ── */
+    .insights-grid {
+      display: grid;
+      grid-template-columns: 160px 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+      animation: fadeScaleIn 0.3s ease both;
+    }
+    .insight-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .insight-card-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .match-ring-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .match-ring {
+      position: relative;
+      width: 80px;
+      height: 80px;
+    }
+    .match-ring svg {
+      transform: rotate(-90deg);
+    }
+    .match-ring-track {
+      fill: none;
+      stroke: var(--border2);
+      stroke-width: 7;
+    }
+    .match-ring-fill {
+      fill: none;
+      stroke-width: 7;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1);
+    }
+    .match-ring-fill.green { stroke: var(--green); }
+    .match-ring-fill.amber { stroke: var(--amber); }
+    .match-ring-fill.red { stroke: var(--red); }
+    .match-ring-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .match-ring-pct {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1;
+    }
+    .match-ring-sub {
+      font-size: 9px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .insight-kw-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .insight-kw-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      color: var(--text2);
+      padding: 4px 0;
+    }
+    .insight-kw-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .insight-kw-dot.missing { background: var(--red); }
+    .insight-kw-dot.strength { background: var(--green); }
+
+    /* ── Skeleton loaders ── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface2) 25%, rgba(255,255,255,0.04) 50%, var(--surface2) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s ease-in-out infinite;
+      border-radius: 6px;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .skeleton-line {
+      height: 12px;
+      margin-bottom: 8px;
+      border-radius: 6px;
+    }
+    .skeleton-line.wide { width: 85%; }
+    .skeleton-line.med  { width: 60%; }
+    .skeleton-line.short { width: 40%; }
+    .skeleton-block {
+      height: 80px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeScaleIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.99); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    .fade-in { animation: fadeIn 0.25s ease both; }
+
+    /* ── Run button tweak for compact hero ── */
+    .btn-run-compact {
+      width: 100%;
+      padding: 13px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+      color: white;
+      font-weight: 700;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 18px rgba(99,102,241,0.45), 0 1px 0 rgba(255,255,255,0.08) inset;
+      letter-spacing: 0.2px;
+    }
+    .btn-run-compact:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 7px 24px rgba(99,102,241,0.55);
+    }
+
+    /* ── Resume Grid: 12-col dashboard layout ── */
+    #resumeGrid {
+      width: 100%;
+      max-width: 1100px;
+      display: grid; /* hidden via JS when switching to other modes */
+      grid-template-columns: 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    @media (min-width: 900px) {
+      #resumeGrid {
+        grid-template-columns: minmax(0, 1fr) 220px;
+      }
+    }
+    #resumeMainCol {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+    }
+    #resumeMainCol .left-panel,
+    #resumeMainCol .right-panel {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+
+    /* ── Quick Sidebar: sticky in grid column ── */
+    #quickSidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: sticky;
+      top: 20px;
+      max-height: calc(100vh - 80px);
+      overflow-y: auto;
+    }
+    @media (max-width: 899px) {
+      #quickSidebar { display: none; }
+    }
+
+    /* ── Topbar desktop override ── */
+    @media (min-width: 769px) {
+      .hero-action-panel { max-width: 100%; }
+    }
+
+    /* ── Mobile: stack hero columns ── */
+    @media (max-width: 768px) {
+      .hero-action-panel {
+        grid-template-columns: 1fr;
+      }
+      .hero-left {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 20px 18px;
+      }
+      .hero-right { padding: 16px 18px; }
+      .resume-dashboard-wrap {
+        grid-template-columns: 1fr;
+      }
+      .quick-actions-sidebar { display: none; }
+      .insights-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .insights-grid .insight-card:first-child {
+        grid-column: 1 / -1;
+      }
+    }
   </style>
 </head>
 
 <body>
   <div class="app">
 
-    <!-- Top Bar -->
+    <!-- Top Bar: Logo | Page Title | Actions -->
     <div class="topbar">
-      <div class="logo" id="logoBtn" title="1stStep.ai">1stStep<span>.ai</span></div>
-      <div class="mode-toggle">
-        <!-- Primary tabs: Resume Tailor · Job Search · My Resumes -->
-        <button class="mode-btn active" id="modeResume" onclick="switchMode('resume')"><svg width="13" height="13"
-            viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M11 1H3a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V5l-3-4z" stroke="currentColor"
-              stroke-width="1.5" stroke-linejoin="round" />
-            <path d="M11 1v4h3M5 8h6M5 10.5h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-          </svg> Resume Tailor</button>
-        <button class="mode-btn" id="modeJobs" onclick="switchMode('jobs')"><svg width="13" height="13"
-            viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5" />
-            <path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-          </svg> Job Search</button>
-        <button class="mode-btn" id="modeTailored" onclick="switchMode('tailored')"><svg width="13" height="13"
-            viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor"
-              stroke-width="1.5" />
-            <path d="M2 4h8a1 1 0 011 1v10a1 1 0 01-1 1H2a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="currentColor"
-              stroke-width="1.5" />
-            <path d="M4 8h5M4 10.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-          </svg> My Resumes <span id="tailoredBadge"
-            style="display:none;background:rgba(99,102,241,0.3);color:#a5b4fc;border-radius:100px;padding:1px 6px;font-size:10px;margin-left:2px">0</span></button>
-        <!-- More dropdown: Applications · LinkedIn Profile · Bulk Apply -->
-        <div class="mode-more" id="modeMoreWrap">
-          <button class="mode-btn" id="modeMoreBtn" onclick="toggleMoreMenu()" title="More tools">
-            More <span style="font-size:9px;opacity:0.7">▾</span>
-            <span id="moreActiveDot"
-              style="display:none;width:6px;height:6px;border-radius:50%;background:#60A5FA;margin-left:2px"></span>
-          </button>
-          <div class="mode-more-menu" id="moreMenu">
-            <button class="mode-more-item" id="modeTracker" onclick="switchMode('tracker');toggleMoreMenu(false)"><svg
-                width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5" />
-                <path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-                  stroke-linejoin="round" />
-              </svg> Applications <span id="trackerBadge"
-                style="display:none;background:var(--blue);color:white;border-radius:100px;padding:1px 6px;font-size:10px;margin-left:4px">0</span></button>
-            <button class="mode-more-item" id="modeLinkedIn" onclick="switchMode('linkedin');toggleMoreMenu(false)"><svg
-                width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5" />
-                <path d="M4 6.5v5M4 4v.5M7 11.5V9c0-1.1.9-2 2-2s2 .9 2 2v2.5M7 6.5v5" stroke="currentColor"
-                  stroke-width="1.5" stroke-linecap="round" />
-              </svg> LinkedIn Profile</button>
-            <button class="mode-more-item" id="modeBulkApply"
-              onclick="switchMode('bulkapply');toggleMoreMenu(false)"><svg width="13" height="13" viewBox="0 0 16 16"
-                fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-                <circle cx="13" cy="12" r="2.5" fill="currentColor" />
-                <path d="M12 12l.7.7 1.3-1.3" stroke="white" stroke-width="1" stroke-linecap="round"
-                  stroke-linejoin="round" />
-              </svg> Bulk Apply</button>
+
+      <!-- Left: Logo -->
+      <div class="logo" id="logoBtn" title="1stStep.ai" style="cursor:pointer" onclick="switchMode('resume');setMobileNav('resume')">1stStep<span>.ai</span></div>
+
+      <!-- Center: Dynamic page title (desktop only) -->
+      <div class="topbar-center hide-mobile" id="pageTitle">Resume Tailor</div>
+
+      <!-- Right: mobile nav toggle + upgrade + avatar -->
+      <div class="topbar-right" style="gap:8px">
+
+        <!-- Mobile-only mode toggle (hidden on desktop via sidebar) -->
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="modeResume" onclick="switchMode('resume')"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M11 1H3a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V5l-3-4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M11 1v4h3M5 8h6M5 10.5h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Resume Tailor</button>
+          <button class="mode-btn" id="modeJobs" onclick="switchMode('jobs')"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Job Search</button>
+          <button class="mode-btn" id="modeTailored" onclick="switchMode('tailored')"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M2 4h8a1 1 0 011 1v10a1 1 0 01-1 1H2a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M4 8h5M4 10.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> My Resumes <span id="tailoredBadge" style="display:none;background:rgba(99,102,241,0.3);color:#a5b4fc;border-radius:100px;padding:1px 6px;font-size:10px;margin-left:2px">0</span></button>
+          <div class="mode-more" id="modeMoreWrap">
+            <button class="mode-btn" id="modeMoreBtn" onclick="toggleMoreMenu()" title="More tools">More <span style="font-size:9px;opacity:0.7">▾</span><span id="moreActiveDot" style="display:none;width:6px;height:6px;border-radius:50%;background:#60A5FA;margin-left:2px"></span></button>
+            <div class="mode-more-menu" id="moreMenu">
+              <button class="mode-more-item" id="modeTracker" onclick="switchMode('tracker');toggleMoreMenu(false)"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Applications <span id="trackerBadge" style="display:none;background:var(--blue);color:white;border-radius:100px;padding:1px 6px;font-size:10px;margin-left:4px">0</span></button>
+              <button class="mode-more-item" id="modeLinkedIn" onclick="switchMode('linkedin');toggleMoreMenu(false)"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 6.5v5M4 4v.5M7 11.5V9c0-1.1.9-2 2-2s2 .9 2 2v2.5M7 6.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> LinkedIn Profile</button>
+              <button class="mode-more-item" id="modeBulkApply" onclick="switchMode('bulkapply');toggleMoreMenu(false)"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="13" cy="12" r="2.5" fill="currentColor"/></svg> Bulk Apply</button>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="topbar-right">
-        <!-- Beta chip — shown only when beta is active -->
-        <div id="betaBadge"
-          style="display:none;align-items:center;gap:5px;padding:5px 10px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);border-radius:8px;font-size:11px;font-weight:600;color:#818CF8;cursor:default"
-          title="Beta access active">
+
+        <!-- Beta badge (shown during beta) -->
+        <div id="betaBadge" style="display:none;align-items:center;gap:5px;padding:4px 9px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);border-radius:7px;font-size:11px;font-weight:600;color:#818CF8;cursor:default" title="Beta access active">
           <span>🧪</span><span id="betaDaysLeft" class="hide-mobile">Beta</span>
         </div>
-        <!-- Feedback button — shown only during beta -->
-        <button id="feedbackBtn" onclick="openFeedbackForm()"
-          style="display:none;align-items:center;gap:5px;padding:6px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s"
-          onmouseover="this.style.borderColor='var(--brand)';this.style.color='var(--brand)'"
-          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
+
+        <!-- Feedback (beta only) -->
+        <button id="feedbackBtn" onclick="openFeedbackForm()" style="display:none;align-items:center;gap:5px;padding:5px 11px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s" onmouseover="this.style.borderColor='var(--brand)';this.style.color='var(--brand)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
           <span>💬</span><span class="badge-label hide-mobile">Feedback</span>
         </button>
-        <div class="api-badge" onclick="downloadDataBackup()"
-          title="Download a backup of your resume, history &amp; subscription — restore it on any browser">
-          <span>💾</span>
-          <span class="badge-label hide-mobile">Backup</span>
+
+        <!-- Upgrade CTA -->
+        <button class="topbar-upgrade hide-mobile" id="topbarUpgradeBtn" onclick="openProfileModal()" title="Upgrade your plan">
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 5h5l-4 3 1.5 5L8 11l-4.5 3L5 9 1 6h5z"/></svg>
+          Upgrade
+        </button>
+
+        <!-- Theme toggle -->
+        <button id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark mode" aria-label="Toggle theme">
+          <svg id="themeIconMoon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"/></svg>
+          <svg id="themeIconSun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+
+        <!-- Backup -->
+        <div class="api-badge" onclick="downloadDataBackup()" title="Download data backup" style="padding:5px 10px">
+          <span>💾</span><span class="badge-label hide-mobile">Backup</span>
         </div>
-        <div class="api-badge" onclick="openProfileModal()">
-          <span>👤</span>
-          <span id="profileBadgeText" class="badge-label hide-mobile">Account</span>
+
+        <!-- Avatar / Account -->
+        <div class="topbar-avatar" onclick="openProfileModal()" title="Account settings" id="topbarAvatar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
+
       </div>
     </div>
 
     <!-- First-time flow hint — shown on first visit until user completes first tailor -->
     <div id="flowHint"
-      style="display:none;align-items:center;justify-content:center;gap:0;padding:7px 20px;background:#EEF2FF;border-bottom:1px solid rgba(67,56,202,0.15);font-size:12px;color:var(--text2);flex-wrap:wrap">
+      style="display:none;align-items:center;justify-content:center;gap:0;padding:7px 20px;background:rgba(99,102,241,0.08);border-bottom:1px solid rgba(99,102,241,0.15);font-size:12px;color:var(--text2);flex-wrap:wrap">
       <span style="font-weight:700;color:var(--text);margin-right:10px">How it works:</span>
       <span id="flowStep1"
         style="padding:3px 10px;border-radius:100px;background:rgba(67,56,202,0.12);color:var(--brand);font-weight:600">1
@@ -3885,128 +4394,374 @@
 
     <div class="main">
 
-      <!-- Left Panel: Inputs -->
+      <!-- Resume Mode: 12-column dashboard grid -->
+      <div id="resumeGrid">
+        <div id="resumeMainCol">
+
+      <!-- Left Panel: Hero + Inputs -->
       <div class="left-panel">
 
-        <!-- Resume input -->
-        <div class="panel-section">
-          <div class="panel-label"><span class="num">1</span> Your Current Resume</div>
+        <!-- ── Hero Action Panel: 2-column ── -->
+        <div class="hero-action-panel">
 
-          <!-- File upload -->
-          <div class="file-drop" id="fileDrop" onclick="document.getElementById('fileInput').click()"
-            ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
-            <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt" onchange="handleFileSelect(event)" />
-            <div class="file-drop-icon"><svg style="width:40px;height:40px;stroke:var(--muted);display:block;margin:0 auto" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
-            <p><strong>Click to upload</strong> or drag & drop</p>
-            <p style="margin-top:4px;font-size:11px;color:var(--muted)">PDF, Word (.docx), or plain text</p>
+          <!-- Left: Value prop + trust signals -->
+          <div class="hero-left">
+            <div class="hero-ai-badge">
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.8 4.6L14 6l-3 3 1 4.3L8 11l-4 2.3L5 9 2 6l4.2-.4z"/></svg>
+              AI-powered optimization
+            </div>
+            <h1 class="hero-title">Tailor Your Resume<br>in Seconds</h1>
+            <p class="hero-subtitle">Upload your resume + paste a job description. We'll handle the rest.</p>
+            <div class="hero-trust-list">
+              <div class="hero-trust-item">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 8 6 12 14 4"/></svg>
+                Keyword matching engine
+              </div>
+              <div class="hero-trust-item">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 8 6 12 14 4"/></svg>
+                ATS-friendly formatting
+              </div>
+              <div class="hero-trust-item">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 8 6 12 14 4"/></svg>
+                Parsed in-browser, never stored
+              </div>
+              <div class="hero-trust-item">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 8 6 12 14 4"/></svg>
+                3 free tailors — no card needed
+              </div>
+            </div>
+            <p style="margin-top:18px;font-size:11px;color:var(--muted);line-height:1.5">Used by job seekers to land<br>interviews faster.</p>
           </div>
 
-          <!-- LinkedIn PDF import shortcut -->
-          <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px">
-            <div style="height:1px;flex:1;background:var(--border)"></div>
-            <button onclick="openLinkedInPdfModal()"
-              style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--muted);font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:6px;transition:all 0.15s;white-space:nowrap"
-              onmouseenter="this.style.background='rgba(99,102,241,0.08)';this.style.color='#818CF8'"
-              onmouseleave="this.style.background='none';this.style.color='var(--muted)'">
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5" />
-                <path d="M4 6.5v5M4 4v.5M7 11.5V9c0-1.1.9-2 2-2s2 .9 2 2v2.5M7 6.5v5" stroke="currentColor"
-                  stroke-width="1.5" stroke-linecap="round" />
-              </svg>
-              Import from LinkedIn
-            </button>
-            <div style="height:1px;flex:1;background:var(--border)"></div>
-          </div>
+          <!-- Right: Inputs + CTA -->
+          <div class="hero-right">
 
-          <!-- Privacy trust signal -->
-          <p style="margin-top:8px;font-size:11px;color:var(--muted);text-align:center;line-height:1.5">
-            <svg style="width:12px;height:12px;stroke:var(--muted);display:inline;vertical-align:middle;margin-right:4px;margin-bottom:1px" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Parsed in your browser — never stored on our servers
-          </p>
+            <!-- Resume upload -->
+            <div>
+              <div class="hero-input-label">1 · Your Resume</div>
+              <div class="file-drop" id="fileDrop" onclick="document.getElementById('fileInput').click()"
+                ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)"
+                style="padding:16px 12px">
+                <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt" onchange="handleFileSelect(event)" />
+                <div class="file-drop-icon" style="margin-bottom:6px"><svg style="width:28px;height:28px;stroke:var(--muted);display:block;margin:0 auto" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+                <p style="font-size:12px"><strong>Click to upload</strong> or drag &amp; drop</p>
+                <p style="margin-top:3px;font-size:11px;color:var(--muted)">PDF, Word, or plain text</p>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:7px">
+                <div style="height:1px;flex:1;background:var(--border)"></div>
+                <button onclick="openLinkedInPdfModal()" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--muted);font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:6px;transition:all 0.15s;white-space:nowrap" onmouseenter="this.style.background='rgba(99,102,241,0.08)';this.style.color='#818CF8'" onmouseleave="this.style.background='none';this.style.color='var(--muted)'">
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 6.5v5M4 4v.5M7 11.5V9c0-1.1.9-2 2-2s2 .9 2 2v2.5M7 6.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  Import from LinkedIn
+                </button>
+                <div style="height:1px;flex:1;background:var(--border)"></div>
+              </div>
+              <div id="wrongFileWarning" style="display:none;margin-top:7px;padding:9px 12px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);border-radius:8px;font-size:12px;color:#FCA5A5;">
+                ⚠ Couldn't read that file. Try a different PDF or save as .docx and re-upload.
+                <button onclick="document.getElementById('wrongFileWarning').style.display='none'" style="margin-left:8px;font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;">✕</button>
+              </div>
+              <div id="fileLoaded" class="file-loaded" style="display:none">
+                <span id="fileName">resume.txt</span>
+                <button onclick="clearFile()">✕ Remove</button>
+              </div>
+              <textarea id="resumeText" rows="1" style="display:none;height:0;padding:0;border:none;resize:none" placeholder="" aria-hidden="true" tabindex="-1"></textarea>
+            </div>
 
-          <!-- File parse error -->
-          <div id="wrongFileWarning"
-            style="display:none;margin-top:8px;padding:10px 14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;font-size:12px;color:#FCA5A5;">
-            ⚠ Couldn't read that file. Try a different PDF or save your resume as .docx and re-upload.
-            <button onclick="document.getElementById('wrongFileWarning').style.display='none'"
-              style="margin-left:8px;font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;">✕</button>
-          </div>
+            <!-- Job Description -->
+            <div id="jdSection">
+              <div class="hero-input-label">2 · Job Description</div>
+              <div id="jobContextBanner" style="display:none;align-items:center;gap:8px;padding:9px 12px;background:rgba(99,102,241,0.12);border:1.5px solid rgba(99,102,241,0.25);border-radius:9px;margin-bottom:8px;font-size:12px;color:var(--brand);font-weight:500">
+                <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="jobContextLabel">💼 Tailoring for: Role at Company</span>
+                <button onclick="clearJobContext()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;flex-shrink:0;padding:0">✕</button>
+              </div>
+              <textarea id="jobText" rows="5" placeholder="Paste the full job description here — the more detail, the better the result."></textarea>
+            </div>
 
-          <div id="fileLoaded" class="file-loaded" style="display:none">
-            <span id="fileName">resume.txt</span>
-            <button onclick="clearFile()">✕ Remove</button>
-          </div>
+            <!-- Tier + Run -->
+            <div class="run-section">
+              <div class="tier-select" style="margin-bottom:12px">
+                <button class="tier-btn active" id="tierEssential" onclick="setTier('essential')"><strong>Resume Only</strong></button>
+                <button class="tier-btn complete-tier" id="tierComplete" onclick="setTier('complete')"><strong>Resume + Cover Letter</strong><span class="tier-lock" id="clLockIcon"></span></button>
+              </div>
+              <button class="btn-run" id="runBtn" onclick="runTailoring()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="runIcon"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span id="runBtnLabel">✦ Generate Tailored Resume</span>
+              </button>
+              <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:8px">Takes 20–45 seconds · <span style="color:var(--green)">ATS-friendly output</span></p>
+              <div id="tailorUsageMeter" style="margin-top:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+                  <span style="font-size:11px;color:var(--text2)" id="tailorUsageLabel">3 free tailors · No card needed</span>
+                  <span style="font-size:10px;color:var(--muted)" id="tailorUsageReset">resets monthly</span>
+                </div>
+                <div style="height:4px;background:var(--border);border-radius:100px;overflow:hidden">
+                  <div id="tailorUsageBar" style="height:100%;width:0%;background:var(--green);border-radius:100px;transition:width 0.4s ease,background 0.4s ease"></div>
+                </div>
+              </div>
+            </div>
 
-          <textarea id="resumeText" rows="1" style="display:none;height:0;padding:0;border:none;resize:none"
-            placeholder="" aria-hidden="true" tabindex="-1"></textarea>
-        </div>
+          </div><!-- /hero-right -->
 
-        <!-- JD input — always visible as Step 2 -->
-        <div class="panel-section" id="jdSection">
-          <div class="panel-label"><span class="num">2</span> Step 2 — Paste the Job Description</div>
-          <!-- Job context banner — shown when tailoring from a job card -->
-          <div id="jobContextBanner"
-            style="display:none;align-items:center;gap:8px;padding:10px 14px;background:#EEF2FF;border:1.5px solid rgba(67,56,202,0.25);border-radius:10px;margin-bottom:10px;font-size:13px;color:var(--brand);font-weight:500">
-            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="jobContextLabel">💼
-              Tailoring for: Role at Company</span>
-            <button onclick="clearJobContext()"
-              style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;flex-shrink:0;padding:0">✕</button>
-          </div>
-          <textarea id="jobText" rows="8"
-            placeholder="Paste the full job description here — the more detail, the better the result."></textarea>
-        </div>
+        </div><!-- /hero-action-panel -->
 
-        <!-- Notes — collapsed by default, inside its own card -->
-        <div class="panel-section" style="padding-top:20px;padding-bottom:20px">
+        <!-- Extra context — collapsible card below hero -->
+        <div class="panel-section" style="padding:14px 20px">
           <details id="advancedSection">
-            <summary
-              style="font-size:11px;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;color:var(--label);cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;user-select:none">
-              <span id="advArrow" style="font-size:9px;transition:transform 0.15s;color:var(--muted)">▶</span> Extra
-              Context <span
-                style="font-size:11px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(Optional)</span>
+            <summary style="font-size:11px;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;color:var(--label);cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;user-select:none">
+              <span id="advArrow" style="font-size:9px;transition:transform 0.15s;color:var(--muted)">▶</span> Extra Context <span style="font-size:11px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(Optional)</span>
             </summary>
-            <div style="margin-top:14px">
-              <textarea id="notesText" rows="3"
-                placeholder="e.g. I'm changing careers from finance to tech. Emphasize transferable skills and downplay unrelated experience."></textarea>
+            <div style="margin-top:12px">
+              <textarea id="notesText" rows="3" placeholder="e.g. I'm changing careers from finance to tech. Emphasize transferable skills and downplay unrelated experience."></textarea>
             </div>
           </details>
         </div>
 
-        <!-- Output mode + Run — wrapped in a card for visual separation -->
-        <div class="panel-section run-section">
-          <!-- Tier / output mode toggle — here so it's seen right before running -->
-          <div class="tier-select" style="margin-bottom:16px">
-            <button class="tier-btn active" id="tierEssential" onclick="setTier('essential')">
-              <strong>Resume Only</strong>
+      </div><!-- /left-panel -->
+
+      <!-- Right Panel: Output (adjacent to left-panel inside resumeMainCol) -->
+      <div class="right-panel">
+
+        <!-- Empty state -->
+        <div class="empty-state" id="emptyState">
+          <div style="text-align:center;padding:60px 24px">
+            <div style="font-size:48px;margin-bottom:16px">✨</div>
+            <h3 style="font-size:18px;font-weight:700;color:var(--text);margin:0 0 8px">Your tailored resume will appear
+              here</h3>
+            <p style="font-size:13px;color:var(--muted);margin:0;line-height:1.6;max-width:280px;margin:0 auto">Upload
+              your resume and paste a job description, then hit Tailor Resume.</p>
+          </div>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress-panel" id="progressPanel">
+          <div class="progress-title">Tailoring your resume...</div>
+          <div class="steps">
+            <div class="step-item" id="step1">
+              <div class="step-icon">🔍</div>
+              <div class="step-text"><strong>Reading the job posting</strong><span>Identifying what the employer is
+                  looking for</span></div>
+            </div>
+            <div class="step-item" id="step2">
+              <div class="step-icon">📊</div>
+              <div class="step-text"><strong>Matching your experience</strong><span>Connecting your background to this
+                  role</span></div>
+            </div>
+            <div class="step-item" id="step3">
+              <div class="step-icon">✍️</div>
+              <div class="step-text"><strong>Rewriting your resume</strong><span>Tailoring your bullets, summary &amp;
+                  skills</span></div>
+            </div>
+            <div class="step-item" id="step4">
+              <div class="step-icon">✅</div>
+              <div class="step-text"><strong>Final formatting check</strong><span>Making sure everything looks
+                  clean</span></div>
+            </div>
+            <div class="step-item" id="step5" style="display:none">
+              <div class="step-icon">✉️</div>
+              <div class="step-text"><strong>Writing your cover letter</strong><span>Personalized for this specific
+                  role</span></div>
+            </div>
+          </div>
+
+          <!-- Skill Gap Preview — injected after Step 2 completes -->
+          <div id="skillGapPreview"
+            style="display:none;margin-top:16px;padding:14px 16px;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;animation:fadeIn 0.3s ease">
+            <div
+              style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">
+              Skill Match Preview</div>
+            <div id="skillGapBody" style="display:flex;flex-direction:column;gap:8px"></div>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div class="results-panel" id="resultsPanel">
+          <div class="results-topbar">
+            <div id="matchBadge" class="match-score-badge good">✓ Resume Tailored</div>
+            <div class="topbar-actions">
+              <!-- Tools dropdown -->
+              <div style="position:relative" id="toolsDropdownWrap">
+                <button class="btn-sm btn-sm-outline" onclick="toggleToolsDropdown()"
+                  style="white-space:nowrap;gap:5px;display:inline-flex;align-items:center" id="toolsDropdownBtn">
+                  🛠 Tools
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" id="toolsChevron" style="transition:transform 0.2s">
+                    <path d="M4 6l4 4 4-4" />
+                  </svg>
+                </button>
+                <div id="toolsDropdown"
+                  style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);min-width:190px;z-index:200;overflow:hidden">
+                  <button onclick="openTemplateModal();closeToolsDropdown()" id="applyTemplateBtn"
+                    style="width:100%;text-align:left;padding:10px 14px;border:none;background:transparent;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);display:flex;align-items:center;gap:9px;transition:background 0.1s"
+                    onmouseenter="this.style.background='var(--surface2)'"
+                    onmouseleave="this.style.background='transparent'">
+                    🎨 <span>Apply Template</span>
+                  </button>
+                  <button onclick="openInterviewModal();closeToolsDropdown()" id="interviewPrepBtn"
+                    style="width:100%;text-align:left;padding:10px 14px;border:none;background:transparent;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);display:flex;align-items:center;gap:9px;transition:background 0.1s;border-top:1px solid var(--border)"
+                    onmouseenter="this.style.background='var(--surface2)'"
+                    onmouseleave="this.style.background='transparent'">
+                    🎤 <span>Interview Prep</span>
+                  </button>
+                  <button onclick="openDiffModal();closeToolsDropdown()" id="viewChangesBtn"
+                    style="width:100%;text-align:left;padding:10px 14px;border:none;background:transparent;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);display:flex;align-items:center;gap:9px;transition:background 0.1s;border-top:1px solid var(--border)"
+                    onmouseenter="this.style.background='var(--surface2)'"
+                    onmouseleave="this.style.background='transparent'">
+                    📊 <span>View Changes</span>
+                  </button>
+                </div>
+              </div>
+              <button class="btn-sm btn-sm-primary" onclick="downloadDocx()"
+                style="white-space:nowrap;gap:6px;display:inline-flex;align-items:center"
+                title="Plain text — best for uploading to job boards &amp; ATS systems">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round">
+                  <path d="M8 2v8M5 7l3 3 3-3M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1" />
+                </svg>
+                ATS Plain Text (.docx)
+              </button>
+              <button class="btn-sm btn-sm-outline" onclick="runTailoring()" style="white-space:nowrap">↺
+                Re-tailor</button>
+              <button class="btn-sm btn-sm-outline" onclick="switchMode('jobs')" style="white-space:nowrap">🔍
+                Jobs</button>
+              <button class="btn-sm btn-sm-outline" onclick="switchMode('tailored')" style="white-space:nowrap">📁
+                History</button>
+            </div>
+          </div>
+
+          <!-- What's Next nudge — shown after tailoring, dismissed on action -->
+          <div id="whatsNextBar"
+            style="display:none;align-items:center;gap:6px;padding:10px 18px;background:rgba(16,185,129,0.08);border-bottom:1px solid rgba(16,185,129,0.2);flex-wrap:wrap">
+            <span style="font-size:12px;font-weight:600;color:var(--green);margin-right:4px;white-space:nowrap">What's next?</span>
+            <button id="wnTemplate" onclick="openTemplateModal();closeToolsDropdown();markNextDone('wnTemplate')"
+              style="display:inline-flex;align-items:center;gap:5px;padding:4px 13px;border-radius:20px;border:2px solid var(--brand);background:rgba(99,102,241,0.15);font-size:12px;font-weight:700;cursor:pointer;color:var(--brand);transition:all 0.15s;font-family:'Inter',sans-serif"
+              onmouseenter="this.style.background='rgba(99,102,241,0.25)'" onmouseleave="this.style.background='rgba(99,102,241,0.15)'">
+              🎨 Formatted Resume
             </button>
-            <button class="tier-btn complete-tier" id="tierComplete" onclick="setTier('complete')" id="tierComplete">
-              <strong>Resume + Cover Letter</strong><span class="tier-lock" id="clLockIcon"></span>
+            <button id="wnDownload" onclick="downloadDocx();markNextDone('wnDownload')"
+              style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1.5px solid rgba(16,185,129,0.4);background:transparent;font-size:12px;font-weight:500;cursor:pointer;color:var(--green);transition:all 0.15s;font-family:'Inter',sans-serif"
+              onmouseenter="this.style.background='rgba(16,185,129,0.12)'" onmouseleave="this.style.background='transparent'"
+              title="Best for uploading to job boards &amp; ATS systems">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M8 2v8M5 7l3 3 3-3M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1"/></svg> ATS Plain Text (.docx)
+            </button>
+            <button id="wnInterview" onclick="openInterviewModal();closeToolsDropdown();markNextDone('wnInterview')"
+              style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1.5px solid rgba(16,185,129,0.4);background:transparent;font-size:12px;font-weight:500;cursor:pointer;color:var(--green);transition:all 0.15s;font-family:'Inter',sans-serif"
+              onmouseenter="this.style.background='rgba(16,185,129,0.12)'" onmouseleave="this.style.background='transparent'">
+              🎤 Prep for interview
+            </button>
+            <button id="wnTrack" onclick="switchMode('tailored');markNextDone('wnTrack')"
+              style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1.5px solid rgba(16,185,129,0.4);background:transparent;font-size:12px;font-weight:500;cursor:pointer;color:var(--green);transition:all 0.15s;font-family:'Inter',sans-serif"
+              onmouseenter="this.style.background='rgba(16,185,129,0.12)'" onmouseleave="this.style.background='transparent'">
+              📁 Save to history
+            </button>
+            <button onclick="document.getElementById('whatsNextBar').style.display='none'"
+              style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0;flex-shrink:0">✕</button>
+          </div>
+
+          <!-- Post-tailor account nudge — hidden once account is set -->
+          <div id="accountNudge"
+            style="display:none;align-items:center;gap:10px;padding:10px 16px;background:rgba(99,102,241,0.1);border-bottom:1px solid rgba(99,102,241,0.25);font-size:13px;flex-wrap:wrap">
+            <span style="color:#a5b4fc;flex:1;min-width:0" id="accountNudgeText">📌 Your resume and history are saved in
+              <strong style="color:#c7d2fe">this browser only</strong> — clearing your browser removes them. Download a
+              backup to keep your data safe.</span>
+            <button onclick="downloadDataBackup()"
+              style="flex-shrink:0;padding:4px 12px;background:#6366F1;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">💾
+              Backup →</button>
+            <button onclick="this.parentElement.style.display='none'"
+              style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;flex-shrink:0">✕</button>
+          </div>
+
+
+          <!-- Skill Gap Analysis Card — populated by renderSkillGapCard() after tailoring -->
+          <div id="skillGapCard"
+            style="display:none;margin:14px 16px 0;padding:16px;background:var(--card-bg);border:1px solid var(--border);border-radius:12px">
+          </div>
+
+          <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('resume', this)">
+              📄 Tailored Resume
+            </button>
+            <button class="tab-btn" onclick="switchTab('keywords', this)" id="kwTab">
+              🔍 Keywords
+              <span class="tab-badge green" id="matchCount">–</span>
+              <span class="tab-badge red" id="gapCount">–</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('changes', this)">
+              📝 What Changed
+            </button>
+            <button class="tab-btn" id="coverTab" onclick="switchTab('cover', this)" style="display:none">
+              ✉️ Cover Letter
             </button>
           </div>
-          <button class="btn-run" id="runBtn" onclick="runTailoring()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-              id="runIcon">
-              <polygon points="5 3 19 12 5 21 5 3" />
-            </svg>
-            <span id="runBtnLabel">✦ Tailor My Resume</span>
-          </button>
-          <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:10px;">Takes 20–45 seconds</p>
-          <!-- Monthly tailor usage meter — always visible for free users -->
-          <div id="tailorUsageMeter" style="margin-top:14px">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-              <span style="font-size:12px;color:var(--text2)" id="tailorUsageLabel">3 free tailors · No card
-                needed</span>
-              <!-- Note: label text is overwritten dynamically by updateUsageLabels() -->
-              <span style="font-size:11px;color:var(--muted)" id="tailorUsageReset">resets monthly</span>
+
+          <div class="tab-content">
+            <div class="tab-pane active" id="tab-resume">
+              <div class="resume-output" id="resumeOutput"></div>
             </div>
-            <div style="height:5px;background:var(--border);border-radius:100px;overflow:hidden">
-              <div id="tailorUsageBar"
-                style="height:100%;width:0%;background:var(--green);border-radius:100px;transition:width 0.4s ease,background 0.4s ease">
-              </div>
+            <div class="tab-pane" id="tab-keywords">
+              <div id="keywordContent"></div>
+            </div>
+            <div class="tab-pane" id="tab-changes">
+              <div id="changesContent"></div>
+            </div>
+            <div class="tab-pane" id="tab-cover">
+              <div class="resume-output" id="coverOutput"></div>
             </div>
           </div>
         </div>
 
-      </div><!-- /left-panel -->
+      </div><!-- /right-panel -->
+
+        </div><!-- /resumeMainCol -->
+
+        <!-- Sidebar: sticky col -->
+        <div>
+          <aside id="quickSidebar">
+
+        <div class="qs-card">
+          <div class="qs-title">Quick Actions</div>
+          <button class="qs-btn qs-btn-primary" onclick="window.scrollTo({top:0,behavior:'smooth'});document.getElementById('fileInput').click()">
+            <span class="qs-icon">✦</span> Generate Another
+          </button>
+          <button class="qs-btn" onclick="runTailoring()">
+            <span class="qs-icon">🔄</span> Re-optimize Resume
+          </button>
+          <button class="qs-btn" onclick="switchMode('tracker');setMobileNav('tracker')">
+            <span class="qs-icon">📋</span> Track Applications
+          </button>
+          <button class="qs-btn" onclick="switchMode('jobs');setMobileNav('jobs')">
+            <span class="qs-icon">🔍</span> Search Jobs
+          </button>
+          <button class="qs-btn" disabled>
+            <span class="qs-icon">🎤</span> Interview Prep
+            <span class="qs-coming-soon">Soon</span>
+          </button>
+        </div>
+
+        <div class="qs-card">
+          <div class="qs-title">Your Stats</div>
+          <div class="qs-stat-row">
+            <span class="qs-stat-label">Tailors this month</span>
+            <span class="qs-stat-value" id="qsStatTailors">—</span>
+          </div>
+          <div class="qs-stat-row">
+            <span class="qs-stat-label">Best match score</span>
+            <span class="qs-stat-value" id="qsStatScore">—</span>
+          </div>
+          <div class="qs-stat-row">
+            <span class="qs-stat-label">Applications</span>
+            <span class="qs-stat-value" id="qsStatApps">—</span>
+          </div>
+        </div>
+
+        <div class="qs-card" style="background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(139,92,246,0.08));border-color:rgba(99,102,241,0.2)">
+          <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px">Upgrade for Unlimited</div>
+          <p style="font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:10px">60 tailors/mo · Cover letters · Templates · Priority AI</p>
+          <button class="qs-btn qs-btn-primary" onclick="openProfileModal()" style="margin-bottom:0;font-size:12px">
+            <span class="qs-icon">⚡</span> View Plans
+          </button>
+        </div>
+
+          </aside><!-- /quickSidebar -->
+        </div>
+      </div><!-- /resumeGrid -->
 
       <!-- Job Search Left Panel -->
       <div class="left-panel js-panel" id="jobSearchLeft">
@@ -4120,205 +4875,6 @@
         </div>
 
       </div><!-- /job search left panel -->
-
-      <!-- Right Panel: Output -->
-      <div class="right-panel">
-
-        <!-- Empty state -->
-        <div class="empty-state" id="emptyState">
-          <div style="text-align:center;padding:60px 24px">
-            <div style="font-size:48px;margin-bottom:16px">✨</div>
-            <h3 style="font-size:18px;font-weight:700;color:var(--text);margin:0 0 8px">Your tailored resume will appear
-              here</h3>
-            <p style="font-size:13px;color:var(--muted);margin:0;line-height:1.6;max-width:280px;margin:0 auto">Upload
-              your resume and paste a job description, then hit Tailor Resume.</p>
-          </div>
-        </div>
-
-        <!-- Progress -->
-        <div class="progress-panel" id="progressPanel">
-          <div class="progress-title">Tailoring your resume...</div>
-          <div class="steps">
-            <div class="step-item" id="step1">
-              <div class="step-icon">🔍</div>
-              <div class="step-text"><strong>Reading the job posting</strong><span>Identifying what the employer is
-                  looking for</span></div>
-            </div>
-            <div class="step-item" id="step2">
-              <div class="step-icon">📊</div>
-              <div class="step-text"><strong>Matching your experience</strong><span>Connecting your background to this
-                  role</span></div>
-            </div>
-            <div class="step-item" id="step3">
-              <div class="step-icon">✍️</div>
-              <div class="step-text"><strong>Rewriting your resume</strong><span>Tailoring your bullets, summary &amp;
-                  skills</span></div>
-            </div>
-            <div class="step-item" id="step4">
-              <div class="step-icon">✅</div>
-              <div class="step-text"><strong>Final formatting check</strong><span>Making sure everything looks
-                  clean</span></div>
-            </div>
-            <div class="step-item" id="step5" style="display:none">
-              <div class="step-icon">✉️</div>
-              <div class="step-text"><strong>Writing your cover letter</strong><span>Personalized for this specific
-                  role</span></div>
-            </div>
-          </div>
-
-          <!-- Skill Gap Preview — injected after Step 2 completes -->
-          <div id="skillGapPreview"
-            style="display:none;margin-top:16px;padding:14px 16px;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;animation:fadeIn 0.3s ease">
-            <div
-              style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">
-              Skill Match Preview</div>
-            <div id="skillGapBody" style="display:flex;flex-direction:column;gap:8px"></div>
-          </div>
-        </div>
-
-        <!-- Results -->
-        <div class="results-panel" id="resultsPanel">
-          <div class="results-topbar">
-            <div id="matchBadge" class="match-score-badge good">✓ Resume Tailored</div>
-            <div class="topbar-actions">
-              <!-- Tools dropdown -->
-              <div style="position:relative" id="toolsDropdownWrap">
-                <button class="btn-sm btn-sm-outline" onclick="toggleToolsDropdown()"
-                  style="white-space:nowrap;gap:5px;display:inline-flex;align-items:center" id="toolsDropdownBtn">
-                  🛠 Tools
-                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"
-                    stroke-linecap="round" id="toolsChevron" style="transition:transform 0.2s">
-                    <path d="M4 6l4 4 4-4" />
-                  </svg>
-                </button>
-                <div id="toolsDropdown"
-                  style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);min-width:190px;z-index:200;overflow:hidden">
-                  <button onclick="openTemplateModal();closeToolsDropdown()" id="applyTemplateBtn"
-                    style="width:100%;text-align:left;padding:10px 14px;border:none;background:transparent;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);display:flex;align-items:center;gap:9px;transition:background 0.1s"
-                    onmouseenter="this.style.background='var(--surface2)'"
-                    onmouseleave="this.style.background='transparent'">
-                    🎨 <span>Apply Template</span>
-                  </button>
-                  <button onclick="openInterviewModal();closeToolsDropdown()" id="interviewPrepBtn"
-                    style="width:100%;text-align:left;padding:10px 14px;border:none;background:transparent;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);display:flex;align-items:center;gap:9px;transition:background 0.1s;border-top:1px solid var(--border)"
-                    onmouseenter="this.style.background='var(--surface2)'"
-                    onmouseleave="this.style.background='transparent'">
-                    🎤 <span>Interview Prep</span>
-                  </button>
-                  <button onclick="openDiffModal();closeToolsDropdown()" id="viewChangesBtn"
-                    style="width:100%;text-align:left;padding:10px 14px;border:none;background:transparent;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);display:flex;align-items:center;gap:9px;transition:background 0.1s;border-top:1px solid var(--border)"
-                    onmouseenter="this.style.background='var(--surface2)'"
-                    onmouseleave="this.style.background='transparent'">
-                    📊 <span>View Changes</span>
-                  </button>
-                </div>
-              </div>
-              <button class="btn-sm btn-sm-primary" onclick="downloadDocx()"
-                style="white-space:nowrap;gap:6px;display:inline-flex;align-items:center"
-                title="Plain text — best for uploading to job boards &amp; ATS systems">
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"
-                  stroke-linecap="round">
-                  <path d="M8 2v8M5 7l3 3 3-3M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1" />
-                </svg>
-                ATS Plain Text (.docx)
-              </button>
-              <button class="btn-sm btn-sm-outline" onclick="runTailoring()" style="white-space:nowrap">↺
-                Re-tailor</button>
-              <button class="btn-sm btn-sm-outline" onclick="switchMode('jobs')" style="white-space:nowrap">🔍
-                Jobs</button>
-              <button class="btn-sm btn-sm-outline" onclick="switchMode('tailored')" style="white-space:nowrap">📁
-                History</button>
-            </div>
-          </div>
-
-          <!-- What's Next nudge — shown after tailoring, dismissed on action -->
-          <div id="whatsNextBar"
-            style="display:none;align-items:center;gap:6px;padding:10px 20px;background:linear-gradient(90deg,#F0FDF4,#F0F9FF);border-bottom:1px solid #BBF7D0;flex-wrap:wrap">
-            <span style="font-size:12px;font-weight:600;color:#065F46;margin-right:4px;white-space:nowrap">What's
-              next?</span>
-            <!-- Template first — the recommended formatted output -->
-            <button id="wnTemplate" onclick="openTemplateModal();closeToolsDropdown();markNextDone('wnTemplate')"
-              style="display:inline-flex;align-items:center;gap:5px;padding:4px 13px;border-radius:20px;border:2px solid #4f46e5;background:#eef2ff;font-size:12px;font-weight:700;cursor:pointer;color:#4338ca;transition:all 0.15s;box-shadow:0 0 0 3px rgba(99,102,241,0.15)"
-              onmouseenter="this.style.background='#e0e7ff'" onmouseleave="this.style.background='#eef2ff'">
-              🎨 Formatted Resume
-            </button>
-            <!-- Plain docx — clearly labeled for ATS/job boards -->
-            <button id="wnDownload" onclick="downloadDocx();markNextDone('wnDownload')"
-              style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1.5px solid #6EE7B7;background:#fff;font-size:12px;font-weight:500;cursor:pointer;color:#065F46;transition:all 0.15s"
-              onmouseenter="this.style.background='#ECFDF5'" onmouseleave="this.style.background='#fff'"
-              title="Best for uploading to job boards &amp; ATS systems">
-              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round">
-                <path d="M8 2v8M5 7l3 3 3-3M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1" />
-              </svg> ATS Plain Text (.docx)
-            </button>
-            <button id="wnInterview" onclick="openInterviewModal();closeToolsDropdown();markNextDone('wnInterview')"
-              style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1.5px solid #6EE7B7;background:#fff;font-size:12px;font-weight:500;cursor:pointer;color:#065F46;transition:all 0.15s"
-              onmouseenter="this.style.background='#ECFDF5'" onmouseleave="this.style.background='#fff'">
-              🎤 Prep for interview
-            </button>
-            <button id="wnTrack" onclick="switchMode('tailored');markNextDone('wnTrack')"
-              style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1.5px solid #6EE7B7;background:#fff;font-size:12px;font-weight:500;cursor:pointer;color:#065F46;transition:all 0.15s"
-              onmouseenter="this.style.background='#ECFDF5'" onmouseleave="this.style.background='#fff'">
-              📁 Save to history
-            </button>
-            <button onclick="document.getElementById('whatsNextBar').style.display='none'"
-              style="margin-left:auto;background:none;border:none;color:#9CA3AF;cursor:pointer;font-size:16px;line-height:1;padding:0;flex-shrink:0">✕</button>
-          </div>
-
-          <!-- Post-tailor account nudge — hidden once account is set -->
-          <div id="accountNudge"
-            style="display:none;align-items:center;gap:10px;padding:10px 16px;background:rgba(99,102,241,0.1);border-bottom:1px solid rgba(99,102,241,0.25);font-size:13px;flex-wrap:wrap">
-            <span style="color:#a5b4fc;flex:1;min-width:0" id="accountNudgeText">📌 Your resume and history are saved in
-              <strong style="color:#c7d2fe">this browser only</strong> — clearing your browser removes them. Download a
-              backup to keep your data safe.</span>
-            <button onclick="downloadDataBackup()"
-              style="flex-shrink:0;padding:4px 12px;background:#6366F1;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">💾
-              Backup →</button>
-            <button onclick="this.parentElement.style.display='none'"
-              style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;flex-shrink:0">✕</button>
-          </div>
-
-
-          <!-- Skill Gap Analysis Card — populated by renderSkillGapCard() after tailoring -->
-          <div id="skillGapCard"
-            style="display:none;margin:14px 16px 0;padding:16px;background:var(--card-bg);border:1px solid var(--border);border-radius:12px">
-          </div>
-
-          <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('resume', this)">
-              📄 Tailored Resume
-            </button>
-            <button class="tab-btn" onclick="switchTab('keywords', this)" id="kwTab">
-              🔍 Keywords
-              <span class="tab-badge green" id="matchCount">–</span>
-              <span class="tab-badge red" id="gapCount">–</span>
-            </button>
-            <button class="tab-btn" onclick="switchTab('changes', this)">
-              📝 What Changed
-            </button>
-            <button class="tab-btn" id="coverTab" onclick="switchTab('cover', this)" style="display:none">
-              ✉️ Cover Letter
-            </button>
-          </div>
-
-          <div class="tab-content">
-            <div class="tab-pane active" id="tab-resume">
-              <div class="resume-output" id="resumeOutput"></div>
-            </div>
-            <div class="tab-pane" id="tab-keywords">
-              <div id="keywordContent"></div>
-            </div>
-            <div class="tab-pane" id="tab-changes">
-              <div id="changesContent"></div>
-            </div>
-            <div class="tab-pane" id="tab-cover">
-              <div class="resume-output" id="coverOutput"></div>
-            </div>
-          </div>
-        </div>
-
-      </div><!-- /right-panel -->
 
       <!-- Job Search Right Panel -->
       <div class="right-panel js-panel" id="jobSearchRight">
@@ -6244,9 +6800,9 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
     function markNextDone(id) {
       const btn = document.getElementById(id);
       if (!btn) return;
-      btn.style.background = '#ECFDF5';
+      btn.style.background = 'rgba(16,185,129,0.12)';
       btn.style.borderColor = '#10B981';
-      btn.style.color = '#065F46';
+      btn.style.color = '#10B981';
       btn.style.textDecoration = 'line-through';
       btn.style.opacity = '0.6';
       btn.style.pointerEvents = 'none';
@@ -6268,7 +6824,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
         const btn = document.getElementById(id);
         if (!btn) return;
         btn.style.background = '#fff'; btn.style.borderColor = '#6EE7B7';
-        btn.style.color = '#065F46'; btn.style.textDecoration = '';
+        btn.style.color = 'var(--green)'; btn.style.textDecoration = '';
         btn.style.opacity = '1'; btn.style.pointerEvents = '';
       });
       const wnBar = document.getElementById('whatsNextBar');
@@ -6868,10 +7424,14 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       if (moreBtn) moreBtn.classList.toggle('active', isMoreMode);
       if (moreDot) moreDot.style.display = isMoreMode ? 'inline-block' : 'none';
 
-      // Resume panels
-      document.querySelectorAll('.left-panel:not(.js-panel), .right-panel:not(.js-panel)').forEach(el => {
-        el.style.display = (mode === 'resume') ? '' : 'none';
-      });
+      // Resume grid (contains left-panel, right-panel, sidebar)
+      const _rg = document.getElementById('resumeGrid');
+      if (_rg) _rg.style.display = (mode === 'resume') ? 'grid' : 'none';
+
+      // Dynamic page title in topbar center
+      const _titleMap = { resume: 'Resume Tailor', jobs: 'Job Search', tailored: 'My Resumes', tracker: 'Applications', linkedin: 'LinkedIn Profile', bulkapply: 'Bulk Apply' };
+      const _pt = document.getElementById('pageTitle');
+      if (_pt) _pt.textContent = _titleMap[mode] || 'Dashboard';
 
       // Job search panels
       document.getElementById('jobSearchLeft').classList.toggle('visible', isJobs);
@@ -8239,7 +8799,7 @@ ${desc}`;
           <button class="btn-tailor-dl" onclick="downloadTailorEntryDocx('${entry.id}')" title="Plain text — best for uploading to job boards &amp; ATS systems">⬇ ATS Plain Text (.docx)</button>
           <button class="btn-tailor-dl" onclick="copyTailorEntryResume('${entry.id}')">📋 Copy Text</button>
           ${hasCover ? `<button class="btn-tailor-dl" onclick="downloadTailorEntryCoverLetter('${entry.id}')">⬇ Cover Letter (.docx)</button><button class="btn-tailor-dl" onclick="copyTailorEntryCoverLetter('${entry.id}')">📋 Copy Cover Letter</button>` : ''}
-          <button class="btn-tailor-dl" onclick="openInterviewModalFromHistory('${entry.id}')" title="Generate a personalized interview cheat sheet for this role" style="border-color:#6EE7B7;color:#065F46">🎤 Interview Prep</button>
+          <button class="btn-tailor-dl" onclick="openInterviewModalFromHistory('${entry.id}')" title="Generate a personalized interview cheat sheet for this role" style="border-color:rgba(16,185,129,0.4);color:#10B981">🎤 Interview Prep</button>
           ${entry.jobId && isApplied(entry.jobId)
             ? `<span class="btn-tailor-applied-badge">✓ Applied</span>`
             : `<button class="btn-tailor-dl apply-now" onclick="applyNowFromHistory('${entry.id}')">${entry.jobUrl ? '🚀 Apply Now' : '✓ Mark Applied'}</button>`}
@@ -9470,7 +10030,7 @@ ${job.jd.slice(0, 1000)}
       'Behavioral': { bg: '#EFF6FF', border: '#BFDBFE', color: '#1D4ED8' },
       'Technical': { bg: '#F5F3FF', border: '#DDD6FE', color: '#6D28D9' },
       'Situational': { bg: '#FFF7ED', border: '#FED7AA', color: '#C2410C' },
-      'Culture Fit': { bg: '#ECFDF5', border: '#A7F3D0', color: '#065F46' },
+      'Culture Fit': { bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)', color: '#10B981' },
     };
 
     async function openInterviewModal() {
@@ -9625,17 +10185,17 @@ ${resume.slice(0, 4000)}`,
         <div style="font-size:11px;color:var(--muted)">Show curiosity. Surface intel.</div>
       </div>
       ${askThem.map((item, i) => `
-        <div style="border:1.5px solid #D1FAE5;border-radius:10px;overflow:hidden;margin-bottom:10px;transition:border-color 0.15s">
+        <div style="border:1.5px solid rgba(16,185,129,0.25);border-radius:10px;overflow:hidden;margin-bottom:10px;transition:border-color 0.15s">
           <button onclick="toggleAskCard(${i})"
             style="width:100%;text-align:left;background:#fff;border:none;padding:13px 16px;cursor:pointer;display:flex;align-items:flex-start;gap:12px"
             onmouseenter="this.parentElement.style.borderColor='#059669'"
-            onmouseleave="this.parentElement.style.borderColor='#D1FAE5'">
+            onmouseleave="this.parentElement.style.borderColor='rgba(16,185,129,0.25)'">
             <div style="min-width:22px;height:22px;border-radius:50%;background:#059669;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">${i + 1}</div>
             <div style="font-size:13.5px;font-weight:600;color:var(--text);line-height:1.45;flex:1">${_e(item.q)}</div>
             <svg id="ask-chevron-${i}" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;margin-top:4px;transition:transform 0.2s"><path d="M4 6l4 4 4-4"/></svg>
           </button>
-          <div id="ask-body-${i}" style="display:none;border-top:1px solid #D1FAE5;background:#F0FDF4;padding:12px 16px 12px 50px">
-            <div style="font-size:11.5px;font-weight:600;color:#065F46;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Why ask this</div>
+          <div id="ask-body-${i}" style="display:none;border-top:1px solid rgba(16,185,129,0.2);background:rgba(16,185,129,0.06);padding:12px 16px 12px 50px">
+            <div style="font-size:11.5px;font-weight:600;color:#10B981;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Why ask this</div>
             <div style="font-size:12.5px;color:var(--text2);line-height:1.55">${_e(item.why)}</div>
           </div>
         </div>`).join('')}
@@ -10813,6 +11373,28 @@ ${_PRINT_BTN}
       // Reset input so same file can be re-selected if needed
       event.target.value = '';
     }
+
+    // ── Theme toggle (light / dark) ──────────────────────────────────────────
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      const moon = document.getElementById('themeIconMoon');
+      const sun  = document.getElementById('themeIconSun');
+      if (moon) moon.style.display = theme === 'light' ? 'none'  : '';
+      if (sun)  sun.style.display  = theme === 'light' ? ''      : 'none';
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('1ststep_theme', next);
+      applyTheme(next);
+    }
+
+    // Restore saved theme on load
+    (function() {
+      const saved = localStorage.getItem('1ststep_theme') || 'dark';
+      applyTheme(saved);
+    })();
 
   </script>
 
