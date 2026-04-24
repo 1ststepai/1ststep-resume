@@ -169,8 +169,10 @@ function isVisible(el) {
 function scanFormFields() {
   const fields = [];
   const seen = new Set();
+  // Excludes file inputs — resume/cover-letter upload is left to the user per product choice.
+  // Also excludes buttons, images, and password fields for obvious reasons.
   const selector =
-    'input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=image]):not([type=reset]):not([type=password]), ' +
+    'input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=image]):not([type=reset]):not([type=password]):not([type=file]), ' +
     'select, textarea';
   const elements = document.querySelectorAll(selector);
 
