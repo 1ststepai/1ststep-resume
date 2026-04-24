@@ -1707,6 +1707,9 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       window.location.hostname === 'localhost' ||
       window.location.hostname === '127.0.0.1';
 
+    // Developer bypass — this email always gets Complete tier, skips all gates
+    const DEV_EMAIL = 'evan@1ststep.ai';
+
     // canSearch() — true on deploy (proxy handles it), true locally only if dev key is set
     function canSearch() { return !IS_LOCAL_DEV || !!adzunaAppKey; }
 
@@ -3726,6 +3729,7 @@ ${desc}`;
 
     async function verifySubscription(email) {
       if (!email || IS_LOCAL_DEV) return; // skip in local dev
+      if (email === DEV_EMAIL) return; // dev bypass — tier already set in checkBetaAccess
 
       // If user has an active beta token, skip Stripe — beta tier is already set
       // and Stripe would return 'free' (beta users haven't paid), triggering a false downgrade toast
@@ -4211,6 +4215,11 @@ ${job.jd.slice(0, 1000)}
 
     const BETA_KEY = '1ststep_beta';
 
+    // Grace period for existing beta users whose tokens have expired.
+    // While true, any user who ever completed beta sign-up (has grantedAt) keeps Complete access.
+    // To remove: set to false — expired users will see the betaExpired screen instead.
+    const BETA_GRACE_PERIOD = true;
+
     // Tally feedback form URL — paste your Tally form share link here after creating it at tally.so
     // Format: https://tally.so/r/XXXXXXXX
     // Make sure your form has an Email field — the webhook uses it to match the GHL contact.
@@ -4309,53 +4318,72 @@ ${job.jd.slice(0, 1000)}
     }
 
     async function checkBetaAccess() {
-      const config = await getAppConfig();
+      // Dev-only logger — silent in production
+      const _log = IS_LOCAL_DEV ? (rule) => console.log('[1ststep access]', rule) : () => {};
 
-      // ── LIVE MODE (betaMode = false) ──────────────────────────────────────────
-      if (!config.betaMode) {
-        // Check if user already has a valid subscription via sub cache
-        const sub = (() => {
-          try { return JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || 'null'); } catch { return null; }
-        })();
-        if (sub && sub.tier && sub.tier !== 'free' && sub.email) {
-          // Restore their tier and let them in
-          currentTier = sub.tier;
-          localStorage.setItem('1ststep_tier', sub.tier);
-          updateTailorUsageMeter?.();
-          updateSearchUsageMeter?.();
-          updateTierLockIcon?.();
-          showTierBadge(sub.tier);
-          return;
-        }
-        // No subscription → show paywall
-        document.getElementById('paywallGate').style.display = 'flex';
+      // ── Rule 1: Owner/admin → always Complete ─────────────────────────────────
+      if (loadProfile()?.email === DEV_EMAIL) {
+        _log('owner bypass → complete');
+        currentTier = 'complete';
+        localStorage.setItem('1ststep_tier', 'complete');
+        updateTailorUsageMeter?.();
+        updateSearchUsageMeter?.();
+        updateTierLockIcon?.();
         return;
       }
 
-      // ── BETA MODE (betaMode = true, default) ──────────────────────────────────
+      // ── Rule 2: Paid subscriber → access at their tier ───────────────────────
+      // Checked before beta logic so paid users always get in regardless of mode.
+      const sub = (() => {
+        try { return JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || 'null'); } catch { return null; }
+      })();
+      if (sub && sub.tier && sub.tier !== 'free' && sub.email) {
+        _log(`paid subscriber (${sub.tier}) → access`);
+        currentTier = sub.tier;
+        localStorage.setItem('1ststep_tier', sub.tier);
+        updateTailorUsageMeter?.();
+        updateSearchUsageMeter?.();
+        updateTierLockIcon?.();
+        showTierBadge(sub.tier);
+        return;
+      }
+
       const beta = getBetaState();
 
-      // No beta token at all → show beta gate
-      if (!beta) {
+      // ── Rule 3: Grace period — existing beta user, token expired ─────────────
+      // Protects users who signed up during beta but whose 15-day window has closed.
+      // Remove: set BETA_GRACE_PERIOD = false to enforce expiry and show betaExpired screen.
+      if (BETA_GRACE_PERIOD && beta && beta.grantedAt) {
+        _log(`grace period: beta expired ${new Date(beta.expiresAt).toLocaleDateString()}, granted ${new Date(beta.grantedAt).toLocaleDateString()} → complete`);
+        currentTier = 'complete';
+        localStorage.setItem('1ststep_tier', 'complete');
+        updateTailorUsageMeter?.();
+        updateSearchUsageMeter?.();
+        updateTierLockIcon?.();
+        return;
+      }
+
+      // ── Rule 4: Valid active beta token → Complete ────────────────────────────
+      if (beta && Date.now() <= beta.expiresAt) {
+        _log(`active beta (expires ${new Date(beta.expiresAt).toLocaleDateString()}) → complete`);
+        currentTier = 'complete';
+        localStorage.setItem('1ststep_tier', 'complete');
+        updateTailorUsageMeter?.();
+        updateSearchUsageMeter?.();
+        updateTierLockIcon?.();
+        updateBetaBadge(beta.expiresAt);
+        return;
+      }
+
+      // ── Rule 5: New user — show appropriate gate ──────────────────────────────
+      const config = await getAppConfig();
+      if (!config.betaMode) {
+        _log('live mode: no subscription → paywall');
+        document.getElementById('paywallGate').style.display = 'flex';
+      } else {
+        _log('beta mode: no token → gate');
         document.getElementById('betaGate').style.display = 'flex';
-        return;
       }
-
-      // Token expired → show expired screen
-      if (Date.now() > beta.expiresAt) {
-        document.getElementById('betaExpired').style.display = 'flex';
-        localStorage.setItem('1ststep_tier', 'free');
-        currentTier = 'free';
-        return;
-      }
-
-      // Valid beta token — force Complete tier
-      currentTier = 'complete';
-      localStorage.setItem('1ststep_tier', 'complete');
-      updateTailorUsageMeter?.();
-      updateSearchUsageMeter?.();
-      updateTierLockIcon?.();
-      updateBetaBadge(beta.expiresAt);
     }
 
     // ── Paywall helpers ────────────────────────────────────────────────────────
