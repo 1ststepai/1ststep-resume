@@ -1710,6 +1710,28 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
     // Developer bypass — this email always gets Complete tier, skips all gates
     const DEV_EMAIL = 'evan@1ststep.ai';
 
+    // ── Dev-only DOM integrity check ──────────────────────────────────────────
+    // Runs once on page load in local dev. Warns in console if required elements
+    // are missing — no user-facing impact, never runs in production.
+    if (IS_LOCAL_DEV) {
+      const DEV_REQUIRED_IDS = [
+        'fileInput', 'fileDrop', 'resumeText', 'clearFileBtn',
+        'runBtn', 'searchBtn',
+        'resultsPanel', 'resumeOutput', 'coverOutput', 'jobResultsPanel',
+        'modeResume', 'modeTailored', 'modeJobs', 'modeLinkedIn', 'modeTracker', 'modeBulkApply',
+        'mobileQuickBar', 'mobileMoreSheet',
+        'upgradeModal', 'profileModal', 'feedbackModal',
+        'interviewModal', 'diffModal', 'templatePickerOverlay',
+        'applyModal', 'linkedInPdfModal', 'linkedInImportModal',
+        'betaGate', 'betaExpired', 'paywallGate',
+        'welcomeOverlay', 'toast', 'themeToggle',
+      ];
+      const missing = DEV_REQUIRED_IDS.filter(id => !document.getElementById(id));
+      if (missing.length > 0) {
+        console.warn('[1ststep QA] Missing required DOM elements:', missing);
+      }
+    }
+
     // canSearch() — true on deploy (proxy handles it), true locally only if dev key is set
     function canSearch() { return !IS_LOCAL_DEV || !!adzunaAppKey; }
 
