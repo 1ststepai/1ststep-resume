@@ -15,6 +15,7 @@ const companyEl      = document.getElementById('company');
 const siteEl         = document.getElementById('site');
 const tailorBtn      = document.getElementById('tailorBtn');
 const autofillBtn    = document.getElementById('autofillBtn');
+const autofillEmptyBtn = document.getElementById('autofillEmptyBtn');
 const openAppLink    = document.getElementById('openAppLink');
 
 // ─── AUTH ────────────────────────────────────────────────────
@@ -54,11 +55,11 @@ async function init() {
     if (job) {
       showJobCard(job, auth);
     } else {
-      showEmptyState();
+      showEmptyState(auth);
     }
   } catch (err) {
     console.error('[1stStep] Init error:', err);
-    showEmptyState();
+    showEmptyState(null);
   } finally {
     loadingState.style.display = 'none';
   }
@@ -74,11 +75,16 @@ function showUnauthState() {
   openAppLink.addEventListener('click', () => chrome.tabs.create({ url: APP_URL }));
 }
 
-function showEmptyState() {
+function showEmptyState(auth) {
   loadingState.style.display = 'none';
   jobState.style.display     = 'block';
   jobCard.classList.remove('visible');
   emptyState.style.display   = 'flex';
+
+  // Auto-fill is still useful even without a detected job — any form on the page can be filled.
+  if (autofillEmptyBtn && auth) {
+    autofillEmptyBtn.onclick = () => autofillPage(auth, autofillEmptyBtn);
+  }
 }
 
 function showJobCard(job, auth) {
@@ -97,7 +103,7 @@ function showJobCard(job, auth) {
   }
 
   tailorBtn.onclick   = () => tailorResume(job, auth);
-  autofillBtn.onclick = () => autofillPage(auth);
+  autofillBtn.onclick = () => autofillPage(auth, autofillBtn);
 }
 
 // ─── JOB ─────────────────────────────────────────────────────
@@ -184,14 +190,18 @@ async function tailorResume(job, auth) {
 
 // ─── AUTOFILL ────────────────────────────────────────────────
 
-async function autofillPage(auth) {
+async function autofillPage(auth, btn) {
+  // `btn` is whichever button triggered this — falls back to autofillBtn so existing callers still work
+  btn = btn || autofillBtn;
+  const originalLabel = btn.textContent;
+
   if (!auth.email) {
     alert('Please sign in to 1stStep.ai first.');
     return;
   }
 
-  autofillBtn.disabled    = true;
-  autofillBtn.textContent = 'Filling...';
+  btn.disabled    = true;
+  btn.textContent = 'Filling...';
 
   try {
     // Refresh tierToken (free tier is allowed for autofill; we still send one for rate-limit context)
@@ -229,16 +239,16 @@ async function autofillPage(auth) {
       throw new Error(response?.error || 'Autofill failed.');
     }
 
-    autofillBtn.textContent = `✓ ${response.filled}/${response.total}`;
+    btn.textContent = `✓ ${response.filled}/${response.total}`;
     setTimeout(() => {
-      autofillBtn.textContent = 'Auto-fill';
-      autofillBtn.disabled    = false;
+      btn.textContent = originalLabel;
+      btn.disabled    = false;
     }, 3000);
   } catch (err) {
     console.error('[1stStep] Autofill error:', err);
     alert('Autofill failed: ' + err.message);
-    autofillBtn.textContent = 'Auto-fill';
-    autofillBtn.disabled    = false;
+    btn.textContent = originalLabel;
+    btn.disabled    = false;
   }
 }
 
