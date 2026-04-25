@@ -163,7 +163,7 @@ async function deliverPendingJob() {
     const now = Date.now();
 
     const data = await new Promise((resolve, reject) =>
-      chrome.storage.session.get(['pendingJobs'], (d) => {
+      chrome.storage.local.get(['pendingJobs'], (d) => {
         if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
         else resolve(d || {});
       })
@@ -193,13 +193,13 @@ async function deliverPendingJob() {
     // Stale guard
     if (now - entry.createdAt > 2 * 60 * 1000) {
       delete pendingJobs[matchedId];
-      await new Promise(resolve => chrome.storage.session.set({ pendingJobs }, resolve));
+      await new Promise(resolve => chrome.storage.local.set({ pendingJobs }, resolve));
       return;
     }
 
     // Remove only this entry before posting — other pending jobs stay intact
     delete pendingJobs[matchedId];
-    await new Promise(resolve => chrome.storage.session.set({ pendingJobs }, resolve));
+    await new Promise(resolve => chrome.storage.local.set({ pendingJobs }, resolve));
 
     // Also pull resume from extension storage so app can auto-tailor
     // even when the app's own session is fresh (no resume loaded yet)
