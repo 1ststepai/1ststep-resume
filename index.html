@@ -277,8 +277,8 @@
             <div id="extPromoBanner" style="display:none;align-items:center;gap:11px;padding:11px 13px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:10px;margin-bottom:10px">
               <span style="font-size:18px;flex-shrink:0">🧩</span>
               <div style="flex:1;min-width:0">
-                <p style="margin:0 0 3px;font-size:12px;font-weight:600;color:var(--text)">Apply faster with the Chrome Extension</p>
-                <p style="margin:0;font-size:11px;color:var(--text2)">Tailor your resume directly from job posts — no copy &amp; paste.</p>
+                <p style="margin:0 0 3px;font-size:12px;font-weight:600;color:var(--text)">Tailor from any job post — no copy &amp; paste</p>
+                <p style="margin:0;font-size:11px;color:var(--text2)">Click the extension on LinkedIn or Indeed and we tailor your resume automatically.</p>
               </div>
               <a id="extBannerBtn" href="https://chromewebstore.google.com/detail/1ststep-ai-resume-tailor/gcmaoapcnobdcfaiijaoamajamijfacd" target="_blank" rel="noopener" style="flex-shrink:0;padding:6px 12px;background:var(--brand);color:white;border-radius:7px;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap;transition:background 0.15s">Install Extension</a>
               <button id="extBannerDismiss" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;flex-shrink:0;padding:0;opacity:0.6" aria-label="Dismiss">✕</button>
@@ -397,10 +397,8 @@
         <div class="empty-state" id="emptyState">
           <div style="text-align:center;padding:60px 24px">
             <div style="font-size:48px;margin-bottom:16px">✨</div>
-            <h3 style="font-size:18px;font-weight:700;color:var(--text);margin:0 0 8px">Your tailored resume will appear
-              here</h3>
-            <p style="font-size:13px;color:var(--muted);margin:0;line-height:1.6;max-width:280px;margin:0 auto">Upload
-              your resume and paste a job description, then hit Tailor Resume.</p>
+            <h3 style="font-size:18px;font-weight:700;color:var(--text);margin:0 0 8px">Your tailored resume will appear here</h3>
+            <p style="font-size:13px;color:var(--muted);margin:0 auto;line-height:1.6;max-width:300px">Takes about 30 seconds. We rewrite your bullets, surface the right keywords, and format it to pass ATS.</p>
           </div>
         </div>
 
@@ -410,28 +408,23 @@
           <div class="steps">
             <div class="step-item" id="step1">
               <div class="step-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-              <div class="step-text"><strong>Reading the job posting</strong><span>Identifying what the employer is
-                  looking for</span></div>
+              <div class="step-text"><strong>Analyzing what this role actually needs…</strong><span>Identifying must-have skills and keywords</span></div>
             </div>
             <div class="step-item" id="step2">
               <div class="step-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></div>
-              <div class="step-text"><strong>Matching your experience</strong><span>Connecting your background to this
-                  role</span></div>
+              <div class="step-text"><strong>Finding your strongest matches…</strong><span>Connecting your experience to this role</span></div>
             </div>
             <div class="step-item" id="step3">
               <div class="step-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
-              <div class="step-text"><strong>Rewriting your resume</strong><span>Tailoring your bullets, summary &amp;
-                  skills</span></div>
+              <div class="step-text"><strong>Rewriting to get past ATS filters…</strong><span>Optimizing bullets, summary &amp; keywords</span></div>
             </div>
             <div class="step-item" id="step4">
               <div class="step-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-              <div class="step-text"><strong>Final formatting check</strong><span>Making sure everything looks
-                  clean</span></div>
+              <div class="step-text"><strong>Final polish — formatting &amp; flow…</strong><span>Making sure it reads clean and scans fast</span></div>
             </div>
             <div class="step-item" id="step5" style="display:none">
               <div class="step-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
-              <div class="step-text"><strong>Writing your cover letter</strong><span>Personalized for this specific
-                  role</span></div>
+              <div class="step-text"><strong>Writing your personalized cover letter…</strong><span>Tailored to this specific role and company</span></div>
             </div>
           </div>
 
@@ -638,8 +631,8 @@
         </div>
 
         <div class="qs-card" style="background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(139,92,246,0.08));border-color:rgba(99,102,241,0.2)">
-          <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px">Upgrade for Unlimited</div>
-          <p style="font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:10px">60 tailors/mo · Cover letters · Templates · Priority AI</p>
+          <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px">Get more interviews</div>
+          <p style="font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:10px">Unlimited tailors, cover letters &amp; templates — from $19/mo</p>
           <button class="qs-btn qs-btn-primary" id="qsViewPlansBtn" style="margin-bottom:0;font-size:12px">
             <span class="qs-icon">⚡</span> View Plans
           </button>

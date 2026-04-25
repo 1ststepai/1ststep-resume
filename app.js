@@ -895,29 +895,52 @@ ${resume.slice(0, 3000)}
       }
 
       if (!hasJob && !hasResume) {
-        btn.style.opacity = '0.85';
+        // State A: nothing — guide to upload
+        btn.style.opacity = '0.7';
         btn.style.cursor = 'pointer';
-        lbl.textContent = '✦ Generate Tailored Resume';
-        btn.onclick = () => { document.getElementById('jobText')?.focus(); showToast('Paste or capture a job description first.', 'info'); };
+        lbl.textContent = '↑ Upload Your Resume to Start';
+        btn.onclick = () => {
+          const drop = document.getElementById('fileDrop');
+          const inp  = document.getElementById('fileInput');
+          if (drop) {
+            drop.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            drop.classList.add('pulse-cta');
+            setTimeout(() => drop.classList.remove('pulse-cta'), 2000);
+          }
+          setTimeout(() => inp?.click(), 300);
+        };
       } else if (hasJob && !hasResume) {
-        btn.style.opacity = '0.5';
+        // State C: job but no resume — prompt upload
+        btn.style.opacity = '0.7';
         btn.style.cursor = 'pointer';
-        lbl.textContent = '✦ Generate Tailored Resume';
-        btn.onclick = () => showToast('Choose or upload a resume first so we can tailor it to this job.', 'info');
+        lbl.textContent = '↑ Upload Your Resume to Tailor This Job';
+        btn.onclick = () => {
+          const drop = document.getElementById('fileDrop');
+          const inp  = document.getElementById('fileInput');
+          if (drop) {
+            drop.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            drop.classList.add('pulse-cta');
+            setTimeout(() => drop.classList.remove('pulse-cta'), 2000);
+          }
+          setTimeout(() => inp?.click(), 300);
+        };
       } else if (!hasJob && hasResume) {
-        btn.style.opacity = '0.85';
+        // State B: resume but no job — point to job textarea
+        btn.style.opacity = '0.7';
         btn.style.cursor = 'pointer';
-        if (window._extensionDetected && window._capturedJob) {
-          lbl.textContent = '↑ Paste Job Description to Tailor';
-          btn.onclick = () => {
-            document.getElementById('jobText')?.focus();
-            showToast('Paste the job description from the posting above, then click Tailor.', 'info');
-          };
-        } else {
-          lbl.textContent = '🔍 Find a Job First';
-          btn.onclick = () => switchMode('jobs');
-        }
+        lbl.textContent = 'Paste a Job Description Below ↓';
+        btn.onclick = () => {
+          const jt = document.getElementById('jobText');
+          if (jt) {
+            jt.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            jt.focus();
+            jt.style.transition = 'box-shadow 0.2s';
+            jt.style.boxShadow = '0 0 0 2px rgba(99,102,241,0.6)';
+            setTimeout(() => { jt.style.boxShadow = ''; }, 1800);
+          }
+        };
       } else {
+        // State D: both present — ready to tailor
         btn.style.opacity = '';
         btn.style.cursor = '';
         lbl.textContent = '✦ Tailor My Resume';
@@ -1174,8 +1197,61 @@ ${resume.slice(0, 3000)}
 
       switchMode('resume');
       if (jobData.jobTitle) showJobContext(jobData.jobTitle, jobData.company || '');
-      showJobCaptureConfirm(jobData);
+
+      // ── Auto-tailor if resume is already loaded ───────────────────────────
+      const hasResumeNow = !!(fileContent || document.getElementById('resumeText')?.value.trim());
+      const hasJobNow    = !!(document.getElementById('jobText')?.value.trim());
+      if (hasResumeNow && hasJobNow) {
+        _startAutoTailorCountdown(jobData);
+      } else {
+        // No resume — show the capture confirm so they can upload
+        showJobCaptureConfirm(jobData);
+        showToast('Job captured. Upload your resume and we\'ll tailor it instantly.', 'info');
+      }
     });
+
+    // ── Auto-tailor countdown (extension flow) ────────────────────────────────
+    let _autoTailorTimer = null;
+    function _startAutoTailorCountdown(jobData) {
+      // Cancel any existing countdown
+      if (_autoTailorTimer) { clearTimeout(_autoTailorTimer); _autoTailorTimer = null; }
+
+      const title   = jobData?.jobTitle || 'this role';
+      const company = jobData?.company  ? ` at ${jobData.company}` : '';
+
+      // Show countdown toast with cancel
+      const toastEl = document.getElementById('toast');
+      let secs = 3;
+      const renderCountdown = () => {
+        if (!toastEl) return;
+        toastEl.innerHTML = `
+          <span>Tailoring your resume for <strong>${title}${company}</strong> in ${secs}s…</span>
+          <button onclick="window._cancelAutoTailor()" style="margin-left:12px;background:rgba(255,255,255,0.15);border:none;color:inherit;padding:3px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">Cancel</button>`;
+        toastEl.className = 'toast toast-info visible';
+      };
+
+      window._cancelAutoTailor = () => {
+        if (_autoTailorTimer) { clearTimeout(_autoTailorTimer); _autoTailorTimer = null; }
+        if (toastEl) { toastEl.className = 'toast'; toastEl.innerHTML = ''; }
+        showJobCaptureConfirm(jobData);
+        showToast('Auto-tailor cancelled — click Tailor My Resume when ready.', 'info');
+        delete window._cancelAutoTailor;
+      };
+
+      renderCountdown();
+      const tick = () => {
+        secs--;
+        if (secs > 0) { renderCountdown(); _autoTailorTimer = setTimeout(tick, 1000); }
+        else {
+          if (toastEl) { toastEl.className = 'toast'; toastEl.innerHTML = ''; }
+          delete window._cancelAutoTailor;
+          _autoTailorTimer = null;
+          showToast('Tailoring your resume now…', 'success');
+          runTailoring();
+        }
+      };
+      _autoTailorTimer = setTimeout(tick, 1000);
+    }
 
     // ── Tier ──────────────────────────────────────────────────────────────────
     // setTier() controls the OUTPUT MODE only (what to generate this session).
