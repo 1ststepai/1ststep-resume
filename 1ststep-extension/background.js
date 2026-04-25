@@ -134,13 +134,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           const now = Date.now();
 
           // Read existing map, prune stale entries (> 2 min), add new one
-          const sessionData = await chrome.storage.session.get(['pendingJobs']);
-          const pendingJobs = sessionData.pendingJobs || {};
+          // NOTE: must use chrome.storage.local (not session) — content scripts
+          // (auth-bridge.js) cannot access chrome.storage.session.
+          const localData = await chrome.storage.local.get(['pendingJobs']);
+          const pendingJobs = localData.pendingJobs || {};
           for (const id of Object.keys(pendingJobs)) {
             if (now - pendingJobs[id].createdAt > 2 * 60 * 1000) delete pendingJobs[id];
           }
           pendingJobs[jobCaptureId] = { jobData: request.jobData, createdAt: now };
-          await chrome.storage.session.set({ pendingJobs });
+          await chrome.storage.local.set({ pendingJobs });
 
           const targetUrl = `${APP_URL}?jobCaptureId=${jobCaptureId}`;
           const existingTabs = await chrome.tabs.query({ url: `${APP_URL}/*` });
