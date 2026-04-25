@@ -926,20 +926,28 @@ ${resume.slice(0, 3000)}
     // Receives job data from auth-bridge.js (Chrome extension content script)
     // after the extension stores a pendingJob and opens this tab.
     function showJobCaptureConfirm(jobData) {
-      const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
+      const hasResume  = !!(fileContent || document.getElementById('resumeText')?.value.trim());
+      const hasJobDesc = !!(jobData.jobDescription?.trim());
 
-      // Both job + resume ready — skip modal, auto-start tailoring
-      if (hasResume) {
+      // Both resume + job description ready — skip modal, auto-start tailoring
+      if (hasResume && hasJobDesc) {
         const roleLabel = [jobData.jobTitle, jobData.company].filter(Boolean).join(' at ');
         showToast(roleLabel ? `Tailoring your resume for ${roleLabel}…` : 'Tailoring your resume…', 'success');
         document.getElementById('runBtn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Re-inject jobDescription into #jobText immediately before firing (race-condition guard)
+        const jt = document.getElementById('jobText');
+        if (jt && !jt.value.trim()) {
+          jt.value = jobData.jobDescription;
+          jt.dispatchEvent(new Event('input'));
+        }
         setTimeout(() => runTailoring(), 400);
         return;
       }
 
-      // No resume — show 2-option card (Upload + Build)
+      // Show 2-option card (Upload + Build)
       const confirm = document.getElementById('jobCaptureConfirm');
       const titleEl = document.getElementById('jccTitle');
+      const subEl   = confirm?.querySelector('.jcc-sub');
       if (!confirm || !titleEl) return;
 
       const company = jobData.company || '';
@@ -947,6 +955,11 @@ ${resume.slice(0, 3000)}
       titleEl.textContent = company && title
         ? `Job captured from ${company} — ${title}`
         : company ? `Job captured from ${company}` : title || 'Job captured';
+
+      // If description is missing, prompt user to paste it in
+      if (!hasJobDesc && subEl) {
+        subEl.textContent = 'Job description not detected — paste it into the box after opening.';
+      }
 
       confirm.style.display = 'block';
     }
