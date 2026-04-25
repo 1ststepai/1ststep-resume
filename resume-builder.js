@@ -907,8 +907,8 @@ function _rbUseInTailor() {
   if (typeof showToast === 'function') {
     showToast(
       hasJD
-        ? '✅ Resume loaded — hit "Tailor My Resume" to get started!'
-        : '✅ Resume built — paste a job description to tailor it.',
+        ? "Resume built. You're ready to tailor it to this job."
+        : 'Resume built. Paste a job description to tailor it.',
       'success'
     );
   }
