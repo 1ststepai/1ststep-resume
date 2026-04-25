@@ -71,7 +71,13 @@
         }, 600);
       });
 
-      document.getElementById('jobText').addEventListener('input', () => { updateCounts(); refreshSetupSteps(); updateRunButton(); updateExtEmptyHint(); });
+      document.getElementById('jobText').addEventListener('input', () => {
+        updateCounts(); refreshSetupSteps(); updateRunButton(); updateExtEmptyHint();
+        const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
+        const hasJob = !!(document.getElementById('jobText').value.trim());
+        if (hasJob && hasResume) updateFlowSteps(3);
+        else if (hasJob) updateFlowSteps(2);
+      });
 
       // ── Restore captured job if page reloaded mid-login ───────────────────
       try {
@@ -135,6 +141,12 @@
         if (!localStorage.getItem('1ststep_hint_dismissed') && !localStorage.getItem('1ststep_first_tailor_celebrated')) {
           const hint = document.getElementById('flowHint');
           if (hint) hint.style.display = 'flex';
+          // Start at the right step based on what they've already done
+          const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
+          const hasJob = !!(document.getElementById('jobText')?.value.trim());
+          if (hasResume && hasJob) updateFlowSteps(3);
+          else if (hasResume) updateFlowSteps(2);
+          else updateFlowSteps(1);
         }
       }
 
@@ -196,6 +208,8 @@
       document.getElementById('topbarAvatar')?.addEventListener('click', openProfileModal);
 
       // ── Phase 4 batch 3: results toolbar + What's Next bar ────────────────
+      // Mark step 4 all-done on download
+      document.getElementById('downloadDocxBtn')?.addEventListener('click', () => updateFlowSteps(5));
       // Tools dropdown
       document.getElementById('toolsDropdownBtn')?.addEventListener('click', toggleToolsDropdown);
       document.getElementById('applyTemplateBtn')?.addEventListener('click', () => { openTemplateModal(); closeToolsDropdown(); });
@@ -699,6 +713,41 @@ ${resume.slice(0, 3000)}
 
     function updateCounts() { /* counts removed */ }
 
+    // ── Flow Hint Step Highlighter ────────────────────────────────────────────
+    // Lights up the "How it works" bar as the user progresses through the flow.
+    // step: 1=upload, 2=find job, 3=tailor, 4=download
+    function updateFlowSteps(activeStep) {
+      const hint = document.getElementById('flowHint');
+      if (!hint || hint.style.display === 'none') return;
+      // Use individual property assignments — don't touch padding/border-radius set in HTML
+      for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById(`flowStep${i}`);
+        if (!el) continue;
+        if (i < activeStep) {
+          // Done — filled brand bg, check indicator
+          el.style.background  = 'rgba(67,56,202,0.25)';
+          el.style.color       = 'var(--brand)';
+          el.style.fontWeight  = '600';
+          el.style.outline     = 'none';
+          el.style.opacity     = '1';
+        } else if (i === activeStep) {
+          // Active — highlighted with ring
+          el.style.background  = 'rgba(67,56,202,0.12)';
+          el.style.color       = 'var(--brand)';
+          el.style.fontWeight  = '700';
+          el.style.outline     = '1.5px solid rgba(99,102,241,0.55)';
+          el.style.opacity     = '1';
+        } else {
+          // Upcoming — muted
+          el.style.background  = 'var(--surface2)';
+          el.style.color       = 'var(--text2)';
+          el.style.fontWeight  = '600';
+          el.style.outline     = 'none';
+          el.style.opacity     = '0.5';
+        }
+      }
+    }
+
     // ── File Upload ───────────────────────────────────────────────────────────
     function handleDragOver(e) { e.preventDefault(); document.getElementById('fileDrop').classList.add('drag-over'); }
     function handleDragLeave() { document.getElementById('fileDrop').classList.remove('drag-over'); }
@@ -790,6 +839,7 @@ ${resume.slice(0, 3000)}
         updateCounts();
         refreshSetupSteps();
         updateRunButton();
+        updateFlowSteps(2); // resume loaded → highlight "Find a job"
 
         // Extension flow: new user uploaded resume — guide them to click Tailor
         if (window._extensionDetected && window._capturedJob) {
@@ -1286,6 +1336,7 @@ ${resume.slice(0, 3000)}
     function showResults() {
       document.getElementById('progressPanel').classList.remove('visible');
       document.getElementById('resultsPanel').classList.add('visible');
+      updateFlowSteps(4); // tailoring done → highlight "Download & apply"
       updateMobileQuickBar();
 
       // Mobile: auto-scroll results into view after tailoring
