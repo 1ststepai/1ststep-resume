@@ -902,7 +902,15 @@ function _rbUseInTailor() {
   closeResumeBuilder();
   // Navigate to Resume Tailor tab — main nav function is switchMode('resume')
   if (typeof switchMode === 'function') switchMode('resume');
-  if (typeof showToast  === 'function') showToast('✅ Resume loaded — paste a job description and tailor away!', 'success');
+  if (typeof showToast === 'function') {
+    const hasJD = !!(document.getElementById('jobText')?.value.trim());
+    showToast(
+      hasJD
+        ? '✅ Resume loaded — hit "Tailor My Resume" to get started!'
+        : '✅ Resume built — paste a job description to tailor it.',
+      'success'
+    );
+  }
 }
 
 function _rbOpenTemplate() {
