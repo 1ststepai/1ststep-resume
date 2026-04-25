@@ -47,7 +47,7 @@ async function init() {
       return;
     }
 
-    statusBadge.textContent = auth.tier === 'complete' ? 'Complete' :
+    statusBadge.textContent = auth.tier === 'complete' ? 'Pass Active' :
                               auth.tier === 'essential' ? 'Essential' : 'Free';
     statusBadge.classList.add('authenticated');
 
