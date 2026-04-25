@@ -651,6 +651,8 @@
       // Tracker panel
       document.getElementById('trackerRefreshBtn')?.addEventListener('click', refreshTracker);
       document.getElementById('trackerAddJobsBtn')?.addEventListener('click', () => switchMode('jobs'));
+      document.getElementById('trackerConfirmViewBtn')?.addEventListener('click', () => switchMode('tracker'));
+      document.getElementById('trackerConfirmDismissBtn')?.addEventListener('click', () => { document.getElementById('trackerSaveConfirm').style.display = 'none'; });
       document.getElementById('trackerEmptyTailorBtn')?.addEventListener('click', _emptyTrackerCta);
       document.getElementById('trackerEmptyJdBtn')?.addEventListener('click', () => {
         _pingTracker('empty_tracker_cta_click');
