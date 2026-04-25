@@ -790,7 +790,19 @@ ${resume.slice(0, 3000)}
         updateCounts();
         refreshSetupSteps();
         updateRunButton();
-        showToast('Resume loaded ✓');
+
+        // Extension flow: new user uploaded resume — guide them to click Tailor
+        if (window._extensionDetected && window._capturedJob) {
+          showToast('Resume uploaded. Click Tailor My Resume to generate your tailored version.', 'success');
+          const runBtn = document.getElementById('runBtn');
+          if (runBtn) {
+            runBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            runBtn.classList.add('pulse-cta');
+            setTimeout(() => runBtn.classList.remove('pulse-cta'), 3000);
+          }
+        } else {
+          showToast('Resume loaded ✓');
+        }
 
       } catch (err) {
         console.error('processFile error:', err);
