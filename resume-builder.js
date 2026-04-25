@@ -900,16 +900,34 @@ function _rbUseInTailor() {
     if (fileName)   fileName.textContent      = _wbResume().name ? `${_wbResume().name} (built)` : 'My Resume (built)';
   }
   closeResumeBuilder();
-  // Navigate to Resume Tailor tab — main nav function is switchMode('resume')
   if (typeof switchMode === 'function') switchMode('resume');
+
+  const hasJD = !!(document.getElementById('jobText')?.value.trim());
+
   if (typeof showToast === 'function') {
-    const hasJD = !!(document.getElementById('jobText')?.value.trim());
     showToast(
       hasJD
         ? '✅ Resume loaded — hit "Tailor My Resume" to get started!'
         : '✅ Resume built — paste a job description to tailor it.',
       'success'
     );
+  }
+
+  if (hasJD) {
+    // Inject pulse keyframes once
+    if (!document.getElementById('_rbPulseStyle')) {
+      const s = document.createElement('style');
+      s.id = '_rbPulseStyle';
+      s.textContent = `@keyframes _rbPulse{0%,100%{box-shadow:0 4px 20px rgba(67,56,202,.4),0 1px 0 rgba(255,255,255,.1) inset}50%{box-shadow:0 0 0 6px rgba(99,102,241,.35),0 8px 32px rgba(67,56,202,.7),0 1px 0 rgba(255,255,255,.15) inset;transform:scale(1.02)}}._rb-pulse-ready{animation:_rbPulse .7s ease 2}`;
+      document.head.appendChild(s);
+    }
+    setTimeout(() => {
+      const btn = document.getElementById('runBtn');
+      if (!btn) return;
+      btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      btn.classList.add('_rb-pulse-ready');
+      btn.addEventListener('animationend', () => btn.classList.remove('_rb-pulse-ready'), { once: true });
+    }, 350); // wait for switchMode transition to settle
   }
 }
 
