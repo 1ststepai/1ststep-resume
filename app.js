@@ -43,11 +43,13 @@
           if (saved.source === 'file') {
             fileContent = saved.text;
             document.getElementById('fileName').textContent = saved.fileName || 'resume';
-            document.getElementById('fileLoaded').style.display = 'flex';
-            document.getElementById('fileDrop').style.display = 'none';
           } else {
             document.getElementById('resumeText').value = saved.text;
+            document.getElementById('fileName').textContent = saved.fileName || 'Saved resume';
           }
+          // Always show the file chip — gives visual confirmation regardless of source
+          document.getElementById('fileLoaded').style.display = 'flex';
+          document.getElementById('fileDrop').style.display = 'none';
           updateCounts();
           refreshSetupSteps();
         }
@@ -83,7 +85,7 @@
             if (jt) { jt.value = jd.jobDescription || ''; jt.dispatchEvent(new Event('input')); }
             window._capturedJob = { title: jd.jobTitle, company: jd.company, url: jd.applyUrl, site: jd.site };
             setTimeout(() => {
-              switchMode('tailored');
+              switchMode('resume');
               if (jd.jobTitle) showJobContext(jd.jobTitle, jd.company || '');
               showJobCaptureConfirm(jd);
             }, 0);
@@ -825,6 +827,11 @@ ${resume.slice(0, 3000)}
       const choiceCard = document.getElementById('resumeChoiceCard');
       if (choiceCard) choiceCard.style.display = (hasJob && !hasResume) ? 'flex' : 'none';
 
+      // When extension delivered the job, hide the choice card — JCC modal handles it
+      if (window._extensionDetected && hasJob && !hasResume) {
+        if (choiceCard) choiceCard.style.display = 'none';
+      }
+
       if (!hasJob && !hasResume) {
         btn.style.opacity = '0.85';
         btn.style.cursor = 'pointer';
@@ -919,64 +926,42 @@ ${resume.slice(0, 3000)}
     // Receives job data from auth-bridge.js (Chrome extension content script)
     // after the extension stores a pendingJob and opens this tab.
     function showJobCaptureConfirm(jobData) {
+      const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
+
+      // Both job + resume ready — skip modal, auto-start tailoring
+      if (hasResume) {
+        const roleLabel = [jobData.jobTitle, jobData.company].filter(Boolean).join(' at ');
+        showToast(roleLabel ? `Tailoring your resume for ${roleLabel}…` : 'Tailoring your resume…', 'success');
+        document.getElementById('runBtn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => runTailoring(), 400);
+        return;
+      }
+
+      // No resume — show 2-option card (Upload + Build)
       const confirm = document.getElementById('jobCaptureConfirm');
       const titleEl = document.getElementById('jccTitle');
       if (!confirm || !titleEl) return;
 
       const company = jobData.company || '';
       const title   = jobData.jobTitle || '';
-      const parts   = [company && 'Job captured from ' + company, title].filter(Boolean);
-      titleEl.textContent = parts.length === 2
+      titleEl.textContent = company && title
         ? `Job captured from ${company} — ${title}`
-        : parts[0] || 'Job captured';
+        : company ? `Job captured from ${company}` : title || 'Job captured';
 
       confirm.style.display = 'block';
     }
 
     function hideJobCaptureConfirm() {
       const confirm = document.getElementById('jobCaptureConfirm');
-      if (confirm) confirm.style.display = 'none';
+      if (!confirm) return;
+      confirm.style.display = 'none';
     }
 
     document.getElementById('jccDismissBtn')?.addEventListener('click', hideJobCaptureConfirm);
 
-    document.getElementById('jccUseResumeBtn')?.addEventListener('click', () => {
-      const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
-      if (hasResume) {
-        hideJobCaptureConfirm();
-        document.getElementById('runBtn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      } else {
-        const saved = loadResume();
-        if (saved?.text?.trim()) {
-          if (saved.source === 'file') {
-            fileContent = saved.text;
-            document.getElementById('fileLoaded').style.display = 'flex';
-            document.getElementById('fileDrop').style.display = 'none';
-            if (saved.fileName) document.getElementById('fileName').textContent = saved.fileName;
-          } else {
-            document.getElementById('resumeText').value = saved.text;
-          }
-          updateRunButton();
-          hideJobCaptureConfirm();
-          showToast('Resume loaded ✓', 'success');
-          document.getElementById('runBtn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else {
-          showToast('No saved resume found — upload one or build a new one.', 'info');
-        }
-      }
-    });
-
     document.getElementById('jccUploadBtn')?.addEventListener('click', () => {
       hideJobCaptureConfirm();
       document.getElementById('fileInput')?.click();
-    });
-
-    document.getElementById('jccClearJobBtn')?.addEventListener('click', () => {
-      const jobText = document.getElementById('jobText');
-      if (jobText) { jobText.value = ''; jobText.dispatchEvent(new Event('input')); }
-      clearJobContext();
-      window._capturedJob = null;
-      hideJobCaptureConfirm();
     });
 
     // ── Feature Help Menu ─────────────────────────────────────────────────────
@@ -1090,7 +1075,7 @@ ${resume.slice(0, 3000)}
         site:    jobData.site
       };
 
-      switchMode('tailored');
+      switchMode('resume');
       if (jobData.jobTitle) showJobContext(jobData.jobTitle, jobData.company || '');
       showJobCaptureConfirm(jobData);
     });
@@ -1306,7 +1291,13 @@ ${resume.slice(0, 3000)}
     }
 
     // ── Main Run ──────────────────────────────────────────────────────────────
+    let _tailoringInProgress = false;
+
     async function runTailoring() {
+      if (_tailoringInProgress) return;
+      _tailoringInProgress = true;
+
+      try {
       // INJECT-01: Sanitize both text sources — pasting bypasses the file-upload sanitizer
       const resumeRaw = sanitizeResumeText(fileContent || document.getElementById('resumeText').value.trim());
       const jobDesc = sanitizeResumeText(document.getElementById('jobText').value.trim());
@@ -1619,6 +1610,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
         btn.classList.remove('spinning');
         btn.querySelector('svg').innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
         updateRunButton(); // restore label to current state
+        _tailoringInProgress = false;
       }
     }
 

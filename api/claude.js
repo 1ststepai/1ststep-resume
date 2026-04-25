@@ -130,11 +130,13 @@ const monthlyIpUsage = new Map();
 //   Essential: 25 tailors / 40 searches  →  server limit is 8x above plan
 //   Complete: ~unlimited tailors / 80 searches  →  server limit is well above plan
 const MONTHLY_IP_LIMITS = {
-  tailor:      200,  // Complete plan is "unlimited" — 200 is pure abuse backstop
-  coverLetter: 200,
-  search:      150,  // Complete plan = 80 searches — 150 gives clear headroom
-  linkedin:     50,
-  autofill:    100,  // Chrome extension form autofill — Haiku-based field matching
+  // tailor + coverLetter are PAID_ONLY_TYPES — free users never reach these.
+  // These limits only apply to paid users, so keep them well above any plan ceiling.
+  tailor:      150,  // Complete plan ~25/month avg — 150 is abuse backstop only
+  coverLetter: 150,
+  search:       10,  // NOT paid-gated — free users can reach this. Client shows 5; server backstop at 10.
+  linkedin:     50,  // Complete only — 50 is well above normal usage
+  autofill:     10,  // NOT paid-gated — extension autofill, Haiku-based. Tighten from 100.
 };
 
 // callType values that are counted against monthly limits
