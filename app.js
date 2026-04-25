@@ -894,11 +894,19 @@ ${resume.slice(0, 3000)}
         if (choiceCard) choiceCard.style.display = 'none';
       }
 
+      // Tier toggle: only visible after results appear (managed by showResults/showProgress)
+      // jdSection dim: muted when no resume loaded
+      const jdSec    = document.getElementById('jdSection');
+      const helpTxt  = document.getElementById('jobHelperText');
+
       if (!hasJob && !hasResume) {
         // State A: nothing — guide to upload
         btn.style.opacity = '0.7';
         btn.style.cursor = 'pointer';
+        btn.classList.remove('pulse-cta');
         lbl.textContent = '↑ Upload Your Resume to Start';
+        if (jdSec) jdSec.style.opacity = '0.45';
+        if (helpTxt) helpTxt.style.display = 'none';
         btn.onclick = () => {
           const drop = document.getElementById('fileDrop');
           const inp  = document.getElementById('fileInput');
@@ -913,7 +921,10 @@ ${resume.slice(0, 3000)}
         // State C: job but no resume — prompt upload
         btn.style.opacity = '0.7';
         btn.style.cursor = 'pointer';
+        btn.classList.remove('pulse-cta');
         lbl.textContent = '↑ Upload Your Resume to Tailor This Job';
+        if (jdSec) jdSec.style.opacity = '';
+        if (helpTxt) helpTxt.style.display = 'none';
         btn.onclick = () => {
           const drop = document.getElementById('fileDrop');
           const inp  = document.getElementById('fileInput');
@@ -928,7 +939,10 @@ ${resume.slice(0, 3000)}
         // State B: resume but no job — point to job textarea
         btn.style.opacity = '0.7';
         btn.style.cursor = 'pointer';
+        btn.classList.remove('pulse-cta');
         lbl.textContent = 'Paste a Job Description Below ↓';
+        if (jdSec) jdSec.style.opacity = '';
+        if (helpTxt) helpTxt.style.display = 'block';
         btn.onclick = () => {
           const jt = document.getElementById('jobText');
           if (jt) {
@@ -944,6 +958,12 @@ ${resume.slice(0, 3000)}
         btn.style.opacity = '';
         btn.style.cursor = '';
         lbl.textContent = '✦ Tailor My Resume';
+        if (jdSec) jdSec.style.opacity = '';
+        if (helpTxt) helpTxt.style.display = 'none';
+        if (!btn.classList.contains('pulse-cta')) {
+          btn.classList.add('pulse-cta');
+          setTimeout(() => btn.classList.remove('pulse-cta'), 3000);
+        }
         btn.onclick = runTailoring;
       }
     }
@@ -1400,6 +1420,9 @@ ${resume.slice(0, 3000)}
       document.getElementById('emptyState').style.display = 'none';
       document.getElementById('resultsPanel').classList.remove('visible');
       document.getElementById('progressPanel').classList.add('visible');
+      // Hide tier toggle while tailoring — it reappears in showResults()
+      const tierWrap = document.getElementById('tierSelectWrap');
+      if (tierWrap) tierWrap.style.display = 'none';
       updateMobileQuickBar();
       [1, 2, 3, 4, 5].forEach(n => setStep(n, null));
       // Reset skill gap widgets for next run
@@ -1413,6 +1436,9 @@ ${resume.slice(0, 3000)}
       document.getElementById('progressPanel').classList.remove('visible');
       document.getElementById('resultsPanel').classList.add('visible');
       updateFlowSteps(4); // tailoring done → highlight "Download & apply"
+      // Reveal tier toggle now that there's a result to regenerate
+      const tierWrap = document.getElementById('tierSelectWrap');
+      if (tierWrap) tierWrap.style.display = '';
       updateMobileQuickBar();
 
       // Mobile: auto-scroll results into view after tailoring
@@ -1741,7 +1767,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
           }
         }
         if (tailorCount >= tailorLimit) {
-          setTimeout(() => showToast(`Monthly tailor limit reached — upgrade for more`, 'warning'), 1000);
+          setTimeout(() => showToast(`You've used your ${tailorLimit} free tailors — upgrade for more`, 'warning'), 1000);
         } else if (tailorCount / tailorLimit >= 0.8) {
           const rem = tailorLimit - tailorCount;
           setTimeout(() => showToast(`Heads up — ${rem} tailor${rem === 1 ? '' : 's'} left this month`, 'warning'), 1000);
@@ -1764,8 +1790,8 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
           document.getElementById('resumeOutput').innerHTML = `
         <div class="error-box" style="text-align:center;padding:32px 24px">
           <div style="font-size:2rem;margin-bottom:8px">🔒</div>
-          <strong style="font-size:1.1rem">Monthly limit reached</strong>
-          <p style="margin:10px 0 20px;opacity:0.85">You've used your free tailors for this month.<br>Upgrade to keep going — no limits, cancel any time.</p>
+          <strong style="font-size:1.1rem">You've used your ${getLimit('tailors')} free tailors</strong>
+          <p style="margin:10px 0 20px;opacity:0.85">Most users see more callbacks within the first week.<br>Upgrade to keep going — cancel any time.</p>
           <button class="btn-run" style="width:auto;padding:10px 28px;font-size:0.95rem" onclick="openUpgradeModal()">See Plans →</button>
         </div>`;
         } else if (err.code === 'TIER_REQUIRED' || err.code === 'COMPLETE_REQUIRED' || err.status === 403) {
@@ -2386,7 +2412,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
 
     function showTailorLimitMessage() {
       const limit = getLimit('tailors');
-      showToast(`Monthly tailor limit reached (${limit}/${limit}) — upgrade for more`, 'warning');
+      showToast(`You've used your ${limit} free tailors — upgrade for more`, 'warning');
       // Show upgrade nudge inline below the run button
       const meter = document.getElementById('tailorUsageMeter');
       if (meter) {
@@ -2394,13 +2420,15 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
         if (!existing) {
           const nudge = document.createElement('div');
           nudge.id = 'tailorUpgradeNudge';
-          nudge.style.cssText = 'margin-top:10px;padding:10px 12px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:8px;font-size:12px;color:var(--muted);text-align:center';
-          nudge.innerHTML = `<strong style="color:var(--fg)">You've used all ${limit} tailors this month.</strong><br>
-        <span style="font-size:11px">Upgrade for ${LIMITS[currentTier === 'essential' ? 'complete' : 'complete'].tailors} tailors/month.</span><br>
-        <button onclick="openUpgradeModal()" style="display:inline-block;margin-top:8px;padding:6px 14px;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;border:none;cursor:pointer">⬆ Upgrade My Plan</button>`;
+          nudge.style.cssText = 'margin-top:10px;padding:12px 14px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:8px;font-size:12px;color:var(--muted);text-align:center';
+          nudge.innerHTML = `<strong style="color:var(--fg)">You've used your ${limit} free tailors.</strong><br>
+        <span style="font-size:11px;color:var(--muted)">Most users see more callbacks within the first week.</span><br>
+        <button onclick="openUpgradeModal()" style="display:inline-block;margin-top:10px;padding:8px 18px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;border:none;cursor:pointer">See Plans →</button>`;
           meter.after(nudge);
         }
       }
+      // Also open the upgrade modal so they can act immediately
+      setTimeout(() => openUpgradeModal(), 400);
     }
 
     // Initialise meters on page load

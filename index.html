@@ -347,12 +347,13 @@
                 <button id="clearJobContextBtn" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;flex-shrink:0;padding:0">✕</button>
               </div>
               <textarea id="jobText" rows="5" placeholder="Paste the full job description here — the more detail, the better the result."></textarea>
+              <p id="jobHelperText" style="display:none;margin:5px 0 0;font-size:12px;color:var(--muted)">Add the job posting to tailor your resume to it</p>
               <p id="extEmptyHint" style="display:none;margin:5px 0 0;font-size:11px;color:var(--muted)">Or <a href="https://chromewebstore.google.com/detail/1ststep-ai-resume-tailor/gcmaoapcnobdcfaiijaoamajamijfacd" target="_blank" rel="noopener" style="color:var(--brand);text-decoration:none;font-weight:500">use the Chrome Extension</a> to pull job descriptions automatically.</p>
             </div>
 
             <!-- Tier + Run -->
             <div class="run-section">
-              <div class="tier-select" style="margin-bottom:12px">
+              <div class="tier-select" id="tierSelectWrap" style="margin-bottom:12px;display:none">
                 <button class="tier-btn active" id="tierEssential"><strong>Resume Only</strong></button>
                 <button class="tier-btn complete-tier" id="tierComplete"><strong>Resume + Cover Letter</strong><span class="tier-lock" id="clLockIcon"></span></button>
               </div>
