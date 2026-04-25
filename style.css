@@ -819,6 +819,43 @@
       color: #fff;
     }
 
+    .rab-btn-cover {
+      background: rgba(99,102,241,0.08);
+      border-color: var(--brand);
+      color: var(--brand);
+      font-weight: 600;
+    }
+
+    .rab-btn-cover:hover {
+      background: var(--brand);
+      color: #fff;
+    }
+
+    #clNudge {
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: rgba(99,102,241,0.06);
+      border-bottom: 1px solid rgba(99,102,241,0.15);
+      font-size: 13px;
+      color: var(--text2);
+    }
+
+    #clNudge span { line-height: 1.4; }
+
+    #clNudgeBtn {
+      background: none;
+      border: none;
+      color: var(--brand);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+      font-family: inherit;
+    }
+
+    #clNudgeBtn:hover { text-decoration: underline; }
+
     /* Results card */
     .results-panel {
       display: none;

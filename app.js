@@ -369,6 +369,14 @@
       document.getElementById('rabVault')?.addEventListener('click', () => { _pingTracker('result_vault_click'); switchMode('tailored'); });
       document.getElementById('rabTracker')?.addEventListener('click', () => { _pingTracker('result_tracker_click'); switchMode('tracker'); });
 
+      // Cover letter upsell — switch to complete mode and re-run
+      function _activateCoverLetter() {
+        setTier('complete');
+        if (outputMode === 'complete') runTailoring();
+      }
+      document.getElementById('rabCoverLetter')?.addEventListener('click', _activateCoverLetter);
+      document.getElementById('clNudgeBtn')?.addEventListener('click', _activateCoverLetter);
+
       // What's Next bar
       document.getElementById('wnTemplate')?.addEventListener('click', () => { openTemplateModal(); closeToolsDropdown(); markNextDone('wnTemplate'); });
       document.getElementById('wnDownload')?.addEventListener('click', () => { downloadDocx(); markNextDone('wnDownload'); });
@@ -1484,6 +1492,13 @@ ${resume.slice(0, 3000)}
       outputMode = tier; // 'essential' = resume only, 'complete' = resume + cover letter
       document.getElementById('tierEssential').classList.toggle('active', tier === 'essential');
       document.getElementById('tierComplete').classList.toggle('active', tier === 'complete');
+      // Once complete mode is active, hide the cover letter nudges
+      if (tier === 'complete') {
+        const rabCL = document.getElementById('rabCoverLetter');
+        if (rabCL) rabCL.style.display = 'none';
+        const nudge = document.getElementById('clNudge');
+        if (nudge) nudge.style.display = 'none';
+      }
     }
 
     // Update lock icon on Cover Letter button based on current tier
@@ -1612,6 +1627,11 @@ ${resume.slice(0, 3000)}
     function showResultActionBar() {
       const bar = document.getElementById('resultActionBar');
       if (bar) bar.style.display = 'flex';
+      const needsCoverLetter = outputMode === 'essential';
+      const rabCL = document.getElementById('rabCoverLetter');
+      if (rabCL) rabCL.style.display = needsCoverLetter ? 'inline-flex' : 'none';
+      const nudge = document.getElementById('clNudge');
+      if (nudge) nudge.style.display = needsCoverLetter ? 'flex' : 'none';
     }
 
     function hideResultActionBar() {
@@ -1632,9 +1652,6 @@ ${resume.slice(0, 3000)}
       document.getElementById('resultsPanel').classList.remove('visible');
       document.getElementById('progressPanel').classList.add('visible');
       hideResultActionBar();
-      // Hide tier toggle while tailoring — it reappears in showResults()
-      const tierWrap = document.getElementById('tierSelectWrap');
-      if (tierWrap) tierWrap.style.display = 'none';
       updateMobileQuickBar();
       [1, 2, 3, 4, 5].forEach(n => setStep(n, null));
       // Reset skill gap widgets for next run
@@ -1648,9 +1665,6 @@ ${resume.slice(0, 3000)}
       document.getElementById('progressPanel').classList.remove('visible');
       document.getElementById('resultsPanel').classList.add('visible');
       updateFlowSteps(4); // tailoring done → highlight "Download & apply"
-      // Reveal tier toggle now that there's a result to regenerate
-      const tierWrap = document.getElementById('tierSelectWrap');
-      if (tierWrap) tierWrap.style.display = '';
       updateMobileQuickBar();
 
       // Mobile: auto-scroll results into view after tailoring

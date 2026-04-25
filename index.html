@@ -353,7 +353,7 @@
 
             <!-- Tier + Run -->
             <div class="run-section">
-              <div class="tier-select" id="tierSelectWrap" style="margin-bottom:12px;display:none">
+              <div class="tier-select" id="tierSelectWrap" style="margin-bottom:12px">
                 <button class="tier-btn active" id="tierEssential"><strong>Resume Only</strong></button>
                 <button class="tier-btn complete-tier" id="tierComplete"><strong>Resume + Cover Letter</strong><span class="tier-lock" id="clLockIcon"></span></button>
               </div>
@@ -461,6 +461,10 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
               Tracker
             </button>
+            <button class="rab-btn rab-btn-cover" id="rabCoverLetter" style="display:none">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+              + Cover Letter
+            </button>
           </div>
 
           <!-- Tracker auto-save confirmation — shown briefly after each tailor -->
@@ -469,6 +473,12 @@
             <span>Added to Tracker as <strong style="color:var(--text)">Resume Ready</strong></span>
             <button id="trackerConfirmViewBtn" style="margin-left:auto;background:none;border:none;color:var(--brand);font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;padding:0;white-space:nowrap">View Tracker →</button>
             <button id="trackerConfirmDismissBtn" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0;flex-shrink:0">✕</button>
+          </div>
+
+          <!-- Cover letter nudge — shown after tailoring when outputMode is 'essential' -->
+          <div id="clNudge" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            <span>Want a matching cover letter? <button id="clNudgeBtn">Add it in one click →</button></span>
           </div>
 
           <div class="results-topbar">
