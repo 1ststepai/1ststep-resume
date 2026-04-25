@@ -150,6 +150,18 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
 
+        <!-- Help menu -->
+        <div id="helpDropdownWrap" style="position:relative">
+          <button id="helpBtn" title="How to use 1stStep.ai" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;color:var(--text2);font-family:'Inter',sans-serif;transition:all 0.15s">?</button>
+          <div id="helpDropdown" style="display:none;position:absolute;right:0;top:calc(100% + 6px);width:320px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:200;overflow:hidden">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:13px;font-weight:700;color:var(--text)">How to use 1stStep.ai</span>
+              <button id="helpDropdownClose" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0">✕</button>
+            </div>
+            <div style="max-height:420px;overflow-y:auto" id="helpDropdownItems"></div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -315,6 +327,16 @@
                 <button id="clearFileBtn">✕ Remove</button>
               </div>
               <textarea id="resumeText" rows="1" style="display:none;height:0;padding:0;border:none;resize:none" placeholder="" aria-hidden="true" tabindex="-1"></textarea>
+            </div>
+
+            <!-- Resume choice — shown when JD exists but no resume loaded -->
+            <div id="resumeChoiceCard" style="display:none;flex-direction:column;gap:10px;padding:14px 16px;background:rgba(99,102,241,0.07);border:1.5px dashed rgba(99,102,241,0.3);border-radius:10px;margin-bottom:4px">
+              <p style="margin:0;font-size:13px;font-weight:600;color:var(--text)">Job description added. Now choose a resume to tailor.</p>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <button id="resumeChoiceUploadBtn" style="padding:7px 13px;background:var(--brand);color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background 0.15s">↑ Upload Resume</button>
+                <button id="resumeChoiceExistingBtn" style="padding:7px 13px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s">Use Existing Resume</button>
+                <button id="resumeChoiceLinkedInBtn" style="padding:7px 13px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:5px;transition:all 0.15s"><svg width="11" height="11" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 6.5v5M4 4v.5M7 11.5V9c0-1.1.9-2 2-2s2 .9 2 2v2.5M7 6.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Import LinkedIn PDF</button>
+              </div>
             </div>
 
             <!-- Job Description -->
@@ -941,6 +963,15 @@
 
           <!-- Main bulk apply UI (Complete users) -->
           <div id="bulkApplyMain">
+            <!-- No-resume notice for bulk apply -->
+            <div id="bulkNoResumeNotice" style="display:none;padding:12px 14px;background:rgba(99,102,241,0.07);border:1.5px dashed rgba(99,102,241,0.3);border-radius:9px;margin-bottom:12px">
+              <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:var(--text)">No resume loaded yet.</p>
+              <p style="margin:0 0 10px;font-size:12px;color:var(--text2)">Add your jobs first. We'll ask for your resume before tailoring.</p>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <button id="bulkUploadResumeBtn" style="padding:6px 12px;background:var(--brand);color:white;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">↑ Upload Resume</button>
+                <button id="bulkUseExistingBtn" style="padding:6px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">Use Existing Resume</button>
+              </div>
+            </div>
             <div id="bulkJobInputs" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
               <!-- Job inputs rendered by JS -->
             </div>

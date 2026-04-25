@@ -162,8 +162,11 @@ async function deliverPendingJob() {
     const jobCaptureId = new URLSearchParams(window.location.search).get('jobCaptureId');
     const now = Date.now();
 
-    const data = await new Promise(resolve =>
-      chrome.storage.session.get(['pendingJobs'], resolve)
+    const data = await new Promise((resolve, reject) =>
+      chrome.storage.session.get(['pendingJobs'], (d) => {
+        if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+        else resolve(d || {});
+      })
     );
     const pendingJobs = data.pendingJobs || {};
 

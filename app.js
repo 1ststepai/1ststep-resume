@@ -436,6 +436,31 @@
       // Bulk apply panel
       document.getElementById('bulkAddBtn')?.addEventListener('click', addBulkJob);
       document.getElementById('bulkRunBtn')?.addEventListener('click', runBulkApply);
+      document.getElementById('bulkUploadResumeBtn')?.addEventListener('click', () => {
+        switchMode('resume');
+        setTimeout(() => document.getElementById('fileInput')?.click(), 200);
+      });
+      document.getElementById('bulkUseExistingBtn')?.addEventListener('click', () => {
+        const has = !!(fileContent || document.getElementById('resumeText')?.value.trim());
+        if (has) {
+          document.getElementById('bulkNoResumeNotice').style.display = 'none';
+          showToast('Resume loaded ✓', 'success');
+        } else {
+          const saved = JSON.parse(localStorage.getItem('1ststep_resume') || 'null');
+          if (saved?.text?.trim()) {
+            fileContent = saved.text;
+            document.getElementById('resumeText').value = saved.text;
+            document.getElementById('fileLoaded').style.display = 'flex';
+            if (saved.fileName) document.getElementById('fileName').textContent = saved.fileName;
+            document.getElementById('bulkNoResumeNotice').style.display = 'none';
+            updateRunButton();
+            showToast('Resume loaded ✓');
+          } else {
+            switchMode('resume');
+            setTimeout(() => document.getElementById('fileInput')?.click(), 200);
+          }
+        }
+      });
 
       // Tracker panel
       document.getElementById('trackerRefreshBtn')?.addEventListener('click', refreshTracker);
@@ -785,11 +810,22 @@ ${resume.slice(0, 3000)}
       if (btn.disabled) return; // don't override state while running
       const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
       const hasJob = !!(document.getElementById('jobText')?.value.trim());
-      if (!hasResume) {
+
+      // Show resume choice card when JD is present but no resume loaded
+      const choiceCard = document.getElementById('resumeChoiceCard');
+      if (choiceCard) choiceCard.style.display = (hasJob && !hasResume) ? 'flex' : 'none';
+
+      if (!hasJob && !hasResume) {
+        btn.style.opacity = '0.85';
+        btn.style.cursor = 'pointer';
+        lbl.textContent = '✦ Generate Tailored Resume';
+        btn.onclick = () => { document.getElementById('jobText')?.focus(); showToast('Paste or capture a job description first.', 'info'); };
+      } else if (hasJob && !hasResume) {
         btn.style.opacity = '0.5';
-        btn.style.cursor = 'default';
-        lbl.textContent = '↑ Upload or paste your resume first';
-      } else if (!hasJob) {
+        btn.style.cursor = 'pointer';
+        lbl.textContent = '✦ Generate Tailored Resume';
+        btn.onclick = () => showToast('Choose or upload a resume first so we can tailor it to this job.', 'info');
+      } else if (!hasJob && hasResume) {
         btn.style.opacity = '0.85';
         btn.style.cursor = 'pointer';
         lbl.textContent = '🔍 Find a Job First';
@@ -801,6 +837,35 @@ ${resume.slice(0, 3000)}
         btn.onclick = runTailoring;
       }
     }
+
+    // ── Resume Choice Card ────────────────────────────────────────────────────
+    document.getElementById('resumeChoiceUploadBtn')?.addEventListener('click', () => {
+      document.getElementById('fileInput')?.click();
+    });
+    document.getElementById('resumeChoiceExistingBtn')?.addEventListener('click', () => {
+      const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
+      if (hasResume) {
+        showToast('Resume already loaded ✓', 'success');
+        updateRunButton();
+      } else {
+        const saved = JSON.parse(localStorage.getItem('1ststep_resume') || 'null');
+        if (saved?.text?.trim()) {
+          fileContent = saved.text;
+          const fn = document.getElementById('fileName');
+          if (fn) fn.textContent = saved.fileName || 'resume';
+          document.getElementById('resumeText').value = saved.text;
+          document.getElementById('fileLoaded').style.display = 'flex';
+          updateRunButton();
+          showToast('Resume loaded ✓');
+        } else {
+          showToast('No saved resume found — please upload one.', 'info');
+          document.getElementById('fileInput')?.click();
+        }
+      }
+    });
+    document.getElementById('resumeChoiceLinkedInBtn')?.addEventListener('click', () => {
+      document.getElementById('liOpenModalBtn')?.click();
+    });
 
     // ── Tools Dropdown ───────────────────────────────────────────────────────
     function toggleToolsDropdown() {
@@ -884,6 +949,50 @@ ${resume.slice(0, 3000)}
       window._capturedJob = null;
       hideJobCaptureConfirm();
     });
+
+    // ── Feature Help Menu ─────────────────────────────────────────────────────
+    (function initHelpMenu() {
+      const btn   = document.getElementById('helpBtn');
+      const dd    = document.getElementById('helpDropdown');
+      const close = document.getElementById('helpDropdownClose');
+      const list  = document.getElementById('helpDropdownItems');
+      if (!btn || !dd || !list) return;
+
+      const HELP_ITEMS = [
+        { icon: '✦', title: 'Tailor Resume', body: 'Paste a job description and your resume — Claude rewrites your resume to match the role and pass ATS filters.' },
+        { icon: '📄', title: 'Upload Resume', body: 'Upload a PDF, Word doc, or plain text file. Your resume is saved locally in your browser — nothing is stored on our servers.' },
+        { icon: '💾', title: 'Use Existing Resume', body: 'If you\'ve uploaded a resume before, click "Use Existing Resume" to reload it instantly without re-uploading.' },
+        { icon: '🧩', title: 'Chrome Extension', body: 'Install the Chrome Extension to capture job descriptions from LinkedIn, Indeed, and other job sites, then send them directly into 1stStep.ai — no copy & paste.' },
+        { icon: '📋', title: 'Application Tracker', body: 'Log every job you apply to. Track status (Applied, Interview, Offer, Rejected) and keep notes on each application.' },
+        { icon: '🕐', title: 'Resume History', body: 'Every tailored resume is saved automatically. Come back anytime to copy, download, or compare past versions.' },
+        { icon: '🎤', title: 'Interview Prep', body: 'Get a list of likely interview questions based on the job description, with tips on how to answer each one.' },
+        { icon: '⚡', title: 'Bulk Apply', body: 'Paste up to 5 job descriptions at once and generate a tailored resume for each in one click. Requires Complete plan.' },
+        { icon: '🔗', title: 'LinkedIn PDF Import', body: 'Download your LinkedIn profile as a PDF and upload it — we\'ll extract it as your resume automatically.' },
+        { icon: '🎨', title: 'Templates', body: 'Browse resume templates to change how your tailored resume is formatted. Swap styles without re-tailoring.' },
+        { icon: '🎯', title: 'Match Score & Keywords', body: 'See how well your resume matches a job description. View which keywords are present or missing and boost your ATS score.' },
+      ];
+
+      list.innerHTML = HELP_ITEMS.map(item =>
+        `<div style="padding:10px 16px;border-bottom:1px solid var(--border)">` +
+        `<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">` +
+        `<span style="font-size:14px">${item.icon}</span>` +
+        `<span style="font-size:12px;font-weight:700;color:var(--text)">${item.title}</span>` +
+        `</div>` +
+        `<p style="margin:0;font-size:12px;color:var(--text2);line-height:1.5">${item.body}</p>` +
+        `</div>`
+      ).join('') +
+      `<div style="padding:10px 16px;font-size:11px;color:var(--muted);text-align:center">1stStep.ai · AI-powered job search tools</div>`;
+
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+      });
+      close.addEventListener('click', () => { dd.style.display = 'none'; });
+      document.addEventListener('click', (e) => {
+        const wrap = document.getElementById('helpDropdownWrap');
+        if (wrap && !wrap.contains(e.target)) dd.style.display = 'none';
+      });
+    })();
 
     // ── Extension Promo ──────────────────────────────────────────────────────
     const EXT_INSTALL_URL = 'https://chromewebstore.google.com/detail/1ststep-ai-resume-tailor/gcmaoapcnobdcfaiijaoamajamijfacd';
@@ -1174,8 +1283,8 @@ ${resume.slice(0, 3000)}
       const jobDesc = sanitizeResumeText(document.getElementById('jobText').value.trim());
       const notes = document.getElementById('notesText').value.trim();
 
-      if (!resumeRaw) { showToast('⚠️ Please add your resume first'); return; }
-      if (!jobDesc) { showToast('⚠️ Please paste a job description'); return; }
+      if (!resumeRaw) { showToast('Choose or upload a resume first so we can tailor it to this job.', 'warning'); return; }
+      if (!jobDesc) { showToast('Paste or capture a job description first.', 'warning'); return; }
       if (isLimitReached('tailors')) { showTailorLimitMessage(); return; }
 
       // Store original for before/after diff
@@ -4164,6 +4273,13 @@ Rules:
       document.getElementById('bulkApplyMain').style.display = isComplete ? 'block' : 'none';
       document.getElementById('bulkTierBadge').style.display = isComplete ? 'inline-block' : 'none';
 
+      // Show resume notice if no resume loaded
+      if (isComplete) {
+        const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
+        const notice = document.getElementById('bulkNoResumeNotice');
+        if (notice) notice.style.display = hasResume ? 'none' : 'block';
+      }
+
       // Add first job input if panel is empty
       if (isComplete && document.getElementById('bulkJobInputs').children.length === 0) {
         addBulkJob();
@@ -4210,7 +4326,9 @@ Rules:
       // INJECT-01: Sanitize resume text regardless of source (file or paste)
       const resume = sanitizeResumeText(fileContent || document.getElementById('resumeText').value.trim());
       if (!resume) {
-        showToast('No resume found — paste your resume in Resume Tailor first', 'warning');
+        showToast('Upload or choose a resume before tailoring.', 'warning');
+        const notice = document.getElementById('bulkNoResumeNotice');
+        if (notice) notice.style.display = 'block';
         return;
       }
 
