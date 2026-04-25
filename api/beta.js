@@ -27,8 +27,10 @@ const ALLOWED_ORIGINS = [
   'https://app.1ststep.ai',
 ];
 
-// Beta token TTL: 15 days
-const BETA_TTL_MS = 15 * 24 * 60 * 60 * 1000;
+// Beta token TTL: 15 days (reviewer account gets 365 days)
+const BETA_TTL_MS          = 15  * 24 * 60 * 60 * 1000;
+const REVIEWER_TTL_MS      = 365 * 24 * 60 * 60 * 1000;
+const REVIEWER_EMAIL       = '1ststep.reviewer@gmail.com';
 
 // Rate limiter — 10 attempts per IP per hour (prevents code brute-forcing)
 const betaAttempts = new Map();
@@ -107,9 +109,10 @@ export default async function handler(req, res) {
     return res.status(200).json({ valid: false, error: 'Invalid invite code — check your invite and try again.' });
   }
 
-  // Issue a 15-day Complete tier token
-  const expiresAt  = Date.now() + BETA_TTL_MS;
-  const tierToken  = signTierToken(cleanEmail, 'complete', BETA_TTL_MS);
+  // Issue a Complete tier token (365-day for reviewer, 15-day for everyone else)
+  const ttl        = cleanEmail === REVIEWER_EMAIL ? REVIEWER_TTL_MS : BETA_TTL_MS;
+  const expiresAt  = Date.now() + ttl;
+  const tierToken  = signTierToken(cleanEmail, 'complete', ttl);
 
   // ── Capture in GHL as beta contact ──────────────────────────────────────────
   const apiKey     = process.env.GHL_API_KEY;
