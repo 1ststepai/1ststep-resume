@@ -764,6 +764,61 @@
       color: var(--green);
     }
 
+    /* ── Result Action Bar ── */
+    #resultActionBar {
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 10px 16px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .rab-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2);
+      margin-right: 4px;
+      white-space: nowrap;
+    }
+
+    .rab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 13px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: border-color 0.15s, background 0.15s;
+      white-space: nowrap;
+    }
+
+    .rab-btn:hover {
+      border-color: var(--brand);
+      color: var(--brand);
+    }
+
+    .rab-btn-primary {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+    }
+
+    .rab-btn-primary:hover {
+      background: #4338CA;
+      border-color: #4338CA;
+      color: #fff;
+    }
+
     /* Results card */
     .results-panel {
       display: none;
@@ -806,6 +861,11 @@
     .match-score-badge.ok {
       background: var(--amber-light);
       color: var(--amber);
+    }
+
+    .match-score-badge.bad {
+      background: rgba(239, 68, 68, 0.1);
+      color: #EF4444;
     }
 
     .topbar-actions {
@@ -2771,6 +2831,21 @@
       font-size: 12px;
     }
 
+    .status-tailored {
+      background: rgba(139, 92, 246, 0.1);
+      color: #7C3AED;
+    }
+
+    .tailored-nudge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--text2);
+      font-style: italic;
+    }
+
     .status-applied {
       background: rgba(99, 102, 241, 0.12);
       color: var(--brand);
@@ -4263,6 +4338,8 @@
     .qs-stat-row:last-child { border-bottom: none; }
     .qs-stat-label { color: var(--text2); }
     .qs-stat-value { color: var(--text); font-weight: 600; }
+    .qs-streak-value { color: var(--brand); }
+    .qs-streak-value.streak-hot { color: #10B981; }
 
     /* ── Trust pill badges ── */
     .trust-pill-row {

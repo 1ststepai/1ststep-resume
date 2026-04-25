@@ -5,6 +5,142 @@
     let results = { resume: '', keywords: null, changes: [], coverLetter: '', score: null };
     let fileContent = '';
 
+    // ── Client-side keyword match score ───────────────────────────────────────
+    function calcMatchScore(resumeText, jobDescription) {
+      if (!resumeText || !jobDescription) return 0;
+      const normalize = s => s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
+      const jdWords = [...new Set(
+        normalize(jobDescription).split(/\s+/).filter(w => w.length > 4)
+      )];
+      if (!jdWords.length) return 0;
+      const resumeLower = normalize(resumeText);
+      const matched = jdWords.filter(w => resumeLower.includes(w)).length;
+      return Math.round((matched / jdWords.length) * 100);
+    }
+
+    // ── Weekly streak ─────────────────────────────────────────────────────────
+    function _getWeekStart() {
+      const d = new Date();
+      const day = d.getDay(); // 0=Sun
+      d.setDate(d.getDate() - (day === 0 ? 6 : day - 1)); // back to Monday
+      return d.toISOString().split('T')[0];
+    }
+
+    function updateStreak() {
+      const thisWeek = _getWeekStart();
+      let s;
+      try { s = JSON.parse(localStorage.getItem('1ststep_streak') || 'null'); } catch { s = null; }
+      if (!s || s.weekStart !== thisWeek) {
+        s = { count: 1, weekStart: thisWeek };
+      } else {
+        s.count += 1;
+      }
+      localStorage.setItem('1ststep_streak', JSON.stringify(s));
+      syncExtensionStats(true);
+      if (s.count === 3 || s.count === 5) {
+        try {
+          const email = loadProfile?.()?.email;
+          if (email) fetch('/api/track-event', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, event: `streak_${s.count}` }),
+          }).catch(() => {});
+        } catch {}
+      }
+      return s;
+    }
+
+    // ── Sidebar stats (streak + tailors + score + apps) ───────────────────────
+    function updateQsStats() {
+      // Tailors this month
+      try {
+        const usage = getMonthlyUsage ? getMonthlyUsage() : {};
+        const el = document.getElementById('qsStatTailors');
+        if (el) el.textContent = usage.tailors ?? '—';
+      } catch {}
+
+      // This week (streak)
+      try {
+        const raw = localStorage.getItem('1ststep_streak');
+        const s = raw ? JSON.parse(raw) : null;
+        const el = document.getElementById('qsStatStreak');
+        if (el) {
+          if (s && s.weekStart === _getWeekStart() && s.count > 0) {
+            el.textContent = s.count === 1 ? '1 tailor' : `${s.count} tailors${s.count >= 3 ? ' 🔥' : ''}`;
+            el.classList.toggle('streak-hot', s.count >= 3);
+          } else {
+            el.textContent = '—';
+            el.classList.remove('streak-hot');
+          }
+        }
+      } catch {}
+
+      // Best match score ever
+      try {
+        const history = getTailorHistory ? getTailorHistory() : [];
+        const best = history.reduce((max, e) => Math.max(max, e.matchPct ?? 0), 0);
+        const el = document.getElementById('qsStatScore');
+        if (el) el.textContent = best > 0 ? `${best}%` : '—';
+      } catch {}
+
+      // Applications count
+      try {
+        const el = document.getElementById('qsStatApps');
+        if (el) el.textContent = applications?.length ?? '—';
+      } catch {}
+    }
+
+    // ── Extension stats sync ─────────────────────────────────────────────────
+    function syncExtensionStats(trackSuccess = false) {
+      try {
+        if (typeof chrome === 'undefined' || !chrome.storage?.sync) return;
+        const usage = getMonthlyUsage();
+        let streakCount = 0;
+        try {
+          const s = JSON.parse(localStorage.getItem('1ststep_streak') || 'null');
+          if (s && s.weekStart === _getWeekStart()) streakCount = s.count || 0;
+        } catch {}
+        const history = getTailorHistory ? getTailorHistory() : [];
+        const bestMatchPct = history.reduce((max, e) => Math.max(max, e.matchPct ?? 0), 0);
+        chrome.storage.sync.set({
+          '1ststep_stats': {
+            tailorsThisMonth: usage.tailors || 0,
+            streakCount,
+            bestMatchPct: bestMatchPct > 0 ? bestMatchPct : null,
+            applicationCount: applications?.length ?? 0,
+            updatedAt: Date.now()
+          }
+        });
+        if (trackSuccess) _pingTracker('extension_stats_synced');
+      } catch {}
+    }
+
+    // ── Empty-state CTAs ──────────────────────────────────────────────────────
+    function _emptyTrackerCta() {
+      _pingTracker('empty_tracker_cta_click');
+      switchMode('resume');
+      const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
+      setTimeout(() => {
+        if (hasResume) {
+          document.getElementById('jobText')?.focus();
+        } else {
+          document.getElementById('fileDrop')?.click();
+        }
+      }, 150);
+    }
+
+    function _emptyVaultCta() {
+      _pingTracker('empty_vault_cta_click');
+      switchMode('resume');
+      const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
+      setTimeout(() => {
+        if (hasResume) {
+          document.getElementById('jobText')?.focus();
+        } else {
+          document.getElementById('fileDrop')?.click();
+        }
+      }, 150);
+    }
+
     // ── Init ──────────────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
       // Hide extension promo if already dismissed
@@ -14,6 +150,8 @@
       }
 
       updateProfileBadge();
+      updateQsStats();
+      syncExtensionStats();
 
       // ── Identify returning users in GHL chat widget on page load ──────────────
       // Fires after widget script loads (~2s). Prevents returning users from
@@ -222,6 +360,15 @@
       document.getElementById('toolbarJobsBtn')?.addEventListener('click', () => switchMode('jobs'));
       document.getElementById('toolbarHistoryBtn')?.addEventListener('click', () => switchMode('tailored'));
 
+      // Result action bar
+      document.getElementById('rabDownload')?.addEventListener('click', () => { _pingTracker('result_download_click'); downloadDocx(); });
+      document.getElementById('rabCopy')?.addEventListener('click', () => {
+        _pingTracker('result_copy_click');
+        navigator.clipboard.writeText(results.resume || '').then(() => showToast('Copied ✓'));
+      });
+      document.getElementById('rabVault')?.addEventListener('click', () => { _pingTracker('result_vault_click'); switchMode('tailored'); });
+      document.getElementById('rabTracker')?.addEventListener('click', () => { _pingTracker('result_tracker_click'); switchMode('tracker'); });
+
       // What's Next bar
       document.getElementById('wnTemplate')?.addEventListener('click', () => { openTemplateModal(); closeToolsDropdown(); markNextDone('wnTemplate'); });
       document.getElementById('wnDownload')?.addEventListener('click', () => { downloadDocx(); markNextDone('wnDownload'); });
@@ -411,6 +558,25 @@
       document.getElementById('welcomeBuildBtn')?.addEventListener('click', () => dismissWelcome('build'));
       document.getElementById('welcomeRestoreBtn')?.addEventListener('click', triggerRestoreBackup);
 
+      // Onboarding step 2 — JD textarea + generate button
+      document.getElementById('welcomeJdInput')?.addEventListener('input', () => {
+        const btn = document.getElementById('welcomeRunBtn');
+        if (!btn) return;
+        const ready = (document.getElementById('welcomeJdInput').value.trim().length >= 50);
+        btn.disabled = !ready;
+        btn.style.opacity = ready ? '1' : '0.45';
+        btn.style.cursor = ready ? 'pointer' : 'default';
+      });
+      document.getElementById('welcomeRunBtn')?.addEventListener('click', () => {
+        const jd = document.getElementById('welcomeJdInput')?.value.trim();
+        if (!jd) return;
+        const jobText = document.getElementById('jobText');
+        if (jobText) { jobText.value = jd; jobText.dispatchEvent(new Event('input')); }
+        _closeWelcomeOverlay();
+        _pingTracker('onboarding_autorun');
+        setTimeout(runTailoring, 120);
+      });
+
       // openUpgradeModal / openFeedbackModal triggers
       document.getElementById('bulkUpgradeBtn')?.addEventListener('click', openUpgradeModal);
       document.getElementById('footerFeedbackBtn')?.addEventListener('click', openFeedbackModal);
@@ -485,7 +651,12 @@
       // Tracker panel
       document.getElementById('trackerRefreshBtn')?.addEventListener('click', refreshTracker);
       document.getElementById('trackerAddJobsBtn')?.addEventListener('click', () => switchMode('jobs'));
-      document.getElementById('trackerEmptyJobsBtn')?.addEventListener('click', () => switchMode('jobs'));
+      document.getElementById('trackerEmptyTailorBtn')?.addEventListener('click', _emptyTrackerCta);
+      document.getElementById('trackerEmptyJdBtn')?.addEventListener('click', () => {
+        _pingTracker('empty_tracker_cta_click');
+        switchMode('resume');
+        setTimeout(() => document.getElementById('jobText')?.focus(), 150);
+      });
 
       // Resume builder — openResumeBuilder() is defined in resume-builder.js
       document.getElementById('resumeChoiceBuildBtn')?.addEventListener('click', () => openResumeBuilder?.());
@@ -515,28 +686,54 @@
       });
     }
 
-    function dismissWelcome(path = false) {
+    function _closeWelcomeOverlay() {
       document.getElementById('welcomeOverlay').classList.remove('visible');
-      document.body.style.overflow = ''; // restore scroll
-      _setChatWidgetVisible(true); // restore chat bubble
+      document.body.style.overflow = '';
+      _setChatWidgetVisible(true);
       localStorage.setItem('1ststep_welcomed', '1');
+    }
 
+    function dismissWelcome(path = false) {
       if (path === 'upload' || path === true) {
-        // Existing path — focus the file upload input
+        // Keep overlay open — trigger file picker then advance to step 2 when resume lands
         setTimeout(() => document.getElementById('fileInput')?.click(), 200);
+        _onResumeReadyAdvanceWelcome();
+        return;
+      }
 
-      } else if (path === 'build') {
-        // New path — open the Resume Builder wizard
-        // Small delay so the overlay fade-out feels clean
+      _closeWelcomeOverlay();
+
+      if (path === 'build') {
         setTimeout(() => {
           if (typeof openResumeBuilder === 'function') {
             openResumeBuilder();
           } else {
-            // resume-builder.js not loaded yet — show a helpful fallback
             showToast('⏳ Builder loading… try again in a moment.', 'info');
           }
         }, 250);
       }
+    }
+
+    function _onResumeReadyAdvanceWelcome() {
+      let attempts = 0;
+      const interval = setInterval(() => {
+        attempts++;
+        if (attempts > 100) { clearInterval(interval); return; } // 30s max
+        const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
+        if (!hasResume) return;
+        clearInterval(interval);
+        const overlay = document.getElementById('welcomeOverlay');
+        if (!overlay?.classList.contains('visible')) return; // already dismissed another way
+        // Swap: hide path buttons, show JD step
+        const grid = document.getElementById('welcomePathGrid');
+        const step2 = document.getElementById('welcomeStep2');
+        if (grid) grid.style.display = 'none';
+        if (step2) {
+          step2.style.display = 'block';
+          document.getElementById('welcomeJdInput')?.focus();
+        }
+        _pingTracker('onboarding_step2_shown');
+      }, 300);
     }
 
     function reopenWelcome() {
@@ -1410,6 +1607,18 @@ ${resume.slice(0, 3000)}
       bar.classList.toggle('visible', !!(resultsVisible && inResumeMode));
     }
 
+    function showResultActionBar() {
+      const bar = document.getElementById('resultActionBar');
+      if (bar) bar.style.display = 'flex';
+    }
+
+    function hideResultActionBar() {
+      const bar = document.getElementById('resultActionBar');
+      if (bar) bar.style.display = 'none';
+      const confirm = document.getElementById('trackerSaveConfirm');
+      if (confirm) confirm.style.display = 'none';
+    }
+
     function dismissExtPromo() {
       const el = document.getElementById('mobileExtPromo');
       if (el) el.style.display = 'none';
@@ -1420,6 +1629,7 @@ ${resume.slice(0, 3000)}
       document.getElementById('emptyState').style.display = 'none';
       document.getElementById('resultsPanel').classList.remove('visible');
       document.getElementById('progressPanel').classList.add('visible');
+      hideResultActionBar();
       // Hide tier toggle while tailoring — it reappears in showResults()
       const tierWrap = document.getElementById('tierSelectWrap');
       if (tierWrap) tierWrap.style.display = 'none';
@@ -1488,6 +1698,8 @@ ${resume.slice(0, 3000)}
           showToast('✓ First resume tailored! Try Job Search next to find roles to apply to →', 'success');
         }, 1200);
       }
+
+      showResultActionBar();
     }
 
     // ── Main Run ──────────────────────────────────────────────────────────────
@@ -1505,6 +1717,9 @@ ${resume.slice(0, 3000)}
       if (!resumeRaw) { showToast('Choose or upload a resume first so we can tailor it to this job.', 'warning'); return; }
       if (!jobDesc) { showToast('Paste or capture a job description first.', 'warning'); return; }
       if (isLimitReached('tailors')) { showTailorLimitMessage(); return; }
+
+      // Client-side score computed before API call — used as badge fallback
+      const clientMatchPct = calcMatchScore(resumeRaw, jobDesc);
 
       // Store original for before/after diff
       window._origResumePlain = resumeRaw;
@@ -1719,7 +1934,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
         }
 
         // ── Store & Display Results ───────────────────────────────
-        results = { resume: atsClean, keywords: { ...kwData, ...gapData }, changes, coverLetter, score: gapData };
+        results = { resume: atsClean, keywords: { ...kwData, ...gapData }, changes, coverLetter, score: gapData, matchPct: clientMatchPct };
         renderResults();
         renderSkillGapCard(gapData);   // ← skill gap card (free: teaser, paid: full)
         showResults();
@@ -1738,6 +1953,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
           coverLetter: coverLetter || '',
           jobDescription: jobDesc.slice(0, 5000),
           tailoredAt: new Date().toISOString(),
+          matchPct: gapData?.match_score_after_estimate ?? clientMatchPct,
         };
         saveTailorEntry(tailorEntry);
 
@@ -1773,10 +1989,10 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
           setTimeout(() => showToast(`Heads up — ${rem} tailor${rem === 1 ? '' : 's'} left this month`, 'warning'), 1000);
         }
 
-        // Navigate to Tailored Resumes tab and let the user download from there
+        // Navigate to Resume Vault and let the user download from there
         setTimeout(() => {
           switchMode('tailored');
-          showToast('✓ Done! Download your resume & cover letter here');
+          showToast('✓ Saved to Resume Vault · Download or apply below');
         }, 400);
 
       } catch (err) {
@@ -1849,15 +2065,24 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       const wnBar = document.getElementById('whatsNextBar');
       if (wnBar) wnBar.style.display = 'flex';
 
-      // Score badge — show before→after delta if we have both scores
+      // Score badge — Claude score when available, client keyword match as fallback
       const matchBadge = document.getElementById('matchBadge');
       if (score?.match_score_after_estimate) {
         const s = score.match_score_after_estimate;
         const before = score.match_score_before;
         const deltaStr = (before && before > 0 && s > before) ? ` (${before}% → ${s}%)` : ` ${s}%`;
         matchBadge.textContent = `${s >= 75 ? '✓' : '~'}${deltaStr} ATS Match`;
-        matchBadge.className = `match-score-badge ${s >= 65 ? 'good' : 'ok'}`;
+        matchBadge.className = `match-score-badge ${s >= 65 ? 'good' : s >= 45 ? 'ok' : 'bad'}`;
+      } else if (results.matchPct !== undefined) {
+        const s = results.matchPct;
+        matchBadge.textContent = `${s >= 70 ? '✓' : '~'} ${s}% keyword match`;
+        matchBadge.className = `match-score-badge ${s >= 70 ? 'good' : s >= 45 ? 'ok' : 'bad'}`;
       }
+      const _ms = score?.match_score_after_estimate ?? results.matchPct;
+      if (_ms != null) {
+        _pingTracker(_ms >= 65 ? 'match_score_good' : _ms >= 45 ? 'match_score_ok' : 'match_score_bad');
+      }
+      updateQsStats();
 
       // Keywords tab
       const matched = [...(keywords.matched_required || []), ...(keywords.matched_preferred || [])];
@@ -3459,6 +3684,45 @@ ${desc}`;
     function saveApplications() {
       localStorage.setItem('1ststep_applications', JSON.stringify(applications));
       updateTrackerBadge();
+      syncExtensionStats(true);
+    }
+
+    function autoSaveToTracker(tailorEntry) {
+      const company = (tailorEntry.company || '').toLowerCase().trim();
+      const title   = (tailorEntry.jobTitle || '').toLowerCase().trim();
+      // Prevent duplicates — match on company + role key
+      const isDupe = applications.some(a =>
+        (a.company || '').toLowerCase().trim() === company &&
+        (a.title || '').toLowerCase().trim() === title
+      );
+      if (isDupe) return;
+
+      const followUp = new Date();
+      followUp.setDate(followUp.getDate() + 3);
+
+      applications.unshift({
+        id:             `app_${Date.now()}`,
+        jobId:          tailorEntry.jobId || null,
+        title:          tailorEntry.jobTitle || 'Untitled Role',
+        company:        tailorEntry.company || '',
+        location:       tailorEntry.location || '',
+        salary:         '',
+        appliedDate:    new Date().toISOString().split('T')[0],
+        followUpDate:   followUp.toISOString().split('T')[0],
+        contactName:    '',
+        contactEmail:   '',
+        notes:          '',
+        status:         'tailored',
+        jobUrl:         tailorEntry.jobUrl || '',
+        tailorHistoryId: tailorEntry.id,
+      });
+      saveApplications();
+      _pingTracker('tracker_auto_save', { jobTitle: tailorEntry.jobTitle, company: tailorEntry.company });
+      // Show inline confirmation — delay so resultsPanel is visible first
+      setTimeout(() => {
+        const confirm = document.getElementById('trackerSaveConfirm');
+        if (confirm) confirm.style.display = 'flex';
+      }, 800);
     }
 
     // ── Tracker analytics — fire-and-forget GHL tag pings ────────────────────────
@@ -3637,7 +3901,8 @@ ${desc}`;
 
     // ── Tracker View ──────────────────────────────────────────────────────────
     const STATUS_OPTIONS = [
-      { value: 'applied', label: '📨 Applied (manual)', cls: 'status-applied' },
+      { value: 'tailored', label: '✏ Resume Ready', cls: 'status-tailored' },
+      { value: 'applied', label: '📨 Applied', cls: 'status-applied' },
       { value: 'screening', label: '📞 Screening', cls: 'status-screening' },
       { value: 'interview', label: '🗣 Interview', cls: 'status-interview' },
       { value: 'offer', label: '🎉 Offer', cls: 'status-offer' },
@@ -3704,6 +3969,12 @@ ${desc}`;
             const chip = chipMap[app.resumeSource] || { cls: 'none', icon: '❓', label: 'Resume unknown' };
             return `<span class="resume-chip ${chip.cls}">${chip.icon} ${chip.label}</span>`;
           })() : ''}
+        ${app.status === 'tailored' ? `
+        <div class="tailored-nudge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Apply today or follow up by ${app.followUpDate || 'soon'}
+          ${app.tailorHistoryId ? `<button onclick="switchMode('tailored')" style="margin-left:6px;background:none;border:none;color:var(--brand);font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;padding:0">View resume →</button>` : ''}
+        </div>` : ''}
       </div>
       <div class="app-row-right">
         <select class="status-badge ${status.cls}" onchange="updateStatus('${app.id}', this.value)" style="border:none;cursor:pointer;font-family:'Inter',sans-serif;font-weight:700">
@@ -3786,6 +4057,10 @@ ${desc}`;
       if (history.length > 50) history.splice(50);
       localStorage.setItem(TAILOR_HISTORY_KEY, JSON.stringify(history));
       updateTailoredBadge();
+      updateStreak();
+      autoSaveToTracker(entry);
+      updateQsStats();
+      syncExtensionStats(true);
     }
 
     function updateTailoredBadge() {
@@ -3825,20 +4100,32 @@ ${desc}`;
       const history = getTailorHistory();
       if (!history.length) {
         list.innerHTML = `<div class="tailor-history-empty">
-      <div class="empty-icon">✍️</div>
-      <p>No tailored resumes yet.</p>
-      <p style="margin-top:6px">Tailor your resume for a job posting and it will appear here.</p>
+      <div class="empty-icon">🗂</div>
+      <h2 style="margin:8px 0 6px;font-size:16px;font-weight:700;color:var(--text)">Your Resume Vault is empty</h2>
+      <p>Every tailored resume you create is saved here automatically.</p>
+      <button id="vaultEmptyCtaBtn" style="margin-top:14px;padding:10px 24px;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.15s" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">✦ Create my first tailored resume</button>
     </div>`;
+        document.getElementById('vaultEmptyCtaBtn')?.addEventListener('click', _emptyVaultCta);
         return;
       }
       list.innerHTML = history.map(entry => {
         const date = new Date(entry.tailoredAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         const hasCover = !!entry.coverLetter;
+        const titleLabel = entry.company
+          ? `${escHtml(entry.company)} — ${escHtml(entry.jobTitle || 'Untitled Role')}`
+          : escHtml(entry.jobTitle || 'Untitled Role');
+        const pct = entry.matchPct;
+        const pctBadge = pct != null
+          ? `<span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;margin-left:6px;${
+              pct >= 70 ? 'background:rgba(16,185,129,0.12);color:#10B981'
+            : pct >= 45 ? 'background:rgba(245,158,11,0.12);color:#F59E0B'
+            : 'background:rgba(239,68,68,0.10);color:#EF4444'}">${pct}% match</span>`
+          : '';
         return `<div class="tailor-card" id="tailor-card-${entry.id}">
       <div class="tailor-card-info">
-        <div class="tailor-card-title">${escHtml(entry.jobTitle || 'Untitled Role')}</div>
+        <div class="tailor-card-title">${titleLabel}${pctBadge}</div>
         <div class="tailor-card-meta">
-          ${[entry.company, entry.location].filter(Boolean).map(s => escHtml(s)).join(' · ')}
+          ${date}${entry.location ? ` · ${escHtml(entry.location)}` : ''}
           ${entry.jobUrl ? ` &nbsp;<a href="${escHtml(entry.jobUrl)}" target="_blank" style="color:var(--blue);font-size:11px;text-decoration:none">View job ↗</a>` : ''}
         </div>
         <div class="tailor-card-actions">

@@ -441,6 +441,36 @@
 
         <!-- Results -->
         <div class="results-panel" id="resultsPanel">
+
+          <!-- Sticky action bar — shown after results generate, hidden during new run -->
+          <div id="resultActionBar" style="display:none">
+            <span class="rab-label">Ready to apply?</span>
+            <button class="rab-btn rab-btn-primary" id="rabDownload">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download
+            </button>
+            <button class="rab-btn" id="rabCopy">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Copy
+            </button>
+            <button class="rab-btn" id="rabVault">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/><rect x="2" y="13" width="9" height="9"/><rect x="13" y="13" width="9" height="9"/></svg>
+              Resume Vault
+            </button>
+            <button class="rab-btn" id="rabTracker">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+              Tracker
+            </button>
+          </div>
+
+          <!-- Tracker auto-save confirmation — shown briefly after each tailor -->
+          <div id="trackerSaveConfirm" style="display:none;align-items:center;gap:8px;padding:8px 16px;background:rgba(99,102,241,0.07);border-bottom:1px solid rgba(99,102,241,0.15);font-size:12px;color:var(--text2)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Added to Tracker as <strong style="color:var(--text)">Resume Ready</strong></span>
+            <button onclick="switchMode('tracker')" style="margin-left:auto;background:none;border:none;color:var(--brand);font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;padding:0;white-space:nowrap">View Tracker →</button>
+            <button onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0;flex-shrink:0">✕</button>
+          </div>
+
           <div class="results-topbar">
             <div id="matchBadge" class="match-score-badge good">✓ Resume Tailored</div>
             <div class="topbar-actions">
@@ -620,6 +650,10 @@
           <div class="qs-stat-row">
             <span class="qs-stat-label">Tailors this month</span>
             <span class="qs-stat-value" id="qsStatTailors">—</span>
+          </div>
+          <div class="qs-stat-row">
+            <span class="qs-stat-label">This week</span>
+            <span class="qs-stat-value qs-streak-value" id="qsStatStreak">—</span>
           </div>
           <div class="qs-stat-row">
             <span class="qs-stat-label">Best match score</span>
@@ -807,12 +841,12 @@
 
       </div><!-- /job search right panel -->
 
-      <!-- Tailored Resumes History Panel -->
+      <!-- Resume Vault Panel -->
       <div class="tracker-panel js-panel" id="tailoredHistoryPanel">
         <div style="max-width:860px;width:100%;margin:0 auto;padding:24px 16px;box-sizing:border-box">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
             <div>
-              <h2 style="font-size:18px;font-weight:700;margin:0 0 4px">📄 Tailored Resumes</h2>
+              <h2 style="font-size:18px;font-weight:700;margin:0 0 4px">🗂 Resume Vault</h2>
               <p style="font-size:13px;color:var(--muted);margin:0">Every resume tailored for a specific job — download
                 anytime.</p>
             </div>
@@ -1015,12 +1049,13 @@
           <div class="tracker-empty" id="trackerEmpty">
             <div class="empty-icon">📭</div>
             <h2>No applications tracked yet</h2>
-            <p>Find a job and click <strong>✓ Applied</strong> to log it here — then track status, notes, and follow-ups
-              all in one place.</p>
-            <button id="trackerEmptyJobsBtn"
-              style="margin-top:16px;padding:10px 24px;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.15s"
-              onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">🔍 Find Jobs to Apply To
-              →</button>
+            <p>Tailor your first resume and we'll automatically add it here as <strong>Resume Ready</strong>.</p>
+            <button id="trackerEmptyTailorBtn"
+              style="margin-top:16px;padding:10px 24px;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.15s;display:block;margin-left:auto;margin-right:auto"
+              onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">✦ Tailor my first resume</button>
+            <button id="trackerEmptyJdBtn"
+              style="margin-top:8px;padding:8px 20px;background:none;color:var(--brand);border:1.5px solid rgba(99,102,241,0.4);border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;display:block;margin-left:auto;margin-right:auto"
+              onmouseover="this.style.background='rgba(99,102,241,0.08)'" onmouseout="this.style.background='none'">Paste a job description</button>
           </div>
           <div id="appList"></div>
         </div>
@@ -1600,7 +1635,7 @@
       </p>
 
       <!-- Two-path onboarding: existing resume vs. build from scratch — FIRST -->
-      <div class="welcome-path-grid" style="margin-bottom:20px">
+      <div id="welcomePathGrid" class="welcome-path-grid" style="margin-bottom:20px">
         <button id="welcomeUploadBtn" style="
         padding:16px;border-radius:14px;font-size:14px;font-weight:700;cursor:pointer;
         background:linear-gradient(135deg,#3B82F6,#6366F1);color:#fff;border:none;
@@ -1656,6 +1691,26 @@
           style="background:none;border:none;color:var(--brand);font-size:11px;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;font-family:'Inter',sans-serif">Restore
           from backup →</button>
       </p>
+
+      <!-- Step 2: paste JD — shown after resume is detected -->
+      <div id="welcomeStep2" style="display:none;margin-top:4px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <div style="width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--text)">Paste a job description</div>
+            <div style="font-size:11px;color:var(--muted)">We'll tailor your resume to it instantly</div>
+          </div>
+        </div>
+        <textarea id="welcomeJdInput"
+          placeholder="Paste any job posting here — LinkedIn, Indeed, company site…"
+          rows="5"
+          style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;font-family:'Inter',sans-serif;resize:vertical;line-height:1.5;outline:none;transition:border-color 0.15s"
+          onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+        <button id="welcomeRunBtn" disabled
+          style="margin-top:10px;width:100%;padding:13px;border-radius:12px;border:none;cursor:pointer;font-size:14px;font-weight:800;font-family:'Inter',sans-serif;background:linear-gradient(135deg,#3B82F6,#6366F1);color:#fff;opacity:0.45;transition:opacity 0.15s">
+          ✦ Generate My Tailored Resume →
+        </button>
+      </div>
     </div>
   </div>
 
