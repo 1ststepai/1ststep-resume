@@ -1610,7 +1610,6 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
         btn.classList.remove('spinning');
         btn.querySelector('svg').innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
         updateRunButton(); // restore label to current state
-      } finally {
         _tailoringInProgress = false;
       }
     }
