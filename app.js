@@ -1294,10 +1294,9 @@ ${resume.slice(0, 3000)}
     let _tailoringInProgress = false;
 
     async function runTailoring() {
+      // ── Pre-flight checks (before try/finally so btn is always defined) ──────
       if (_tailoringInProgress) return;
-      _tailoringInProgress = true;
 
-      try {
       // INJECT-01: Sanitize both text sources — pasting bypasses the file-upload sanitizer
       const resumeRaw = sanitizeResumeText(fileContent || document.getElementById('resumeText').value.trim());
       const jobDesc = sanitizeResumeText(document.getElementById('jobText').value.trim());
@@ -1311,6 +1310,9 @@ ${resume.slice(0, 3000)}
       window._origResumePlain = resumeRaw;
 
       const btn = document.getElementById('runBtn');
+
+      _tailoringInProgress = true;
+      try {
       btn.disabled = true;
       btn.classList.add('spinning');
       btn.querySelector('svg').innerHTML = '<path d="M21 12a9 9 0 11-6.219-8.56"/>';
