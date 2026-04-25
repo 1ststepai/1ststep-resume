@@ -1291,7 +1291,13 @@ ${resume.slice(0, 3000)}
     }
 
     // ── Main Run ──────────────────────────────────────────────────────────────
+    let _tailoringInProgress = false;
+
     async function runTailoring() {
+      if (_tailoringInProgress) return;
+      _tailoringInProgress = true;
+
+      try {
       // INJECT-01: Sanitize both text sources — pasting bypasses the file-upload sanitizer
       const resumeRaw = sanitizeResumeText(fileContent || document.getElementById('resumeText').value.trim());
       const jobDesc = sanitizeResumeText(document.getElementById('jobText').value.trim());
@@ -1604,6 +1610,8 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
         btn.classList.remove('spinning');
         btn.querySelector('svg').innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
         updateRunButton(); // restore label to current state
+      } finally {
+        _tailoringInProgress = false;
       }
     }
 
