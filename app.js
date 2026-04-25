@@ -845,8 +845,16 @@ ${resume.slice(0, 3000)}
       } else if (!hasJob && hasResume) {
         btn.style.opacity = '0.85';
         btn.style.cursor = 'pointer';
-        lbl.textContent = '🔍 Find a Job First';
-        btn.onclick = () => switchMode('jobs');
+        if (window._extensionDetected && window._capturedJob) {
+          lbl.textContent = '↑ Paste Job Description to Tailor';
+          btn.onclick = () => {
+            document.getElementById('jobText')?.focus();
+            showToast('Paste the job description from the posting above, then click Tailor.', 'info');
+          };
+        } else {
+          lbl.textContent = '🔍 Find a Job First';
+          btn.onclick = () => switchMode('jobs');
+        }
       } else {
         btn.style.opacity = '';
         btn.style.cursor = '';
@@ -1077,8 +1085,13 @@ ${resume.slice(0, 3000)}
 
       const jobText = document.getElementById('jobText');
       if (jobText) {
-        jobText.value = jobData.jobDescription || '';
-        jobText.dispatchEvent(new Event('input'));
+        if (jobData.jobDescription) {
+          jobText.value = jobData.jobDescription;
+          jobText.dispatchEvent(new Event('input'));
+        } else {
+          // No description captured — still refresh button so extension-aware label shows
+          updateRunButton();
+        }
       }
 
       window._capturedJob = {
