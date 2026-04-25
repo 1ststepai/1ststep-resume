@@ -931,15 +931,11 @@ ${resume.slice(0, 3000)}
     function showJobCaptureConfirm(jobData) {
       const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
 
-      // Both job + resume ready — skip modal, pulse the button
+      // Both job + resume ready — skip modal, auto-start tailoring
       if (hasResume) {
-        showToast('Job captured — ready to tailor!', 'success');
-        const btn = document.getElementById('runBtn');
-        if (btn) {
-          btn.classList.add('ext-ready-pulse');
-          setTimeout(() => btn.classList.remove('ext-ready-pulse'), 3000);
-          btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        showToast('Job captured — tailoring now…', 'success');
+        // Small delay lets the job text render and toast show before the API call starts
+        setTimeout(() => runTailoring(), 300);
         return;
       }
 
