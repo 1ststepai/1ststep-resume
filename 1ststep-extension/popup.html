@@ -328,6 +328,29 @@
         <button class="btn-secondary" id="autofillEmptyBtn" style="width:100%; margin-top:10px; flex:none;">Auto-fill This Form</button>
       </div>
     </div>
+
+    <!-- Momentum Stats -->
+    <div id="statsSection" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;box-shadow:var(--shadow-xs);">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Your Momentum</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="text-align:center;padding:8px 0;">
+          <div id="statTailors" style="font-size:22px;font-weight:700;color:var(--brand);">—</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px;">Tailored this month</div>
+        </div>
+        <div style="text-align:center;padding:8px 0;">
+          <div id="statStreak" style="font-size:22px;font-weight:700;color:var(--brand);">—</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px;">This week</div>
+        </div>
+        <div style="text-align:center;padding:8px 0;">
+          <div id="statBestMatch" style="font-size:22px;font-weight:700;color:var(--brand);">—</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px;">Best match</div>
+        </div>
+        <div style="text-align:center;padding:8px 0;">
+          <div id="statApps" style="font-size:22px;font-weight:700;color:var(--brand);">—</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px;">Applications</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="popup.js"></script>

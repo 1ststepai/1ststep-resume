@@ -57,6 +57,7 @@ async function init() {
     } else {
       showEmptyState(auth);
     }
+    renderStats();
   } catch (err) {
     console.error('[1stStep] Init error:', err);
     showEmptyState(null);
@@ -266,6 +267,29 @@ async function autofillPage(auth, btn) {
     btn.textContent = 'Autofill failed — try again';
     setTimeout(() => { btn.textContent = originalLabel; btn.disabled = false; }, 3000);
   }
+}
+
+// ─── STATS ───────────────────────────────────────────────────
+
+function renderStats() {
+  try {
+    chrome.storage.sync.get(['1ststep_stats'], (data) => {
+      if (chrome.runtime.lastError) return;
+      const stats = data['1ststep_stats'];
+      if (!stats) return;
+      const section = document.getElementById('statsSection');
+      if (!section) return;
+      const t = document.getElementById('statTailors');
+      const w = document.getElementById('statStreak');
+      const m = document.getElementById('statBestMatch');
+      const a = document.getElementById('statApps');
+      if (t) t.textContent = stats.tailorsThisMonth > 0 ? stats.tailorsThisMonth : '—';
+      if (w) w.textContent = stats.streakCount > 0 ? stats.streakCount : '—';
+      if (m) m.textContent = stats.bestMatchPct > 0 ? stats.bestMatchPct + '%' : '—';
+      if (a) a.textContent = stats.applicationCount > 0 ? stats.applicationCount : '—';
+      section.style.display = 'block';
+    });
+  } catch {}
 }
 
 // ─── START ───────────────────────────────────────────────────
