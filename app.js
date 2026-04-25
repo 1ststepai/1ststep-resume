@@ -5412,10 +5412,10 @@ ${job.jd.slice(0, 1000)}
     let _interviewEntry = null; // set when opening from tailor history
 
     const INTERVIEW_TYPE_STYLES = {
-      'Behavioral': { bg: '#EFF6FF', border: '#BFDBFE', color: '#1D4ED8' },
-      'Technical': { bg: '#F5F3FF', border: '#DDD6FE', color: '#6D28D9' },
-      'Situational': { bg: '#FFF7ED', border: '#FED7AA', color: '#C2410C' },
-      'Culture Fit': { bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)', color: '#10B981' },
+      'Behavioral': { bg: 'rgba(59,130,246,0.1)', border: 'rgba(59,130,246,0.25)', color: '#3B82F6' },
+      'Technical':  { bg: 'rgba(139,92,246,0.1)', border: 'rgba(139,92,246,0.25)', color: '#8B5CF6' },
+      'Situational':{ bg: 'rgba(249,115,22,0.1)', border: 'rgba(249,115,22,0.25)', color: '#F97316' },
+      'Culture Fit':{ bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)', color: '#10B981' },
     };
 
     async function openInterviewModal() {
@@ -5538,9 +5538,9 @@ ${resume.slice(0, 4000)}`,
         return `
       <div class="interview-card" style="border:1.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px;transition:border-color 0.15s">
         <button onclick="toggleInterviewCard(${i})"
-          style="width:100%;text-align:left;background:#fff;border:none;padding:14px 16px;cursor:pointer;display:flex;align-items:flex-start;gap:12px"
+          style="width:100%;text-align:left;background:var(--surface);border:none;padding:14px 16px;cursor:pointer;display:flex;align-items:flex-start;gap:12px"
           onmouseenter="this.parentElement.style.borderColor='var(--brand)'"
-          onmouseleave="this.parentElement.style.borderColor='var(--border)'">
+          onmouseleave="this.parentElement.style.borderColor='var(--border)'"
           <div style="min-width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px;flex-shrink:0">${i + 1}</div>
           <div style="flex:1">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap">
@@ -5555,7 +5555,7 @@ ${resume.slice(0, 4000)}`,
             <div style="font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Why they'll ask this</div>
             <div style="font-size:12.5px;color:var(--text2);line-height:1.55;margin-bottom:12px">${_e(q.why)}</div>
             <div style="font-size:11.5px;font-weight:600;color:var(--brand);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Your talking point</div>
-            <div style="font-size:13px;color:var(--text);line-height:1.65;background:#fff;padding:10px 13px;border-radius:7px;border:1px solid var(--border)">${_e(q.tip)}</div>
+            <div style="font-size:13px;color:var(--text);line-height:1.65;background:var(--surface);padding:10px 13px;border-radius:7px;border:1px solid var(--border)">${_e(q.tip)}</div>
           </div>
         </div>
       </div>`;
@@ -5572,7 +5572,7 @@ ${resume.slice(0, 4000)}`,
       ${askThem.map((item, i) => `
         <div style="border:1.5px solid rgba(16,185,129,0.25);border-radius:10px;overflow:hidden;margin-bottom:10px;transition:border-color 0.15s">
           <button onclick="toggleAskCard(${i})"
-            style="width:100%;text-align:left;background:#fff;border:none;padding:13px 16px;cursor:pointer;display:flex;align-items:flex-start;gap:12px"
+            style="width:100%;text-align:left;background:var(--surface);border:none;padding:13px 16px;cursor:pointer;display:flex;align-items:flex-start;gap:12px"
             onmouseenter="this.parentElement.style.borderColor='#059669'"
             onmouseleave="this.parentElement.style.borderColor='rgba(16,185,129,0.25)'">
             <div style="min-width:22px;height:22px;border-radius:50%;background:#059669;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">${i + 1}</div>
@@ -5595,13 +5595,13 @@ ${resume.slice(0, 4000)}`,
         <div style="font-size:11px;color:var(--muted)">Address it before they ask.</div>
       </div>
       ${watchOut.map(item => `
-        <div style="border:1.5px solid #FED7AA;border-radius:10px;background:#fff;padding:14px 16px;margin-bottom:10px">
+        <div style="border:1.5px solid rgba(249,115,22,0.35);border-radius:10px;background:var(--surface);padding:14px 16px;margin-bottom:10px">
           <div style="display:flex;gap:10px;align-items:flex-start">
             <span style="font-size:16px;flex-shrink:0;margin-top:1px">⚠️</span>
             <div>
-              <div style="font-size:13px;font-weight:600;color:#92400E;margin-bottom:6px">${_e(item.concern)}</div>
-              <div style="font-size:11.5px;font-weight:600;color:#C2410C;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">How to reframe it</div>
-              <div style="font-size:12.5px;color:var(--text);line-height:1.6">${_e(item.reframe)}</div>
+              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">${_e(item.concern)}</div>
+              <div style="font-size:11.5px;font-weight:600;color:#F97316;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">How to reframe it</div>
+              <div style="font-size:12.5px;color:var(--text2);line-height:1.6">${_e(item.reframe)}</div>
             </div>
           </div>
         </div>`).join('')}
