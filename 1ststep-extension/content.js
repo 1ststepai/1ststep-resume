@@ -77,8 +77,19 @@ function extractText(selector) {
 }
 
 function extractJobDescription() {
-  // For LinkedIn, check inside iframe first (job view sometimes rendered there)
+  // For LinkedIn, try expanding collapsed "See more" before reading text
   if (SITE === 'linkedin') {
+    const expandBtn = document.querySelector(
+      'button.jobs-description__footer-button, ' +
+      'button[aria-label*="more"], ' +
+      '.jobs-description-content__toggle-btn-more, ' +
+      '.jobs-description__toggle-btn'
+    );
+    if (expandBtn) {
+      try { expandBtn.click(); } catch (_) {}
+    }
+
+    // Check inside iframe (job view sometimes rendered there)
     const iframe = document.querySelector('iframe');
     if (iframe && iframe.contentDocument) {
       try {
@@ -214,7 +225,8 @@ setInterval(() => {
     lastUrl = location.href;
     detectedJob = null;
     removeTailorButton();
-    setTimeout(pollForJob, 1500); // wait for SPA content to render
+    setTimeout(pollForJob, 1500); // first attempt: most sites ready by now
+    setTimeout(pollForJob, 4000); // second attempt: LinkedIn lazy-loads description panel
   }
 }, 1000);
 
