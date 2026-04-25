@@ -446,12 +446,16 @@
           document.getElementById('bulkNoResumeNotice').style.display = 'none';
           showToast('Resume loaded ✓', 'success');
         } else {
-          const saved = JSON.parse(localStorage.getItem('1ststep_resume') || 'null');
+          const saved = loadResume();
           if (saved?.text?.trim()) {
-            fileContent = saved.text;
-            document.getElementById('resumeText').value = saved.text;
-            document.getElementById('fileLoaded').style.display = 'flex';
-            if (saved.fileName) document.getElementById('fileName').textContent = saved.fileName;
+            if (saved.source === 'file') {
+              fileContent = saved.text;
+              document.getElementById('fileLoaded').style.display = 'flex';
+              document.getElementById('fileDrop').style.display = 'none';
+              if (saved.fileName) document.getElementById('fileName').textContent = saved.fileName;
+            } else {
+              document.getElementById('resumeText').value = saved.text;
+            }
             document.getElementById('bulkNoResumeNotice').style.display = 'none';
             updateRunButton();
             showToast('Resume loaded ✓');
@@ -848,13 +852,17 @@ ${resume.slice(0, 3000)}
         showToast('Resume already loaded ✓', 'success');
         updateRunButton();
       } else {
-        const saved = JSON.parse(localStorage.getItem('1ststep_resume') || 'null');
+        const saved = loadResume();
         if (saved?.text?.trim()) {
-          fileContent = saved.text;
-          const fn = document.getElementById('fileName');
-          if (fn) fn.textContent = saved.fileName || 'resume';
-          document.getElementById('resumeText').value = saved.text;
-          document.getElementById('fileLoaded').style.display = 'flex';
+          if (saved.source === 'file') {
+            fileContent = saved.text;
+            const fn = document.getElementById('fileName');
+            if (fn) fn.textContent = saved.fileName || 'resume';
+            document.getElementById('fileLoaded').style.display = 'flex';
+            document.getElementById('fileDrop').style.display = 'none';
+          } else {
+            document.getElementById('resumeText').value = saved.text;
+          }
           updateRunButton();
           showToast('Resume loaded ✓');
         } else {
