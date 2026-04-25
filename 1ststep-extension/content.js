@@ -120,9 +120,6 @@ function extractCompanyFallback() {
 }
 
 // ─── JOB DETECTION ───────────────────────────────────────────
-// Privacy: job data stays in tab memory only. Nothing is written to storage
-// and nothing is sent to the background until the user clicks
-// "Tailor Resume for This Job" in the popup.
 
 let detectedJob = null;
 
@@ -130,7 +127,7 @@ function pollForJob() {
   if (!chrome.runtime?.id) return;
 
   const jd = extractJobDescription();
-  if (!jd) { detectedJob = null; return; }
+  if (!jd) { detectedJob = null; removeTailorButton(); return; }
 
   // Skip if nothing changed
   if (detectedJob && jd === detectedJob.jobDescription && location.href === detectedJob.applyUrl) return;
@@ -142,6 +139,66 @@ function pollForJob() {
 
   detectedJob = { site: SITE, jobTitle, company, jobDescription: jd, applyUrl: location.href };
   console.log(`[1stStep] Job detected: "${jobTitle}" at "${company}" (${SITE})`);
+
+  // Pre-stage in background so popup and app tab can pick it up instantly
+  chrome.runtime.sendMessage({ action: 'JOB_DETECTED', ...detectedJob }).catch(() => {});
+
+  // Inject page-level button so user never has to open the popup
+  injectTailorButton(detectedJob);
+}
+
+// ─── INJECTED TAILOR BUTTON ───────────────────────────────────
+
+function removeTailorButton() {
+  document.getElementById('1ststep-tailor-btn')?.remove();
+}
+
+function injectTailorButton(job) {
+  if (document.getElementById('1ststep-tailor-btn')) return; // already present
+
+  chrome.storage.sync.get(['1ststep_resume'], (data) => {
+    if (!chrome.runtime?.id) return;
+    const hasResume = !!(data['1ststep_resume']);
+    const label = hasResume ? '⚡ Tailor Resume' : '⚡ Tailor with 1stStep';
+
+    const btn = document.createElement('button');
+    btn.id = '1ststep-tailor-btn';
+    btn.textContent = label;
+    btn.setAttribute('aria-label', '1stStep: Tailor resume for this job');
+    btn.style.cssText = [
+      'position:fixed', 'bottom:24px', 'right:24px', 'z-index:2147483647',
+      'background:linear-gradient(135deg,#4F46E5,#6366F1)',
+      'color:#fff', 'border:none', 'border-radius:10px',
+      'padding:11px 18px',
+      "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
+      'font-size:13px', 'font-weight:700', 'cursor:pointer',
+      'box-shadow:0 4px 20px rgba(99,102,241,0.45)',
+      'transition:transform 0.15s,box-shadow 0.15s',
+      'display:flex', 'align-items:center', 'gap:6px', 'white-space:nowrap',
+    ].join(';');
+
+    btn.onmouseover = () => {
+      btn.style.transform = 'translateY(-2px)';
+      btn.style.boxShadow = '0 6px 28px rgba(99,102,241,0.55)';
+    };
+    btn.onmouseout = () => {
+      btn.style.transform = '';
+      btn.style.boxShadow = '0 4px 20px rgba(99,102,241,0.45)';
+    };
+
+    btn.onclick = () => {
+      btn.textContent = 'Opening…';
+      btn.disabled = true;
+      chrome.runtime.sendMessage({ action: 'OPEN_IN_APP', jobData: job }, (response) => {
+        if (!response?.success) {
+          btn.textContent = label;
+          btn.disabled = false;
+        }
+      });
+    };
+
+    document.body.appendChild(btn);
+  });
 }
 
 // ─── INIT ─────────────────────────────────────────────────────
@@ -156,6 +213,7 @@ setInterval(() => {
   if (location.href !== lastUrl) {
     lastUrl = location.href;
     detectedJob = null;
+    removeTailorButton();
     setTimeout(pollForJob, 1500); // wait for SPA content to render
   }
 }, 1000);

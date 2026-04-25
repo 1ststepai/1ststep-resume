@@ -123,6 +123,23 @@ function showJobCard(job, auth) {
   if (openAppDirectLink) {
     openAppDirectLink.onclick = () => chrome.tabs.create({ url: APP_URL });
   }
+
+  // Resume already synced — auto-trigger without requiring a click
+  if (auth.resume) {
+    let countdown = 2;
+    tailorBtn.textContent = `Tailoring in ${countdown}s…`;
+    const timer = setInterval(() => {
+      countdown--;
+      if (countdown > 0) {
+        tailorBtn.textContent = `Tailoring in ${countdown}s…`;
+      } else {
+        clearInterval(timer);
+        openInApp(job, tailorBtn);
+      }
+    }, 1000);
+    // Let user cancel by clicking the button early or clicking away
+    tailorBtn.onclick = () => { clearInterval(timer); openInApp(job, tailorBtn); };
+  }
 }
 
 // ─── JOB ─────────────────────────────────────────────────────
