@@ -261,6 +261,34 @@
           <!-- Right: Inputs + CTA -->
           <div class="hero-right">
 
+            <!-- Extension promo banner — hidden once dismissed or extension detected -->
+            <div id="extPromoBanner" style="display:none;align-items:center;gap:11px;padding:11px 13px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:10px;margin-bottom:10px">
+              <span style="font-size:18px;flex-shrink:0">🧩</span>
+              <div style="flex:1;min-width:0">
+                <p style="margin:0 0 3px;font-size:12px;font-weight:600;color:var(--text)">Apply faster with the Chrome Extension</p>
+                <p style="margin:0;font-size:11px;color:var(--text2)">Tailor your resume directly from job posts — no copy &amp; paste.</p>
+              </div>
+              <a id="extBannerBtn" href="https://chromewebstore.google.com/detail/1ststep-ai-resume-tailor/gcmaoapcnobdcfaiijaoamajamijfacd" target="_blank" rel="noopener" style="flex-shrink:0;padding:6px 12px;background:var(--brand);color:white;border-radius:7px;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap;transition:background 0.15s">Install Extension</a>
+              <button id="extBannerDismiss" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;flex-shrink:0;padding:0;opacity:0.6" aria-label="Dismiss">✕</button>
+            </div>
+
+            <!-- Job Capture Confirmation (shown when extension delivers a job) -->
+            <div id="jobCaptureConfirm" style="display:none">
+              <div class="jcc-card">
+                <div class="jcc-icon">💼</div>
+                <div class="jcc-body">
+                  <div class="jcc-title" id="jccTitle">Job captured</div>
+                  <div class="jcc-sub">Upload or select your resume to generate a tailored version for this role.</div>
+                </div>
+                <button id="jccDismissBtn" class="jcc-dismiss" aria-label="Dismiss">✕</button>
+              </div>
+              <div class="jcc-actions">
+                <button id="jccUseResumeBtn" class="jcc-btn-primary">Use Existing Resume</button>
+                <button id="jccUploadBtn" class="jcc-btn-secondary">Upload Resume</button>
+                <button id="jccClearJobBtn" class="jcc-btn-ghost">Clear Job</button>
+              </div>
+            </div>
+
             <!-- Resume upload -->
             <div>
               <div class="hero-input-label">1 · Your Resume</div>
@@ -297,6 +325,7 @@
                 <button id="clearJobContextBtn" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;flex-shrink:0;padding:0">✕</button>
               </div>
               <textarea id="jobText" rows="5" placeholder="Paste the full job description here — the more detail, the better the result."></textarea>
+              <p id="extEmptyHint" style="display:none;margin:5px 0 0;font-size:11px;color:var(--muted)">Or <a href="https://chromewebstore.google.com/detail/1ststep-ai-resume-tailor/gcmaoapcnobdcfaiijaoamajamijfacd" target="_blank" rel="noopener" style="color:var(--brand);text-decoration:none;font-weight:500">use the Chrome Extension</a> to pull job descriptions automatically.</p>
             </div>
 
             <!-- Tier + Run -->
@@ -471,6 +500,13 @@
             </button>
             <button id="wnDismissBtn"
               style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0;flex-shrink:0">✕</button>
+          </div>
+
+          <!-- Extension post-gen nudge — shown after tailoring for non-extension users -->
+          <div id="extPostGenNudge" style="display:none;align-items:center;gap:10px;padding:10px 18px;background:rgba(99,102,241,0.07);border-bottom:1px solid rgba(99,102,241,0.18);flex-wrap:wrap">
+            <span style="font-size:12px;color:var(--text2);flex:1;min-width:200px">🧩 Skip copy &amp; paste next time — use the <strong style="color:var(--text)">Chrome Extension</strong> to tailor resumes directly from job posts.</span>
+            <a href="https://chromewebstore.google.com/detail/1ststep-ai-resume-tailor/gcmaoapcnobdcfaiijaoamajamijfacd" target="_blank" rel="noopener" style="flex-shrink:0;padding:4px 14px;border-radius:20px;border:1.5px solid rgba(99,102,241,0.4);background:transparent;font-size:12px;font-weight:600;color:var(--brand);text-decoration:none;white-space:nowrap;transition:all 0.15s">Install Extension</a>
+            <button id="extPostGenDismiss" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;flex-shrink:0;padding:0;margin-left:2px" aria-label="Dismiss">✕</button>
           </div>
 
           <!-- Post-tailor account nudge — hidden once account is set -->

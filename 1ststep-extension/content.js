@@ -12,36 +12,44 @@ const SITE_SELECTORS = {
     companySelector: '.jobs-unified-top-card__company-name a, .job-details-jobs-unified-top-card__company-name a, .jobs-unified-top-card__subtitle-primary-grouping a'
   },
   indeed: {
-    jobDescriptionSelector: '#jobDescriptionText, .jobsearch-jobDescriptionText',
-    jobTitleSelector: 'h1.jobsearch-JobInfoHeader-title',
-    companySelector: '[data-testid="inlineHeader-companyName"] a'
+    jobDescriptionSelector: '#jobDescriptionText, .jobsearch-jobDescriptionText, [data-testid="jobsearch-JobComponent-description"]',
+    jobTitleSelector: 'h1.jobsearch-JobInfoHeader-title, h1[data-testid="jobsearch-JobInfoHeader-title"]',
+    companySelector: '[data-testid="inlineHeader-companyName"] a, [data-testid="jobsearch-JobInfoHeader-companyNameSimple"]'
   },
   greenhouse: {
-    jobDescriptionSelector: '#content .job-post, #app_body',
-    jobTitleSelector: 'h1.app-title',
-    companySelector: '.company-name'
+    jobDescriptionSelector: '#content .job-post, #app_body, .job-description, [class*="job-description"]',
+    jobTitleSelector: 'h1.app-title, h1',
+    companySelector: '.company-name, .company'
   },
   lever: {
-    jobDescriptionSelector: '.section-wrapper, .posting-content',
-    jobTitleSelector: 'h2[data-qa="posting-name"]',
-    companySelector: '.posting-headline .sort-by-team'
+    // Company extracted via URL fallback in extractCompanyFallback() — the DOM selector
+    // .sort-by-team returns the team name, not the company.
+    jobDescriptionSelector: '.posting-content, .posting-description, .section-wrapper',
+    jobTitleSelector: 'h2[data-qa="posting-name"], .posting-headline h2',
+    companySelector: '.main-header-logo[alt]'
   },
   workday: {
-    jobDescriptionSelector: '[data-automation-id="jobPostingDescription"]',
-    jobTitleSelector: '[data-automation-id="jobPostingHeader"] h2',
-    companySelector: '[data-automation-id="jobPostingHeader"] [class*="subtitle"]'
+    jobDescriptionSelector: '[data-automation-id="jobPostingDescription"], [class*="jobPostingDescription"]',
+    jobTitleSelector: '[data-automation-id="jobPostingHeader"] h2, [data-automation-id="jobPostingHeader"] h1',
+    companySelector: '[data-automation-id="jobPostingCompanyName"], [data-automation-id="jobPostingHeader"] [class*="subtitle"]'
   },
   icims: {
-    jobDescriptionSelector: '.iCIMS_JobContent, #jobContentArea',
-    jobTitleSelector: '.iCIMS_Header h1',
-    companySelector: '.iCIMS_EmployerInfo'
+    jobDescriptionSelector: '.iCIMS_JobContent, #jobContentArea, .job-details',
+    jobTitleSelector: '.iCIMS_Header h1, h1',
+    companySelector: '.iCIMS_EmployerInfo, .employer-name'
   }
 };
 
 const GENERIC_SELECTORS = {
-  jobDescriptionSelector: '#job-description, .job-description, .description, [data-testid="job-details"], main article',
+  jobDescriptionSelector: [
+    '#job-description', '.job-description', '.jobDescription',
+    '[class*="job-description"]', '[class*="jobDescription"]',
+    '[id*="job-description"]', '[id*="jobDescription"]',
+    '[data-testid="job-details"]', '[data-testid="job-description"]',
+    '.job-details', '.posting-description', 'section[class*="description"]'
+  ].join(', '),
   jobTitleSelector: 'h1',
-  companySelector: '[data-testid="companyName"], .company-name'
+  companySelector: '[data-testid="companyName"], .company-name, [class*="company-name"], [itemprop="hiringOrganization"] [itemprop="name"]'
 };
 
 // ─── SITE DETECTION ──────────────────────────────────────────
@@ -69,71 +77,86 @@ function extractText(selector) {
 }
 
 function extractJobDescription() {
-  // For LinkedIn, search inside the iframe too
+  // For LinkedIn, check inside iframe first (job view sometimes rendered there)
   if (SITE === 'linkedin') {
     const iframe = document.querySelector('iframe');
     if (iframe && iframe.contentDocument) {
-      const iframeEl = iframe.contentDocument.querySelector(SEL.jobDescriptionSelector);
-      if (iframeEl) {
-        const text = (iframeEl.innerText || iframeEl.textContent || '').trim();
-        if (text.length > 100) return text;
-      }
+      try {
+        const iframeEl = iframe.contentDocument.querySelector(SEL.jobDescriptionSelector);
+        if (iframeEl) {
+          const text = (iframeEl.innerText || iframeEl.textContent || '').trim();
+          if (text.length > 100) return text;
+        }
+      } catch (_) {} // cross-origin guard
     }
   }
   const text = extractText(SEL.jobDescriptionSelector);
   return text && text.length > 100 ? text : null;
 }
 
-// ─── JOB DETECTION ───────────────────────────────────────────
+// Parse page <title> when DOM selectors miss the job title.
+// Common patterns: "Senior PM | Acme Corp", "Senior PM - Jobs at Acme", "Senior PM — LinkedIn"
+function extractTitleFallback() {
+  const raw = document.title || '';
+  const cleaned = raw
+    .replace(/\s*[-–|•]\s*(jobs?\s+at|careers?|linkedin|indeed|glassdoor).*/i, '')
+    .replace(/\s*\|\s*(linkedin|indeed|glassdoor|greenhouse|lever|workday).*/i, '')
+    .trim();
+  const parts = cleaned.split(/\s*[|\-–•]\s*/);
+  return parts[0]?.trim() || null;
+}
 
-let lastDetectedJD = null;
-let isSending = false;
+// Extract company when the DOM selector misses it.
+function extractCompanyFallback() {
+  // Lever: URL pattern is https://jobs.lever.co/company-slug/uuid
+  if (SITE === 'lever') {
+    const m = location.pathname.match(/^\/([^/]+)\//);
+    if (m) return m[1].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+  // og:site_name (many job boards set this to the company name)
+  const ogSite = document.querySelector('meta[property="og:site_name"]')?.content?.trim();
+  if (ogSite && ogSite.length < 80) return ogSite;
+  return null;
+}
+
+// ─── JOB DETECTION ───────────────────────────────────────────
+// Privacy: job data stays in tab memory only. Nothing is written to storage
+// and nothing is sent to the background until the user clicks
+// "Tailor Resume for This Job" in the popup.
+
+let detectedJob = null;
 
 function pollForJob() {
-  // Don't send if extension context is gone
   if (!chrome.runtime?.id) return;
-  if (isSending) return;
 
   const jd = extractJobDescription();
-  if (!jd || jd === lastDetectedJD) return;
+  if (!jd) { detectedJob = null; return; }
 
-  lastDetectedJD = jd;
-  isSending = true;
+  // Skip if nothing changed
+  if (detectedJob && jd === detectedJob.jobDescription && location.href === detectedJob.applyUrl) return;
 
-  const jobTitle = extractText(SEL.jobTitleSelector);
-  const company = extractText(SEL.companySelector);
+  const rawTitle   = extractText(SEL.jobTitleSelector);
+  const rawCompany = extractText(SEL.companySelector);
+  const jobTitle   = (rawTitle   && rawTitle.length   > 2 ? rawTitle   : extractTitleFallback())   || '';
+  const company    = (rawCompany && rawCompany.length  > 2 ? rawCompany : extractCompanyFallback()) || '';
 
-  console.log(`[1stStep] Job detected: "${jobTitle}" at "${company}"`);
-
-  chrome.runtime.sendMessage({
-    action: 'JOB_DETECTED',
-    site: SITE,
-    jobTitle,
-    company,
-    jobDescription: jd,
-    applyUrl: window.location.href
-  }, (response) => {
-    isSending = false;
-    if (chrome.runtime.lastError) return; // Extension reloaded - ignore
-  });
+  detectedJob = { site: SITE, jobTitle, company, jobDescription: jd, applyUrl: location.href };
+  console.log(`[1stStep] Job detected: "${jobTitle}" at "${company}" (${SITE})`);
 }
 
 // ─── INIT ─────────────────────────────────────────────────────
 
-// Poll on interval only (no MutationObserver spam)
+// Detect once on page load
 pollForJob();
-setInterval(() => {
-  if (!chrome.runtime?.id) return; // Stop if extension reloaded
-  pollForJob();
-}, 3000);
 
-// For LinkedIn SPA: re-poll when URL changes (job selection)
+// Re-detect on URL change — covers LinkedIn/Indeed SPA navigation
 let lastUrl = location.href;
 setInterval(() => {
+  if (!chrome.runtime?.id) return;
   if (location.href !== lastUrl) {
     lastUrl = location.href;
-    lastDetectedJD = null; // Reset so new job gets detected
-    setTimeout(pollForJob, 1500); // Wait for content to render
+    detectedJob = null;
+    setTimeout(pollForJob, 1500); // wait for SPA content to render
   }
 }, 1000);
 
@@ -306,9 +329,18 @@ function parseClaudeAutofillResponse(data) {
   }
 }
 
-// ─── AUTOFILL MESSAGE HANDLER ─────────────────────────────────
+// ─── MESSAGE HANDLERS ─────────────────────────────────────────
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  // ── DETECT_JOB_NOW: popup requests the current detected job ──
+  // Only respond from the top frame to prevent multiple responses from iframes.
+  if (msg?.action === 'DETECT_JOB_NOW') {
+    if (window !== window.top) { sendResponse({ success: false, job: null }); return false; }
+    pollForJob();
+    sendResponse({ success: true, job: detectedJob });
+    return false;
+  }
+
   if (msg?.action !== 'AUTOFILL') return;
 
   (async () => {

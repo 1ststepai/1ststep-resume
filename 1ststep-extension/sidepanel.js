@@ -156,7 +156,7 @@ function showResult(result) {
   } else if (result.text) {
     resultContent.textContent = result.text;
   } else if (result.html) {
-    resultContent.innerHTML = result.html;
+    resultContent.textContent = result.html;
   } else {
     resultContent.textContent = JSON.stringify(result, null, 2);
   }

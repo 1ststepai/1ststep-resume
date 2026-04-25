@@ -69,7 +69,29 @@
         }, 600);
       });
 
-      document.getElementById('jobText').addEventListener('input', () => { updateCounts(); refreshSetupSteps(); updateRunButton(); });
+      document.getElementById('jobText').addEventListener('input', () => { updateCounts(); refreshSetupSteps(); updateRunButton(); updateExtEmptyHint(); });
+
+      // ── Restore captured job if page reloaded mid-login ───────────────────
+      try {
+        const raw = sessionStorage.getItem('1ststep_pending_capture');
+        if (raw) {
+          const { jobData: jd, ts } = JSON.parse(raw);
+          if (jd && Date.now() - ts < 5 * 60 * 1000) {
+            sessionStorage.removeItem('1ststep_pending_capture');
+            window._extensionDetected = true;
+            const jt = document.getElementById('jobText');
+            if (jt) { jt.value = jd.jobDescription || ''; jt.dispatchEvent(new Event('input')); }
+            window._capturedJob = { title: jd.jobTitle, company: jd.company, url: jd.applyUrl, site: jd.site };
+            setTimeout(() => {
+              switchMode('tailored');
+              if (jd.jobTitle) showJobContext(jd.jobTitle, jd.company || '');
+              showJobCaptureConfirm(jd);
+            }, 0);
+          } else {
+            sessionStorage.removeItem('1ststep_pending_capture');
+          }
+        }
+      } catch (_) {}
 
       // Also hook run button update to resume textarea
       document.getElementById('resumeText').addEventListener('input', updateRunButton);
@@ -814,6 +836,127 @@ ${resume.slice(0, 3000)}
       if (banner) banner.style.display = 'none';
     }
 
+    // ── Extension Job Capture ─────────────────────────────────────────────────
+    // Receives job data from auth-bridge.js (Chrome extension content script)
+    // after the extension stores a pendingJob and opens this tab.
+    function showJobCaptureConfirm(jobData) {
+      const confirm = document.getElementById('jobCaptureConfirm');
+      const titleEl = document.getElementById('jccTitle');
+      if (!confirm || !titleEl) return;
+
+      const company = jobData.company || '';
+      const title   = jobData.jobTitle || '';
+      const parts   = [company && 'Job captured from ' + company, title].filter(Boolean);
+      titleEl.textContent = parts.length === 2
+        ? `Job captured from ${company} — ${title}`
+        : parts[0] || 'Job captured';
+
+      confirm.style.display = 'block';
+    }
+
+    function hideJobCaptureConfirm() {
+      const confirm = document.getElementById('jobCaptureConfirm');
+      if (confirm) confirm.style.display = 'none';
+    }
+
+    document.getElementById('jccDismissBtn')?.addEventListener('click', hideJobCaptureConfirm);
+
+    document.getElementById('jccUseResumeBtn')?.addEventListener('click', () => {
+      const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
+      if (hasResume) {
+        hideJobCaptureConfirm();
+        document.getElementById('runBtn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        showToast('No saved resume found — please upload one.', 'info');
+        document.getElementById('fileInput')?.click();
+      }
+    });
+
+    document.getElementById('jccUploadBtn')?.addEventListener('click', () => {
+      hideJobCaptureConfirm();
+      document.getElementById('fileInput')?.click();
+    });
+
+    document.getElementById('jccClearJobBtn')?.addEventListener('click', () => {
+      const jobText = document.getElementById('jobText');
+      if (jobText) { jobText.value = ''; jobText.dispatchEvent(new Event('input')); }
+      clearJobContext();
+      window._capturedJob = null;
+      hideJobCaptureConfirm();
+    });
+
+    // ── Extension Promo ──────────────────────────────────────────────────────
+    const EXT_INSTALL_URL = 'https://chromewebstore.google.com/detail/1ststep-ai-resume-tailor/gcmaoapcnobdcfaiijaoamajamijfacd';
+
+    function hideExtPromoBanner() {
+      const banner = document.getElementById('extPromoBanner');
+      if (banner) banner.style.display = 'none';
+    }
+
+    function updateExtEmptyHint() {
+      const hint = document.getElementById('extEmptyHint');
+      if (!hint) return;
+      const jobText = document.getElementById('jobText');
+      const isEmpty = !jobText?.value?.trim();
+      const bannerDismissed = localStorage.getItem('1ststep_ext_banner_dismissed');
+      hint.style.display = isEmpty && !window._extensionDetected && bannerDismissed ? 'block' : 'none';
+    }
+
+    // Dashboard banner — show unless dismissed or extension already detected
+    (function initExtPromoBanner() {
+      const banner = document.getElementById('extPromoBanner');
+      if (!banner) return;
+      if (!localStorage.getItem('1ststep_ext_banner_dismissed')) {
+        banner.style.display = 'flex';
+      }
+      document.getElementById('extBannerDismiss')?.addEventListener('click', () => {
+        localStorage.setItem('1ststep_ext_banner_dismissed', '1');
+        hideExtPromoBanner();
+        updateExtEmptyHint();
+      });
+      updateExtEmptyHint();
+    })();
+
+    // Post-gen nudge dismiss
+    document.getElementById('extPostGenDismiss')?.addEventListener('click', () => {
+      localStorage.setItem('1ststep_ext_postgen_dismissed', '1');
+      document.getElementById('extPostGenNudge').style.display = 'none';
+    });
+
+    window.addEventListener('message', (event) => {
+      if (event.origin !== window.location.origin) return;
+      if (!event.data || event.data.type !== '1STSTEP_JOB_CAPTURE') return;
+      const { jobData } = event.data;
+      if (!jobData) return;
+
+      window._extensionDetected = true;
+      hideExtPromoBanner();
+      const _mobilePromo = document.getElementById('mobileExtPromo');
+      if (_mobilePromo) _mobilePromo.style.display = 'none';
+
+      // Persist for reload survival (e.g. OAuth login redirect clears the page)
+      try {
+        sessionStorage.setItem('1ststep_pending_capture', JSON.stringify({ jobData, ts: Date.now() }));
+      } catch (_) {}
+
+      const jobText = document.getElementById('jobText');
+      if (jobText) {
+        jobText.value = jobData.jobDescription || '';
+        jobText.dispatchEvent(new Event('input'));
+      }
+
+      window._capturedJob = {
+        title:   jobData.jobTitle,
+        company: jobData.company,
+        url:     jobData.applyUrl,
+        site:    jobData.site
+      };
+
+      switchMode('tailored');
+      if (jobData.jobTitle) showJobContext(jobData.jobTitle, jobData.company || '');
+      showJobCaptureConfirm(jobData);
+    });
+
     // ── Tier ──────────────────────────────────────────────────────────────────
     // setTier() controls the OUTPUT MODE only (what to generate this session).
     // It does NOT change the subscription tier — that is read-only from verifySubscription().
@@ -998,6 +1141,15 @@ ${resume.slice(0, 3000)}
               ? `💾 You have ${remaining} tailor${remaining !== 1 ? 's' : ''} left this month. Save your account to pick up right where you left off when your limit resets.`
               : `💾 You've used all ${limit} free tailors. Create an account and upgrade to keep going.`;
           }
+        }
+      }
+
+      // Extension post-gen nudge — shown after tailoring for non-extension users
+      if (!window._extensionDetected && !localStorage.getItem('1ststep_ext_postgen_dismissed')) {
+        const nudge = document.getElementById('extPostGenNudge');
+        if (nudge) {
+          nudge.style.display = 'flex';
+          hideExtPromoBanner(); // avoid two ext CTAs at once
         }
       }
 

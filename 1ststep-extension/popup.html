@@ -108,29 +108,6 @@
       margin-bottom: 12px;
     }
 
-    .match-score {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 12px;
-      background: var(--surface2);
-      border-radius: 8px;
-      margin-bottom: 12px;
-    }
-
-    .match-score-label {
-      font-size: 12px;
-      color: var(--text2);
-      flex: 1;
-      font-weight: 500;
-    }
-
-    .score-value {
-      font-weight: 600;
-      font-size: 14px;
-      color: var(--brand);
-    }
-
     .action-buttons {
       display: flex;
       gap: 10px;
@@ -256,6 +233,48 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+
+    .manual-section {
+      width: 100%;
+      margin-top: 14px;
+      text-align: left;
+    }
+
+    .manual-label {
+      font-size: 12px;
+      color: var(--text2);
+      margin-bottom: 6px;
+    }
+
+    .manual-textarea {
+      width: 100%;
+      height: 90px;
+      padding: 8px 10px;
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      font-size: 12px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--surface);
+      resize: none;
+      outline: none;
+      transition: border-color 0.15s;
+      display: block;
+    }
+
+    .manual-textarea:focus { border-color: var(--brand); }
+
+    .open-app-link {
+      display: inline-block;
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--brand);
+      cursor: pointer;
+      border-bottom: 1px dotted var(--brand);
+      padding-bottom: 1px;
+    }
+
+    .open-app-link:hover { opacity: 0.8; }
   </style>
 </head>
 <body>
@@ -284,23 +303,29 @@
           <span id="company">—</span>
           <span id="site">—</span>
         </div>
-        
-        <div class="match-score">
-          <div class="match-score-label">Match Score</div>
-          <div class="score-value" id="matchScore">—</div>
-        </div>
+        <div id="jobUrl" style="display:none; font-size:11px; color:var(--muted); margin-bottom:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
 
         <div class="action-buttons">
-          <button class="btn-primary" id="tailorBtn">Tailor Resume</button>
+          <button class="btn-primary" id="tailorBtn">Tailor Resume for This Job</button>
           <button class="btn-secondary" id="autofillBtn">Auto-fill</button>
+        </div>
+        <div style="text-align:center; margin-top:10px;">
+          <span class="open-app-link" id="openAppDirectLink">Open 1stStep.ai</span>
         </div>
       </div>
 
       <div id="emptyState" class="empty-state">
         <div class="empty-state-icon">🔍</div>
         <div class="empty-state-title">No Job Detected</div>
-        <div class="empty-state-desc" style="margin-bottom: 14px;">No job description found on this page — but if there's an application form below, you can still auto-fill it.</div>
-        <button class="btn-primary" id="autofillEmptyBtn" style="width: 100%; max-width: 220px;">Auto-fill This Form</button>
+        <div class="empty-state-desc">We couldn't detect the full job post. Paste the job description manually.</div>
+
+        <div class="manual-section" id="manualSection">
+          <div class="manual-label">Job description:</div>
+          <textarea id="manualJdInput" class="manual-textarea" placeholder="Paste the full job description here…"></textarea>
+          <button class="btn-primary" id="manualOpenBtn" style="width:100%; margin-top:8px; flex:none;">Open in 1stStep.ai</button>
+        </div>
+
+        <button class="btn-secondary" id="autofillEmptyBtn" style="width:100%; margin-top:10px; flex:none;">Auto-fill This Form</button>
       </div>
     </div>
   </div>

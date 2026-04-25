@@ -153,10 +153,75 @@ window.addEventListener('message', async (event) => {
   }
 });
 
+// ─── PENDING JOB DELIVERY ─────────────────────────────────────
+
+async function deliverPendingJob() {
+  try {
+    if (typeof chrome === 'undefined' || !chrome.storage) return;
+
+    const jobCaptureId = new URLSearchParams(window.location.search).get('jobCaptureId');
+    const now = Date.now();
+
+    const data = await new Promise(resolve =>
+      chrome.storage.session.get(['pendingJobs'], resolve)
+    );
+    const pendingJobs = data.pendingJobs || {};
+
+    // Resolve which entry to deliver
+    let matchedId = null;
+    let entry = null;
+
+    if (jobCaptureId && pendingJobs[jobCaptureId]) {
+      // Exact match from URL param — correct job for this tab/navigation
+      matchedId = jobCaptureId;
+      entry = pendingJobs[jobCaptureId];
+    } else {
+      // Fallback: most recent non-stale job (backward compat, no param in URL)
+      const candidates = Object.entries(pendingJobs)
+        .filter(([, e]) => now - e.createdAt <= 2 * 60 * 1000)
+        .sort((a, b) => b[1].createdAt - a[1].createdAt);
+      if (candidates.length > 0) {
+        [matchedId, entry] = candidates[0];
+      }
+    }
+
+    if (!entry) return;
+
+    // Stale guard
+    if (now - entry.createdAt > 2 * 60 * 1000) {
+      delete pendingJobs[matchedId];
+      await new Promise(resolve => chrome.storage.session.set({ pendingJobs }, resolve));
+      return;
+    }
+
+    // Remove only this entry before posting — other pending jobs stay intact
+    delete pendingJobs[matchedId];
+    await new Promise(resolve => chrome.storage.session.set({ pendingJobs }, resolve));
+
+    const jobData = entry.jobData;
+    window.postMessage({
+      type: '1STSTEP_JOB_CAPTURE',
+      version: '1',
+      jobData: {
+        jobTitle:       jobData.jobTitle,
+        company:        jobData.company,
+        jobDescription: jobData.jobDescription,
+        applyUrl:       jobData.applyUrl,
+        site:           jobData.site
+      }
+    }, window.location.origin);
+
+    console.log('[1stStep] Delivered pending job:', jobData.jobTitle, '| id:', matchedId);
+  } catch (err) {
+    console.error('[1stStep] deliverPendingJob error:', err);
+  }
+}
+
 // ─── AUTO-SYNC ON LOAD & CHANGES ──────────────────────────────
 
 // Sync on page load
 syncToExtension();
+deliverPendingJob();
 
 // Sync when localStorage changes (cross-tab sync)
 window.addEventListener('storage', async (event) => {
