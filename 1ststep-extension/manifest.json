@@ -10,7 +10,6 @@
   },
   "permissions": [
     "storage",
-    "scripting",
     "activeTab",
     "sidePanel",
     "tabs"
@@ -24,10 +23,6 @@
     "https://*.workday.com/*",
     "https://*.myworkdayjobs.com/*",
     "https://*.icims.com/*",
-    "https://*.taleo.net/*",
-    "https://*.ashbyhq.com/*",
-    "https://*.jobvite.com/*",
-    "https://*.smartrecruiters.com/*",
     "https://app.1ststep.ai/*"
   ],
   "content_security_policy": {

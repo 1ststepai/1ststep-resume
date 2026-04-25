@@ -81,9 +81,21 @@ function showEmptyState(auth) {
   jobCard.classList.remove('visible');
   emptyState.style.display   = 'flex';
 
-  // Auto-fill is still useful even without a detected job — any form on the page can be filled.
+  // Wire manual paste → open in app
+  const manualOpenBtn = document.getElementById('manualOpenBtn');
+  if (manualOpenBtn) {
+    manualOpenBtn.onclick = () => {
+      const jd = document.getElementById('manualJdInput')?.value?.trim();
+      if (!jd) { manualOpenBtn.textContent = 'Paste a description first'; setTimeout(() => { manualOpenBtn.textContent = 'Open in 1stStep.ai'; }, 2000); return; }
+      openInApp({ jobTitle: '', company: '', jobDescription: jd, applyUrl: '', site: 'manual' }, manualOpenBtn);
+    };
+  }
+
+  // Auto-fill still works without a detected job
   if (autofillEmptyBtn && auth) {
     autofillEmptyBtn.onclick = () => autofillPage(auth, autofillEmptyBtn);
+  } else if (autofillEmptyBtn) {
+    autofillEmptyBtn.style.display = 'none';
   }
 }
 
@@ -97,95 +109,83 @@ function showJobCard(job, auth) {
   companyEl.textContent  = job.company  || 'Unknown Company';
   siteEl.textContent     = (job.site    || 'unknown').toUpperCase();
 
-  // Show upgrade notice if free tier
-  if (auth.tier === 'free') {
-    tailorBtn.title = 'Tailor Resume requires an active subscription';
+  const jobUrlEl = document.getElementById('jobUrl');
+  if (jobUrlEl && job.applyUrl) {
+    jobUrlEl.textContent = job.applyUrl.replace(/^https?:\/\//, '').slice(0, 50) + (job.applyUrl.length > 55 ? '…' : '');
+    jobUrlEl.title = job.applyUrl;
+    jobUrlEl.style.display = 'block';
   }
 
-  tailorBtn.onclick   = () => tailorResume(job, auth);
+  tailorBtn.onclick   = () => openInApp(job, tailorBtn);
   autofillBtn.onclick = () => autofillPage(auth, autofillBtn);
+
+  const openAppDirectLink = document.getElementById('openAppDirectLink');
+  if (openAppDirectLink) {
+    openAppDirectLink.onclick = () => chrome.tabs.create({ url: APP_URL });
+  }
 }
 
 // ─── JOB ─────────────────────────────────────────────────────
 
 async function getCurrentJob() {
+  // 1. Ask the active tab's content script directly — freshest signal.
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id) {
+      const result = await new Promise((resolve) => {
+        chrome.tabs.sendMessage(tab.id, { action: 'DETECT_JOB_NOW' }, { frameId: 0 }, (r) => {
+          if (chrome.runtime.lastError) resolve(null);
+          else resolve(r?.job || null);
+        });
+      });
+      if (result) return result;
+    }
+  } catch (_) {}
+
+  // 2. Fall back to background cache (e.g. tab without content script).
   return new Promise((resolve) => {
     chrome.runtime.sendMessage({ action: 'GET_CURRENT_JOB' }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.error('[1stStep] Error getting current job:', chrome.runtime.lastError.message);
-        resolve(null);
-        return;
-      }
+      if (chrome.runtime.lastError) { resolve(null); return; }
       resolve(response?.job || null);
     });
   });
 }
 
-// ─── TAILOR ──────────────────────────────────────────────────
+// ─── OPEN IN APP ─────────────────────────────────────────────
 
-async function tailorResume(job, auth) {
-  if (!auth.resume) {
-    alert('No resume found. Please add your resume at app.1ststep.ai first.');
+async function openInApp(job, btn) {
+  btn = btn || tailorBtn;
+  const originalLabel = btn.textContent;
+  btn.disabled    = true;
+  btn.textContent = 'Opening…';
+
+  if (!job.jobDescription?.trim()) {
+    btn.textContent = 'No job description found';
+    setTimeout(() => { btn.textContent = originalLabel; btn.disabled = false; }, 2500);
     return;
   }
 
-  if (auth.tier === 'free') {
-    if (!confirm('Resume tailoring requires a paid subscription. Open 1stStep.ai to upgrade?')) return;
-    chrome.tabs.create({ url: APP_URL });
-    return;
-  }
+  const jobData = {
+    jobTitle:        job.jobTitle        || '',
+    company:         job.company         || '',
+    jobDescription:  job.jobDescription,
+    applyUrl:        job.applyUrl        || '',
+    site:            job.site            || 'unknown'
+  };
 
-  tailorBtn.disabled    = true;
-  tailorBtn.textContent = 'Tailoring...';
-
-  try {
-    // Get a fresh tier token from the backend first
-    const subRes = await fetch(
-      `${APP_URL}/api/subscription?email=${encodeURIComponent(auth.email)}`
-    );
-    if (!subRes.ok) {
-      throw new Error(`Failed to fetch subscription status: ${subRes.statusText}`);
+  chrome.runtime.sendMessage({ action: 'OPEN_IN_APP', jobData }, (response) => {
+    if (chrome.runtime.lastError) {
+      btn.textContent = 'Extension error — try reloading';
+      setTimeout(() => { btn.textContent = originalLabel; btn.disabled = false; }, 3000);
+      return;
     }
-    const subData = await subRes.json();
-    const tierToken = subData.tierToken || auth.tierToken;
-
-    const response = await fetch(`${APP_URL}/api/claude`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model:     'claude-sonnet-4-6',
-        callType:  'tailor',
-        userEmail: auth.email,
-        tierToken: tierToken,
-        max_tokens: 4096,
-        messages: [{
-          role: 'user',
-          content: `Please tailor my resume for this job posting.\n\n<resume>\n${auth.resume}\n</resume>\n\n<job_description>\n${job.jobDescription}\n</job_description>`
-        }]
-      })
-    });
-
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error || `Error ${response.status}`);
+    if (!response?.success) {
+      btn.textContent = 'Could not open app — try again';
+      setTimeout(() => { btn.textContent = originalLabel; btn.disabled = false; }, 3000);
+      return;
     }
-
-    const result = await response.json();
-    const text   = result.content?.[0]?.text || '';
-
-    await navigator.clipboard.writeText(text);
-    tailorBtn.textContent = '✓ Copied!';
-    setTimeout(() => {
-      tailorBtn.textContent = 'Tailor Resume';
-      tailorBtn.disabled = false;
-    }, 2000);
-
-  } catch (err) {
-    console.error('[1stStep] Tailor error:', err);
-    alert('Tailoring failed: ' + err.message);
-    tailorBtn.textContent = 'Tailor Resume';
-    tailorBtn.disabled = false;
-  }
+    // Tab is now opening — popup closes naturally
+  });
 }
 
 // ─── AUTOFILL ────────────────────────────────────────────────
@@ -246,9 +246,8 @@ async function autofillPage(auth, btn) {
     }, 3000);
   } catch (err) {
     console.error('[1stStep] Autofill error:', err);
-    alert('Autofill failed: ' + err.message);
-    btn.textContent = originalLabel;
-    btn.disabled    = false;
+    btn.textContent = 'Autofill failed — try again';
+    setTimeout(() => { btn.textContent = originalLabel; btn.disabled = false; }, 3000);
   }
 }
 

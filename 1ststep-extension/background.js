@@ -128,6 +128,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           break;
         }
 
+        // ─── OPEN IN APP ──────────────────────────────────
+        case 'OPEN_IN_APP': {
+          const jobCaptureId = crypto.randomUUID();
+          const now = Date.now();
+
+          // Read existing map, prune stale entries (> 2 min), add new one
+          const sessionData = await chrome.storage.session.get(['pendingJobs']);
+          const pendingJobs = sessionData.pendingJobs || {};
+          for (const id of Object.keys(pendingJobs)) {
+            if (now - pendingJobs[id].createdAt > 2 * 60 * 1000) delete pendingJobs[id];
+          }
+          pendingJobs[jobCaptureId] = { jobData: request.jobData, createdAt: now };
+          await chrome.storage.session.set({ pendingJobs });
+
+          const targetUrl = `${APP_URL}?jobCaptureId=${jobCaptureId}`;
+          const existingTabs = await chrome.tabs.query({ url: `${APP_URL}/*` });
+          if (existingTabs.length > 0) {
+            await chrome.tabs.update(existingTabs[0].id, { active: true, url: targetUrl });
+            await chrome.windows.update(existingTabs[0].windowId, { focused: true });
+          } else {
+            await chrome.tabs.create({ url: targetUrl });
+          }
+          sendResponse({ success: true, jobCaptureId });
+          break;
+        }
+
         // ─── TAILOR REQUEST ──────────────────────────
         case 'TAILOR_RESUME': {
           // Forward to 1stStep.ai backend claude.js
@@ -217,7 +243,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 /**
  * On extension install, fire tracking event
  */
-chrome.runtime.onInstalled.addListener(() => {
-  // Optionally open setup/welcome page
-  console.log('[1stStep] Extension installed');
+chrome.runtime.onInstalled.addListener((details) => {
+  console.log('[1stStep] Extension installed, reason:', details.reason);
+  if (details.reason === 'install') {
+    fetch(`${APP_URL}/api/track-event`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'anonymous', event: 'extension_install' })
+    }).catch(() => {});
+    chrome.tabs.create({ url: `${APP_URL}?welcome=ext` });
+  }
 });

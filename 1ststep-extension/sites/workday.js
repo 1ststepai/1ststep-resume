@@ -29,7 +29,7 @@ export default {
   },
   
   // Special handler for Shadow DOM piercing
-  pierceShado wRoot: true,
+  pierceShadowRoot: true,
   shadowHostSelector: '[data-automation-id="form"]',
   
   // Difficulty: Hard — requires special handling
