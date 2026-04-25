@@ -151,8 +151,8 @@
       }
 
       // ── Phase 4 batch 1: hero panel event listeners ───────────────────────
-      // Generate button
-      document.getElementById('runBtn')?.addEventListener('click', runTailoring);
+      // Note: runBtn click is managed entirely by updateRunButton() via btn.onclick
+      // Do NOT add an addEventListener here — it would conflict with the state machine
 
       // File drop zone
       const fileDrop = document.getElementById('fileDrop');
