@@ -43,11 +43,13 @@
           if (saved.source === 'file') {
             fileContent = saved.text;
             document.getElementById('fileName').textContent = saved.fileName || 'resume';
-            document.getElementById('fileLoaded').style.display = 'flex';
-            document.getElementById('fileDrop').style.display = 'none';
           } else {
             document.getElementById('resumeText').value = saved.text;
+            document.getElementById('fileName').textContent = saved.fileName || 'Saved resume';
           }
+          // Always show the file chip — gives visual confirmation regardless of source
+          document.getElementById('fileLoaded').style.display = 'flex';
+          document.getElementById('fileDrop').style.display = 'none';
           updateCounts();
           refreshSetupSteps();
         }
@@ -83,7 +85,7 @@
             if (jt) { jt.value = jd.jobDescription || ''; jt.dispatchEvent(new Event('input')); }
             window._capturedJob = { title: jd.jobTitle, company: jd.company, url: jd.applyUrl, site: jd.site };
             setTimeout(() => {
-              switchMode('tailored');
+              switchMode('resume');
               if (jd.jobTitle) showJobContext(jd.jobTitle, jd.company || '');
               showJobCaptureConfirm(jd);
             }, 0);
@@ -825,6 +827,14 @@ ${resume.slice(0, 3000)}
       const choiceCard = document.getElementById('resumeChoiceCard');
       if (choiceCard) choiceCard.style.display = (hasJob && !hasResume) ? 'flex' : 'none';
 
+      // When extension delivered the job, trim choice card to Upload + Build only
+      if (window._extensionDetected && hasJob && !hasResume) {
+        const existingBtn = document.getElementById('resumeChoiceExistingBtn');
+        const linkedInBtn = document.getElementById('resumeChoiceLinkedInBtn');
+        if (existingBtn) existingBtn.style.display = 'none';
+        if (linkedInBtn) linkedInBtn.style.display = 'none';
+      }
+
       if (!hasJob && !hasResume) {
         btn.style.opacity = '0.85';
         btn.style.cursor = 'pointer';
@@ -919,23 +929,52 @@ ${resume.slice(0, 3000)}
     // Receives job data from auth-bridge.js (Chrome extension content script)
     // after the extension stores a pendingJob and opens this tab.
     function showJobCaptureConfirm(jobData) {
+      const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
+
+      // Both job + resume ready — skip modal, pulse the button
+      if (hasResume) {
+        showToast('Job captured — ready to tailor!', 'success');
+        const btn = document.getElementById('runBtn');
+        if (btn) {
+          btn.classList.add('ext-ready-pulse');
+          setTimeout(() => btn.classList.remove('ext-ready-pulse'), 3000);
+          btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
+
+      // No resume — show simplified 2-option card
       const confirm = document.getElementById('jobCaptureConfirm');
       const titleEl = document.getElementById('jccTitle');
       if (!confirm || !titleEl) return;
 
       const company = jobData.company || '';
       const title   = jobData.jobTitle || '';
-      const parts   = [company && 'Job captured from ' + company, title].filter(Boolean);
-      titleEl.textContent = parts.length === 2
+      titleEl.textContent = company && title
         ? `Job captured from ${company} — ${title}`
-        : parts[0] || 'Job captured';
+        : company ? `Job captured from ${company}` : title || 'Job captured';
+
+      const sub = confirm.querySelector('.jcc-sub');
+      if (sub) sub.textContent = 'Add your resume to tailor it for this role.';
+
+      // Show only Upload + Build; hide Use Existing + Clear Job
+      const useResumeBtn = document.getElementById('jccUseResumeBtn');
+      const clearJobBtn  = document.getElementById('jccClearJobBtn');
+      if (useResumeBtn) useResumeBtn.style.display = 'none';
+      if (clearJobBtn)  clearJobBtn.style.display  = 'none';
 
       confirm.style.display = 'block';
     }
 
     function hideJobCaptureConfirm() {
       const confirm = document.getElementById('jobCaptureConfirm');
-      if (confirm) confirm.style.display = 'none';
+      if (!confirm) return;
+      confirm.style.display = 'none';
+      // Reset button visibility for next capture
+      const useResumeBtn = document.getElementById('jccUseResumeBtn');
+      const clearJobBtn  = document.getElementById('jccClearJobBtn');
+      if (useResumeBtn) useResumeBtn.style.display = '';
+      if (clearJobBtn)  clearJobBtn.style.display  = '';
     }
 
     document.getElementById('jccDismissBtn')?.addEventListener('click', hideJobCaptureConfirm);
@@ -1090,7 +1129,7 @@ ${resume.slice(0, 3000)}
         site:    jobData.site
       };
 
-      switchMode('tailored');
+      switchMode('resume');
       if (jobData.jobTitle) showJobContext(jobData.jobTitle, jobData.company || '');
       showJobCaptureConfirm(jobData);
     });
