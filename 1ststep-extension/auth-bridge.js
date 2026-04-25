@@ -201,6 +201,13 @@ async function deliverPendingJob() {
     delete pendingJobs[matchedId];
     await new Promise(resolve => chrome.storage.session.set({ pendingJobs }, resolve));
 
+    // Also pull resume from extension storage so app can auto-tailor
+    // even when the app's own session is fresh (no resume loaded yet)
+    const syncData = await new Promise((resolve) =>
+      chrome.storage.sync.get(['1ststep_resume'], resolve)
+    );
+    const resumeText = syncData['1ststep_resume'] || null;
+
     const jobData = entry.jobData;
     window.postMessage({
       type: '1STSTEP_JOB_CAPTURE',
@@ -211,7 +218,8 @@ async function deliverPendingJob() {
         jobDescription: jobData.jobDescription,
         applyUrl:       jobData.applyUrl,
         site:           jobData.site
-      }
+      },
+      resumeText
     }, window.location.origin);
 
     console.log('[1stStep] Delivered pending job:', jobData.jobTitle, '| id:', matchedId);

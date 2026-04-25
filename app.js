@@ -1070,7 +1070,7 @@ ${resume.slice(0, 3000)}
     window.addEventListener('message', (event) => {
       if (event.origin !== window.location.origin) return;
       if (!event.data || event.data.type !== '1STSTEP_JOB_CAPTURE') return;
-      const { jobData } = event.data;
+      const { jobData, resumeText } = event.data;
       if (!jobData) return;
 
       window._extensionDetected = true;
@@ -1082,6 +1082,15 @@ ${resume.slice(0, 3000)}
       try {
         sessionStorage.setItem('1ststep_pending_capture', JSON.stringify({ jobData, ts: Date.now() }));
       } catch (_) {}
+
+      // If the extension delivered a resume and none is loaded yet, load it now
+      // so auto-tailor can fire without requiring the user to re-upload
+      const appHasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
+      if (!appHasResume && resumeText) {
+        document.getElementById('resumeText').value = resumeText;
+        // Also save to localStorage so it persists across reloads
+        try { localStorage.setItem('1ststep_resume', resumeText); } catch (_) {}
+      }
 
       const jobText = document.getElementById('jobText');
       if (jobText) {
