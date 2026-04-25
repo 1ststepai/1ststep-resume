@@ -369,8 +369,16 @@
       document.getElementById('rabVault')?.addEventListener('click', () => { _pingTracker('result_vault_click'); switchMode('tailored'); });
       document.getElementById('rabTracker')?.addEventListener('click', () => { _pingTracker('result_tracker_click'); switchMode('tracker'); });
 
-      // Cover letter upsell — switch to complete mode and re-run
+      // Cover letter upsell — gate free users who've used their 1 cover letter
       function _activateCoverLetter() {
+        if (currentTier === 'free') {
+          const clUsed = getMonthlyUsage().coverLetters || 0;
+          if (clUsed >= getLimit('coverLetters')) {
+            _pingTracker('cover_letter_limit_view');
+            openUpgradeModal('coverLetter');
+            return;
+          }
+        }
         setTier('complete');
         if (outputMode === 'complete') runTailoring();
       }
@@ -491,7 +499,10 @@
       document.getElementById('upgradeModal')?.addEventListener('click', e => {
         if (e.target === e.currentTarget) closeUpgradeModal();
       });
-      document.getElementById('upgradeModalCloseBtn')?.addEventListener('click', closeUpgradeModal);
+      document.getElementById('upgradeModalCloseBtn')?.addEventListener('click', () => { _pingTracker('paywall_dismiss'); closeUpgradeModal(); });
+      document.getElementById('paywallDismissBtn')?.addEventListener('click', () => { _pingTracker('paywall_dismiss'); closeUpgradeModal(); });
+      document.getElementById('paywallUnlockBtn')?.addEventListener('click', () => _pingTracker('paywall_unlock_click'));
+      document.getElementById('postResultPassBtn')?.addEventListener('click', () => { _pingTracker('pricing_cta_click'); openUpgradeModal(); });
       document.getElementById('modal-btn-monthly')?.addEventListener('click', () => setModalBilling('monthly'));
       document.getElementById('modal-btn-annual')?.addEventListener('click', () => setModalBilling('annual'));
       document.getElementById('upgradeVerifyBtn')?.addEventListener('click', async () => {
@@ -1632,6 +1643,9 @@ ${resume.slice(0, 3000)}
       if (rabCL) rabCL.style.display = needsCoverLetter ? 'inline-flex' : 'none';
       const nudge = document.getElementById('clNudge');
       if (nudge) nudge.style.display = needsCoverLetter ? 'flex' : 'none';
+      // Post-result pass card — only for free users
+      const passCard = document.getElementById('postResultPassCard');
+      if (passCard) passCard.style.display = currentTier === 'free' ? 'block' : 'none';
     }
 
     function hideResultActionBar() {
@@ -2022,18 +2036,21 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
           document.getElementById('resumeOutput').innerHTML = `
         <div class="error-box" style="text-align:center;padding:32px 24px">
           <div style="font-size:2rem;margin-bottom:8px">🔒</div>
-          <strong style="font-size:1.1rem">You've used your ${getLimit('tailors')} free tailors</strong>
-          <p style="margin:10px 0 20px;opacity:0.85">Most users see more callbacks within the first week.<br>Upgrade to keep going — cancel any time.</p>
-          <button class="btn-run" style="width:auto;padding:10px 28px;font-size:0.95rem" onclick="openUpgradeModal()">See Plans →</button>
+          <strong style="font-size:1.1rem">You've used your ${getLimit('tailors')} free tailors this month</strong>
+          <p style="margin:10px 0 20px;opacity:0.85">Most users land interviews within the first week.<br>Unlock unlimited tailoring for 30 days — no subscription.</p>
+          <button class="btn-run" style="width:auto;padding:10px 28px;font-size:0.95rem" id="limitErrorPassBtn">Unlock 30-Day Pass →</button>
         </div>`;
+          document.getElementById('limitErrorPassBtn')?.addEventListener('click', openUpgradeModal);
+          setTimeout(() => openUpgradeModal(), 400);
         } else if (err.code === 'TIER_REQUIRED' || err.code === 'COMPLETE_REQUIRED' || err.status === 403) {
           document.getElementById('resumeOutput').innerHTML = `
         <div class="error-box" style="text-align:center;padding:32px 24px">
           <div style="font-size:2rem;margin-bottom:8px">🔒</div>
-          <strong style="font-size:1.1rem">Subscription required</strong>
-          <p style="margin:10px 0 20px;opacity:0.85">This feature requires a paid plan.</p>
-          <button class="btn-run" style="width:auto;padding:10px 28px;font-size:0.95rem" onclick="openUpgradeModal()">See Plans →</button>
+          <strong style="font-size:1.1rem">30-Day pass required</strong>
+          <p style="margin:10px 0 20px;opacity:0.85">This feature requires the Job Hunt Pass.</p>
+          <button class="btn-run" style="width:auto;padding:10px 28px;font-size:0.95rem" id="tierErrorPassBtn">Unlock 30-Day Pass →</button>
         </div>`;
+          document.getElementById('tierErrorPassBtn')?.addEventListener('click', openUpgradeModal);
           setTimeout(() => openUpgradeModal(), 400);
         } else {
           document.getElementById('resumeOutput').innerHTML = `<div class="error-box"><strong>Error:</strong> ${err.message}<br><br>Common fixes:<br>• Check your internet connection and try again<br>• If the error says "529", Anthropic is temporarily overloaded — wait 30 seconds<br>• Contact support at evan@1ststep.ai if the problem persists</div>`;
@@ -2464,11 +2481,13 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
     // Essential $19/mo: 60 searches / 30 tailors / 30 cover letters.
     // Complete $39/mo: unlimited everything.
     const LIMITS = {
-      free: { searches: 5, tailors: 3, coverLetters: 0 },
-      essential: { searches: 60, tailors: 30, coverLetters: 30 },
-      complete: { searches: 999, tailors: 999, coverLetters: 999 },
+      free:      { searches: 5, tailors: 3, coverLetters: 1, vaultVisible: 3 },
+      essential: { searches: 60, tailors: 30, coverLetters: 30, vaultVisible: 999 },
+      complete:  { searches: 999, tailors: 999, coverLetters: 999, vaultVisible: 999 },
     };
-    // Stripe payment links
+    // 30-Day Job Hunt Pass — one-time Stripe checkout (no subscription)
+    const STRIPE_PASS_URL = 'https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00';
+    // Stripe payment links (legacy — kept for backwards compat)
     const STRIPE_LINKS = {
       essential: {
         monthly: 'https://buy.stripe.com/28E00k7OFfCXd0E1MPfIs01',
@@ -2483,7 +2502,23 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
     const STRIPE_COMPLETE = STRIPE_LINKS.complete.monthly;  // fallback
     const UPGRADE_URL = STRIPE_ESSENTIAL;
 
-    function openUpgradeModal() { document.getElementById('upgradeModal').style.display = 'flex'; }
+    function openUpgradeModal(context) {
+      _pingTracker('paywall_view');
+      // Customise copy based on trigger context
+      const headline = document.getElementById('paywallHeadline');
+      const sub = document.getElementById('paywallSubheadline');
+      if (context === 'coverLetter' && sub) {
+        if (headline) headline.textContent = 'Need more cover letters?';
+        sub.textContent = 'Your free plan includes 1 cover letter. Unlock unlimited cover letters for 30 days.';
+      } else if (context === 'vault' && sub) {
+        if (headline) headline.textContent = 'Unlock your full Resume Vault';
+        sub.textContent = 'Your tailored resumes are saved. Upgrade to access every version.';
+      } else {
+        if (headline) headline.textContent = 'Keep your job search moving';
+        if (sub) sub.textContent = 'You’ve used your free credits. Unlock unlimited resume tailoring, cover letters, and job tracking for the next 30 days.';
+      }
+      document.getElementById('upgradeModal').style.display = 'flex';
+    }
     function closeUpgradeModal() { document.getElementById('upgradeModal').style.display = 'none'; }
 
     function setModalBilling(mode) {
@@ -2652,28 +2687,13 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
     }
 
     function showTailorLimitMessage() {
-      const limit = getLimit('tailors');
-      showToast(`You've used your ${limit} free tailors — upgrade for more`, 'warning');
-      // Show upgrade nudge inline below the run button
-      const meter = document.getElementById('tailorUsageMeter');
-      if (meter) {
-        const existing = document.getElementById('tailorUpgradeNudge');
-        if (!existing) {
-          const nudge = document.createElement('div');
-          nudge.id = 'tailorUpgradeNudge';
-          nudge.style.cssText = 'margin-top:10px;padding:12px 14px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:8px;font-size:12px;color:var(--muted);text-align:center';
-          nudge.innerHTML = `<strong style="color:var(--fg)">You've used your ${limit} free tailors.</strong><br>
-        <span style="font-size:11px;color:var(--muted)">Most users see more callbacks within the first week.</span><br>
-        <button onclick="openUpgradeModal()" style="display:inline-block;margin-top:10px;padding:8px 18px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;border:none;cursor:pointer">See Plans →</button>`;
-          meter.after(nudge);
-        }
-      }
-      // Also open the upgrade modal so they can act immediately
-      setTimeout(() => openUpgradeModal(), 400);
+      _pingTracker('paywall_view');
+      showToast(`You've used your ${getLimit('tailors')} free tailors this month`, 'warning');
+      setTimeout(() => openUpgradeModal('tailors'), 400);
     }
 
-    // Initialise meters on page load
-    window.addEventListener('DOMContentLoaded', () => { updateSearchUsageMeter(); updateTailorUsageMeter(); });
+    // Initialise meters and pricing card on page load
+    window.addEventListener('DOMContentLoaded', () => { updateSearchUsageMeter(); updateTailorUsageMeter(); renderPricingCard(); });
 
     let currentRadius = 10; // miles
     let activeJobTypes = new Set(['full_time', 'part_time', 'contract', 'remote']);
@@ -4124,7 +4144,32 @@ ${desc}`;
         document.getElementById('vaultEmptyCtaBtn')?.addEventListener('click', _emptyVaultCta);
         return;
       }
-      list.innerHTML = history.map(entry => {
+
+      const vaultLimit = getLimit('vaultVisible');
+      const visible = history.slice(0, vaultLimit);
+      const locked  = history.slice(vaultLimit);
+
+      let lockedHtml = '';
+      if (locked.length > 0) {
+        _pingTracker('vault_limit_view');
+        lockedHtml = `
+      <div class="vault-lock-gate">
+        <div class="vault-lock-blurred">
+          ${locked.slice(0, 2).map(entry => {
+            const date = new Date(entry.tailoredAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const label = entry.company ? `${entry.company} — ${entry.jobTitle || 'Untitled Role'}` : (entry.jobTitle || 'Untitled Role');
+            return `<div class="tailor-card vault-card-locked"><div class="tailor-card-info"><div class="tailor-card-title">${label}</div><div class="tailor-card-meta">${date}</div></div></div>`;
+          }).join('')}
+        </div>
+        <div class="vault-lock-overlay">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Unlock your full Resume Vault</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.4">Your tailored resumes are saved.<br>Upgrade to access every version.</div>
+          <button id="vaultLockCta" style="padding:9px 20px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Unlock 30-Day Pass</button>
+        </div>
+      </div>`;
+      }
+
+      list.innerHTML = visible.map(entry => {
         const date = new Date(entry.tailoredAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         const hasCover = !!entry.coverLetter;
         const titleLabel = entry.company
@@ -4160,7 +4205,12 @@ ${desc}`;
         <button class="btn-tailor-delete" onclick="deleteTailorEntry('${entry.id}')" title="Remove">✕</button>
       </div>
     </div>`;
-      }).join('');
+      }).join('') + lockedHtml;
+
+      document.getElementById('vaultLockCta')?.addEventListener('click', () => {
+        _pingTracker('pricing_cta_click');
+        openUpgradeModal('vault');
+      });
     }
 
     function downloadTailorEntryDocx(id) {
@@ -4556,6 +4606,7 @@ ${desc}`;
         const cached = JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || 'null');
         if (cached && cached.email === email && Date.now() - cached.ts < SUB_CACHE_TTL) {
           _applySubscriptionTier(cached.tier, false);
+          renderPricingCard();
           return;
         }
         const resp = await fetch(`/api/subscription?email=${encodeURIComponent(email)}`);
@@ -4563,7 +4614,7 @@ ${desc}`;
         const data = await resp.json();
         const tier = data.tier || 'free';
         // Cache the result
-        localStorage.setItem(SUB_CACHE_KEY, JSON.stringify({ email, tier, ts: Date.now(), tierToken: data.tierToken || '' }));
+        localStorage.setItem(SUB_CACHE_KEY, JSON.stringify({ email, tier, ts: Date.now(), tierToken: data.tierToken || '', expiresInDays: data.expiresInDays ?? null, status: data.status || '' }));
         _applySubscriptionTier(tier, true);
       } catch (err) {
         console.warn('Subscription check failed:', err.message);
@@ -4587,9 +4638,63 @@ ${desc}`;
         updateSearchUsageMeter();
       }
       updateTailorUsageMeter?.();
+      renderPricingCard();
       if (notify && tier !== 'free') {
-        const label = tier === 'complete' ? 'Complete' : 'Essential';
-        showToast(`✅ ${label} plan activated — limits updated!`);
+        showToast('✅ Job Hunt Pass activated — unlimited tailoring unlocked!');
+      }
+    }
+
+    // ── Pricing Status Card ──────────────────────────────────────────────────────
+    let _pricingCardPinged = false;
+    function renderPricingCard() {
+      const card = document.getElementById('pricingStatusCard');
+      if (!card) return;
+
+      if (currentTier === 'free') {
+        card.innerHTML = `
+          <div class="pricing-status-card pricing-status-free">
+            <div class="pscard-left">
+              <div class="pscard-label">Free Beta</div>
+              <div class="pscard-desc">3 resume tailors/month · 1 cover letter</div>
+            </div>
+            <button class="pscard-cta" id="pricingCardCta">Unlock 30-Day Pass</button>
+          </div>`;
+        document.getElementById('pricingCardCta')?.addEventListener('click', () => {
+          _pingTracker('pricing_cta_click');
+          openUpgradeModal();
+        });
+        if (!_pricingCardPinged) { _pingTracker('pricing_card_view'); _pricingCardPinged = true; }
+      } else {
+        // Pass active — read expiry from cache
+        const cached = (() => { try { return JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || 'null'); } catch { return null; } })();
+        const expiresInDays = cached?.expiresInDays ?? null;
+        const status = cached?.status || '';
+        const isBeta = status === 'beta';
+
+        let expiryLine = '';
+        if (isBeta) {
+          expiryLine = '<div class="pscard-desc">Beta access · unlimited</div>';
+        } else if (expiresInDays != null) {
+          const soon = expiresInDays <= 5;
+          expiryLine = `<div class="pscard-desc${soon ? ' pscard-expiring' : ''}">Expires in ${expiresInDays} day${expiresInDays === 1 ? '' : 's'}</div>`;
+        } else {
+          expiryLine = '<div class="pscard-desc">Pass active</div>';
+        }
+
+        const showRenew = !isBeta && expiresInDays != null && expiresInDays <= 5;
+        card.innerHTML = `
+          <div class="pricing-status-card pricing-status-active">
+            <div class="pscard-left">
+              <div class="pscard-label pscard-label-active">✓ Job Hunt Pass Active</div>
+              ${expiryLine}
+            </div>
+            ${showRenew ? `<button class="pscard-cta pscard-cta-renew" id="pricingCardRenew">Renew Pass</button>` : ''}
+          </div>`;
+        document.getElementById('pricingCardRenew')?.addEventListener('click', () => {
+          _pingTracker('pass_renew_click');
+          openUpgradeModal();
+        });
+        _pingTracker('pass_active_view');
       }
     }
 

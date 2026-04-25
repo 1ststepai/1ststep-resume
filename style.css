@@ -843,6 +843,87 @@
 
     #clNudge span { line-height: 1.4; }
 
+    /* ── Pricing status card (below Generate button) ── */
+    .pricing-status-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 13px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+    }
+
+    .pricing-status-free { border-color: rgba(99,102,241,0.25); background: rgba(99,102,241,0.04); }
+    .pricing-status-active { border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.04); }
+
+    .pscard-left { flex: 1; min-width: 0; }
+
+    .pscard-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text2);
+      margin-bottom: 1px;
+    }
+
+    .pscard-label-active { color: var(--green); }
+
+    .pscard-desc {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .pscard-expiring { color: #F59E0B; font-weight: 600; }
+
+    .pscard-cta {
+      flex-shrink: 0;
+      padding: 6px 12px;
+      background: linear-gradient(135deg,#4F46E5,#6366F1);
+      color: white;
+      border: none;
+      border-radius: 7px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+
+    .pscard-cta:hover { opacity: 0.88; }
+    .pscard-cta-renew { background: linear-gradient(135deg,#D97706,#F59E0B); }
+
+    /* ── Vault lock gate ── */
+    .vault-lock-gate {
+      position: relative;
+      margin-top: 4px;
+    }
+
+    .vault-lock-blurred {
+      filter: blur(3px);
+      pointer-events: none;
+      user-select: none;
+      opacity: 0.6;
+    }
+
+    .vault-card-locked {
+      pointer-events: none;
+    }
+
+    .vault-lock-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(var(--surface-rgb, 255,255,255), 0.7);
+      backdrop-filter: blur(2px);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
     #clNudgeBtn {
       background: none;
       border: none;
