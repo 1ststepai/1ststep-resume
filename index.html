@@ -353,7 +353,7 @@
 
             <!-- Tier + Run -->
             <div class="run-section">
-              <div class="tier-select" id="tierSelectWrap" style="margin-bottom:12px;display:none">
+              <div class="tier-select" id="tierSelectWrap" style="margin-bottom:12px">
                 <button class="tier-btn active" id="tierEssential"><strong>Resume Only</strong></button>
                 <button class="tier-btn complete-tier" id="tierComplete"><strong>Resume + Cover Letter</strong><span class="tier-lock" id="clLockIcon"></span></button>
               </div>
@@ -371,6 +371,8 @@
                   <div id="tailorUsageBar" style="height:100%;width:0%;background:var(--green);border-radius:100px;transition:width 0.4s ease,background 0.4s ease"></div>
                 </div>
               </div>
+              <!-- Pricing status card — rendered by renderPricingCard() -->
+              <div id="pricingStatusCard" style="margin-top:10px"></div>
             </div>
 
           </div><!-- /hero-right -->
@@ -461,6 +463,10 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
               Tracker
             </button>
+            <button class="rab-btn rab-btn-cover" id="rabCoverLetter" style="display:none">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+              + Cover Letter
+            </button>
           </div>
 
           <!-- Tracker auto-save confirmation — shown briefly after each tailor -->
@@ -469,6 +475,19 @@
             <span>Added to Tracker as <strong style="color:var(--text)">Resume Ready</strong></span>
             <button id="trackerConfirmViewBtn" style="margin-left:auto;background:none;border:none;color:var(--brand);font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;padding:0;white-space:nowrap">View Tracker →</button>
             <button id="trackerConfirmDismissBtn" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0;flex-shrink:0">✕</button>
+          </div>
+
+          <!-- Cover letter nudge — shown after tailoring when outputMode is 'essential' -->
+          <div id="clNudge" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            <span>Want a matching cover letter? <button id="clNudgeBtn">Add it in one click →</button></span>
+          </div>
+
+          <!-- Post-result upgrade card — shown for free users after a successful tailor -->
+          <div id="postResultPassCard" style="display:none;margin:8px 16px 0;padding:12px 16px;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.18);border-radius:10px">
+            <div style="font-size:13px;font-weight:600;color:var(--text)">Applying to more jobs?</div>
+            <div style="font-size:12px;color:var(--text2);margin:4px 0 10px;line-height:1.45">Unlock unlimited tailoring for 30 days — no subscription.</div>
+            <button id="postResultPassBtn" style="padding:8px 16px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border:none;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer">Get Job Hunt Pass</button>
           </div>
 
           <div class="results-topbar">
@@ -1123,111 +1142,44 @@
     </div>
   </div>
 
-  <!-- ── Upgrade / Plan Picker Modal ─────────────────────────── -->
-  <div class="modal-overlay" id="upgradeModal">
-    <div class="modal" style="width:580px;padding:32px">
+  <!-- ── 30-Day Job Hunt Pass Modal ──────────────────────────────────────── -->
+  <div class="modal-overlay" id="upgradeModal" style="display:none">
+    <div class="modal" style="max-width:440px;width:100%;padding:32px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <h2 style="font-size:20px;font-weight:800;margin:0">Choose your plan</h2>
-        <button id="upgradeModalCloseBtn"
-          style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1">✕</button>
+        <h2 style="font-size:19px;font-weight:800;margin:0;color:var(--text)" id="paywallHeadline">Keep your job search moving</h2>
+        <button id="upgradeModalCloseBtn" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1">✕</button>
       </div>
-      <p style="color:var(--muted);font-size:13px;margin:0 0 16px">You're on the <strong style="color:var(--fg)">Free
-          plan</strong> — 3 tailors, 5 searches/mo. Upgrade for more.</p>
+      <p style="color:var(--text2);font-size:13px;margin:0 0 20px;line-height:1.5" id="paywallSubheadline">You've used your free credits. Unlock unlimited resume tailoring, cover letters, and job tracking for the next 30 days.</p>
 
-      <!-- Billing toggle -->
-      <div
-        style="display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:20px;background:var(--input-bg);border:1px solid var(--border);border-radius:100px;padding:3px;width:fit-content;margin-left:auto;margin-right:auto">
-        <button id="modal-btn-monthly"
-          style="padding:5px 16px;border-radius:100px;border:none;font-size:12px;font-weight:600;cursor:pointer;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;font-family:'Inter',sans-serif;transition:all 0.2s">Monthly</button>
-        <button id="modal-btn-annual"
-          style="padding:5px 16px;border-radius:100px;border:none;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted);font-family:'Inter',sans-serif;transition:all 0.2s">Annual
-          <span style="color:#34d399;font-size:10px;font-weight:700">−40%</span></button>
+      <!-- Pass offer card -->
+      <div style="border:2px solid var(--brand);border-radius:14px;padding:20px;background:rgba(99,102,241,0.04);margin-bottom:14px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">30-Day Job Hunt Pass</div>
+            <div style="display:flex;align-items:baseline;gap:3px">
+              <span style="font-size:30px;font-weight:800;color:var(--text)">$24.99</span>
+            </div>
+            <div style="font-size:11.5px;color:var(--text2);margin-top:3px">No subscription. No auto-renewal.</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;font-size:10px;font-weight:700;padding:4px 10px;border-radius:100px;letter-spacing:0.04em;white-space:nowrap;margin-top:2px">30 DAYS</div>
+        </div>
+        <ul style="list-style:none;padding:0;margin:0 0 16px;display:flex;flex-direction:column;gap:7px">
+          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Unlimited tailored resumes</li>
+          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Unlimited cover letters</li>
+          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Full Resume Vault</li>
+          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Full Application Tracker</li>
+          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Chrome extension workflow</li>
+          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Match score for every job</li>
+        </ul>
+        <a id="paywallUnlockBtn" href="https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00" target="_blank"
+          style="display:block;text-align:center;padding:13px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none">
+          Unlock 30-Day Pass →
+        </a>
       </div>
 
-      <div id="pricingGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-        <!-- Free (current) -->
-        <div
-          style="border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px;opacity:0.75">
-          <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase">
-            Free</div>
-          <div>
-            <span style="font-size:24px;font-weight:800">$0</span>
-            <div style="font-size:10px;color:var(--muted);margin-top:2px">Current plan</div>
-          </div>
-          <ul
-            style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:5px">
-            <li>· 5 job searches / mo</li>
-            <li>· 3 resume tailors / mo</li>
-            <li>· ATS optimizer</li>
-            <li>· No cover letters</li>
-          </ul>
-          <div
-            style="margin-top:auto;display:block;text-align:center;padding:8px;background:var(--input-bg);border:1px solid var(--border);color:var(--muted);border-radius:8px;font-size:12px;font-weight:600">
-            Current
-          </div>
-        </div>
-        <!-- Essential -->
-        <div
-          style="border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px">
-          <div style="font-size:11px;font-weight:700;color:var(--blue);letter-spacing:0.05em;text-transform:uppercase">
-            Essential</div>
-          <div>
-            <span id="modal-essential-price" style="font-size:24px;font-weight:800">$19</span><span
-              style="font-size:12px;font-weight:400;color:var(--muted)">/mo</span>
-            <div id="modal-essential-note" style="font-size:10px;color:#34d399;margin-top:2px;min-height:14px"></div>
-          </div>
-          <ul
-            style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:5px">
-            <li>✓ <strong style="color:var(--fg)">60</strong> searches / mo</li>
-            <li>✓ <strong style="color:var(--fg)">30</strong> tailors / mo</li>
-            <li>✓ 30 cover letters / mo</li>
-            <li>✓ ATS keyword optimizer</li>
-            <li>✓ Skill gap analysis</li>
-            <li>✓ Resume builder wizard</li>
-            <li>✓ Interview prep</li>
-          </ul>
-          <a id="modal-essential-cta" href="https://buy.stripe.com/28E00k7OFfCXd0E1MPfIs01" target="_blank"
-            style="margin-top:auto;display:block;text-align:center;padding:9px;background:var(--blue);color:white;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none">
-            Get Essential
-          </a>
-        </div>
-        <!-- Complete -->
-        <div
-          style="border:2px solid var(--blue);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px;position:relative">
-          <div
-            style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;letter-spacing:0.05em;white-space:nowrap">
-            MOST POPULAR</div>
-          <div style="font-size:11px;font-weight:700;color:var(--blue);letter-spacing:0.05em;text-transform:uppercase">
-            Complete</div>
-          <div>
-            <span id="modal-complete-price" style="font-size:24px;font-weight:800">$39</span><span
-              style="font-size:12px;font-weight:400;color:var(--muted)">/mo</span>
-            <div id="modal-complete-note" style="font-size:10px;color:#34d399;margin-top:2px;min-height:14px"></div>
-          </div>
-          <ul
-            style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:5px">
-            <li>✓ <strong style="color:var(--fg)">Unlimited</strong> searches</li>
-            <li>✓ <strong style="color:var(--fg)">Unlimited</strong> tailors</li>
-            <li>✓ Unlimited cover letters</li>
-            <li>✓ ATS keyword optimizer</li>
-            <li>✓ Skill gap analysis</li>
-            <li>✓ Resume builder wizard</li>
-            <li>✓ Interview prep</li>
-            <li>✓ <strong style="color:var(--fg)">Resume templates</strong> (4 formats)</li>
-            <li>✓ AI responsibility suggestions</li>
-          </ul>
-          <a id="modal-complete-cta" href="https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00" target="_blank"
-            style="margin-top:auto;display:block;text-align:center;padding:9px;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none">
-            Get Complete
-          </a>
-        </div>
-      </div>
-      <p style="text-align:center;font-size:11px;color:var(--muted);margin:16px 0 0">Cancel anytime · Secure checkout
-        via Stripe</p>
-      <div style="text-align:center;margin-top:12px">
-        <button id="upgradeVerifyBtn"
-          style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:2px">Already
-          subscribed? Click to verify</button>
+      <button id="paywallDismissBtn" style="width:100%;padding:10px;background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer">Not now</button>
+      <div style="text-align:center;margin-top:10px">
+        <button id="upgradeVerifyBtn" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:2px">Already purchased? Click to verify access</button>
       </div>
     </div>
   </div>

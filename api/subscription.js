@@ -53,6 +53,13 @@ export function verifyTierToken(token) {
   }
 }
 
+// ── Beta email override — BETA_EMAILS env var (comma-separated) ──────────────
+function isBetaEmail(email) {
+  const list = (process.env.BETA_EMAILS || '')
+    .split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+  return list.includes(email.toLowerCase());
+}
+
 // ── Per-IP rate limiter — prevents email enumeration / customer probing ──────
 const subCheckWindows = new Map();
 const SUB_CHECK_WINDOW_MS  = 60_000; // 1 minute
@@ -90,7 +97,7 @@ function corsHeaders(req) {
 /** Map Stripe product name → app tier */
 function productToTier(productName = '') {
   const name = productName.toLowerCase();
-  if (name.includes('complete')) return 'complete';
+  if (name.includes('job hunt pass') || name.includes('complete')) return 'complete';
   if (name.includes('essential')) return 'essential';
   return 'free';
 }
@@ -321,6 +328,11 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'A valid email address is required.', tier: 'free' });
   }
 
+  // Beta override — no Stripe lookup needed
+  if (isBetaEmail(email)) {
+    return res.status(200).json({ tier: 'complete', status: 'beta', expiresAt: null, expiresInDays: null, tierToken: signTierToken(email, 'complete') });
+  }
+
   if (!process.env.STRIPE_SECRET_KEY) {
     console.error('STRIPE_SECRET_KEY not set. Subscription check unavailable.');
     return res.status(200).json({ tier: 'free', error: 'Subscription check unavailable.' });
@@ -353,9 +365,12 @@ export default async function handler(req, res) {
           if (product?.name) {
             const tier = productToTier(product.name);
             if (tier !== 'free') {
-              // Only expose tier and status — no subscriptionId, productName, or billing dates.
-              // Include a short-lived HMAC tierToken so claude.js can verify without re-hitting Stripe.
-              return res.status(200).json({ tier, status: sub.status, tierToken: signTierToken(email, tier) });
+              const passExpMs = customer.metadata?.pass_expires_at ? Number(customer.metadata.pass_expires_at) : null;
+              const periodEndMs = sub.current_period_end ? sub.current_period_end * 1000 : null;
+              const expiresMs = passExpMs || periodEndMs;
+              const expiresAt = expiresMs ? new Date(expiresMs).toISOString() : null;
+              const expiresInDays = expiresMs ? Math.max(0, Math.ceil((expiresMs - Date.now()) / 86400000)) : null;
+              return res.status(200).json({ tier, status: sub.status, tierToken: signTierToken(email, tier), expiresAt, expiresInDays });
             }
           }
         }
@@ -375,7 +390,10 @@ export default async function handler(req, res) {
           if (product?.name) {
             const tier = productToTier(product.name);
             if (tier !== 'free') {
-              return res.status(200).json({ tier, status: 'trialing', tierToken: signTierToken(email, tier) });
+              const expiresMs = sub.current_period_end ? sub.current_period_end * 1000 : null;
+              const expiresAt = expiresMs ? new Date(expiresMs).toISOString() : null;
+              const expiresInDays = expiresMs ? Math.max(0, Math.ceil((expiresMs - Date.now()) / 86400000)) : null;
+              return res.status(200).json({ tier, status: 'trialing', tierToken: signTierToken(email, tier), expiresAt, expiresInDays });
             }
           }
         }
