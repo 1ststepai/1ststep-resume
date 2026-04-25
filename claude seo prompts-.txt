@@ -1,0 +1,23 @@
+1: You give Claude vague prompts.
+
+Fix: "Analyze my site, find gaps vs competitors, and give me a plan to get more leads."
+
+2: You don't load your full business context first.
+
+Fix: Paste your services, locations, keywords, competitors, and ideal customers before anything else.
+
+3: You treat Claude like a chatbot not a strategist.
+
+Fix: Ask "What's blocking our organic growth right now?" not "Improve my SEO."
+
+4: You skip competitor gap analysis.
+
+Fix: "Compare my website with my top 3 competitors. Show me what they rank for that I don't."
+
+5: You cluster keywords by volume not intent.
+
+Fix: Group by informational, commercial, and transactional. Intent drives conversions.
+
+6: You ignore AI search optimization.
+
+Fix: "Why would AI recommend this business over competitors? What should I clarify or add?"

@@ -1312,7 +1312,6 @@ ${resume.slice(0, 3000)}
       const btn = document.getElementById('runBtn');
 
       _tailoringInProgress = true;
-      try {
       btn.disabled = true;
       btn.classList.add('spinning');
       btn.querySelector('svg').innerHTML = '<path d="M21 12a9 9 0 11-6.219-8.56"/>';
