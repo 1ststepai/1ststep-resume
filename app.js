@@ -827,12 +827,9 @@ ${resume.slice(0, 3000)}
       const choiceCard = document.getElementById('resumeChoiceCard');
       if (choiceCard) choiceCard.style.display = (hasJob && !hasResume) ? 'flex' : 'none';
 
-      // When extension delivered the job, trim choice card to Upload + Build only
+      // When extension delivered the job, hide the choice card — JCC modal handles it
       if (window._extensionDetected && hasJob && !hasResume) {
-        const existingBtn = document.getElementById('resumeChoiceExistingBtn');
-        const linkedInBtn = document.getElementById('resumeChoiceLinkedInBtn');
-        if (existingBtn) existingBtn.style.display = 'none';
-        if (linkedInBtn) linkedInBtn.style.display = 'none';
+        if (choiceCard) choiceCard.style.display = 'none';
       }
 
       if (!hasJob && !hasResume) {
@@ -933,13 +930,14 @@ ${resume.slice(0, 3000)}
 
       // Both job + resume ready — skip modal, auto-start tailoring
       if (hasResume) {
-        showToast('Job captured — tailoring now…', 'success');
-        // Small delay lets the job text render and toast show before the API call starts
-        setTimeout(() => runTailoring(), 300);
+        const roleLabel = [jobData.jobTitle, jobData.company].filter(Boolean).join(' at ');
+        showToast(roleLabel ? `Tailoring your resume for ${roleLabel}…` : 'Tailoring your resume…', 'success');
+        document.getElementById('runBtn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => runTailoring(), 400);
         return;
       }
 
-      // No resume — show simplified 2-option card
+      // No resume — show 2-option card (Upload + Build)
       const confirm = document.getElementById('jobCaptureConfirm');
       const titleEl = document.getElementById('jccTitle');
       if (!confirm || !titleEl) return;
@@ -950,15 +948,6 @@ ${resume.slice(0, 3000)}
         ? `Job captured from ${company} — ${title}`
         : company ? `Job captured from ${company}` : title || 'Job captured';
 
-      const sub = confirm.querySelector('.jcc-sub');
-      if (sub) sub.textContent = 'Add your resume to tailor it for this role.';
-
-      // Show only Upload + Build; hide Use Existing + Clear Job
-      const useResumeBtn = document.getElementById('jccUseResumeBtn');
-      const clearJobBtn  = document.getElementById('jccClearJobBtn');
-      if (useResumeBtn) useResumeBtn.style.display = 'none';
-      if (clearJobBtn)  clearJobBtn.style.display  = 'none';
-
       confirm.style.display = 'block';
     }
 
@@ -966,52 +955,13 @@ ${resume.slice(0, 3000)}
       const confirm = document.getElementById('jobCaptureConfirm');
       if (!confirm) return;
       confirm.style.display = 'none';
-      // Reset button visibility for next capture
-      const useResumeBtn = document.getElementById('jccUseResumeBtn');
-      const clearJobBtn  = document.getElementById('jccClearJobBtn');
-      if (useResumeBtn) useResumeBtn.style.display = '';
-      if (clearJobBtn)  clearJobBtn.style.display  = '';
     }
 
     document.getElementById('jccDismissBtn')?.addEventListener('click', hideJobCaptureConfirm);
 
-    document.getElementById('jccUseResumeBtn')?.addEventListener('click', () => {
-      const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
-      if (hasResume) {
-        hideJobCaptureConfirm();
-        document.getElementById('runBtn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      } else {
-        const saved = loadResume();
-        if (saved?.text?.trim()) {
-          if (saved.source === 'file') {
-            fileContent = saved.text;
-            document.getElementById('fileLoaded').style.display = 'flex';
-            document.getElementById('fileDrop').style.display = 'none';
-            if (saved.fileName) document.getElementById('fileName').textContent = saved.fileName;
-          } else {
-            document.getElementById('resumeText').value = saved.text;
-          }
-          updateRunButton();
-          hideJobCaptureConfirm();
-          showToast('Resume loaded ✓', 'success');
-          document.getElementById('runBtn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else {
-          showToast('No saved resume found — upload one or build a new one.', 'info');
-        }
-      }
-    });
-
     document.getElementById('jccUploadBtn')?.addEventListener('click', () => {
       hideJobCaptureConfirm();
       document.getElementById('fileInput')?.click();
-    });
-
-    document.getElementById('jccClearJobBtn')?.addEventListener('click', () => {
-      const jobText = document.getElementById('jobText');
-      if (jobText) { jobText.value = ''; jobText.dispatchEvent(new Event('input')); }
-      clearJobContext();
-      window._capturedJob = null;
-      hideJobCaptureConfirm();
     });
 
     // ── Feature Help Menu ─────────────────────────────────────────────────────
