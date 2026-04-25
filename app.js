@@ -5258,7 +5258,16 @@ Output plain text only — no markdown, no asterisks, no hashtags.`,
         fileContent = '';  // clear any file upload state
         const resumeTextEl = document.getElementById('resumeText');
         if (resumeTextEl) resumeTextEl.value = finalResume;
-        saveResume({ source: 'text', text: finalResume, fileName: 'LinkedIn Profile' });
+        saveResume({ source: 'linkedin-pdf', text: finalResume, fileName: 'LinkedIn Profile' });
+
+        // Update file chip so the drop zone is replaced with the loaded state
+        const fileDrop   = document.getElementById('fileDrop');
+        const fileLoaded = document.getElementById('fileLoaded');
+        const fileName   = document.getElementById('fileName');
+        if (fileDrop)   fileDrop.style.display   = 'none';
+        if (fileLoaded) fileLoaded.style.display  = 'flex';
+        if (fileName)   fileName.textContent      = 'LinkedIn Profile';
+
         updateCounts();
         refreshSetupSteps();
         updateRunButton();
@@ -6240,18 +6249,17 @@ ${_PRINT_BTN}
         }
 
         // Sanitize and load into the resume input exactly like a regular upload
+        fileContent = '';  // clear any previously uploaded file so LinkedIn import wins
         const sanitized = sanitizeResumeText(text);
         document.getElementById('resumeText').value = sanitized;
         saveResume({ source: 'linkedin-pdf', text: sanitized });
 
         // Show the file-loaded badge
         document.getElementById('fileLoaded').style.display = 'flex';
-        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileName').textContent = 'LinkedIn Profile';
         document.getElementById('fileDrop').style.display = 'none';
 
-        // Reveal the JD section
-        document.getElementById('jdSection').style.display = 'block';
-
+        updateRunButton();
         showToast('✅ LinkedIn profile imported! Now paste a job description.', 'success');
       } catch (err) {
         console.error('LinkedIn PDF import error:', err);
