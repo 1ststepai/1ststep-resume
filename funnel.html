@@ -437,8 +437,8 @@
         <li><span class="check">✓</span> Full match breakdown</li>
       </ul>
 
-      <div class="paywall-price">$24.99<span style="font-size:14px;font-weight:500;color:var(--muted)">/mo</span></div>
-      <div class="paywall-cancel">Cancel anytime.</div>
+      <div class="paywall-price">$24.99<span style="font-size:14px;font-weight:500;color:var(--muted)"> one-time</span></div>
+      <div class="paywall-cancel">One-time payment. No subscription.</div>
 
       <button class="btn btn-primary" id="unlockBtn">🔒 Unlock My Resume</button>
 
@@ -483,8 +483,39 @@ function setJobLabel(title, company) {
   });
 }
 
-// ── Read URL params (fallback when extension not present) ────────
+// ── Apply job data to state + UI ─────────────────────────────────
+function applyJobCapture(jobData, resumeText, persist) {
+  S.jobTitle       = jobData.jobTitle       || '';
+  S.company        = jobData.company        || '';
+  S.jobDescription = jobData.jobDescription || '';
+  setJobLabel(S.jobTitle, S.company);
+
+  if (resumeText && resumeText.length > 100) {
+    S.resumeText = resumeText;
+    document.getElementById('uploadSub').textContent =
+      'Your resume was loaded from the extension. Click below to tailor it.';
+    document.getElementById('dropZone').style.display = 'none';
+    document.querySelector('.btn-row').style.display  = 'none';
+    document.getElementById('continueBtn').disabled   = false;
+  }
+
+  if (persist) {
+    try { sessionStorage.setItem('1ststep_funnel_job', JSON.stringify({ jobData, resumeText })); } catch (_) {}
+  }
+}
+
+// ── Restore job context on load ──────────────────────────────────
 (function() {
+  // 1. sessionStorage — survives page refresh within the same tab session
+  try {
+    const saved = sessionStorage.getItem('1ststep_funnel_job');
+    if (saved) {
+      const { jobData, resumeText } = JSON.parse(saved);
+      if (jobData) applyJobCapture(jobData, resumeText, false);
+    }
+  } catch (_) {}
+
+  // 2. URL params — direct link / share fallback
   const p = new URLSearchParams(location.search);
   if (p.get('title') || p.get('jd')) {
     S.jobTitle       = p.get('title')   || '';
@@ -498,22 +529,8 @@ function setJobLabel(title, company) {
 window.addEventListener('message', e => {
   if (e.origin !== location.origin) return;
   if (!e.data || e.data.type !== '1STSTEP_JOB_CAPTURE') return;
-
   const { jobData, resumeText } = e.data;
-  S.jobTitle       = jobData.jobTitle       || '';
-  S.company        = jobData.company        || '';
-  S.jobDescription = jobData.jobDescription || '';
-  setJobLabel(S.jobTitle, S.company);
-
-  // Resume synced from extension — skip the upload step
-  if (resumeText && resumeText.length > 100) {
-    S.resumeText = resumeText;
-    document.getElementById('uploadSub').textContent =
-      'Your resume was loaded from the extension. Click below to tailor it.';
-    document.getElementById('dropZone').style.display = 'none';
-    document.querySelector('.btn-row').style.display  = 'none';
-    document.getElementById('continueBtn').disabled   = false;
-  }
+  applyJobCapture(jobData, resumeText, true);
 });
 
 // ── DOM refs ─────────────────────────────────────────────────────

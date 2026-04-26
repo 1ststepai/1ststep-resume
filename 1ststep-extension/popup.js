@@ -127,7 +127,7 @@ function showJobCard(job, auth) {
   }
 
   tailorBtn.onclick   = () => openInApp(job, tailorBtn);
-  autofillBtn.onclick = () => autofillPage(auth, autofillBtn);
+  if (autofillBtn) autofillBtn.onclick = () => autofillPage(auth, autofillBtn);
 
   // Resume already synced — auto-trigger without requiring a click
   if (auth.resume) {
