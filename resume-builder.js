@@ -1291,9 +1291,9 @@ Return ONLY a JSON array of 7 strings. No markdown, no explanation.`,
     bulletsContainer.insertAdjacentHTML('beforebegin', panelHtml);
 
   } catch (err) {
-    console.warn('inferResponsibilities failed silently:', err);
+    console.warn('inferResponsibilities failed:', err);
     document.getElementById(loaderId)?.remove();
-    // Fail silently — user can still type bullets manually
+    if (typeof showToast === 'function') showToast('Couldn\'t load suggestions — add your own bullets.', 'info');
   }
 }
 
