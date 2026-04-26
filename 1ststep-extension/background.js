@@ -144,7 +144,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           pendingJobs[jobCaptureId] = { jobData: request.jobData, createdAt: now };
           await chrome.storage.local.set({ pendingJobs });
 
-          const targetUrl = `${APP_URL}?jobCaptureId=${jobCaptureId}`;
+          const targetUrl = `${APP_URL}/funnel?jobCaptureId=${jobCaptureId}`;
           const existingTabs = await chrome.tabs.query({ url: `${APP_URL}/*` });
           if (existingTabs.length > 0) {
             await chrome.tabs.update(existingTabs[0].id, { active: true, url: targetUrl });
