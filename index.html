@@ -486,7 +486,7 @@
           <!-- Post-result upgrade card — shown for free users after a successful tailor -->
           <div id="postResultPassCard" style="display:none;margin:8px 16px 0;padding:12px 16px;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.18);border-radius:10px">
             <div style="font-size:13px;font-weight:600;color:var(--text)">Applying to more jobs?</div>
-            <div style="font-size:12px;color:var(--text2);margin:4px 0 10px;line-height:1.45">Unlock unlimited tailoring for 30 days — no subscription.</div>
+            <div style="font-size:12px;color:var(--text2);margin:4px 0 10px;line-height:1.45">Unlock unlimited tailoring — cancel anytime.</div>
             <button id="postResultPassBtn" style="padding:8px 16px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border:none;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer">Get Job Hunt Pass</button>
           </div>
 
@@ -1142,26 +1142,26 @@
     </div>
   </div>
 
-  <!-- ── 30-Day Job Hunt Pass Modal ──────────────────────────────────────── -->
+  <!-- ── Job Hunt Pass Modal ──────────────────────────────────────────────── -->
   <div class="modal-overlay" id="upgradeModal" style="display:none">
     <div class="modal" style="max-width:440px;width:100%;padding:32px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <h2 style="font-size:19px;font-weight:800;margin:0;color:var(--text)" id="paywallHeadline">Keep your job search moving</h2>
         <button id="upgradeModalCloseBtn" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1">✕</button>
       </div>
-      <p style="color:var(--text2);font-size:13px;margin:0 0 20px;line-height:1.5" id="paywallSubheadline">You've used your free credits. Unlock unlimited resume tailoring, cover letters, and job tracking for the next 30 days.</p>
+      <p style="color:var(--text2);font-size:13px;margin:0 0 20px;line-height:1.5" id="paywallSubheadline">You've used your free credits. Unlock unlimited resume tailoring, cover letters, and job tracking — cancel anytime.</p>
 
       <!-- Pass offer card -->
       <div style="border:2px solid var(--brand);border-radius:14px;padding:20px;background:rgba(99,102,241,0.04);margin-bottom:14px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
           <div>
-            <div style="font-size:11px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">30-Day Job Hunt Pass</div>
+            <div style="font-size:11px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Job Hunt Pass</div>
             <div style="display:flex;align-items:baseline;gap:3px">
-              <span style="font-size:30px;font-weight:800;color:var(--text)">$24.99</span>
+              <span style="font-size:30px;font-weight:800;color:var(--text)">$24.99</span><span style="font-size:13px;color:var(--text2)">/mo</span>
             </div>
-            <div style="font-size:11.5px;color:var(--text2);margin-top:3px">No subscription. No auto-renewal.</div>
+            <div style="font-size:11.5px;color:var(--text2);margin-top:3px">Cancel anytime · Secure checkout via Stripe</div>
           </div>
-          <div style="background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;font-size:10px;font-weight:700;padding:4px 10px;border-radius:100px;letter-spacing:0.04em;white-space:nowrap;margin-top:2px">30 DAYS</div>
+          <div style="background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;font-size:10px;font-weight:700;padding:4px 10px;border-radius:100px;letter-spacing:0.04em;white-space:nowrap;margin-top:2px">MONTHLY</div>
         </div>
         <ul style="list-style:none;padding:0;margin:0 0 16px;display:flex;flex-direction:column;gap:7px">
           <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Unlimited tailored resumes</li>
@@ -1173,13 +1173,14 @@
         </ul>
         <a id="paywallUnlockBtn" href="https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00" target="_blank"
           style="display:block;text-align:center;padding:13px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none">
-          Unlock 30-Day Pass →
+          🔒 Start Job Hunt Pass
         </a>
       </div>
 
-      <button id="paywallDismissBtn" style="width:100%;padding:10px;background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer">Not now</button>
-      <div style="text-align:center;margin-top:10px">
-        <button id="upgradeVerifyBtn" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:2px">Already purchased? Click to verify access</button>
+      <p style="text-align:center;font-size:11.5px;color:var(--muted);margin:10px 0 4px">No commitment. Cancel anytime.</p>
+      <button id="paywallDismissBtn" style="width:100%;padding:8px;background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer">Not now</button>
+      <div style="text-align:center;margin-top:6px">
+        <button id="upgradeVerifyBtn" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:2px">Already subscribed? Click to verify access</button>
       </div>
     </div>
   </div>

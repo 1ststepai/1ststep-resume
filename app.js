@@ -2037,8 +2037,8 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
         <div class="error-box" style="text-align:center;padding:32px 24px">
           <div style="font-size:2rem;margin-bottom:8px">🔒</div>
           <strong style="font-size:1.1rem">You've used your ${getLimit('tailors')} free tailors this month</strong>
-          <p style="margin:10px 0 20px;opacity:0.85">Most users land interviews within the first week.<br>Unlock unlimited tailoring for 30 days — no subscription.</p>
-          <button class="btn-run" style="width:auto;padding:10px 28px;font-size:0.95rem" id="limitErrorPassBtn">Unlock 30-Day Pass →</button>
+          <p style="margin:10px 0 20px;opacity:0.85">Most users land interviews within the first week.<br>Unlock unlimited tailoring — cancel anytime.</p>
+          <button class="btn-run" style="width:auto;padding:10px 28px;font-size:0.95rem" id="limitErrorPassBtn">Unlock Job Hunt Pass →</button>
         </div>`;
           document.getElementById('limitErrorPassBtn')?.addEventListener('click', openUpgradeModal);
           setTimeout(() => openUpgradeModal(), 400);
@@ -2046,9 +2046,9 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
           document.getElementById('resumeOutput').innerHTML = `
         <div class="error-box" style="text-align:center;padding:32px 24px">
           <div style="font-size:2rem;margin-bottom:8px">🔒</div>
-          <strong style="font-size:1.1rem">30-Day pass required</strong>
+          <strong style="font-size:1.1rem">Job Hunt Pass required</strong>
           <p style="margin:10px 0 20px;opacity:0.85">This feature requires the Job Hunt Pass.</p>
-          <button class="btn-run" style="width:auto;padding:10px 28px;font-size:0.95rem" id="tierErrorPassBtn">Unlock 30-Day Pass →</button>
+          <button class="btn-run" style="width:auto;padding:10px 28px;font-size:0.95rem" id="tierErrorPassBtn">Unlock Job Hunt Pass →</button>
         </div>`;
           document.getElementById('tierErrorPassBtn')?.addEventListener('click', openUpgradeModal);
           setTimeout(() => openUpgradeModal(), 400);
@@ -2485,7 +2485,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       essential: { searches: 60, tailors: 30, coverLetters: 30, vaultVisible: 999 },
       complete:  { searches: 999, tailors: 999, coverLetters: 999, vaultVisible: 999 },
     };
-    // 30-Day Job Hunt Pass — one-time Stripe checkout (no subscription)
+    // Job Hunt Pass — monthly Stripe subscription
     const STRIPE_PASS_URL = 'https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00';
     // Stripe payment links (legacy — kept for backwards compat)
     const STRIPE_LINKS = {
@@ -2503,21 +2503,20 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
     const UPGRADE_URL = STRIPE_ESSENTIAL;
 
     function openUpgradeModal(context) {
-      _pingTracker('paywall_view');
-      // Customise copy based on trigger context
-      const headline = document.getElementById('paywallHeadline');
-      const sub = document.getElementById('paywallSubheadline');
-      if (context === 'coverLetter' && sub) {
-        if (headline) headline.textContent = 'Need more cover letters?';
-        sub.textContent = 'Your free plan includes 1 cover letter. Unlock unlimited cover letters for 30 days.';
-      } else if (context === 'vault' && sub) {
-        if (headline) headline.textContent = 'Unlock your full Resume Vault';
-        sub.textContent = 'Your tailored resumes are saved. Upgrade to access every version.';
+      _pingTracker(‘paywall_view’);
+      const headline = document.getElementById(‘paywallHeadline’);
+      const sub = document.getElementById(‘paywallSubheadline’);
+      if (context === ‘coverLetter’ && sub) {
+        if (headline) headline.textContent = ‘Need more cover letters?’;
+        sub.textContent = ‘Unlimited cover letters are included with Job Hunt Pass.’;
+      } else if (context === ‘vault’ && sub) {
+        if (headline) headline.textContent = ‘Unlock your full Resume Vault’;
+        sub.textContent = ‘Your tailored resumes are saved. Upgrade to access every version.’;
       } else {
-        if (headline) headline.textContent = 'Keep your job search moving';
-        if (sub) sub.textContent = 'You’ve used your free credits. Unlock unlimited resume tailoring, cover letters, and job tracking for the next 30 days.';
+        if (headline) headline.textContent = ‘Upgrade to Job Hunt Pass’;
+        if (sub) sub.textContent = ‘Unlimited resumes, cover letters, and tracking while you\’re job hunting.’;
       }
-      document.getElementById('upgradeModal').style.display = 'flex';
+      document.getElementById(‘upgradeModal’).style.display = ‘flex’;
     }
     function closeUpgradeModal() { document.getElementById('upgradeModal').style.display = 'none'; }
 
@@ -4164,7 +4163,7 @@ ${desc}`;
         <div class="vault-lock-overlay">
           <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Unlock your full Resume Vault</div>
           <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.4">Your tailored resumes are saved.<br>Upgrade to access every version.</div>
-          <button id="vaultLockCta" style="padding:9px 20px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Unlock 30-Day Pass</button>
+          <button id="vaultLockCta" style="padding:9px 20px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Unlock Job Hunt Pass</button>
         </div>
       </div>`;
       }
@@ -4587,6 +4586,13 @@ ${desc}`;
     const SUB_CACHE_KEY = '1ststep_sub_cache';
     const SUB_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 
+    function hasActiveSubscription() {
+      try {
+        const cached = JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || 'null');
+        return !!(cached && cached.tier !== 'free' && cached.status === 'active');
+      } catch { return false; }
+    }
+
     async function verifySubscription(email) {
       if (!email || IS_LOCAL_DEV) return; // skip in local dev
       if (email === DEV_EMAIL) return; // dev bypass — tier already set in checkBetaAccess
@@ -4657,7 +4663,7 @@ ${desc}`;
               <div class="pscard-label">Free Beta</div>
               <div class="pscard-desc">3 resume tailors/month · 1 cover letter</div>
             </div>
-            <button class="pscard-cta" id="pricingCardCta">Unlock 30-Day Pass</button>
+            <button class="pscard-cta" id="pricingCardCta">Unlock Job Hunt Pass</button>
           </div>`;
         document.getElementById('pricingCardCta')?.addEventListener('click', () => {
           _pingTracker('pricing_cta_click');
@@ -5506,6 +5512,28 @@ ${job.jd.slice(0, 1000)}
       checkBetaAccess().finally(() => {
         cover.style.opacity = '0';
         setTimeout(() => cover.remove(), 220);
+
+        // Detect Stripe success redirect (?success=1) and optimistically activate subscription
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('success') === '1') {
+          const profile = loadProfile();
+          if (profile?.email) {
+            const existing = JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || '{}');
+            // Set a short TTL so Stripe is re-verified within 30s
+            localStorage.setItem(SUB_CACHE_KEY, JSON.stringify({
+              ...existing,
+              email: profile.email,
+              tier: 'complete',
+              status: 'active',
+              ts: Date.now() - SUB_CACHE_TTL + 30_000,
+            }));
+            _applySubscriptionTier('complete', false);
+            showToast('✅ Job Hunt Pass activated — welcome!');
+          }
+          const cleanUrl = new URL(window.location.href);
+          cleanUrl.searchParams.delete('success');
+          window.history.replaceState({}, '', cleanUrl.toString());
+        }
       });
     });
 
