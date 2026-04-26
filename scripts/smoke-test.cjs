@@ -38,7 +38,7 @@ if (html) {
   if (/<link[^>]+href=["']style\.css["']/.test(html)) pass('style.css linked in <head>');
   else fail('style.css NOT linked in <head>');
 
-  if (/<script[^>]+src=["']app\.js["']/.test(html)) pass('app.js linked before </body>');
+  if (/<script[^>]+src=["']app\.js(?:\?[^"']*)?["']/.test(html)) pass('app.js linked before </body>');
   else fail('app.js NOT linked');
 
   // Orphaned content after </html>
