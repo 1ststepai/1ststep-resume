@@ -333,12 +333,12 @@
       <div class="drop-zone" id="dropZone">
         <div class="drop-icon">📄</div>
         <div class="drop-text" id="dropText">Drop your resume here</div>
-        <div class="drop-hint" id="dropHint">PDF or DOCX · or click to browse</div>
+        <div class="drop-hint" id="dropHint">.txt · or paste below</div>
       </div>
-      <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt">
+      <input type="file" id="fileInput" accept=".txt">
 
       <div class="btn-row">
-        <button class="btn btn-secondary" id="browseBtn">Upload PDF or DOCX</button>
+        <button class="btn btn-secondary" id="browseBtn">Upload .txt resume</button>
         <button class="btn btn-secondary" id="pasteToggleBtn">Paste text instead</button>
       </div>
 
@@ -560,8 +560,16 @@ fileInput.addEventListener('change', async () => {
   try {
     S.resumeText = await readFile(file);
     markResumeReady(file.name);
-  } catch {
-    err(uploadErrBox, 'Could not read file. Try pasting the text instead.');
+  } catch (e) {
+    fileInput.value = '';
+    if (e.message === 'BINARY_FILE') {
+      err(uploadErrBox, 'PDF and DOCX can\'t be read in-browser. Use "Paste text instead" to paste your resume.');
+      pasteArea.classList.add('visible');
+      pasteToggle.textContent = 'Hide paste area';
+      pasteArea.focus();
+    } else {
+      err(uploadErrBox, 'Could not read file. Try pasting the text instead.');
+    }
   }
 });
 
@@ -575,8 +583,15 @@ dropZone.addEventListener('drop', async e => {
   try {
     S.resumeText = await readFile(file);
     markResumeReady(file.name);
-  } catch {
-    err(uploadErrBox, 'Could not read file. Try pasting instead.');
+  } catch (e) {
+    if (e.message === 'BINARY_FILE') {
+      err(uploadErrBox, 'PDF and DOCX can\'t be read in-browser. Use "Paste text instead" to paste your resume.');
+      pasteArea.classList.add('visible');
+      pasteToggle.textContent = 'Hide paste area';
+      pasteArea.focus();
+    } else {
+      err(uploadErrBox, 'Could not read file. Try pasting instead.');
+    }
   }
 });
 
@@ -600,25 +615,23 @@ function markResumeReady(filename) {
 }
 
 async function readFile(file) {
+  if (!file.name.toLowerCase().endsWith('.txt')) throw new Error('BINARY_FILE');
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload  = e => resolve(e.target.result);
     reader.onerror = () => reject(new Error('read error'));
-    // Text files decoded directly; PDF/DOCX sent as dataURL for backend decoding
-    file.name.toLowerCase().endsWith('.txt')
-      ? reader.readAsText(file)
-      : reader.readAsDataURL(file);
+    reader.readAsText(file);
   });
 }
 
 // ── Continue → loading ───────────────────────────────────────────
 continueBtn.addEventListener('click', () => {
   if (!S.jobDescription) {
-    err(uploadErrBox, 'No job description found. Make sure you opened this from a job listing via the extension.');
+    err(uploadErrBox, 'No job description found. Make sure you opened this page from a job listing via the extension.');
     return;
   }
-  if (!S.resumeText) {
-    err(uploadErrBox, 'Please upload or paste your resume first.');
+  if (!S.resumeText || S.resumeText.startsWith('data:')) {
+    err(uploadErrBox, 'Please upload a .txt file or paste your resume text first.');
     return;
   }
   err(uploadErrBox, '');
@@ -656,6 +669,12 @@ function applyStep({ pct, icon, msg }) {
 
 // ── Tailoring API call ───────────────────────────────────────────
 async function startTailoring() {
+  // Guard: dataURL slip-through (shouldn't happen after readFile fix, but be explicit)
+  if (S.resumeText.startsWith('data:')) {
+    err(uploadErrBox, 'PDF and DOCX can\'t be parsed. Please paste your resume text instead.');
+    return;
+  }
+
   show('loading');
   startLoadAnim();
 
@@ -669,32 +688,61 @@ async function startTailoring() {
   S.matchBefore = estimateBefore(S.resumeText, S.jobDescription);
 
   try {
+    const userMessage =
+`Rewrite this resume to maximize ATS match for the following job.
+
+RULES:
+1. Never add experience, skills, or credentials the candidate does not have
+2. Reorder bullets to surface the most relevant experience first
+3. Rewrite bullets to lead with exact keywords from the job description
+4. Write a new professional summary targeting this specific role
+5. Format as clean plain text — no markdown, no tables, no columns
+6. Preserve all company names, titles, dates, and achievements exactly
+
+<job_description>
+${S.jobDescription.slice(0, 6000)}
+</job_description>
+
+<resume>
+${S.resumeText.slice(0, 8000)}
+</resume>
+
+After the resume, write exactly:
+---BULLETS---
+Then list 4-6 key tailored bullet points from the resume.`;
+
     const res = await fetch('/api/claude', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        callType:       'tailor',
-        resume:         S.resumeText,
-        jobDescription: S.jobDescription,
-        email:          email || 'anonymous',
-        tierToken
+        model:     'claude-sonnet-4-6',
+        max_tokens: 2048,
+        callType:  'tailor',
+        userEmail: email || 'anonymous',
+        tierToken,
+        messages:  [{ role: 'user', content: userMessage }]
       })
     });
 
     if (!res.ok) {
-      const e = await res.json().catch(() => ({}));
-      throw new Error(e.error || 'API ' + res.status);
+      const errData = await res.json().catch(() => ({}));
+      // 403 TIER_REQUIRED — free user; demo fallback is intentional to drive upgrade
+      if (res.status === 403) throw new Error('TIER_REQUIRED');
+      throw new Error(errData.error || 'API ' + res.status);
     }
 
     const data = await res.json();
-    S.tailoredResume = data.resume        || data.tailoredResume || '';
-    S.coverLetter    = data.coverLetter   || '';
-    S.matchAfter     = data.matchScore    || data.score          || estimateAfter(S.matchBefore);
-    S.bullets        = parseBullets(S.tailoredResume);
+    const text = data.content?.[0]?.text || '';
+    if (!text) throw new Error('Empty response');
+
+    const parts = text.split('---BULLETS---');
+    S.tailoredResume = parts[0].trim();
+    S.bullets        = parseBullets(parts[1] || S.tailoredResume);
+    S.matchAfter     = estimateAfter(S.matchBefore);
 
   } catch (e) {
-    // Demo fallback — funnel still works without a real API response
-    console.warn('[1stStep funnel] API error, using demo bullets:', e.message);
+    // TIER_REQUIRED (free user) or transient API failure — demo bullets drive toward paywall
+    console.warn('[1stStep funnel] Tailor fell back to demo:', e.message);
     S.matchAfter = estimateAfter(S.matchBefore);
     S.bullets    = demoBullets(S.jobTitle);
   }
