@@ -2503,20 +2503,20 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
     const UPGRADE_URL = STRIPE_ESSENTIAL;
 
     function openUpgradeModal(context) {
-      _pingTracker(‘paywall_view’);
-      const headline = document.getElementById(‘paywallHeadline’);
-      const sub = document.getElementById(‘paywallSubheadline’);
-      if (context === ‘coverLetter’ && sub) {
-        if (headline) headline.textContent = ‘Need more cover letters?’;
-        sub.textContent = ‘Unlimited cover letters are included with Job Hunt Pass.’;
-      } else if (context === ‘vault’ && sub) {
-        if (headline) headline.textContent = ‘Unlock your full Resume Vault’;
-        sub.textContent = ‘Your tailored resumes are saved. Upgrade to access every version.’;
+      _pingTracker('paywall_view');
+      const headline = document.getElementById('paywallHeadline');
+      const sub = document.getElementById('paywallSubheadline');
+      if (context === 'coverLetter' && sub) {
+        if (headline) headline.textContent = 'Need more cover letters?';
+        sub.textContent = 'Unlimited cover letters are included with Job Hunt Pass.';
+      } else if (context === 'vault' && sub) {
+        if (headline) headline.textContent = 'Unlock your full Resume Vault';
+        sub.textContent = 'Your tailored resumes are saved. Upgrade to access every version.';
       } else {
-        if (headline) headline.textContent = ‘Upgrade to Job Hunt Pass’;
-        if (sub) sub.textContent = ‘Unlimited resumes, cover letters, and tracking while you\’re job hunting.’;
+        if (headline) headline.textContent = 'Upgrade to Job Hunt Pass';
+        if (sub) sub.textContent = 'Unlimited resumes, cover letters, and tracking while you\'re job hunting.';
       }
-      document.getElementById(‘upgradeModal’).style.display = ‘flex’;
+      document.getElementById('upgradeModal').style.display = 'flex';
     }
     function closeUpgradeModal() { document.getElementById('upgradeModal').style.display = 'none'; }
 
