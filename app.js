@@ -501,7 +501,12 @@
       });
       document.getElementById('upgradeModalCloseBtn')?.addEventListener('click', () => { _pingTracker('paywall_dismiss'); closeUpgradeModal(); });
       document.getElementById('paywallDismissBtn')?.addEventListener('click', () => { _pingTracker('paywall_dismiss'); closeUpgradeModal(); });
-      document.getElementById('paywallUnlockBtn')?.addEventListener('click', () => _pingTracker('paywall_unlock_click'));
+      document.getElementById('paywallUnlockBtn')?.addEventListener('click', function() {
+        _pingTracker('paywall_unlock_click');
+        this.style.pointerEvents = 'none';
+        this.style.opacity = '0.7';
+        setTimeout(() => { this.style.pointerEvents = ''; this.style.opacity = ''; }, 3000);
+      });
       document.getElementById('postResultPassBtn')?.addEventListener('click', () => { _pingTracker('pricing_cta_click'); openUpgradeModal(); });
       document.getElementById('modal-btn-monthly')?.addEventListener('click', () => setModalBilling('monthly'));
       document.getElementById('modal-btn-annual')?.addEventListener('click', () => setModalBilling('annual'));
@@ -4151,7 +4156,7 @@ ${desc}`;
 
       let lockedHtml = '';
       if (locked.length > 0) {
-        _pingTracker('vault_limit_view');
+        if (!_vaultLimitPinged) { _pingTracker('vault_limit_view'); _vaultLimitPinged = true; }
         lockedHtml = `
       <div class="vault-lock-gate">
         <div class="vault-lock-blurred">
@@ -4645,6 +4650,7 @@ ${desc}`;
     }
 
     // ── Pricing Status Card ──────────────────────────────────────────────────────
+    let _vaultLimitPinged = false;
     let _pricingCardPinged = false;
     function renderPricingCard() {
       const card = document.getElementById('pricingStatusCard');
@@ -6892,5 +6898,186 @@ ${_PRINT_BTN}
     (function() {
       const saved = localStorage.getItem('1ststep_theme') || 'dark';
       applyTheme(saved);
+    })();
+
+    // ── QA / Dev Helpers ────────────────────────────────────────────────────────
+
+    function _qaRefreshUI() {
+      updateTailorUsageMeter?.();
+      renderPricingCard?.();
+      _vaultLimitPinged = false;
+      _pricingCardPinged = false;
+      if (typeof renderTailoredHistory === 'function') renderTailoredHistory();
+    }
+
+    // window.__test — console helpers for QA without opening DevTools manually
+    window.__test = {
+      setFree(tailors = 0, coverLetters = 0) {
+        const month = new Date().toISOString().slice(0, 7);
+        localStorage.setItem('monthlyUsage', JSON.stringify({ month, searches: 0, tailors, coverLetters }));
+        const cached = (() => { try { return JSON.parse(localStorage.getItem('1ststep_sub_cache') || 'null'); } catch { return null; } })();
+        localStorage.setItem('1ststep_sub_cache', JSON.stringify({ email: cached?.email || '', tier: 'free', ts: Date.now(), tierToken: '', expiresInDays: null, status: 'none' }));
+        console.log(`[__test] free tier set — tailors: ${tailors}/3, coverLetters: ${coverLetters}/1`);
+        window.location.reload();
+      },
+      setPaid(days = 28) {
+        const month = new Date().toISOString().slice(0, 7);
+        localStorage.setItem('monthlyUsage', JSON.stringify({ month, searches: 0, tailors: 0, coverLetters: 0 }));
+        const cached = (() => { try { return JSON.parse(localStorage.getItem('1ststep_sub_cache') || 'null'); } catch { return null; } })();
+        localStorage.setItem('1ststep_sub_cache', JSON.stringify({ email: cached?.email || '', tier: 'complete', ts: Date.now(), tierToken: 'test', expiresInDays: days, status: 'active' }));
+        console.log(`[__test] paid tier set — expires in ${days} days`);
+        window.location.reload();
+      },
+      reset() {
+        localStorage.removeItem('monthlyUsage');
+        localStorage.removeItem('1ststep_sub_cache');
+        console.log('[__test] state reset');
+        window.location.reload();
+      },
+      simulateVault(count = 5) {
+        const existing = (() => { try { return JSON.parse(localStorage.getItem('1ststep_tailor_history') || '[]'); } catch { return []; } })();
+        const entries = Array.from({ length: count }, (_, i) => ({
+          id: 'test_' + i,
+          tailoredAt: new Date(Date.now() - i * 86400000).toISOString(),
+          jobTitle: `Test Role ${i + 1}`,
+          company: `Company ${i + 1}`,
+          resume: 'Sample resume text',
+          matchPct: 60 + i,
+        }));
+        localStorage.setItem('1ststep_tailor_history', JSON.stringify([...entries, ...existing]));
+        console.log(`[__test] vault seeded with ${count} entries`);
+        _qaRefreshUI();
+      },
+      status() {
+        const usage = (() => { try { return JSON.parse(localStorage.getItem('monthlyUsage') || '{}'); } catch { return {}; } })();
+        const sub = (() => { try { return JSON.parse(localStorage.getItem('1ststep_sub_cache') || 'null'); } catch { return null; } })();
+        const vault = (() => { try { return JSON.parse(localStorage.getItem('1ststep_tailor_history') || '[]'); } catch { return []; } })();
+        console.table({ tier: sub?.tier || 'unknown', tailors: usage.tailors || 0, coverLetters: usage.coverLetters || 0, vaultEntries: vault.length, expiresInDays: sub?.expiresInDays ?? 'n/a' });
+      },
+    };
+
+    // window.__runQAChecklist — prints pass/fail for all paywall states
+    window.__runQAChecklist = function() {
+      const month = new Date().toISOString().slice(0, 7);
+      const usage = (() => { try { return JSON.parse(localStorage.getItem('monthlyUsage') || '{}'); } catch { return {}; } })();
+      const sub   = (() => { try { return JSON.parse(localStorage.getItem('1ststep_sub_cache') || 'null'); } catch { return null; } })();
+      const vault = (() => { try { return JSON.parse(localStorage.getItem('1ststep_tailor_history') || '[]'); } catch { return []; } })();
+      const tier  = sub?.tier || 'free';
+      const tailors = usage.tailors || 0;
+      const cls   = usage.coverLetters || 0;
+
+      const pass = (label) => console.log(`%c✔ ${label}`, 'color:#10B981;font-weight:700');
+      const fail = (label) => console.log(`%c✘ ${label}`, 'color:#EF4444;font-weight:700');
+      const info = (label) => console.log(`%c  ${label}`, 'color:#6B7280');
+
+      console.log('%c── 1stStep QA Checklist ──', 'font-weight:900;font-size:13px');
+      info(`Current state: tier=${tier}, tailors=${tailors}/3, coverLetters=${cls}/1, vault=${vault.length} entries`);
+
+      // Usage meter
+      const meter = document.getElementById('tailorUsageMeter');
+      meter?.style.display !== 'none' ? pass('Usage meter visible') : fail('Usage meter hidden');
+
+      // Pricing card
+      const card = document.getElementById('pricingStatusCard');
+      card?.innerHTML ? pass('Pricing status card rendered') : fail('Pricing status card empty');
+
+      // Paywall guard
+      if (tailors >= 3 && tier === 'free') {
+        typeof isLimitReached === 'function' && isLimitReached('tailors') ? pass('Tailor limit correctly detected') : fail('Tailor limit NOT detected');
+      } else {
+        info('Tailor limit: not at limit yet (use __test.setFree(3) to test)');
+      }
+
+      // Cover letter gate
+      if (cls >= 1 && tier === 'free') {
+        typeof isLimitReached === 'function' && isLimitReached('coverLetters') ? pass('Cover letter limit correctly detected') : fail('Cover letter limit NOT detected');
+      } else {
+        info('Cover letter gate: not at limit yet (use __test.setFree(0,1) to test)');
+      }
+
+      // Vault lock
+      if (vault.length > 3 && tier === 'free') {
+        document.querySelector('.vault-lock-gate') ? pass('Vault lock gate rendered') : fail('Vault lock gate missing — open Resume Vault tab to check');
+      } else {
+        info(`Vault lock: need >3 vault entries as free user (use __test.simulateVault(5) to test)`);
+      }
+
+      // Paid state
+      if (tier === 'complete') {
+        const passCard = document.getElementById('postResultPassCard');
+        passCard?.style.display === 'none' || passCard?.style.display === '' ? pass('Post-result upgrade block hidden for paid user') : fail('Post-result upgrade block visible for paid user');
+        pass('Paid tier active — no limits apply');
+      } else {
+        info('Paid state: use __test.setPaid() to test');
+      }
+
+      // Upgrade modal
+      const modal = document.getElementById('upgradeModal');
+      modal ? pass('Paywall modal element present in DOM') : fail('Paywall modal missing from DOM');
+
+      console.log('%c──────────────────────────', 'color:#6B7280');
+      console.log('Run window.__test.status() for a quick state summary.');
+    };
+
+    // ── Debug Panel (?debug=1) ────────────────────────────────────────────────
+    (function initDebugPanel() {
+      if (!/[?&]debug=1/.test(window.location.search)) return;
+
+      const panel = document.createElement('div');
+      panel.id = '__debugPanel';
+      panel.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:99999;background:#1e1e2e;border:1.5px solid #4F46E5;border-radius:12px;padding:16px;min-width:240px;font-family:monospace;font-size:12px;color:#e2e8f0;box-shadow:0 8px 32px rgba(0,0,0,0.4)';
+      panel.innerHTML = `
+        <div style="font-weight:800;font-size:13px;color:#a5b4fc;margin-bottom:12px">🛠 1stStep Debug</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="color:#94a3b8;font-size:11px;margin-bottom:2px">TAILOR USAGE</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button data-qa="free0"  style="${_dbtnStyle()}">0/3</button>
+            <button data-qa="free1"  style="${_dbtnStyle()}">1/3</button>
+            <button data-qa="free2"  style="${_dbtnStyle()}">2/3</button>
+            <button data-qa="free3"  style="${_dbtnStyle('#EF4444')}">3/3 (limit)</button>
+          </div>
+          <div style="color:#94a3b8;font-size:11px;margin-top:6px;margin-bottom:2px">COVER LETTER</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button data-qa="cl0" style="${_dbtnStyle()}">0/1</button>
+            <button data-qa="cl1" style="${_dbtnStyle('#EF4444')}">1/1 (limit)</button>
+          </div>
+          <div style="color:#94a3b8;font-size:11px;margin-top:6px;margin-bottom:2px">TIER</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button data-qa="setFree" style="${_dbtnStyle()}">Free</button>
+            <button data-qa="setPaid" style="${_dbtnStyle('#10B981')}">Paid (28d)</button>
+          </div>
+          <div style="color:#94a3b8;font-size:11px;margin-top:6px;margin-bottom:2px">VAULT</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button data-qa="vault5" style="${_dbtnStyle()}">Seed 5</button>
+            <button data-qa="vaultClear" style="${_dbtnStyle('#EF4444')}">Clear</button>
+          </div>
+          <button data-qa="reset"    style="${_dbtnStyle('#F59E0B')};margin-top:8px;width:100%">Reset All</button>
+          <button data-qa="checklist" style="${_dbtnStyle('#6366F1')};width:100%">Run QA Checklist</button>
+          <button data-qa="status"    style="${_dbtnStyle()};width:100%">Log Status</button>
+        </div>`;
+      document.body.appendChild(panel);
+
+      panel.addEventListener('click', (e) => {
+        const qa = e.target.dataset?.qa;
+        if (!qa) return;
+        const t = window.__test;
+        if (qa === 'free0')    t.setFree(0, 0);
+        else if (qa === 'free1')    t.setFree(1, 0);
+        else if (qa === 'free2')    t.setFree(2, 0);
+        else if (qa === 'free3')    t.setFree(3, 0);
+        else if (qa === 'cl0')      t.setFree(0, 0);
+        else if (qa === 'cl1')      t.setFree(0, 1);
+        else if (qa === 'setFree')  t.setFree(0, 0);
+        else if (qa === 'setPaid')  t.setPaid(28);
+        else if (qa === 'vault5')   t.simulateVault(5);
+        else if (qa === 'vaultClear') { localStorage.removeItem('1ststep_tailor_history'); window.location.reload(); }
+        else if (qa === 'reset')    t.reset();
+        else if (qa === 'checklist') window.__runQAChecklist();
+        else if (qa === 'status')   t.status();
+      });
+
+      function _dbtnStyle(accent = '#4F46E5') {
+        return `padding:5px 10px;background:${accent}22;border:1px solid ${accent}66;color:#e2e8f0;border-radius:6px;cursor:pointer;font-size:11px;font-family:monospace`;
+      }
     })();
 
