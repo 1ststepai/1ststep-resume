@@ -2252,6 +2252,121 @@
       color: var(--red);
     }
 
+    /* ── JOB TRACKER — Pipeline & Status ─────────────────── */
+    .pipeline-section { margin-bottom: 24px; }
+
+    .pipeline-section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .pipeline-count {
+      background: var(--surface2);
+      color: var(--muted);
+      border-radius: 100px;
+      padding: 1px 7px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .pipeline-count.active {
+      background: rgba(99,102,241,0.12);
+      color: var(--brand);
+    }
+
+    .status-select {
+      appearance: none;
+      -webkit-appearance: none;
+      padding: 4px 22px 4px 9px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background-color: var(--surface2);
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394A3B8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 7px center;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      color: var(--text2);
+      cursor: pointer;
+      transition: border-color 0.15s, background-color 0.15s;
+      flex-shrink: 0;
+    }
+
+    .status-select:focus { outline: none; border-color: var(--brand); }
+
+    .status-select.s-not_applied  { color: var(--muted); }
+    .status-select.s-applied      { border-color: rgba(59,130,246,0.5); color: #3B82F6; background-color: rgba(59,130,246,0.08); }
+    .status-select.s-interviewing { border-color: rgba(139,92,246,0.5); color: #8B5CF6; background-color: rgba(139,92,246,0.08); }
+    .status-select.s-offer        { border-color: rgba(16,185,129,0.45); color: var(--green); background-color: rgba(16,185,129,0.08); }
+    .status-select.s-rejected     { border-color: rgba(239,68,68,0.35); color: var(--red); background-color: rgba(239,68,68,0.05); }
+
+    .tailor-card.status-offer    { border-color: rgba(16,185,129,0.35); background: rgba(16,185,129,0.025); }
+    .tailor-card.status-rejected { opacity: 0.6; }
+
+    .followup-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #FFFBEB;
+      border: 1px solid #FDE68A;
+      color: #92400E;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    .next-action-hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 5px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .next-action-hint b { color: var(--brand); font-weight: 700; }
+
+    .match-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-left: 2px;
+    }
+
+    .tailor-card-notes {
+      width: 100%;
+      margin-top: 10px;
+      padding: 7px 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 12px;
+      font-family: 'Inter', sans-serif;
+      resize: vertical;
+      min-height: 38px;
+      max-height: 120px;
+      box-sizing: border-box;
+      transition: border-color 0.15s;
+    }
+    .tailor-card-notes::placeholder { color: var(--muted); }
+    .tailor-card-notes:focus { outline: none; border-color: var(--brand); }
+
     /* ── JOB SEARCH PANEL ────────────────────────────────── */
     .js-panel {
       display: none;

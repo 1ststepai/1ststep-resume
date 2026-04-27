@@ -8,13 +8,13 @@
 const SITE_SELECTORS = {
   linkedin: {
     jobDescriptionSelector: '.jobs-description__content, .jobs-description-content__text, .job-view-layout .jobs-box__html-content, [class*="jobs-description"], .jobs-details__main-content',
-    jobTitleSelector: '.jobs-unified-top-card__job-title h1, .job-details-jobs-unified-top-card__job-title h1, h1.t-24, h1',
-    companySelector: '.jobs-unified-top-card__company-name a, .job-details-jobs-unified-top-card__company-name a, .jobs-unified-top-card__subtitle-primary-grouping a'
+    jobTitleSelector: '.top-card-layout__title, .jobs-unified-top-card__job-title h1, .job-details-jobs-unified-top-card__job-title h1, h1.t-24, h1',
+    companySelector: '.topcard__org-name-link, .jobs-unified-top-card__company-name a, .job-details-jobs-unified-top-card__company-name a, .jobs-unified-top-card__subtitle-primary-grouping a'
   },
   indeed: {
     jobDescriptionSelector: '#jobDescriptionText, .jobsearch-jobDescriptionText, [data-testid="jobsearch-JobComponent-description"]',
     jobTitleSelector: 'h1.jobsearch-JobInfoHeader-title, h1[data-testid="jobsearch-JobInfoHeader-title"]',
-    companySelector: '[data-testid="inlineHeader-companyName"] a, [data-testid="jobsearch-JobInfoHeader-companyNameSimple"]'
+    companySelector: '.jobsearch-InlineCompanyRating div, [data-testid="inlineHeader-companyName"] a, [data-testid="jobsearch-JobInfoHeader-companyNameSimple"]'
   },
   greenhouse: {
     jobDescriptionSelector: '#content .job-post, #app_body, .job-description, [class*="job-description"]',
@@ -130,6 +130,14 @@ function extractCompanyFallback() {
   return null;
 }
 
+// Extract a specific line (0 = first, 1 = second) from job description text as last-resort fallback.
+function extractFromJdLines(jd, lineIndex) {
+  if (!jd) return null;
+  const lines = jd.split('\n').map(l => l.trim()).filter(l => l.length > 1 && l.length < 120);
+  const line = lines[lineIndex] || null;
+  return line && line.length > 2 ? line : null;
+}
+
 // ─── JOB DETECTION ───────────────────────────────────────────
 
 let detectedJob = null;
@@ -145,8 +153,10 @@ function pollForJob() {
 
   const rawTitle   = extractText(SEL.jobTitleSelector);
   const rawCompany = extractText(SEL.companySelector);
-  const jobTitle   = (rawTitle   && rawTitle.length   > 2 ? rawTitle   : extractTitleFallback())   || '';
-  const company    = (rawCompany && rawCompany.length  > 2 ? rawCompany : extractCompanyFallback()) || '';
+  const titleFallback   = extractTitleFallback()   || extractFromJdLines(jd, 0);
+  const companyFallback = extractCompanyFallback() || extractFromJdLines(jd, 1);
+  const jobTitle   = (rawTitle   && rawTitle.length   > 2 ? rawTitle   : titleFallback)   || 'Unknown Role';
+  const company    = (rawCompany && rawCompany.length  > 2 ? rawCompany : companyFallback) || '';
 
   detectedJob = { site: SITE, jobTitle, company, jobDescription: jd, applyUrl: location.href };
   console.log(`[1stStep] Job detected: "${jobTitle}" at "${company}" (${SITE})`);

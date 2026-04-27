@@ -123,6 +123,14 @@ const RATE_LIMIT_MAX_CALLS = 15;     // max Claude calls per IP per minute
 // requiring an external database.
 const monthlyIpUsage = new Map();
 
+// ── Abuse volume counter — triggers upgrade alert to persistent KV banning ──
+// Counts unique IPs that have been monthly-limit-blocked this instance lifetime.
+// When KV_ABUSE_THRESHOLD distinct IPs are blocked, fire a one-time alert
+// recommending the Vercel KV upgrade for persistent IP banning.
+const blockedIpsThisInstance = new Set();
+const KV_ABUSE_THRESHOLD = 5; // 5 distinct IPs blocked → alert once
+let kvAlertFired = false;
+
 // Server-side monthly limits per IP.
 // These are ABUSE backstops only — must be well above the highest plan limits
 // so no paying user ever hits them.
@@ -160,6 +168,19 @@ function checkAndIncrementMonthly(ip, callType) {
   const limit = MONTHLY_IP_LIMITS[callType] ?? 999;
 
   if (usage[callType] >= limit) {
+    // Track unique blocked IPs — when enough accumulate, recommend persistent KV banning
+    blockedIpsThisInstance.add(ip);
+    if (!kvAlertFired && blockedIpsThisInstance.size >= KV_ABUSE_THRESHOLD) {
+      kvAlertFired = true;
+      alertOnAbuse(
+        'kv_upgrade_recommended',
+        `${blockedIpsThisInstance.size} IPs blocked`,
+        `${blockedIpsThisInstance.size} distinct IPs have hit monthly limits on this instance. ` +
+        `In-memory caps reset on cold starts and are bypassed by rotating IPs. ` +
+        `Implement Vercel KV (Redis) for persistent cross-instance IP banning. ` +
+        `See: vercel.com/docs/storage/vercel-kv`
+      );
+    }
     return { allowed: false, used: usage[callType], limit };
   }
 

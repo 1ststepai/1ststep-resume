@@ -321,6 +321,55 @@
     }
 
     .autofill-link:hover { opacity: 0.8; }
+
+    .job-info-form {
+      background: #FFFBEB;
+      border: 1px solid #FDE68A;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 14px;
+    }
+
+    .job-info-form-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #92400E;
+      margin-bottom: 8px;
+    }
+
+    .job-info-input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--surface);
+      outline: none;
+      transition: border-color 0.15s;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .job-info-input:focus { border-color: var(--brand); }
+
+    .job-info-input.required-error { border-color: var(--red); }
+
+    .edit-job-link {
+      font-size: 11px;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 1px dotted var(--muted);
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      padding: 0;
+      font-family: inherit;
+    }
+
+    .edit-job-link:hover { color: var(--text2); }
   </style>
 </head>
 <body>
@@ -351,6 +400,13 @@
         </div>
         <div id="jobUrl" style="display:none; font-size:11px; color:var(--muted); margin-bottom:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
 
+        <!-- Job info edit form — shown when title is missing or user clicks edit -->
+        <div id="jobInfoForm" class="job-info-form" style="display:none;">
+          <div class="job-info-form-label">We couldn't detect the job title — please confirm:</div>
+          <input type="text" id="jobTitleInput" class="job-info-input" placeholder="Job Title (required)" autocomplete="off">
+          <input type="text" id="companyInput" class="job-info-input" placeholder="Company Name (optional)" autocomplete="off" style="margin-bottom:0;">
+        </div>
+
         <div id="matchLine" class="match-line" style="display:none;">
           <span id="matchPct" class="match-pct"></span>
           <span id="matchArrow"> · Tailoring can push this to 85%+</span>
@@ -363,7 +419,10 @@
 
         <div class="card-footer">
           <span>Free to try · No signup needed</span>
-          <button class="autofill-link" id="autofillBtn">Auto-fill form</button>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <button class="edit-job-link" id="editJobBtn" style="display:none;">Edit job info</button>
+            <button class="autofill-link" id="autofillBtn">Auto-fill form</button>
+          </div>
         </div>
       </div>
 

@@ -628,6 +628,7 @@
 
       // Tailored history panel
       document.getElementById('clearTailorHistoryBtn')?.addEventListener('click', clearTailorHistory);
+    document.getElementById('addManualJobBtn')?.addEventListener('click', addManualJob);
 
       // LinkedIn optimizer panel
       document.getElementById('liRunBtn')?.addEventListener('click', runLinkedInOptimize);
@@ -1975,10 +1976,10 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
         const tailorEntry = {
           id: `tailor_${Date.now()}`,
           jobId: lastTailoredJobId || null,
-          jobTitle: _srcJob?.title || kwData?.job_title || gapData?.job_title || '',
-          company: _srcJob?.company?.display_name || kwData?.company || gapData?.company || '',
+          jobTitle: _srcJob?.title || kwData?.job_title || gapData?.job_title || window._capturedJob?.title || '',
+          company: _srcJob?.company?.display_name || kwData?.company || gapData?.company || window._capturedJob?.company || '',
           location: _srcJob?.location?.display_name || '',
-          jobUrl: _srcJob?.redirect_url || '',
+          jobUrl: _srcJob?.redirect_url || window._capturedJob?.url || '',
           resume: atsClean,
           coverLetter: coverLetter || '',
           jobDescription: jobDesc.slice(0, 5000),
@@ -2736,7 +2737,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       if (_rg) _rg.style.display = (mode === 'resume') ? 'grid' : 'none';
 
       // Dynamic page title in topbar center
-      const _titleMap = { resume: 'Resume Tailor', jobs: 'Job Search', tailored: 'My Resumes', tracker: 'Applications', linkedin: 'LinkedIn Profile', bulkapply: 'Bulk Apply' };
+      const _titleMap = { resume: 'Resume Tailor', jobs: 'Job Search', tailored: 'Job Tracker', tracker: 'Applications', linkedin: 'LinkedIn Profile', bulkapply: 'Bulk Apply' };
       const _pt = document.getElementById('pageTitle');
       if (_pt) _pt.textContent = _titleMap[mode] || 'Dashboard';
 
@@ -4081,11 +4082,28 @@ ${desc}`;
     };
 
     // ── Tailored Resume History ───────────────────────────────────────────────────
+    // Backward-compatible migration — adds tracker fields to entries saved before Job Tracker
+    function migrateHistoryEntry(e) {
+      if (!e.status)    e.status    = 'not_applied';
+      if (!e.createdAt) e.createdAt = e.tailoredAt || new Date().toISOString();
+      if (!e.updatedAt) e.updatedAt = e.tailoredAt || new Date().toISOString();
+      if (!('appliedAt' in e)) e.appliedAt = null;
+      if (!('notes' in e)) e.notes = '';
+      return e;
+    }
+
     function getTailorHistory() {
-      return JSON.parse(localStorage.getItem(TAILOR_HISTORY_KEY) || '[]');
+      const raw = JSON.parse(localStorage.getItem(TAILOR_HISTORY_KEY) || '[]');
+      return raw.map(migrateHistoryEntry);
     }
 
     function saveTailorEntry(entry) {
+      // Ensure new fields are present on save
+      entry.status    = entry.status    || 'not_applied';
+      entry.createdAt = entry.createdAt || entry.tailoredAt || new Date().toISOString();
+      entry.updatedAt = new Date().toISOString();
+      if (!('appliedAt' in entry)) entry.appliedAt = null;
+
       const history = getTailorHistory();
       history.unshift(entry); // newest first
       // Keep max 50 entries
@@ -4122,8 +4140,71 @@ ${desc}`;
     }
 
     function deleteTailorEntry(id) {
-      if (!confirm('Remove this tailored resume? This cannot be undone.')) return;
+      if (!confirm('Remove this entry? This cannot be undone.')) return;
       const history = getTailorHistory().filter(e => e.id !== id);
+      localStorage.setItem(TAILOR_HISTORY_KEY, JSON.stringify(history));
+      updateTailoredBadge();
+      renderTailoredHistory();
+    }
+
+    function updateTailorEntryStatus(id, newStatus) {
+      const history = getTailorHistory();
+      const entry = history.find(e => e.id === id);
+      if (!entry) return;
+      entry.status    = newStatus;
+      entry.updatedAt = new Date().toISOString();
+      if (newStatus === 'applied' && !entry.appliedAt) {
+        entry.appliedAt = new Date().toISOString();
+      }
+      localStorage.setItem(TAILOR_HISTORY_KEY, JSON.stringify(history));
+      // Re-render the select's colour class without full re-render for snappiness
+      const sel = document.querySelector(`#tailor-card-${id} .status-select`);
+      if (sel) {
+        sel.className = `status-select s-${newStatus}`;
+        sel.value = newStatus;
+      }
+      const card = document.getElementById(`tailor-card-${id}`);
+      if (card) {
+        card.className = `tailor-card status-${newStatus}`;
+      }
+      // Full re-render to move card into correct pipeline section
+      renderTailoredHistory();
+    }
+
+    function updateTailorEntryNote(id, note) {
+      const history = getTailorHistory();
+      const entry = history.find(e => e.id === id);
+      if (!entry) return;
+      entry.notes = note;
+      entry.updatedAt = new Date().toISOString();
+      localStorage.setItem(TAILOR_HISTORY_KEY, JSON.stringify(history));
+    }
+
+    function addManualJob() {
+      const title   = prompt('Job title:');
+      if (!title) return;
+      const company = prompt('Company (optional):') || '';
+      const url     = prompt('Job URL (optional):') || '';
+      const entry = {
+        id:          `manual_${Date.now()}`,
+        jobTitle:    title.trim(),
+        company:     company.trim(),
+        location:    '',
+        jobUrl:      url.trim(),
+        resume:      '',
+        coverLetter: '',
+        jobDescription: '',
+        matchPct:    null,
+        notes:       '',
+        status:      'not_applied',
+        createdAt:   new Date().toISOString(),
+        updatedAt:   new Date().toISOString(),
+        appliedAt:   null,
+        tailoredAt:  null,
+      };
+      const history = getTailorHistory();
+      history.unshift(entry);
+      if (history.length > 50) history.splice(50);
       localStorage.setItem(TAILOR_HISTORY_KEY, JSON.stringify(history));
       updateTailoredBadge();
       renderTailoredHistory();
@@ -4133,13 +4214,14 @@ ${desc}`;
       const list = document.getElementById('tailoredHistoryList');
       if (!list) return;
       const history = getTailorHistory();
+
       if (!history.length) {
         list.innerHTML = `<div class="tailor-history-empty">
-      <div class="empty-icon">🗂</div>
-      <h2 style="margin:8px 0 6px;font-size:16px;font-weight:700;color:var(--text)">Your Resume Vault is empty</h2>
-      <p>Every tailored resume you create is saved here automatically.</p>
-      <button id="vaultEmptyCtaBtn" style="margin-top:14px;padding:10px 24px;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.15s" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">✦ Create my first tailored resume</button>
-    </div>`;
+          <div class="empty-icon">📋</div>
+          <h2 style="margin:8px 0 6px;font-size:16px;font-weight:700;color:var(--text)">Your Job Tracker is empty</h2>
+          <p>Every resume you tailor is saved here — track your applications from tailored to offer.</p>
+          <button id="vaultEmptyCtaBtn" style="margin-top:14px;padding:10px 24px;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.15s" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">✦ Tailor my first resume</button>
+        </div>`;
         document.getElementById('vaultEmptyCtaBtn')?.addEventListener('click', _emptyVaultCta);
         return;
       }
@@ -4148,63 +4230,143 @@ ${desc}`;
       const visible = history.slice(0, vaultLimit);
       const locked  = history.slice(vaultLimit);
 
+      // ── Helpers ─────────────────────────────────────────────────────────────
+      const STATUS_META = {
+        not_applied:  { label: 'Not Applied', icon: '○', next: 'Apply now',   nextIcon: '→' },
+        applied:      { label: 'Applied',     icon: '●', next: 'Follow up',   nextIcon: '📬' },
+        interviewing: { label: 'Interviewing',icon: '◎', next: 'Prepare',     nextIcon: '🎤' },
+        offer:        { label: 'Offer',       icon: '★', next: 'Decide',      nextIcon: '🎉' },
+        rejected:     { label: 'Rejected',    icon: '✕', next: 'Move on',     nextIcon: '→'  },
+      };
+
+      const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+
+      function getRelevantDate(entry) {
+        const s = entry.status || 'not_applied';
+        const useApplied = s === 'applied' || s === 'interviewing' || s === 'offer' || s === 'rejected';
+        const ts = (useApplied ? entry.appliedAt : null) || entry.createdAt || entry.tailoredAt;
+        return ts ? new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+      }
+
+      function buildCard(entry) {
+        const status   = entry.status || 'not_applied';
+        const meta     = STATUS_META[status] || STATUS_META.not_applied;
+        const date     = getRelevantDate(entry);
+        const hasCover = !!entry.coverLetter;
+
+        const titleLabel = entry.company
+          ? `${escHtml(entry.company)} — ${escHtml(entry.jobTitle || 'Untitled Role')}`
+          : escHtml(entry.jobTitle || 'Untitled Role');
+
+        // Match score badge with label
+        const pct = entry.matchPct;
+        let pctBadge = '';
+        if (pct != null) {
+          const [bg, color, lbl] =
+            pct >= 80 ? ['rgba(16,185,129,0.12)',  '#10B981', 'Strong'] :
+            pct >= 50 ? ['rgba(245,158,11,0.12)',  '#F59E0B', 'Medium'] :
+                        ['rgba(239,68,68,0.10)',   '#EF4444', 'Weak'];
+          pctBadge = `<span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;background:${bg};color:${color};margin-left:6px">${pct}% <span class="match-label" style="color:${color}">${lbl}</span></span>`;
+        }
+
+        // Follow-up reminder
+        let followupBadge = '';
+        if (status === 'applied' && entry.appliedAt) {
+          const age = Date.now() - new Date(entry.appliedAt).getTime();
+          if (age > THREE_DAYS_MS) {
+            followupBadge = `<span class="followup-badge">📬 Follow up</span>`;
+          }
+        }
+
+        // Status dropdown
+        const opts = Object.entries(STATUS_META).map(([val, m]) =>
+          `<option value="${val}"${val === status ? ' selected' : ''}>${m.icon} ${m.label}</option>`
+        ).join('');
+        const statusSel = `<select class="status-select s-${status}" onchange="updateTailorEntryStatus('${entry.id}', this.value)" title="Update status">${opts}</select>`;
+
+        // Next action hint
+        const nextHint = `<div class="next-action-hint">${meta.nextIcon} Next: <b>${meta.next}</b></div>`;
+
+        return `<div class="tailor-card status-${status}" id="tailor-card-${entry.id}">
+          <div class="tailor-card-info">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:3px">
+              <div class="tailor-card-title" style="white-space:normal">${titleLabel}${pctBadge}</div>
+              ${statusSel}
+            </div>
+            <div class="tailor-card-meta">
+              ${date}${entry.location ? ` · ${escHtml(entry.location)}` : ''}
+              ${entry.jobUrl ? ` &nbsp;<a href="${escHtml(entry.jobUrl)}" target="_blank" style="color:var(--blue);font-size:11px;text-decoration:none">View job ↗</a>` : ''}
+              ${followupBadge}
+            </div>
+            ${nextHint}
+            <div class="tailor-card-actions">
+              <button class="btn-tailor-dl primary" onclick="openTemplateFromHistory('${entry.id}')">🎨 Formatted Resume</button>
+              <button class="btn-tailor-dl" onclick="downloadTailorEntryDocx('${entry.id}')" title="Best for ATS uploads">⬇ ATS .docx</button>
+              <button class="btn-tailor-dl" onclick="copyTailorEntryResume('${entry.id}')">📋 Copy</button>
+              ${hasCover ? `<button class="btn-tailor-dl" onclick="downloadTailorEntryCoverLetter('${entry.id}')">⬇ Cover Letter</button><button class="btn-tailor-dl" onclick="copyTailorEntryCoverLetter('${entry.id}')">📋 Copy Letter</button>` : ''}
+              <button class="btn-tailor-dl" onclick="openInterviewModalFromHistory('${entry.id}')" style="border-color:rgba(16,185,129,0.4);color:#10B981">🎤 Interview Prep</button>
+            </div>
+            <textarea class="tailor-card-notes" placeholder="Notes — recruiter name, salary, feedback…" onblur="updateTailorEntryNote('${entry.id}', this.value)">${escHtml(entry.notes || '')}</textarea>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+            <div class="tailor-card-date">${date}</div>
+            <button class="btn-tailor-delete" onclick="deleteTailorEntry('${entry.id}')" title="Remove">✕</button>
+          </div>
+        </div>`;
+      }
+
+      // ── Pipeline sections ────────────────────────────────────────────────────
+      const SECTIONS = [
+        { key: 'not_applied',  label: 'Not Applied',   icon: '○' },
+        { key: 'applied',      label: 'Applied',        icon: '●' },
+        { key: 'interviewing', label: 'Interviewing',   icon: '◎' },
+        { key: 'offer',        label: 'Offer',          icon: '★' },
+        { key: 'rejected',     label: 'Rejected',       icon: '✕' },
+      ];
+
+      // Group visible entries by status
+      const grouped = {};
+      SECTIONS.forEach(s => { grouped[s.key] = []; });
+      visible.forEach(e => {
+        const k = e.status || 'not_applied';
+        if (grouped[k]) grouped[k].push(e); else grouped['not_applied'].push(e);
+      });
+
+      let html = '';
+      for (const sec of SECTIONS) {
+        const entries = grouped[sec.key];
+        if (!entries.length) continue;
+        const countCls = entries.length ? 'pipeline-count active' : 'pipeline-count';
+        html += `<div class="pipeline-section">
+          <div class="pipeline-section-header">
+            ${sec.icon} ${sec.label} <span class="${countCls}">${entries.length}</span>
+          </div>
+          ${entries.map(buildCard).join('')}
+        </div>`;
+      }
+
+      // ── Paywall gate for locked entries ──────────────────────────────────────
       let lockedHtml = '';
       if (locked.length > 0) {
         _pingTracker('vault_limit_view');
         lockedHtml = `
-      <div class="vault-lock-gate">
-        <div class="vault-lock-blurred">
-          ${locked.slice(0, 2).map(entry => {
-            const date = new Date(entry.tailoredAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            const label = entry.company ? `${entry.company} — ${entry.jobTitle || 'Untitled Role'}` : (entry.jobTitle || 'Untitled Role');
-            return `<div class="tailor-card vault-card-locked"><div class="tailor-card-info"><div class="tailor-card-title">${label}</div><div class="tailor-card-meta">${date}</div></div></div>`;
-          }).join('')}
-        </div>
-        <div class="vault-lock-overlay">
-          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Unlock your full Resume Vault</div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.4">Your tailored resumes are saved.<br>Upgrade to access every version.</div>
-          <button id="vaultLockCta" style="padding:9px 20px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Unlock Job Hunt Pass</button>
-        </div>
-      </div>`;
+        <div class="vault-lock-gate">
+          <div class="vault-lock-blurred">
+            ${locked.slice(0, 2).map(entry => {
+              const date = new Date(entry.appliedAt || entry.createdAt || entry.tailoredAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+              const label = entry.company ? `${entry.company} — ${entry.jobTitle || 'Untitled Role'}` : (entry.jobTitle || 'Untitled Role');
+              return `<div class="tailor-card vault-card-locked"><div class="tailor-card-info"><div class="tailor-card-title">${label}</div><div class="tailor-card-meta">${date}</div></div></div>`;
+            }).join('')}
+          </div>
+          <div class="vault-lock-overlay">
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Unlock your full Job Tracker</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.4">All your tailored resumes are saved.<br>Upgrade to track every application.</div>
+            <button id="vaultLockCta" style="padding:9px 20px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Unlock Job Hunt Pass</button>
+          </div>
+        </div>`;
       }
 
-      list.innerHTML = visible.map(entry => {
-        const date = new Date(entry.tailoredAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        const hasCover = !!entry.coverLetter;
-        const titleLabel = entry.company
-          ? `${escHtml(entry.company)} — ${escHtml(entry.jobTitle || 'Untitled Role')}`
-          : escHtml(entry.jobTitle || 'Untitled Role');
-        const pct = entry.matchPct;
-        const pctBadge = pct != null
-          ? `<span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;margin-left:6px;${
-              pct >= 70 ? 'background:rgba(16,185,129,0.12);color:#10B981'
-            : pct >= 45 ? 'background:rgba(245,158,11,0.12);color:#F59E0B'
-            : 'background:rgba(239,68,68,0.10);color:#EF4444'}">${pct}% match</span>`
-          : '';
-        return `<div class="tailor-card" id="tailor-card-${entry.id}">
-      <div class="tailor-card-info">
-        <div class="tailor-card-title">${titleLabel}${pctBadge}</div>
-        <div class="tailor-card-meta">
-          ${date}${entry.location ? ` · ${escHtml(entry.location)}` : ''}
-          ${entry.jobUrl ? ` &nbsp;<a href="${escHtml(entry.jobUrl)}" target="_blank" style="color:var(--blue);font-size:11px;text-decoration:none">View job ↗</a>` : ''}
-        </div>
-        <div class="tailor-card-actions">
-          <button class="btn-tailor-dl primary" onclick="openTemplateFromHistory('${entry.id}')">🎨 Formatted Resume</button>
-          <button class="btn-tailor-dl" onclick="downloadTailorEntryDocx('${entry.id}')" title="Plain text — best for uploading to job boards &amp; ATS systems">⬇ ATS Plain Text (.docx)</button>
-          <button class="btn-tailor-dl" onclick="copyTailorEntryResume('${entry.id}')">📋 Copy Text</button>
-          ${hasCover ? `<button class="btn-tailor-dl" onclick="downloadTailorEntryCoverLetter('${entry.id}')">⬇ Cover Letter (.docx)</button><button class="btn-tailor-dl" onclick="copyTailorEntryCoverLetter('${entry.id}')">📋 Copy Cover Letter</button>` : ''}
-          <button class="btn-tailor-dl" onclick="openInterviewModalFromHistory('${entry.id}')" title="Generate a personalized interview cheat sheet for this role" style="border-color:rgba(16,185,129,0.4);color:#10B981">🎤 Interview Prep</button>
-          ${entry.jobId && isApplied(entry.jobId)
-            ? `<span class="btn-tailor-applied-badge">✓ Applied</span>`
-            : `<button class="btn-tailor-dl apply-now" onclick="applyNowFromHistory('${entry.id}')">${entry.jobUrl ? '🚀 Apply Now' : '✓ Mark Applied'}</button>`}
-        </div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0">
-        <div class="tailor-card-date">${date}</div>
-        <button class="btn-tailor-delete" onclick="deleteTailorEntry('${entry.id}')" title="Remove">✕</button>
-      </div>
-    </div>`;
-      }).join('') + lockedHtml;
+      list.innerHTML = html + lockedHtml;
 
       document.getElementById('vaultLockCta')?.addEventListener('click', () => {
         _pingTracker('pricing_cta_click');
