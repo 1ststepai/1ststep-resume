@@ -5,6 +5,15 @@
     let results = { resume: '', keywords: null, changes: [], coverLetter: '', score: null };
     let fileContent = '';
 
+    // ── Event Ledger ──────────────────────────────────────────────────────────
+    window.__EVENT_LOG__ = [];
+    function logEvent(evt) {
+      const entry = { id: crypto.randomUUID(), timestamp: Date.now(), ...evt };
+      window.__EVENT_LOG__.push(entry);
+      try { localStorage.setItem('1ststep_event_log', JSON.stringify(window.__EVENT_LOG__.slice(-100))); } catch (_) {}
+    }
+    window.debugEvents = () => console.table(window.__EVENT_LOG__);
+
     // ── Client-side keyword match score ───────────────────────────────────────
     function calcMatchScore(resumeText, jobDescription) {
       if (!resumeText || !jobDescription) return 0;
@@ -1399,6 +1408,8 @@ ${resume.slice(0, 3000)}
       const { jobData, resumeText, mode } = event.data;
       if (!jobData) return;
 
+      logEvent({ type: 'EXTENSION_JOB_CAPTURED', source: 'extension', mode: mode || 'tailor', payload: { jobTitle: jobData.jobTitle, company: jobData.company, hasDescription: !!jobData.jobDescription, hasResume: !!resumeText }, stateSnapshot: { mode: currentMode, jobCount: getTailorHistory().length } });
+
       window._extensionDetected = true;
       hideExtPromoBanner();
       const _mobilePromo = document.getElementById('mobileExtPromo');
@@ -2709,6 +2720,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
 
     // ── Mode Switching ────────────────────────────────────────────────────────
     function switchMode(mode) {
+      logEvent({ type: 'MODE_SET', source: 'app', mode, stateSnapshot: { mode, jobCount: getTailorHistory().length } });
       currentMode = mode;
       updateMobileQuickBar();
       const isJobs = mode === 'jobs';
@@ -4111,6 +4123,8 @@ ${desc}`;
       entry.updatedAt = new Date().toISOString();
       if (!('appliedAt' in entry)) entry.appliedAt = null;
 
+      logEvent({ type: 'JOB_CREATED', source: entry.source || 'app', jobId: entry.id, payload: { jobTitle: entry.jobTitle, company: entry.company, status: entry.status } });
+
       const history = getTailorHistory();
       history.unshift(entry); // newest first
       // Keep max 50 entries
@@ -4158,11 +4172,11 @@ ${desc}`;
       const history = getTailorHistory();
       const entry = history.find(e => e.id === id);
       if (!entry) return;
+      const appliedAtStamped = newStatus === 'applied' && !entry.appliedAt;
       entry.status    = newStatus;
       entry.updatedAt = new Date().toISOString();
-      if (newStatus === 'applied' && !entry.appliedAt) {
-        entry.appliedAt = new Date().toISOString();
-      }
+      if (appliedAtStamped) entry.appliedAt = new Date().toISOString();
+      logEvent({ type: 'STATUS_CHANGED', source: 'app', jobId: id, payload: { newStatus, appliedAtStamped, jobTitle: entry.jobTitle } });
       localStorage.setItem(TAILOR_HISTORY_KEY, JSON.stringify(history));
       // Re-render the select's colour class without full re-render for snappiness
       const sel = document.querySelector(`#tailor-card-${id} .status-select`);
@@ -4246,6 +4260,8 @@ ${desc}`;
           const newJobs = extJobs.filter(e => e.jobUrl && !existingUrls.has(e.jobUrl));
           if (!newJobs.length) return;
 
+          logEvent({ type: 'EXTENSION_SYNC', source: 'extension', payload: { newJobs: newJobs.length, totalExtJobs: extJobs.length } });
+
           const merged = [...newJobs, ...history];
           if (merged.length > 50) merged.splice(50);
           localStorage.setItem(TAILOR_HISTORY_KEY, JSON.stringify(merged));
@@ -4254,8 +4270,8 @@ ${desc}`;
           showToast(`${newJobs.length} job${newJobs.length > 1 ? 's' : ''} synced from extension`);
           renderTailoredHistory();
         });
-      } catch (_) {
-        // Not in extension context — silent
+      } catch (err) {
+        logEvent({ type: 'ERROR', source: 'app', payload: { fn: 'mergeExtensionJobs', message: err.message } });
       }
     }
 
@@ -4281,6 +4297,7 @@ ${desc}`;
         appliedAt:   null,
         tailoredAt:  null,
       };
+      logEvent({ type: 'JOB_CREATED', source: 'manual', jobId: entry.id, payload: { jobTitle: entry.jobTitle, company: entry.company } });
       const history = getTailorHistory();
       history.unshift(entry);
       if (history.length > 50) history.splice(50);
