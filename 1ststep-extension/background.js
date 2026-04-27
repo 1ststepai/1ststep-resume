@@ -141,10 +141,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           for (const id of Object.keys(pendingJobs)) {
             if (now - pendingJobs[id].createdAt > 2 * 60 * 1000) delete pendingJobs[id];
           }
-          pendingJobs[jobCaptureId] = { jobData: request.jobData, createdAt: now };
+          const jobMode = request.mode || 'tailor';
+          pendingJobs[jobCaptureId] = { jobData: request.jobData, mode: jobMode, createdAt: now };
           await chrome.storage.local.set({ pendingJobs });
 
-          const targetUrl = `${APP_URL}/funnel?jobCaptureId=${jobCaptureId}`;
+          // Cover letter opens main app (tier selector available); tailor opens funnel
+          const targetUrl = jobMode === 'coverLetter'
+            ? `${APP_URL}/?jobCaptureId=${jobCaptureId}&mode=coverLetter`
+            : `${APP_URL}/funnel?jobCaptureId=${jobCaptureId}`;
           const existingTabs = await chrome.tabs.query({ url: `${APP_URL}/*` });
           if (existingTabs.length > 0) {
             await chrome.tabs.update(existingTabs[0].id, { active: true, url: targetUrl });

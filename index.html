@@ -347,6 +347,10 @@
                 <button id="clearJobContextBtn" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;flex-shrink:0;padding:0">✕</button>
               </div>
               <textarea id="jobText" rows="5" placeholder="Paste the full job description here — the more detail, the better the result."></textarea>
+              <div id="trackerPickerWrap" style="position:relative;margin-top:6px;">
+                <button id="pickTrackedJobBtn" style="background:none;border:none;padding:0;font-size:12px;color:var(--brand);cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;">📋 Pick from Job Tracker</button>
+                <div id="trackerPickerDropdown" style="display:none;position:absolute;left:0;right:0;top:22px;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.12);max-height:220px;overflow-y:auto;"></div>
+              </div>
               <p id="jobHelperText" style="display:none;margin:5px 0 0;font-size:12px;color:var(--muted)">Add the job posting to tailor your resume to it</p>
               <p id="extEmptyHint" style="display:none;margin:5px 0 0;font-size:11px;color:var(--muted)">Or <a href="https://chromewebstore.google.com/detail/1ststep-ai-resume-tailor/gcmaoapcnobdcfaiijaoamajamijfacd" target="_blank" rel="noopener" style="color:var(--brand);text-decoration:none;font-weight:500">use the Chrome Extension</a> to pull job descriptions automatically.</p>
             </div>
