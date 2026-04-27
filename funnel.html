@@ -333,12 +333,12 @@
       <div class="drop-zone" id="dropZone">
         <div class="drop-icon">📄</div>
         <div class="drop-text" id="dropText">Drop your resume here</div>
-        <div class="drop-hint" id="dropHint">.txt · or paste below</div>
+        <div class="drop-hint" id="dropHint">.txt, .pdf, .docx · or paste below</div>
       </div>
-      <input type="file" id="fileInput" accept=".txt">
+      <input type="file" id="fileInput" accept=".txt,.pdf,.docx">
 
       <div class="btn-row">
-        <button class="btn btn-secondary" id="browseBtn">Upload .txt resume</button>
+        <button class="btn btn-secondary" id="browseBtn">Upload resume</button>
         <button class="btn btn-secondary" id="pasteToggleBtn">Paste text instead</button>
       </div>
 
@@ -562,8 +562,8 @@ fileInput.addEventListener('change', async () => {
     markResumeReady(file.name);
   } catch (e) {
     fileInput.value = '';
-    if (e.message === 'BINARY_FILE') {
-      err(uploadErrBox, 'PDF and DOCX can\'t be read in-browser. Use "Paste text instead" to paste your resume.');
+    if (e.message === 'UNSUPPORTED_FORMAT') {
+      err(uploadErrBox, 'Unsupported file type. Please upload a .txt, .pdf, or .docx file.');
       pasteArea.classList.add('visible');
       pasteToggle.textContent = 'Hide paste area';
       pasteArea.focus();
@@ -584,8 +584,8 @@ dropZone.addEventListener('drop', async e => {
     S.resumeText = await readFile(file);
     markResumeReady(file.name);
   } catch (e) {
-    if (e.message === 'BINARY_FILE') {
-      err(uploadErrBox, 'PDF and DOCX can\'t be read in-browser. Use "Paste text instead" to paste your resume.');
+    if (e.message === 'UNSUPPORTED_FORMAT') {
+      err(uploadErrBox, 'Unsupported file type. Please upload a .txt, .pdf, or .docx file.');
       pasteArea.classList.add('visible');
       pasteToggle.textContent = 'Hide paste area';
       pasteArea.focus();
@@ -615,12 +615,75 @@ function markResumeReady(filename) {
 }
 
 async function readFile(file) {
-  if (!file.name.toLowerCase().endsWith('.txt')) throw new Error('BINARY_FILE');
+  const name = file.name.toLowerCase();
+  if (name.endsWith('.txt')) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload  = e => resolve(e.target.result);
+      reader.onerror = () => reject(new Error('read error'));
+      reader.readAsText(file);
+    });
+  }
+  if (name.endsWith('.pdf')) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async e => {
+        try {
+          const pdfjsLib = await loadPdfJs();
+          const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(e.target.result) }).promise;
+          let text = '';
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            text += content.items.map(item => item.str).join(' ') + '\n';
+          }
+          resolve(text.trim());
+        } catch (err) { reject(err); }
+      };
+      reader.onerror = () => reject(new Error('read error'));
+      reader.readAsArrayBuffer(file);
+    });
+  }
+  if (name.endsWith('.docx')) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async e => {
+        try {
+          const mammoth = await loadMammoth();
+          const result = await mammoth.extractRawText({ arrayBuffer: e.target.result });
+          resolve(result.value.trim());
+        } catch (err) { reject(err); }
+      };
+      reader.onerror = () => reject(new Error('read error'));
+      reader.readAsArrayBuffer(file);
+    });
+  }
+  throw new Error('UNSUPPORTED_FORMAT');
+}
+
+function loadPdfJs() {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload  = e => resolve(e.target.result);
-    reader.onerror = () => reject(new Error('read error'));
-    reader.readAsText(file);
+    if (window.pdfjsLib) { resolve(window.pdfjsLib); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = () => {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      resolve(window.pdfjsLib);
+    };
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+function loadMammoth() {
+  return new Promise((resolve, reject) => {
+    if (window.mammoth) { resolve(window.mammoth); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
+    s.onload = () => resolve(window.mammoth);
+    s.onerror = reject;
+    document.head.appendChild(s);
   });
 }
 
@@ -631,7 +694,7 @@ continueBtn.addEventListener('click', () => {
     return;
   }
   if (!S.resumeText || S.resumeText.startsWith('data:')) {
-    err(uploadErrBox, 'Please upload a .txt file or paste your resume text first.');
+    err(uploadErrBox, 'Please upload a resume (.txt, .pdf, or .docx) or paste your resume text first.');
     return;
   }
   err(uploadErrBox, '');
@@ -671,7 +734,7 @@ function applyStep({ pct, icon, msg }) {
 async function startTailoring() {
   // Guard: dataURL slip-through (shouldn't happen after readFile fix, but be explicit)
   if (S.resumeText.startsWith('data:')) {
-    err(uploadErrBox, 'PDF and DOCX can\'t be parsed. Please paste your resume text instead.');
+    err(uploadErrBox, 'Resume could not be read. Please paste your resume text instead.');
     return;
   }
 
