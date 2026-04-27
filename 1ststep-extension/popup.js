@@ -155,6 +155,9 @@ function showJobCard(job, auth) {
 
   if (autofillBtn) autofillBtn.onclick = () => autofillPage(auth, autofillBtn);
 
+  // Tracker strip — show pipeline status for this job
+  renderTrackerStatus(job);
+
   function buildJob() {
     const title   = jobTitleInput?.value.trim() || job.jobTitle || '';
     const company = companyInput?.value.trim()  || job.company  || '';
@@ -193,6 +196,85 @@ function showJobCard(job, auth) {
     }, 1000);
     tailorBtn.onclick = () => { clearInterval(timer); validateAndOpen(tailorBtn); };
   }
+}
+
+// ─── TRACKER STATUS ──────────────────────────────────────────
+
+const TRACKER_STAGES = [
+  { key: 'not_applied',   icon: '○', label: 'Save'      },
+  { key: 'applied',       icon: '●', label: 'Applied'   },
+  { key: 'interviewing',  icon: '◎', label: 'Interview' },
+];
+
+const TRACKER_STATUS_ICONS = { not_applied: '○', applied: '●', interviewing: '◎', offer: '★', rejected: '✕' };
+
+async function renderTrackerStatus(job) {
+  const strip = document.getElementById('trackerStrip');
+  const label = document.getElementById('trackerLabel');
+  const stageBtns = document.getElementById('trackerStageBtns');
+  if (!strip || !job?.applyUrl) return;
+
+  const data = await new Promise(r => chrome.storage.local.get(['1ststep_ext_tracker'], r));
+  const tracker = data['1ststep_ext_tracker'] || [];
+  const entry = tracker.find(e => e.jobUrl === job.applyUrl);
+
+  strip.style.display = 'flex';
+  stageBtns.innerHTML = '';
+
+  if (entry) {
+    const icon = TRACKER_STATUS_ICONS[entry.status] || '○';
+    const display = entry.status.replace('_', ' ');
+    label.textContent = `${icon} ${display.charAt(0).toUpperCase() + display.slice(1)}`;
+    label.classList.add('tracked');
+    label.style.cursor = 'default';
+    label.onclick = null;
+  } else {
+    label.textContent = '+ Add to Job Tracker';
+    label.classList.remove('tracked');
+    label.style.cursor = 'pointer';
+    label.onclick = () => setTrackerStatus(job, 'not_applied');
+  }
+
+  for (const stage of TRACKER_STAGES) {
+    const btn = document.createElement('button');
+    btn.className = 'tracker-stage-btn' + (entry?.status === stage.key ? ' active' : '');
+    btn.textContent = `${stage.icon} ${stage.label}`;
+    btn.onclick = () => setTrackerStatus(job, stage.key);
+    stageBtns.appendChild(btn);
+  }
+}
+
+async function setTrackerStatus(job, newStatus) {
+  const data = await new Promise(r => chrome.storage.local.get(['1ststep_ext_tracker'], r));
+  const tracker = data['1ststep_ext_tracker'] || [];
+  let entry = tracker.find(e => e.jobUrl === job.applyUrl);
+
+  if (!entry) {
+    entry = {
+      id: 'ext_' + Date.now(),
+      jobTitle:       job.jobTitle || '',
+      company:        job.company  || '',
+      jobUrl:         job.applyUrl || '',
+      jobDescription: (job.jobDescription || '').slice(0, 5000),
+      location: '', resume: '', coverLetter: '', matchPct: null, notes: '',
+      status:    newStatus,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      appliedAt: null,
+      tailoredAt: null,
+      source: 'extension',
+    };
+    tracker.unshift(entry);
+  } else {
+    entry.status    = newStatus;
+    entry.updatedAt = new Date().toISOString();
+    if (newStatus === 'applied' && !entry.appliedAt) entry.appliedAt = new Date().toISOString();
+  }
+
+  if (tracker.length > 100) tracker.splice(100);
+  await new Promise(r => chrome.storage.local.set({ '1ststep_ext_tracker': tracker }, r));
+  chrome.runtime.sendMessage({ action: 'UPDATE_TRACKER_BADGE' }).catch(() => {});
+  renderTrackerStatus(job);
 }
 
 // ─── MATCH ESTIMATE ──────────────────────────────────────────
