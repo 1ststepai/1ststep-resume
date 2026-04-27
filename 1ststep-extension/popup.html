@@ -275,6 +275,52 @@
     }
 
     .open-app-link:hover { opacity: 0.8; }
+
+    .match-line {
+      font-size: 12px;
+      color: var(--text2);
+      margin-bottom: 10px;
+    }
+
+    .match-pct {
+      font-weight: 700;
+      color: var(--brand);
+    }
+
+    .pitch {
+      font-size: 13px;
+      color: var(--text);
+      margin-bottom: 6px;
+      line-height: 1.5;
+    }
+
+    .urgency {
+      font-size: 12px;
+      color: var(--text2);
+      margin-bottom: 14px;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .autofill-link {
+      background: none;
+      border: none;
+      border-bottom: 1px dotted var(--brand);
+      padding: 0;
+      font-size: inherit;
+      font-family: inherit;
+      color: var(--brand);
+      cursor: pointer;
+    }
+
+    .autofill-link:hover { opacity: 0.8; }
   </style>
 </head>
 <body>
@@ -305,12 +351,19 @@
         </div>
         <div id="jobUrl" style="display:none; font-size:11px; color:var(--muted); margin-bottom:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
 
-        <div class="action-buttons">
-          <button class="btn-primary" id="tailorBtn">Tailor Resume for This Job</button>
-          <button class="btn-secondary" id="autofillBtn">Auto-fill</button>
+        <div id="matchLine" class="match-line" style="display:none;">
+          <span id="matchPct" class="match-pct"></span>
+          <span id="matchArrow"> · Tailoring can push this to 85%+</span>
         </div>
-        <div style="text-align:center; margin-top:10px;">
-          <span class="open-app-link" id="openAppDirectLink">Open 1stStep.ai</span>
+
+        <div class="pitch">Tailor your resume to <strong>THIS</strong> job — in under 2 minutes.</div>
+        <div class="urgency">Most applicants don't tailor their resume.</div>
+
+        <button class="btn-primary" id="tailorBtn" style="width:100%">Tailor my resume →</button>
+
+        <div class="card-footer">
+          <span>Free to try · No signup needed</span>
+          <button class="autofill-link" id="autofillBtn">Auto-fill form</button>
         </div>
       </div>
 

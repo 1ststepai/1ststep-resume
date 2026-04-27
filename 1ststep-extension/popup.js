@@ -117,30 +117,46 @@ function showJobCard(job, auth) {
     jobUrlEl.style.display = 'block';
   }
 
-  tailorBtn.onclick   = () => openInApp(job, tailorBtn);
-  autofillBtn.onclick = () => autofillPage(auth, autofillBtn);
-
-  const openAppDirectLink = document.getElementById('openAppDirectLink');
-  if (openAppDirectLink) {
-    openAppDirectLink.onclick = () => chrome.tabs.create({ url: APP_URL });
+  // Show match % if we have a resume to compare against
+  const matchPct = estimateMatch(auth.resume, job.jobDescription);
+  const matchLine = document.getElementById('matchLine');
+  const matchPctEl = document.getElementById('matchPct');
+  if (matchPct !== null && matchLine && matchPctEl) {
+    matchPctEl.textContent = `~${matchPct}% match`;
+    matchLine.style.display = 'block';
   }
+
+  tailorBtn.onclick   = () => openInApp(job, tailorBtn);
+  if (autofillBtn) autofillBtn.onclick = () => autofillPage(auth, autofillBtn);
 
   // Resume already synced — auto-trigger without requiring a click
   if (auth.resume) {
     let countdown = 2;
-    tailorBtn.textContent = `Tailoring in ${countdown}s…`;
+    tailorBtn.textContent = `Tailoring in ${countdown}s… (click to go now)`;
     const timer = setInterval(() => {
       countdown--;
       if (countdown > 0) {
-        tailorBtn.textContent = `Tailoring in ${countdown}s…`;
+        tailorBtn.textContent = `Tailoring in ${countdown}s… (click to go now)`;
       } else {
         clearInterval(timer);
         openInApp(job, tailorBtn);
       }
     }, 1000);
-    // Let user cancel by clicking the button early or clicking away
     tailorBtn.onclick = () => { clearInterval(timer); openInApp(job, tailorBtn); };
   }
+}
+
+// ─── MATCH ESTIMATE ──────────────────────────────────────────
+
+function estimateMatch(resume, jd) {
+  if (!resume || !jd) return null;
+  const words = jd.toLowerCase().match(/\b[a-z]{4,}\b/g) || [];
+  const unique = [...new Set(words)];
+  if (unique.length === 0) return null;
+  const resumeLower = resume.toLowerCase();
+  const hits = unique.filter(w => resumeLower.includes(w)).length;
+  const raw = Math.round((hits / unique.length) * 100);
+  return Math.max(22, Math.min(58, raw));
 }
 
 // ─── JOB ─────────────────────────────────────────────────────

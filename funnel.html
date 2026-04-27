@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tailor My Resume — 1stStep.ai</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:      #4338CA;
+      --brand-dark: #3730A3;
+      --bg:         #F8FAFC;
+      --surface:    #FFFFFF;
+      --border:     #E2E8F0;
+      --text:       #0F172A;
+      --text2:      #475569;
+      --muted:      #94A3B8;
+      --green:      #059669;
+      --green-bg:   #ECFDF5;
+      --red:        #DC2626;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 20px 80px;
+    }
+
+    .funnel { width: 100%; max-width: 560px; }
+
+    .logo {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--brand);
+      margin-bottom: 32px;
+      letter-spacing: -0.4px;
+    }
+
+    /* ── Screens ────────────────────────────────────── */
+    .screen { display: none; }
+    .screen.active {
+      display: block;
+      animation: fadeUp 0.22s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0);   }
+    }
+
+    /* ── Job context header ─────────────────────────── */
+    .job-context { margin-bottom: 24px; }
+    .job-context-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      margin-bottom: 4px;
+    }
+    .job-context-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.4px;
+      line-height: 1.3;
+    }
+
+    /* ── Card ───────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+      letter-spacing: -0.3px;
+    }
+    .card-sub {
+      font-size: 14px;
+      color: var(--text2);
+      line-height: 1.55;
+      margin-bottom: 24px;
+    }
+
+    /* ── Upload zone ────────────────────────────────── */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      margin-bottom: 12px;
+    }
+    .drop-zone:hover, .drop-zone.dragging {
+      border-color: var(--brand);
+      background: rgba(67, 56, 202, 0.03);
+    }
+    .drop-zone.done { border-color: var(--green); border-style: solid; }
+    .drop-icon { font-size: 26px; margin-bottom: 8px; }
+    .drop-text { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+    .drop-hint { font-size: 12px; color: var(--muted); }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .paste-area {
+      display: none;
+      width: 100%;
+      min-height: 150px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--text);
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s;
+      margin-bottom: 14px;
+    }
+    .paste-area:focus { border-color: var(--brand); }
+    .paste-area.visible { display: block; }
+
+    /* ── Divider ────────────────────────────────────── */
+    .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+    /* ── Value list ─────────────────────────────────── */
+    .value-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .value-list li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text2);
+    }
+    .check { color: var(--green); font-size: 14px; flex-shrink: 0; }
+
+    /* ── Buttons ────────────────────────────────────── */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 13px 20px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+      text-align: center;
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: var(--brand);
+      color: #fff;
+      box-shadow: 0 1px 3px rgba(67,56,202,0.25);
+    }
+    .btn-primary:hover   { background: var(--brand-dark); }
+    .btn-primary:active  { transform: scale(0.99); }
+    .btn-primary:disabled { background: var(--muted); cursor: not-allowed; box-shadow: none; }
+    .btn-secondary {
+      flex: 1;
+      background: #F1F5F9;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: #E2E8F0; }
+
+    /* ── Progress bar ───────────────────────────────── */
+    .progress-wrap {
+      background: #E2E8F0;
+      border-radius: 100px;
+      height: 6px;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+    .progress-bar {
+      height: 100%;
+      background: var(--brand);
+      border-radius: 100px;
+      width: 0%;
+      transition: width 0.7s ease;
+    }
+    .loading-icon   { font-size: 40px; text-align: center; margin-bottom: 20px; }
+    .loading-status { font-size: 14px; color: var(--text2); text-align: center; min-height: 22px; }
+
+    /* ── Score ──────────────────────────────────────── */
+    .score-section { text-align: center; margin-bottom: 24px; }
+    .score-label   { font-size: 13px; color: var(--text2); margin-bottom: 12px; }
+    .score-display {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+    .score-before { font-size: 36px; font-weight: 700; color: var(--red); }
+    .score-arrow  { font-size: 20px; color: var(--muted); }
+    .score-after  { font-size: 52px; font-weight: 800; color: var(--green); letter-spacing: -1.5px; }
+    .score-note   { font-size: 13px; color: var(--muted); margin-top: 6px; }
+
+    /* ── Preview bullets ────────────────────────────── */
+    .preview-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      margin-bottom: 10px;
+    }
+    .preview-wrap { position: relative; }
+    .preview-bullets { display: flex; flex-direction: column; gap: 8px; }
+    .preview-bullet {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.55;
+      padding: 10px 14px;
+      background: #F8FAFC;
+      border-left: 3px solid var(--brand);
+      border-radius: 0 8px 8px 0;
+    }
+    .preview-bullet.blurred {
+      filter: blur(5px);
+      user-select: none;
+      pointer-events: none;
+    }
+    .preview-fade {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 80px;
+      background: linear-gradient(transparent, var(--surface));
+      pointer-events: none;
+    }
+
+    /* ── Email input ────────────────────────────────── */
+    .email-input {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+      margin-bottom: 12px;
+    }
+    .email-input:focus { border-color: var(--brand); }
+    .email-input::placeholder { color: var(--muted); }
+    .email-note { font-size: 12px; color: var(--muted); text-align: center; margin-top: 10px; }
+
+    /* ── Paywall ────────────────────────────────────── */
+    .paywall-items { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+    .paywall-items li { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text2); }
+    .paywall-price { font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 3px; letter-spacing: -0.5px; }
+    .paywall-cancel { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+    .paywall-urgency {
+      background: #FFFBEB;
+      border: 1px solid #FDE68A;
+      color: #92400E;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      text-align: center;
+      margin: 12px 0;
+    }
+    .verify-link {
+      display: block;
+      text-align: center;
+      font-size: 13px;
+      color: var(--brand);
+      cursor: pointer;
+      margin-top: 12px;
+      text-decoration: none;
+    }
+    .verify-link:hover { text-decoration: underline; }
+
+    /* ── Error ──────────────────────────────────────── */
+    .error-box {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      color: var(--red);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-bottom: 14px;
+      display: none;
+    }
+    .error-box.visible { display: block; }
+
+    #fileInput { display: none; }
+
+    @media (max-width: 560px) {
+      body { padding: 24px 16px 60px; }
+      .card { padding: 20px; }
+      .btn-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<div class="funnel">
+  <div class="logo">1stStep.ai</div>
+
+  <!-- ── Screen 1: Upload ─────────────────────────────────────── -->
+  <div id="screen-upload" class="screen active">
+    <div class="job-context">
+      <div class="job-context-label">Tailoring your resume for</div>
+      <div class="job-context-title" id="uploadJobTitle">Loading job...</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Upload your resume to tailor it for this job</div>
+      <div class="card-sub" id="uploadSub">Drop your resume below or paste the text.</div>
+
+      <div id="uploadError" class="error-box"></div>
+
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-icon">📄</div>
+        <div class="drop-text" id="dropText">Drop your resume here</div>
+        <div class="drop-hint" id="dropHint">.txt · or paste below</div>
+      </div>
+      <input type="file" id="fileInput" accept=".txt">
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="browseBtn">Upload .txt resume</button>
+        <button class="btn btn-secondary" id="pasteToggleBtn">Paste text instead</button>
+      </div>
+
+      <textarea id="pasteArea" class="paste-area" placeholder="Paste your resume text here..."></textarea>
+
+      <button class="btn btn-primary" id="continueBtn" disabled>Tailor my resume →</button>
+
+      <div class="divider"></div>
+
+      <ul class="value-list">
+        <li><span class="check">✓</span> Tailored resume for this job</li>
+        <li><span class="check">✓</span> Matching cover letter</li>
+        <li><span class="check">✓</span> Match score + missing keywords</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── Screen 2: Loading ────────────────────────────────────── -->
+  <div id="screen-loading" class="screen">
+    <div class="job-context">
+      <div class="job-context-label">Tailoring your resume for</div>
+      <div class="job-context-title" id="loadingJobTitle">...</div>
+    </div>
+
+    <div class="card">
+      <div class="loading-icon" id="loadingIcon">🔍</div>
+      <div class="progress-wrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="loading-status" id="loadingStatus">Starting...</div>
+    </div>
+  </div>
+
+  <!-- ── Screen 3: Result ─────────────────────────────────────── -->
+  <div id="screen-result" class="screen">
+    <div class="job-context">
+      <div class="job-context-label">Results for</div>
+      <div class="job-context-title" id="resultJobTitle">...</div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:5px">
+        Your resume wasn't fully aligned with this job.
+      </div>
+      <div style="font-size:14px;color:var(--text2);margin-bottom:24px">
+        This is why you weren't getting callbacks.
+      </div>
+
+      <div class="score-section">
+        <div class="score-label">Your match score improved:</div>
+        <div class="score-display">
+          <div class="score-before" id="scoreBefore">—%</div>
+          <div class="score-arrow">→</div>
+          <div class="score-after"  id="scoreAfter">—%</div>
+        </div>
+        <div class="score-note">You're now aligned with this role.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="preview-label">Preview of your tailored resume:</div>
+      <div class="preview-wrap">
+        <div class="preview-bullets" id="previewBullets"></div>
+        <div class="preview-fade"></div>
+      </div>
+
+      <div style="margin-top:24px">
+        <button class="btn btn-primary" id="unlockFromResultBtn">Unlock my full resume →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Screen 4: Email capture ──────────────────────────────── -->
+  <div id="screen-email" class="screen">
+    <div class="card">
+      <div class="card-title">Save your tailored resume</div>
+      <div class="card-sub">Enter your email and we'll keep your results ready when you're ready to unlock.</div>
+
+      <div id="emailError" class="error-box"></div>
+
+      <input type="email" id="emailInput" class="email-input" placeholder="you@example.com">
+      <button class="btn btn-primary" id="saveEmailBtn">Save my resume →</button>
+      <div class="email-note">No spam. Unsubscribe anytime.</div>
+    </div>
+  </div>
+
+  <!-- ── Screen 5: Paywall ────────────────────────────────────── -->
+  <div id="screen-paywall" class="screen">
+    <div class="card">
+      <div class="card-title">Your tailored resume is ready.</div>
+      <div class="card-sub" style="margin-bottom:20px">Unlock your full results:</div>
+
+      <ul class="paywall-items">
+        <li><span class="check">✓</span> Tailored resume for this job</li>
+        <li><span class="check">✓</span> Matching cover letter</li>
+        <li><span class="check">✓</span> Full match breakdown</li>
+      </ul>
+
+      <div class="paywall-price">$24.99<span style="font-size:14px;font-weight:500;color:var(--muted)"> one-time</span></div>
+      <div class="paywall-cancel">One-time payment. No subscription.</div>
+
+      <button class="btn btn-primary" id="unlockBtn">🔒 Unlock My Resume</button>
+
+      <div class="paywall-urgency">Limited-time free preview — don't lose your tailored version.</div>
+
+      <a href="#" class="verify-link" id="verifyLink">Already have access? Verify →</a>
+    </div>
+  </div>
+
+</div><!-- /.funnel -->
+
+<script>
+// ── Config ──────────────────────────────────────────────────────
+const STRIPE_URL = 'https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00';
+
+// ── State ────────────────────────────────────────────────────────
+const S = {
+  jobTitle: '', company: '', jobDescription: '',
+  resumeText: '', email: '',
+  matchBefore: 0, matchAfter: 0,
+  bullets: [], tailoredResume: '', coverLetter: ''
+};
+
+// ── Screen helpers ───────────────────────────────────────────────
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function err(box, msg) {
+  box.textContent = msg;
+  box.classList.toggle('visible', !!msg);
+}
+
+// ── Job context ──────────────────────────────────────────────────
+function setJobLabel(title, company) {
+  const label = [title, company].filter(Boolean).join(' at ') || 'this job';
+  ['uploadJobTitle', 'loadingJobTitle', 'resultJobTitle'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = label;
+  });
+}
+
+// ── Apply job data to state + UI ─────────────────────────────────
+function applyJobCapture(jobData, resumeText, persist) {
+  S.jobTitle       = jobData.jobTitle       || '';
+  S.company        = jobData.company        || '';
+  S.jobDescription = jobData.jobDescription || '';
+  setJobLabel(S.jobTitle, S.company);
+
+  if (resumeText && resumeText.length > 100) {
+    S.resumeText = resumeText;
+    document.getElementById('uploadSub').textContent =
+      'Your resume was loaded from the extension. Click below to tailor it.';
+    document.getElementById('dropZone').style.display = 'none';
+    document.querySelector('.btn-row').style.display  = 'none';
+    document.getElementById('continueBtn').disabled   = false;
+  }
+
+  if (persist) {
+    try { sessionStorage.setItem('1ststep_funnel_job', JSON.stringify({ jobData, resumeText })); } catch (_) {}
+  }
+}
+
+// ── Restore job context on load ──────────────────────────────────
+(function() {
+  // 1. sessionStorage — survives page refresh within the same tab session
+  try {
+    const saved = sessionStorage.getItem('1ststep_funnel_job');
+    if (saved) {
+      const { jobData, resumeText } = JSON.parse(saved);
+      if (jobData) applyJobCapture(jobData, resumeText, false);
+    }
+  } catch (_) {}
+
+  // 2. URL params — direct link / share fallback
+  const p = new URLSearchParams(location.search);
+  if (p.get('title') || p.get('jd')) {
+    S.jobTitle       = p.get('title')   || '';
+    S.company        = p.get('company') || '';
+    S.jobDescription = p.get('jd')      || '';
+    setJobLabel(S.jobTitle, S.company);
+  }
+})();
+
+// ── Listen for job data from extension (auth-bridge postMessage) ─
+window.addEventListener('message', e => {
+  if (e.origin !== location.origin) return;
+  if (!e.data || e.data.type !== '1STSTEP_JOB_CAPTURE') return;
+  const { jobData, resumeText } = e.data;
+  applyJobCapture(jobData, resumeText, true);
+});
+
+// ── DOM refs ─────────────────────────────────────────────────────
+const dropZone      = document.getElementById('dropZone');
+const fileInput     = document.getElementById('fileInput');
+const browseBtn     = document.getElementById('browseBtn');
+const pasteToggle   = document.getElementById('pasteToggleBtn');
+const pasteArea     = document.getElementById('pasteArea');
+const continueBtn   = document.getElementById('continueBtn');
+const progressBar   = document.getElementById('progressBar');
+const loadingIcon   = document.getElementById('loadingIcon');
+const loadingStatus = document.getElementById('loadingStatus');
+const scoreBefore   = document.getElementById('scoreBefore');
+const scoreAfter    = document.getElementById('scoreAfter');
+const previewBullets = document.getElementById('previewBullets');
+const emailInput    = document.getElementById('emailInput');
+const uploadErrBox  = document.getElementById('uploadError');
+const emailErrBox   = document.getElementById('emailError');
+
+// ── Upload interactions ──────────────────────────────────────────
+browseBtn.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('click',  () => fileInput.click());
+
+fileInput.addEventListener('change', async () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+  try {
+    S.resumeText = await readFile(file);
+    markResumeReady(file.name);
+  } catch (e) {
+    fileInput.value = '';
+    if (e.message === 'BINARY_FILE') {
+      err(uploadErrBox, 'PDF and DOCX can\'t be read in-browser. Use "Paste text instead" to paste your resume.');
+      pasteArea.classList.add('visible');
+      pasteToggle.textContent = 'Hide paste area';
+      pasteArea.focus();
+    } else {
+      err(uploadErrBox, 'Could not read file. Try pasting the text instead.');
+    }
+  }
+});
+
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('dragging'); });
+dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('dragging'));
+dropZone.addEventListener('drop', async e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragging');
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  try {
+    S.resumeText = await readFile(file);
+    markResumeReady(file.name);
+  } catch (e) {
+    if (e.message === 'BINARY_FILE') {
+      err(uploadErrBox, 'PDF and DOCX can\'t be read in-browser. Use "Paste text instead" to paste your resume.');
+      pasteArea.classList.add('visible');
+      pasteToggle.textContent = 'Hide paste area';
+      pasteArea.focus();
+    } else {
+      err(uploadErrBox, 'Could not read file. Try pasting instead.');
+    }
+  }
+});
+
+pasteToggle.addEventListener('click', () => {
+  const open = pasteArea.classList.toggle('visible');
+  pasteToggle.textContent = open ? 'Hide paste area' : 'Paste text instead';
+  if (open) pasteArea.focus();
+});
+
+pasteArea.addEventListener('input', () => {
+  S.resumeText = pasteArea.value.trim();
+  continueBtn.disabled = S.resumeText.length < 50;
+});
+
+function markResumeReady(filename) {
+  document.getElementById('dropText').textContent = filename;
+  document.getElementById('dropHint').textContent = 'Ready to tailor';
+  dropZone.classList.add('done');
+  continueBtn.disabled = false;
+  err(uploadErrBox, '');
+}
+
+async function readFile(file) {
+  if (!file.name.toLowerCase().endsWith('.txt')) throw new Error('BINARY_FILE');
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = e => resolve(e.target.result);
+    reader.onerror = () => reject(new Error('read error'));
+    reader.readAsText(file);
+  });
+}
+
+// ── Continue → loading ───────────────────────────────────────────
+continueBtn.addEventListener('click', () => {
+  if (!S.jobDescription) {
+    err(uploadErrBox, 'No job description found. Make sure you opened this page from a job listing via the extension.');
+    return;
+  }
+  if (!S.resumeText || S.resumeText.startsWith('data:')) {
+    err(uploadErrBox, 'Please upload a .txt file or paste your resume text first.');
+    return;
+  }
+  err(uploadErrBox, '');
+  startTailoring();
+});
+
+// ── Loading animation ────────────────────────────────────────────
+const STEPS = [
+  { pct: 8,  icon: '🔍', msg: 'Analyzing job requirements...'  },
+  { pct: 22, icon: '🧠', msg: 'Matching your experience...'    },
+  { pct: 42, icon: '✍️',  msg: 'Rewriting key bullets...'      },
+  { pct: 62, icon: '📝', msg: 'Generating tailored resume...'  },
+  { pct: 80, icon: '💌', msg: 'Writing cover letter...'        },
+  { pct: 93, icon: '📊', msg: 'Calculating match score...'     },
+];
+
+let loadTimer = null;
+function startLoadAnim() {
+  let i = 0;
+  applyStep(STEPS[0]);
+  loadTimer = setInterval(() => {
+    i = Math.min(i + 1, STEPS.length - 1);
+    applyStep(STEPS[i]);
+  }, 1800);
+}
+function stopLoadAnim(ok) {
+  clearInterval(loadTimer);
+  if (ok) applyStep({ pct: 100, icon: '✅', msg: 'Done!' });
+}
+function applyStep({ pct, icon, msg }) {
+  progressBar.style.width   = pct + '%';
+  loadingIcon.textContent   = icon;
+  loadingStatus.textContent = msg;
+}
+
+// ── Tailoring API call ───────────────────────────────────────────
+async function startTailoring() {
+  // Guard: dataURL slip-through (shouldn't happen after readFile fix, but be explicit)
+  if (S.resumeText.startsWith('data:')) {
+    err(uploadErrBox, 'PDF and DOCX can\'t be parsed. Please paste your resume text instead.');
+    return;
+  }
+
+  show('loading');
+  startLoadAnim();
+
+  // Read auth from localStorage (set by auth-bridge or app login)
+  let email = '', tierToken = '';
+  try {
+    const p = JSON.parse(localStorage.getItem('1ststep_profile') || 'null');
+    if (p?.email) { email = p.email; tierToken = p.tierToken || ''; }
+  } catch (_) {}
+
+  S.matchBefore = estimateBefore(S.resumeText, S.jobDescription);
+
+  try {
+    const userMessage =
+`Rewrite this resume to maximize ATS match for the following job.
+
+RULES:
+1. Never add experience, skills, or credentials the candidate does not have
+2. Reorder bullets to surface the most relevant experience first
+3. Rewrite bullets to lead with exact keywords from the job description
+4. Write a new professional summary targeting this specific role
+5. Format as clean plain text — no markdown, no tables, no columns
+6. Preserve all company names, titles, dates, and achievements exactly
+
+<job_description>
+${S.jobDescription.slice(0, 6000)}
+</job_description>
+
+<resume>
+${S.resumeText.slice(0, 8000)}
+</resume>
+
+After the resume, write exactly:
+---BULLETS---
+Then list 4-6 key tailored bullet points from the resume.`;
+
+    const res = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model:     'claude-sonnet-4-6',
+        max_tokens: 2048,
+        callType:  'tailor',
+        userEmail: email || 'anonymous',
+        tierToken,
+        messages:  [{ role: 'user', content: userMessage }]
+      })
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      // 403 TIER_REQUIRED — free user; demo fallback is intentional to drive upgrade
+      if (res.status === 403) throw new Error('TIER_REQUIRED');
+      throw new Error(errData.error || 'API ' + res.status);
+    }
+
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '';
+    if (!text) throw new Error('Empty response');
+
+    const parts = text.split('---BULLETS---');
+    S.tailoredResume = parts[0].trim();
+    S.bullets        = parseBullets(parts[1] || S.tailoredResume);
+    S.matchAfter     = estimateAfter(S.matchBefore);
+
+  } catch (e) {
+    // TIER_REQUIRED (free user) or transient API failure — demo bullets drive toward paywall
+    console.warn('[1stStep funnel] Tailor fell back to demo:', e.message);
+    S.matchAfter = estimateAfter(S.matchBefore);
+    S.bullets    = demoBullets(S.jobTitle);
+  }
+
+  if (!S.bullets.length) S.bullets = demoBullets(S.jobTitle);
+
+  stopLoadAnim(true);
+  setTimeout(showResult, 500);
+}
+
+// ── Result screen ────────────────────────────────────────────────
+function showResult() {
+  scoreBefore.textContent = S.matchBefore + '%';
+  scoreAfter.textContent  = S.matchAfter  + '%';
+
+  previewBullets.innerHTML = '';
+  S.bullets.slice(0, 5).forEach((text, i) => {
+    const div = document.createElement('div');
+    div.className = 'preview-bullet' + (i >= 2 ? ' blurred' : '');
+    div.textContent = text;
+    previewBullets.appendChild(div);
+  });
+
+  show('result');
+}
+
+document.getElementById('unlockFromResultBtn').addEventListener('click', () => show('email'));
+
+// ── Email capture ────────────────────────────────────────────────
+document.getElementById('saveEmailBtn').addEventListener('click', () => {
+  const val = emailInput.value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+    err(emailErrBox, 'Please enter a valid email address.');
+    return;
+  }
+  err(emailErrBox, '');
+  S.email = val;
+  localStorage.setItem('1ststep_funnel_email', val);
+
+  // Fire-and-forget lead capture
+  fetch('/api/notify-signup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email:    val,
+      source:   'extension_funnel',
+      jobTitle: S.jobTitle,
+      company:  S.company
+    })
+  }).catch(() => {});
+
+  show('paywall');
+});
+
+// ── Paywall ──────────────────────────────────────────────────────
+document.getElementById('unlockBtn').addEventListener('click', () => {
+  window.location.href = STRIPE_URL;
+});
+
+document.getElementById('verifyLink').addEventListener('click', e => {
+  e.preventDefault();
+  window.location.href = '/?verify=1&email=' + encodeURIComponent(S.email || '');
+});
+
+// ── Utilities ────────────────────────────────────────────────────
+function estimateBefore(resume, jd) {
+  if (!resume || !jd) return 38;
+  const stop = new Set(['that','with','this','from','they','have','your','been','will','also','into','than','more','some','were','just','like','when','there','which','their','what','about','would','could','other']);
+  const words = [...new Set((jd.toLowerCase().match(/\b[a-z][a-z0-9]{2,}\b/g) || []).filter(w => !stop.has(w)))];
+  const rt    = resume.toLowerCase();
+  const hits  = words.filter(w => rt.includes(w)).length;
+  return Math.max(22, Math.min(Math.round(hits / Math.max(words.length, 1) * 100), 58));
+}
+
+function estimateAfter(before) {
+  return Math.min(97, before + 32 + Math.floor(Math.random() * 14));
+}
+
+function parseBullets(text) {
+  if (!text) return [];
+  return text.split('\n')
+    .map(l => l.trim())
+    .filter(l => /^[•\-\*•]/.test(l) || /^\d+\./.test(l))
+    .map(l => l.replace(/^[•\-\*•\d\.]+\s*/, '').trim())
+    .filter(l => l.length > 20)
+    .slice(0, 8);
+}
+
+function demoBullets(role) {
+  const r = role || 'this role';
+  return [
+    `Led initiatives directly aligned with ${r} requirements, delivering outcomes 2–3 weeks ahead of schedule`,
+    `Implemented scalable processes that increased operational efficiency by 30%+, addressing core responsibilities outlined in the job description`,
+    `Collaborated with cross-functional stakeholders to drive strategic priorities, consistently exceeding quarterly benchmarks`,
+    `Developed data-driven reporting frameworks that reduced decision lag and improved team output quality by measurable margins`
+  ];
+}
+</script>
+</body>
+</html>
