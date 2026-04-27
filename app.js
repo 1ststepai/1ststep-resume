@@ -1440,7 +1440,7 @@ ${resume.slice(0, 3000)}
       if (jobData.jobTitle) showJobContext(jobData.jobTitle, jobData.company || '');
 
       // Cover letter mode — pre-select complete tier
-      if (mode === 'coverLetter') {
+      if (mode === 'coverLetter') { // MODES.COVER_LETTER — extension constant
         document.getElementById('tierComplete')?.click();
       }
 

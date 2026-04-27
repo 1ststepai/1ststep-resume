@@ -4,6 +4,9 @@
 
 const APP_URL = 'https://app.1ststep.ai';
 
+// Keep in sync with background.js MODES
+const MODES = { TAILOR: 'tailor', COVER_LETTER: 'coverLetter' };
+
 const statusBadge    = document.getElementById('statusBadge');
 const loadingState   = document.getElementById('loadingState');
 const unauthState    = document.getElementById('unauthState');
@@ -191,7 +194,7 @@ function showJobCard(job, auth) {
         return;
       }
       if (jobTitleInput) jobTitleInput.classList.remove('required-error');
-      openInApp(buildJob(), coverLetterBtn, 'coverLetter');
+      openInApp(buildJob(), coverLetterBtn, MODES.COVER_LETTER);
     };
   }
 
