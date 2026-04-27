@@ -628,6 +628,7 @@
 
       // Tailored history panel
       document.getElementById('clearTailorHistoryBtn')?.addEventListener('click', clearTailorHistory);
+    document.getElementById('addManualJobBtn')?.addEventListener('click', addManualJob);
 
       // LinkedIn optimizer panel
       document.getElementById('liRunBtn')?.addEventListener('click', runLinkedInOptimize);
