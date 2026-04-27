@@ -107,7 +107,7 @@
         <div class="mode-toggle">
           <button class="mode-btn active" id="modeResume"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M11 1H3a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V5l-3-4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M11 1v4h3M5 8h6M5 10.5h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Resume Tailor</button>
           <button class="mode-btn" id="modeJobs"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Job Search</button>
-          <button class="mode-btn" id="modeTailored"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M2 4h8a1 1 0 011 1v10a1 1 0 01-1 1H2a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M4 8h5M4 10.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> My Resumes <span id="tailoredBadge" style="display:none;background:rgba(99,102,241,0.3);color:#a5b4fc;border-radius:100px;padding:1px 6px;font-size:10px;margin-left:2px">0</span></button>
+          <button class="mode-btn" id="modeTailored"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M2 4h8a1 1 0 011 1v10a1 1 0 01-1 1H2a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M4 8h5M4 10.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Job Tracker <span id="tailoredBadge" style="display:none;background:rgba(99,102,241,0.3);color:#a5b4fc;border-radius:100px;padding:1px 6px;font-size:10px;margin-left:2px">0</span></button>
           <div class="mode-more" id="modeMoreWrap">
             <button class="mode-btn" id="modeMoreBtn" title="More tools">More <span style="font-size:9px;opacity:0.7">▾</span><span id="moreActiveDot" style="display:none;width:6px;height:6px;border-radius:50%;background:#60A5FA;margin-left:2px"></span></button>
             <div class="mode-more-menu" id="moreMenu">
@@ -199,7 +199,7 @@
         </button>
         <button class="sb-item" id="sbTailored">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/><rect x="2" y="13" width="9" height="9"/><rect x="13" y="13" width="9" height="9"/></svg>
-          My Resumes
+          Job Tracker
           <span class="sb-badge" id="sbTailoredBadge" style="display:none">0</span>
         </button>
         <button class="sb-item" id="sbTracker">
@@ -457,7 +457,7 @@
             </button>
             <button class="rab-btn" id="rabVault">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/><rect x="2" y="13" width="9" height="9"/><rect x="13" y="13" width="9" height="9"/></svg>
-              Resume Vault
+              Job Tracker
             </button>
             <button class="rab-btn" id="rabTracker">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
@@ -860,18 +860,20 @@
 
       </div><!-- /job search right panel -->
 
-      <!-- Resume Vault Panel -->
+      <!-- Job Tracker Panel -->
       <div class="tracker-panel js-panel" id="tailoredHistoryPanel">
         <div style="max-width:860px;width:100%;margin:0 auto;padding:24px 16px;box-sizing:border-box">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
             <div>
-              <h2 style="font-size:18px;font-weight:700;margin:0 0 4px">🗂 Resume Vault</h2>
-              <p style="font-size:13px;color:var(--muted);margin:0">Every resume tailored for a specific job — download
-                anytime.</p>
+              <h2 style="font-size:18px;font-weight:700;margin:0 0 4px">📋 Job Tracker</h2>
+              <p style="font-size:13px;color:var(--muted);margin:0">Track every application — from tailored to offer.</p>
             </div>
-            <button id="clearTailorHistoryBtn"
-              style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif">Clear
-              all</button>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button onclick="addManualJob()"
+                style="background:linear-gradient(135deg,#6366F1,#8B5CF6);color:white;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">+ Add Job</button>
+              <button id="clearTailorHistoryBtn"
+                style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif">Clear all</button>
+            </div>
           </div>
           <div id="tailoredHistoryList"></div>
         </div>
@@ -1166,7 +1168,7 @@
         <ul style="list-style:none;padding:0;margin:0 0 16px;display:flex;flex-direction:column;gap:7px">
           <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Unlimited tailored resumes</li>
           <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Unlimited cover letters</li>
-          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Full Resume Vault</li>
+          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Full Job Tracker</li>
           <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Full Application Tracker</li>
           <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Chrome extension workflow</li>
           <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Match score for every job</li>
@@ -1988,7 +1990,7 @@
       <rect x="3" y="14" width="7" height="7" rx="1" />
       <rect x="14" y="14" width="7" height="7" rx="1" />
     </svg>
-    Resumes
+    Tracker
     <span class="mobile-nav-badge" id="mobileNavTailoredBadge" style="display:none">0</span>
   </button>
   <button class="mobile-nav-item" id="mobileNavTracker">

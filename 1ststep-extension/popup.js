@@ -106,11 +106,18 @@ function showJobCard(job, auth) {
   jobCard.classList.add('visible');
   emptyState.style.display   = 'none';
 
+  const titleMissing = !job.jobTitle || job.jobTitle === 'Unknown Role';
+
   jobTitleEl.textContent = job.jobTitle || 'Unknown Role';
-  companyEl.textContent  = job.company  || 'Unknown Company';
+  companyEl.textContent  = job.company  || '';
   siteEl.textContent     = (job.site    || 'unknown').toUpperCase();
 
-  const jobUrlEl = document.getElementById('jobUrl');
+  const jobUrlEl      = document.getElementById('jobUrl');
+  const jobInfoForm   = document.getElementById('jobInfoForm');
+  const jobTitleInput = document.getElementById('jobTitleInput');
+  const companyInput  = document.getElementById('companyInput');
+  const editJobBtn    = document.getElementById('editJobBtn');
+
   if (jobUrlEl && job.applyUrl) {
     jobUrlEl.textContent = job.applyUrl.replace(/^https?:\/\//, '').slice(0, 50) + (job.applyUrl.length > 55 ? '…' : '');
     jobUrlEl.title = job.applyUrl;
@@ -126,11 +133,53 @@ function showJobCard(job, auth) {
     matchLine.style.display = 'block';
   }
 
-  tailorBtn.onclick   = () => openInApp(job, tailorBtn);
+  // Pre-fill inputs
+  if (jobTitleInput) jobTitleInput.value = titleMissing ? '' : (job.jobTitle || '');
+  if (companyInput)  companyInput.value  = job.company || '';
+
+  // Show edit form immediately if title unknown; show edit link otherwise
+  if (jobInfoForm) jobInfoForm.style.display = titleMissing ? 'block' : 'none';
+  if (editJobBtn)  editJobBtn.style.display  = titleMissing ? 'none'  : 'inline';
+
+  if (editJobBtn) {
+    editJobBtn.onclick = () => {
+      const open = jobInfoForm.style.display === 'none';
+      jobInfoForm.style.display = open ? 'block' : 'none';
+      if (open && jobTitleInput) jobTitleInput.focus();
+    };
+  }
+
+  // Sync display labels when user edits inputs
+  if (jobTitleInput) jobTitleInput.oninput = () => { jobTitleEl.textContent = jobTitleInput.value.trim() || 'Unknown Role'; };
+  if (companyInput)  companyInput.oninput  = () => { companyEl.textContent  = companyInput.value.trim(); };
+
   if (autofillBtn) autofillBtn.onclick = () => autofillPage(auth, autofillBtn);
 
-  // Resume already synced — auto-trigger without requiring a click
-  if (auth.resume) {
+  function buildJob() {
+    const title   = jobTitleInput?.value.trim() || job.jobTitle || '';
+    const company = companyInput?.value.trim()  || job.company  || '';
+    return { ...job, jobTitle: title, company };
+  }
+
+  function validateAndOpen(btn) {
+    const title = jobTitleInput?.value.trim() || job.jobTitle || '';
+    if (!title || title === 'Unknown Role') {
+      if (jobInfoForm) jobInfoForm.style.display = 'block';
+      if (jobTitleInput) {
+        jobTitleInput.classList.add('required-error');
+        jobTitleInput.focus();
+        jobTitleInput.placeholder = 'Job Title is required';
+      }
+      return;
+    }
+    if (jobTitleInput) jobTitleInput.classList.remove('required-error');
+    openInApp(buildJob(), btn);
+  }
+
+  tailorBtn.onclick = () => validateAndOpen(tailorBtn);
+
+  // Auto-trigger only when title is already known (skip countdown if user must fill form)
+  if (auth.resume && !titleMissing) {
     let countdown = 2;
     tailorBtn.textContent = `Tailoring in ${countdown}s… (click to go now)`;
     const timer = setInterval(() => {
@@ -139,10 +188,10 @@ function showJobCard(job, auth) {
         tailorBtn.textContent = `Tailoring in ${countdown}s… (click to go now)`;
       } else {
         clearInterval(timer);
-        openInApp(job, tailorBtn);
+        openInApp(buildJob(), tailorBtn);
       }
     }, 1000);
-    tailorBtn.onclick = () => { clearInterval(timer); openInApp(job, tailorBtn); };
+    tailorBtn.onclick = () => { clearInterval(timer); validateAndOpen(tailorBtn); };
   }
 }
 

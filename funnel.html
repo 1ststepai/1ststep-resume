@@ -394,7 +394,7 @@
           <div class="score-arrow">→</div>
           <div class="score-after"  id="scoreAfter">—%</div>
         </div>
-        <div class="score-note">You're now aligned with this role.</div>
+        <div class="score-note" id="resultScoreNote">You're now aligned with this role.</div>
       </div>
 
       <div class="divider"></div>
@@ -405,8 +405,17 @@
         <div class="preview-fade"></div>
       </div>
 
-      <div style="margin-top:24px">
+      <div style="margin-top:24px;display:flex;flex-direction:column;gap:10px;">
         <button class="btn btn-primary" id="unlockFromResultBtn">Unlock my full resume →</button>
+        <button class="btn btn-secondary" id="editJobInfoBtn" style="font-size:13px;padding:10px;">Edit Job Info</button>
+      </div>
+
+      <!-- Edit job info panel -->
+      <div id="editJobPanel" style="display:none;margin-top:16px;padding:14px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;">
+        <div style="font-size:12px;font-weight:600;color:#92400E;margin-bottom:8px;">Update job details:</div>
+        <input type="text" id="funnelJobTitleInput" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:8px;font-size:13px;font-family:inherit;margin-bottom:8px;outline:none;box-sizing:border-box;" placeholder="Job Title">
+        <input type="text" id="funnelCompanyInput" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:8px;font-size:13px;font-family:inherit;margin-bottom:10px;outline:none;box-sizing:border-box;" placeholder="Company Name">
+        <button class="btn btn-primary" id="saveJobInfoBtn" style="padding:9px 16px;font-size:13px;">Save</button>
       </div>
     </div>
   </div>
@@ -816,10 +825,39 @@ Then list 4-6 key tailored bullet points from the resume.`;
   setTimeout(showResult, 500);
 }
 
+// ── Save to shared history (same key app.js reads) ───────────────
+function saveFunnelEntry() {
+  if (!S.tailoredResume) return;
+  try {
+    const HISTORY_KEY = '1ststep_tailor_history';
+    const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    const entry = {
+      id:             `tailor_${Date.now()}`,
+      jobId:          null,
+      jobTitle:       S.jobTitle || '',
+      company:        S.company  || '',
+      location:       '',
+      jobUrl:         '',
+      resume:         S.tailoredResume,
+      coverLetter:    '',
+      jobDescription: S.jobDescription.slice(0, 5000),
+      tailoredAt:     new Date().toISOString(),
+      matchPct:       S.matchAfter || null,
+    };
+    history.unshift(entry);
+    if (history.length > 50) history.splice(50);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch (_) {}
+}
+
 // ── Result screen ────────────────────────────────────────────────
 function showResult() {
   scoreBefore.textContent = S.matchBefore + '%';
   scoreAfter.textContent  = S.matchAfter  + '%';
+
+  const roleLabel = S.jobTitle && S.jobTitle !== 'Unknown Role' ? S.jobTitle : 'this role';
+  const scoreNote = document.getElementById('resultScoreNote');
+  if (scoreNote) scoreNote.textContent = `You're now aligned with ${roleLabel}.`;
 
   previewBullets.innerHTML = '';
   S.bullets.slice(0, 5).forEach((text, i) => {
@@ -829,10 +867,37 @@ function showResult() {
     previewBullets.appendChild(div);
   });
 
+  // Pre-fill edit panel with current job info
+  const fti = document.getElementById('funnelJobTitleInput');
+  const fci = document.getElementById('funnelCompanyInput');
+  if (fti) fti.value = S.jobTitle || '';
+  if (fci) fci.value = S.company  || '';
+
+  // Persist to the same localStorage key the app's Resume Vault reads
+  saveFunnelEntry();
+
   show('result');
 }
 
 document.getElementById('unlockFromResultBtn').addEventListener('click', () => show('email'));
+
+// ── Edit Job Info panel (result screen) ──────────────────────────
+document.getElementById('editJobInfoBtn').addEventListener('click', () => {
+  const panel = document.getElementById('editJobPanel');
+  if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+});
+
+document.getElementById('saveJobInfoBtn').addEventListener('click', () => {
+  const title   = document.getElementById('funnelJobTitleInput')?.value.trim();
+  const company = document.getElementById('funnelCompanyInput')?.value.trim();
+  if (title) S.jobTitle = title;
+  if (company !== undefined) S.company = company;
+  setJobLabel(S.jobTitle, S.company);
+  const roleLabel = S.jobTitle && S.jobTitle !== 'Unknown Role' ? S.jobTitle : 'this role';
+  const scoreNote = document.getElementById('resultScoreNote');
+  if (scoreNote) scoreNote.textContent = `You're now aligned with ${roleLabel}.`;
+  document.getElementById('editJobPanel').style.display = 'none';
+});
 
 // ── Email capture ────────────────────────────────────────────────
 document.getElementById('saveEmailBtn').addEventListener('click', () => {
