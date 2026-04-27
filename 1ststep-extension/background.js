@@ -214,6 +214,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           break;
         }
 
+        // ─── TRACKER BADGE ─────────────────────────
+        case 'UPDATE_TRACKER_BADGE': {
+          const localData = await chrome.storage.local.get(['1ststep_ext_tracker']);
+          const count = (localData['1ststep_ext_tracker'] || []).length;
+          if (count > 0) {
+            await chrome.action.setBadgeText({ text: String(count) });
+            await chrome.action.setBadgeBackgroundColor({ color: '#4F46E5' });
+          } else {
+            await chrome.action.setBadgeText({ text: '' });
+          }
+          sendResponse({ success: true });
+          break;
+        }
+
         // ─── TRACKING ──────────────────────────────
         case 'TRACK_EVENT': {
           // Fire GHL tag via backend track-event.js

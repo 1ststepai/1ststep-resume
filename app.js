@@ -152,6 +152,7 @@
       updateProfileBadge();
       updateQsStats();
       syncExtensionStats();
+      mergeExtensionJobs();
 
       // ── Identify returning users in GHL chat widget on page load ──────────────
       // Fires after widget script loads (~2s). Prevents returning users from
@@ -4178,6 +4179,32 @@ ${desc}`;
       entry.notes = note;
       entry.updatedAt = new Date().toISOString();
       localStorage.setItem(TAILOR_HISTORY_KEY, JSON.stringify(history));
+    }
+
+    function mergeExtensionJobs() {
+      try {
+        if (typeof chrome === 'undefined' || !chrome.storage?.local) return;
+        chrome.storage.local.get(['1ststep_ext_tracker'], (data) => {
+          if (chrome.runtime.lastError) return;
+          const extJobs = data['1ststep_ext_tracker'];
+          if (!extJobs || !extJobs.length) return;
+
+          const history = getTailorHistory();
+          const existingUrls = new Set(history.map(e => e.jobUrl).filter(Boolean));
+          const newJobs = extJobs.filter(e => e.jobUrl && !existingUrls.has(e.jobUrl));
+          if (!newJobs.length) return;
+
+          const merged = [...newJobs, ...history];
+          if (merged.length > 50) merged.splice(50);
+          localStorage.setItem(TAILOR_HISTORY_KEY, JSON.stringify(merged));
+          updateTailoredBadge();
+          chrome.storage.local.set({ '1ststep_ext_tracker': [] }).catch(() => {});
+          showToast(`${newJobs.length} job${newJobs.length > 1 ? 's' : ''} synced from extension`);
+          renderTailoredHistory();
+        });
+      } catch (_) {
+        // Not in extension context — silent
+      }
     }
 
     function addManualJob() {

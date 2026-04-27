@@ -171,54 +171,117 @@ function pollForJob() {
 // ─── INJECTED TAILOR BUTTON ───────────────────────────────────
 
 function removeTailorButton() {
-  document.getElementById('1ststep-tailor-btn')?.remove();
+  document.getElementById('1ststep-action-strip')?.remove();
 }
 
 function injectTailorButton(job) {
-  if (document.getElementById('1ststep-tailor-btn')) return; // already present
+  if (document.getElementById('1ststep-action-strip')) return;
 
   chrome.storage.sync.get(['1ststep_resume'], (data) => {
     if (!chrome.runtime?.id) return;
     const hasResume = !!(data['1ststep_resume']);
-    const label = hasResume ? '⚡ Tailor Resume' : '⚡ Tailor with 1stStep';
+    const tailorLabel = hasResume ? '⚡ Tailor Resume' : '⚡ Tailor with 1stStep';
+    const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
 
-    const btn = document.createElement('button');
-    btn.id = '1ststep-tailor-btn';
-    btn.textContent = label;
-    btn.setAttribute('aria-label', '1stStep: Tailor resume for this job');
-    btn.style.cssText = [
+    const strip = document.createElement('div');
+    strip.id = '1ststep-action-strip';
+    strip.style.cssText = [
       'position:fixed', 'bottom:24px', 'right:24px', 'z-index:2147483647',
+      'display:flex', 'gap:8px', 'align-items:center',
+      `font-family:${FONT}`,
+    ].join(';');
+
+    // ── Tailor button (primary) ──────────────────────────────
+    const tailorBtn = document.createElement('button');
+    tailorBtn.id = '1ststep-tailor-btn';
+    tailorBtn.textContent = tailorLabel;
+    tailorBtn.setAttribute('aria-label', '1stStep: Tailor resume for this job');
+    tailorBtn.style.cssText = [
       'background:linear-gradient(135deg,#4F46E5,#6366F1)',
       'color:#fff', 'border:none', 'border-radius:10px',
-      'padding:11px 18px',
-      "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
+      'padding:11px 18px', `font-family:${FONT}`,
       'font-size:13px', 'font-weight:700', 'cursor:pointer',
       'box-shadow:0 4px 20px rgba(99,102,241,0.45)',
       'transition:transform 0.15s,box-shadow 0.15s',
       'display:flex', 'align-items:center', 'gap:6px', 'white-space:nowrap',
     ].join(';');
-
-    btn.onmouseover = () => {
-      btn.style.transform = 'translateY(-2px)';
-      btn.style.boxShadow = '0 6px 28px rgba(99,102,241,0.55)';
-    };
-    btn.onmouseout = () => {
-      btn.style.transform = '';
-      btn.style.boxShadow = '0 4px 20px rgba(99,102,241,0.45)';
-    };
-
-    btn.onclick = () => {
-      btn.textContent = 'Opening…';
-      btn.disabled = true;
+    tailorBtn.onmouseover = () => { tailorBtn.style.transform = 'translateY(-2px)'; tailorBtn.style.boxShadow = '0 6px 28px rgba(99,102,241,0.55)'; };
+    tailorBtn.onmouseout  = () => { tailorBtn.style.transform = ''; tailorBtn.style.boxShadow = '0 4px 20px rgba(99,102,241,0.45)'; };
+    tailorBtn.onclick = () => {
+      tailorBtn.textContent = 'Opening…';
+      tailorBtn.disabled = true;
       chrome.runtime.sendMessage({ action: 'OPEN_IN_APP', jobData: job }, (response) => {
-        if (!response?.success) {
-          btn.textContent = label;
-          btn.disabled = false;
-        }
+        if (!response?.success) { tailorBtn.textContent = tailorLabel; tailorBtn.disabled = false; }
       });
     };
 
-    document.body.appendChild(btn);
+    // ── Track button (secondary) ─────────────────────────────
+    const trackBtn = document.createElement('button');
+    trackBtn.id = '1ststep-track-btn';
+    trackBtn.textContent = '＋ Track';
+    trackBtn.style.cssText = [
+      'background:rgba(255,255,255,0.96)',
+      'color:#4F46E5', 'border:1.5px solid rgba(99,102,241,0.4)', 'border-radius:10px',
+      'padding:11px 16px', `font-family:${FONT}`,
+      'font-size:13px', 'font-weight:700', 'cursor:pointer',
+      'box-shadow:0 4px 16px rgba(0,0,0,0.10)',
+      'transition:all 0.15s', 'white-space:nowrap',
+    ].join(';');
+    trackBtn.onmouseover = () => { trackBtn.style.background = '#EEEEFD'; trackBtn.style.borderColor = '#4F46E5'; };
+    trackBtn.onmouseout  = () => { trackBtn.style.background = 'rgba(255,255,255,0.96)'; trackBtn.style.borderColor = 'rgba(99,102,241,0.4)'; };
+    trackBtn.onclick = () => addToTracker(job, trackBtn);
+
+    // Mark already-tracked jobs on load
+    chrome.storage.local.get(['1ststep_ext_tracker'], (localData) => {
+      const tracker = localData['1ststep_ext_tracker'] || [];
+      if (tracker.find(e => e.jobUrl === job.applyUrl)) markTracked(trackBtn);
+    });
+
+    strip.appendChild(tailorBtn);
+    strip.appendChild(trackBtn);
+    document.body.appendChild(strip);
+  });
+}
+
+function markTracked(btn) {
+  btn.textContent = '✓ Tracked';
+  btn.style.background = '#ECFDF5';
+  btn.style.color = '#059669';
+  btn.style.borderColor = '#059669';
+  btn.disabled = true;
+  btn.onmouseover = null;
+  btn.onmouseout  = null;
+}
+
+function addToTracker(job, btn) {
+  btn.textContent = 'Saving…';
+  btn.disabled = true;
+
+  const entry = {
+    id:             'ext_' + Date.now(),
+    jobTitle:       job.jobTitle || 'Unknown Role',
+    company:        job.company  || '',
+    jobUrl:         job.applyUrl || '',
+    jobDescription: (job.jobDescription || '').slice(0, 5000),
+    location: '', resume: '', coverLetter: '', matchPct: null, notes: '',
+    status:    'not_applied',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    appliedAt: null,
+    tailoredAt: null,
+    source: 'extension',
+  };
+
+  chrome.storage.local.get(['1ststep_ext_tracker'], (data) => {
+    const tracker = data['1ststep_ext_tracker'] || [];
+    if (!tracker.find(e => e.jobUrl === job.applyUrl)) {
+      tracker.unshift(entry);
+      if (tracker.length > 100) tracker.splice(100);
+    }
+    chrome.storage.local.set({ '1ststep_ext_tracker': tracker }, () => {
+      markTracked(btn);
+      chrome.runtime.sendMessage({ action: 'UPDATE_TRACKER_BADGE' }).catch(() => {});
+    });
   });
 }
 

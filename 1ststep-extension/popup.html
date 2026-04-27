@@ -370,6 +370,55 @@
     }
 
     .edit-job-link:hover { color: var(--text2); }
+
+    .tracker-strip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    .tracker-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2);
+      white-space: nowrap;
+    }
+
+    .tracker-label.tracked { color: var(--brand); }
+
+    .tracker-stage-btns {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .tracker-stage-btn {
+      flex: none;
+      padding: 3px 9px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 20px;
+      cursor: pointer;
+      border: 1.5px solid var(--border2);
+      background: var(--surface);
+      color: var(--text2);
+      transition: all 0.12s;
+      font-family: inherit;
+    }
+
+    .tracker-stage-btn:hover { border-color: var(--brand); color: var(--brand); }
+
+    .tracker-stage-btn.active {
+      background: var(--brand);
+      color: white;
+      border-color: var(--brand);
+    }
   </style>
 </head>
 <body>
@@ -405,6 +454,12 @@
           <div class="job-info-form-label">We couldn't detect the job title — please confirm:</div>
           <input type="text" id="jobTitleInput" class="job-info-input" placeholder="Job Title (required)" autocomplete="off">
           <input type="text" id="companyInput" class="job-info-input" placeholder="Company Name (optional)" autocomplete="off" style="margin-bottom:0;">
+        </div>
+
+        <!-- Tracker strip — shows pipeline status + quick-stage buttons -->
+        <div id="trackerStrip" class="tracker-strip" style="display:none;">
+          <span id="trackerLabel" class="tracker-label">+ Add to Job Tracker</span>
+          <div id="trackerStageBtns" class="tracker-stage-btns"></div>
         </div>
 
         <div id="matchLine" class="match-line" style="display:none;">
