@@ -219,7 +219,8 @@ async function deliverPendingJob() {
         applyUrl:       jobData.applyUrl,
         site:           jobData.site
       },
-      resumeText
+      resumeText,
+      mode: entry.mode || 'tailor'
     }, window.location.origin);
 
     console.log('[1stStep] Delivered pending job:', jobData.jobTitle, '| id:', matchedId);

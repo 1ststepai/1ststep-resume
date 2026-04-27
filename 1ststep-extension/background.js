@@ -5,6 +5,9 @@
 
 const APP_URL = 'https://app.1ststep.ai';
 
+// Canonical mode constants — keep in sync with popup.js
+const MODES = { TAILOR: 'tailor', COVER_LETTER: 'coverLetter' };
+
 // Auth token cache { token, expiry }
 let authTokenCache = null;
 
@@ -141,10 +144,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           for (const id of Object.keys(pendingJobs)) {
             if (now - pendingJobs[id].createdAt > 2 * 60 * 1000) delete pendingJobs[id];
           }
-          pendingJobs[jobCaptureId] = { jobData: request.jobData, createdAt: now };
+          const jobMode = request.mode || MODES.TAILOR;
+          pendingJobs[jobCaptureId] = { jobData: request.jobData, mode: jobMode, createdAt: now };
           await chrome.storage.local.set({ pendingJobs });
 
-          const targetUrl = `${APP_URL}/funnel?jobCaptureId=${jobCaptureId}`;
+          // Cover letter opens main app (tier selector available); tailor opens funnel
+          const targetUrl = jobMode === MODES.COVER_LETTER
+            ? `${APP_URL}/?jobCaptureId=${jobCaptureId}&mode=${MODES.COVER_LETTER}`
+            : `${APP_URL}/funnel?jobCaptureId=${jobCaptureId}`;
           const existingTabs = await chrome.tabs.query({ url: `${APP_URL}/*` });
           if (existingTabs.length > 0) {
             await chrome.tabs.update(existingTabs[0].id, { active: true, url: targetUrl });

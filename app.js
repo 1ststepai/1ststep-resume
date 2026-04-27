@@ -153,6 +153,7 @@
       updateQsStats();
       syncExtensionStats();
       mergeExtensionJobs();
+      initTrackerPicker();
 
       // ── Identify returning users in GHL chat widget on page load ──────────────
       // Fires after widget script loads (~2s). Prevents returning users from
@@ -1395,7 +1396,7 @@ ${resume.slice(0, 3000)}
     window.addEventListener('message', (event) => {
       if (event.origin !== window.location.origin) return;
       if (!event.data || event.data.type !== '1STSTEP_JOB_CAPTURE') return;
-      const { jobData, resumeText } = event.data;
+      const { jobData, resumeText, mode } = event.data;
       if (!jobData) return;
 
       window._extensionDetected = true;
@@ -1437,6 +1438,11 @@ ${resume.slice(0, 3000)}
 
       switchMode('resume');
       if (jobData.jobTitle) showJobContext(jobData.jobTitle, jobData.company || '');
+
+      // Cover letter mode — pre-select complete tier
+      if (mode === 'coverLetter') { // MODES.COVER_LETTER — extension constant
+        document.getElementById('tierComplete')?.click();
+      }
 
       // ── Auto-tailor if resume is already loaded ───────────────────────────
       const hasResumeNow = !!(fileContent || document.getElementById('resumeText')?.value.trim());
@@ -4179,6 +4185,52 @@ ${desc}`;
       entry.notes = note;
       entry.updatedAt = new Date().toISOString();
       localStorage.setItem(TAILOR_HISTORY_KEY, JSON.stringify(history));
+    }
+
+    function initTrackerPicker() {
+      const btn      = document.getElementById('pickTrackedJobBtn');
+      const dropdown = document.getElementById('trackerPickerDropdown');
+      if (!btn || !dropdown) return;
+
+      const STATUS_ICONS = { not_applied: '○', applied: '●', interviewing: '◎', offer: '★', rejected: '✕' };
+
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (dropdown.style.display !== 'none') { dropdown.style.display = 'none'; return; }
+
+        const jobs = getTailorHistory().filter(e => e.jobDescription?.trim());
+        if (!jobs.length) {
+          dropdown.innerHTML = '<div style="padding:10px 12px;font-size:12px;color:var(--muted)">No tracked jobs with descriptions yet.</div>';
+        } else {
+          dropdown.innerHTML = jobs.slice(0, 25).map(e => {
+            const label = [e.company, e.jobTitle].filter(Boolean).join(' — ') || 'Untitled Role';
+            const icon  = STATUS_ICONS[e.status] || '○';
+            return `<div class="tracker-picker-item" data-id="${escHtml(e.id)}"
+              style="padding:9px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;">
+              <span style="color:var(--muted);font-size:11px;flex-shrink:0">${icon}</span>
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(label)}</span>
+            </div>`;
+          }).join('');
+
+          dropdown.querySelectorAll('.tracker-picker-item').forEach(item => {
+            item.addEventListener('mouseover', () => item.style.background = 'var(--surface2)');
+            item.addEventListener('mouseout',  () => item.style.background = '');
+            item.addEventListener('click', () => {
+              const entry = jobs.find(e => e.id === item.dataset.id);
+              if (!entry) return;
+              const jt = document.getElementById('jobText');
+              if (jt) { jt.value = entry.jobDescription; jt.dispatchEvent(new Event('input')); }
+              window._capturedJob = { title: entry.jobTitle, company: entry.company, url: entry.jobUrl };
+              if (entry.jobTitle) showJobContext(entry.jobTitle, entry.company || '');
+              dropdown.style.display = 'none';
+              jt?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+          });
+        }
+        dropdown.style.display = 'block';
+      });
+
+      document.addEventListener('click', () => { dropdown.style.display = 'none'; }, { capture: true, passive: true });
     }
 
     function mergeExtensionJobs() {

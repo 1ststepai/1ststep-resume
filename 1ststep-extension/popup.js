@@ -4,6 +4,9 @@
 
 const APP_URL = 'https://app.1ststep.ai';
 
+// Keep in sync with background.js MODES
+const MODES = { TAILOR: 'tailor', COVER_LETTER: 'coverLetter' };
+
 const statusBadge    = document.getElementById('statusBadge');
 const loadingState   = document.getElementById('loadingState');
 const unauthState    = document.getElementById('unauthState');
@@ -181,6 +184,20 @@ function showJobCard(job, auth) {
 
   tailorBtn.onclick = () => validateAndOpen(tailorBtn);
 
+  const coverLetterBtn = document.getElementById('coverLetterBtn');
+  if (coverLetterBtn) {
+    coverLetterBtn.onclick = () => {
+      const title = jobTitleInput?.value.trim() || job.jobTitle || '';
+      if (!title || title === 'Unknown Role') {
+        if (jobInfoForm) jobInfoForm.style.display = 'block';
+        if (jobTitleInput) { jobTitleInput.classList.add('required-error'); jobTitleInput.focus(); }
+        return;
+      }
+      if (jobTitleInput) jobTitleInput.classList.remove('required-error');
+      openInApp(buildJob(), coverLetterBtn, MODES.COVER_LETTER);
+    };
+  }
+
   // Auto-trigger only when title is already known (skip countdown if user must fill form)
   if (auth.resume && !titleMissing) {
     let countdown = 2;
@@ -318,7 +335,7 @@ async function getCurrentJob() {
 
 // ─── OPEN IN APP ─────────────────────────────────────────────
 
-async function openInApp(job, btn) {
+async function openInApp(job, btn, mode = 'tailor') {
   btn = btn || tailorBtn;
   const originalLabel = btn.textContent;
   btn.disabled    = true;
@@ -338,7 +355,7 @@ async function openInApp(job, btn) {
     site:            job.site            || 'unknown'
   };
 
-  chrome.runtime.sendMessage({ action: 'OPEN_IN_APP', jobData }, (response) => {
+  chrome.runtime.sendMessage({ action: 'OPEN_IN_APP', jobData, mode }, (response) => {
     if (chrome.runtime.lastError) {
       btn.textContent = 'Extension error — try reloading';
       setTimeout(() => { btn.textContent = originalLabel; btn.disabled = false; }, 3000);
