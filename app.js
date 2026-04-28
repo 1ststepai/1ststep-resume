@@ -4658,10 +4658,7 @@ ${desc}`;
     });
 
     // ── Feedback / Review Modal ───────────────────────────────────────────────
-    // ⚙ Replace the PLACEHOLDER in the Google review link with your actual
-    //   Google Business Profile short URL once you've claimed your listing.
-    //   e.g.  https://g.page/r/YOUR_PLACE_ID/review
-    //   Find it at: https://business.google.com → Get more reviews → Copy link
+    // Google review link lives on #googleReviewBtn in index.html.
 
     let _selectedStars = 0;
 
