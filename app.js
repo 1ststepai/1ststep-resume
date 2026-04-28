@@ -89,6 +89,12 @@
       } catch {}
     }
 
+    function activateOnEnterOrSpace(e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      e.currentTarget.click();
+    }
+
     // ── Extension stats sync ─────────────────────────────────────────────────
     function syncExtensionStats(trackSuccess = false) {
       try {
@@ -298,6 +304,7 @@
       const fileDrop = document.getElementById('fileDrop');
       if (fileDrop) {
         fileDrop.addEventListener('click', () => document.getElementById('fileInput').click());
+        fileDrop.addEventListener('keydown', activateOnEnterOrSpace);
         fileDrop.addEventListener('dragover', handleDragOver);
         fileDrop.addEventListener('dragleave', handleDragLeave);
         fileDrop.addEventListener('drop', handleDrop);
@@ -320,6 +327,7 @@
       // ── Phase 4 batch 2: nav / topbar / sidebar ───────────────────────────
       // Logo
       document.getElementById('logoBtn')?.addEventListener('click', () => { switchMode('resume'); setMobileNav('resume'); });
+      document.getElementById('logoBtn')?.addEventListener('keydown', activateOnEnterOrSpace);
 
       // Mobile mode toggle
       document.getElementById('modeResume')?.addEventListener('click', () => switchMode('resume'));
@@ -345,7 +353,9 @@
       document.getElementById('topbarUpgradeBtn')?.addEventListener('click', openProfileModal);
       document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
       document.getElementById('topbarBackupBtn')?.addEventListener('click', downloadDataBackup);
+      document.getElementById('topbarBackupBtn')?.addEventListener('keydown', activateOnEnterOrSpace);
       document.getElementById('topbarAvatar')?.addEventListener('click', openProfileModal);
+      document.getElementById('topbarAvatar')?.addEventListener('keydown', activateOnEnterOrSpace);
 
       // ── Phase 4 batch 3: results toolbar + What's Next bar ────────────────
       // Mark step 4 all-done on download
@@ -470,6 +480,7 @@
       const liDrop = document.getElementById('liPdfDrop');
       if (liDrop) {
         liDrop.addEventListener('click', () => document.getElementById('liPdfInput').click());
+        liDrop.addEventListener('keydown', activateOnEnterOrSpace);
         liDrop.addEventListener('dragover', e => {
           e.preventDefault();
           liDrop.style.borderColor = 'var(--brand)';
@@ -805,6 +816,7 @@
     function refreshSetupSteps() {
       const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
       const hasJob = !!(document.getElementById('jobText')?.value.trim());
+      btn.setAttribute('aria-disabled', String(!(hasResume && hasJob)));
 
       function applyStep(id, displayNum, done) {
         const row = document.getElementById(`setupStep${id}`);
@@ -1126,6 +1138,7 @@ ${resume.slice(0, 3000)}
         btn.style.cursor = 'pointer';
         btn.classList.remove('pulse-cta');
         lbl.textContent = '↑ Upload Your Resume to Start';
+        btn.setAttribute('aria-label', 'Upload your resume to start tailoring');
         if (jdSec) jdSec.style.opacity = '0.45';
         if (helpTxt) helpTxt.style.display = 'none';
         btn.onclick = () => {
@@ -1144,6 +1157,7 @@ ${resume.slice(0, 3000)}
         btn.style.cursor = 'pointer';
         btn.classList.remove('pulse-cta');
         lbl.textContent = '↑ Upload Your Resume to Tailor This Job';
+        btn.setAttribute('aria-label', 'Upload your resume to tailor this job');
         if (jdSec) jdSec.style.opacity = '';
         if (helpTxt) helpTxt.style.display = 'none';
         btn.onclick = () => {
@@ -1162,6 +1176,7 @@ ${resume.slice(0, 3000)}
         btn.style.cursor = 'pointer';
         btn.classList.remove('pulse-cta');
         lbl.textContent = 'Paste a Job Description Below ↓';
+        btn.setAttribute('aria-label', 'Paste a job description before generating a tailored resume');
         if (jdSec) jdSec.style.opacity = '';
         if (helpTxt) helpTxt.style.display = 'block';
         btn.onclick = () => {
@@ -1179,6 +1194,7 @@ ${resume.slice(0, 3000)}
         btn.style.opacity = '';
         btn.style.cursor = '';
         lbl.textContent = '✦ Tailor My Resume';
+        btn.setAttribute('aria-label', outputMode === 'complete' ? 'Tailor my resume and generate a cover letter' : 'Tailor my resume');
         if (jdSec) jdSec.style.opacity = '';
         if (helpTxt) helpTxt.style.display = 'none';
         if (!btn.classList.contains('pulse-cta')) {
@@ -1356,7 +1372,7 @@ ${resume.slice(0, 3000)}
     })();
 
     // ── Extension Promo ──────────────────────────────────────────────────────
-    const EXT_INSTALL_URL = 'https://chromewebstore.google.com/detail/1ststep-ai-resume-tailor/gcmaoapcnobdcfaiijaoamajamijfacd';
+    const EXT_INSTALL_URL = 'https://chromewebstore.google.com/detail/1ststepai-%E2%80%93-tailor-your-r/gnbjcmennlcbkmakameknfcnioohnjkp';
 
     function hideExtPromoBanner() {
       const banner = document.getElementById('extPromoBanner');
@@ -1673,6 +1689,7 @@ ${resume.slice(0, 3000)}
       document.getElementById('emptyState').style.display = 'none';
       document.getElementById('resultsPanel').classList.remove('visible');
       document.getElementById('progressPanel').classList.add('visible');
+      document.getElementById('progressPanel')?.setAttribute('aria-busy', 'true');
       hideResultActionBar();
       updateMobileQuickBar();
       [1, 2, 3, 4, 5].forEach(n => setStep(n, null));
@@ -1685,6 +1702,7 @@ ${resume.slice(0, 3000)}
 
     function showResults() {
       document.getElementById('progressPanel').classList.remove('visible');
+      document.getElementById('progressPanel')?.setAttribute('aria-busy', 'false');
       document.getElementById('resultsPanel').classList.add('visible');
       updateFlowSteps(4); // tailoring done → highlight "Download & apply"
       updateMobileQuickBar();

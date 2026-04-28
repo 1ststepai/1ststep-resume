@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>1stStep.ai Demo</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #080b14;
+      --panel: #0d1220;
+      --line: rgba(143, 157, 183, 0.28);
+      --text: #f8fafc;
+      --muted: #a9b4c7;
+      --soft: #7f8da6;
+      --accent: #6d4aff;
+      --accent-2: #22c55e;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(109, 74, 255, 0.18), transparent 32rem),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 56px 0;
+    }
+
+    .demo {
+      display: grid;
+      gap: 22px;
+    }
+
+    .demo-head {
+      display: grid;
+      gap: 10px;
+      text-align: center;
+    }
+
+    .brand-logo {
+      justify-self: center;
+      width: min(360px, 76vw);
+      height: 112px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      object-fit: cover;
+      object-position: center;
+      filter: drop-shadow(0 18px 34px rgba(109, 74, 255, 0.22));
+    }
+
+    .badge {
+      justify-self: center;
+      border: 1px solid rgba(109, 74, 255, 0.5);
+      border-radius: 999px;
+      background: rgba(109, 74, 255, 0.16);
+      color: #d9d2ff;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(32px, 5vw, 58px);
+      line-height: 1.04;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 720px;
+      margin: 0 auto;
+      color: var(--muted);
+      font-size: clamp(16px, 2vw, 19px);
+    }
+
+    .video-shell {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(109, 74, 255, 0.46);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.04),
+        0 22px 80px rgba(0, 0, 0, 0.42),
+        0 0 48px rgba(109, 74, 255, 0.16);
+    }
+
+    video {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
+      background: #05070d;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .steps li {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: center;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(13, 18, 32, 0.78);
+      padding: 13px 14px;
+      color: #dce5f5;
+      font-weight: 700;
+    }
+
+    .steps span {
+      display: inline-grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(109, 74, 255, 0.22);
+      color: #ede9ff;
+      font-size: 13px;
+    }
+
+    .trust {
+      margin: 0;
+      color: var(--muted);
+      text-align: center;
+      font-size: 16px;
+    }
+
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .button {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 48px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 0 18px;
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .button.primary {
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      box-shadow: 0 12px 28px rgba(109, 74, 255, 0.28);
+    }
+
+    .button.secondary {
+      border-color: var(--line);
+      background: rgba(255, 255, 255, 0.05);
+      color: #dbe4f5;
+    }
+
+    @media (max-width: 760px) {
+      main {
+        width: min(100% - 28px, 1120px);
+        padding: 30px 0;
+      }
+
+      .steps {
+        grid-template-columns: 1fr;
+      }
+
+      .steps li {
+        padding: 12px;
+      }
+
+      .cta-row {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .button {
+        width: 100%;
+      }
+
+      .brand-logo {
+        width: min(300px, 82vw);
+        height: 96px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="demo" aria-labelledby="demo-title">
+      <div class="demo-head">
+        <img class="brand-logo" src="1ststep-ai-logo-official.png" alt="1stStep.ai">
+        <span class="badge">2-minute demo</span>
+        <h1 id="demo-title">See 1stStep.ai tailor a resume from a job post</h1>
+        <p class="lead">A quick look at the Chrome extension and app workflow for generating a tailored resume, cover letter, and match score.</p>
+      </div>
+
+      <div class="video-shell">
+        <video
+          controls
+          muted
+          playsinline
+          preload="metadata"
+          poster="app-1ststep-demo-poster.jpg"
+          aria-label="1stStep.ai resume tailoring demo video">
+          <source src="app-1ststep-2min-web-demo.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+
+      <ol class="steps" aria-label="How the demo works">
+        <li><span>1</span>Open a job</li>
+        <li><span>2</span>Click &ldquo;Tailor my resume&rdquo;</li>
+        <li><span>3</span>Get resume + cover letter + match score</li>
+      </ol>
+
+      <p class="trust">Works with LinkedIn, Indeed, and major job boards.</p>
+
+      <div class="cta-row" aria-label="Demo calls to action">
+        <a class="button primary" href="https://app.1ststep.ai/">Try 1stStep.ai Free</a>
+        <a class="button secondary" href="#TODO-chrome-web-store-url">Get the Chrome Extension</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
