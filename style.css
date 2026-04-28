@@ -6,6 +6,29 @@
       padding: 0;
     }
 
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible,
+    summary:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 3px solid #FBBF24;
+      outline-offset: 3px;
+    }
+
     :root {
       /* ── Brand ───────────────────────────────────────────────── */
       --brand: #6366F1;
@@ -4833,4 +4856,4 @@
     .hover-linkedin:hover { background: rgba(0,119,181,0.2) !important; }
     .hover-indigo-border:hover { border-color: rgba(99,102,241,0.7) !important; }
     .hover-indigo-btn:hover { background: #3730a3 !important; }
-    .hover-feedback:hover { border-color: var(--brand) !important; color: var(--brand) !important; }
+    .hover-feedback:hover { border-color: var(--brand) !important; color: var(--brand) !important; }
