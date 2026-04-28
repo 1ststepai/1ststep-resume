@@ -5765,7 +5765,7 @@ ${job.jd.slice(0, 1000)}
         zIndex: '99998', display: 'flex', alignItems: 'center',
         justifyContent: 'center', transition: 'opacity 0.2s',
       });
-      cover.innerHTML = '<div style="font-size:22px;font-weight:800;color:rgba(255,255,255,0.15);letter-spacing:-0.5px">1stStep<span style="color:rgba(99,102,241,0.4)">.ai</span></div>';
+      cover.innerHTML = '<div style="font-size:22px;font-weight:800;color:#E2E8F0;letter-spacing:-0.5px">1stStep<span style="color:#A5B4FC">.ai</span></div>';
       document.body.appendChild(cover);
 
       checkBetaAccess().finally(() => {

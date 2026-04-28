@@ -44,9 +44,9 @@
 
       /* ── Typography ──────────────────────────────────────────── */
       --text: #E4E7F0;
-      --text2: #8892B0;
-      --muted: #50577A;
-      --label: #50577A;
+      --text2: #A8B3CF;
+      --muted: #A8B3CF;
+      --label: #B8C2DD;
 
       /* ── Status colors ───────────────────────────────────────── */
       --green: #10B981;
@@ -83,8 +83,8 @@
       --border2: rgba(0, 0, 0, 0.14);
       --text: #1A1E2E;
       --text2: #4B5563;
-      --muted: #9CA3AF;
-      --label: #9CA3AF;
+      --muted: #6B7280;
+      --label: #4B5563;
       --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.08);
       --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0,0,0,0.04);
       --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0,0,0,0.05);
@@ -436,6 +436,7 @@
       background: rgba(99, 102, 241, 0.08);
     }
 
+    #fileInput,
     .file-drop input {
       display: none;
     }

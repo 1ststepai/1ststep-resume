@@ -89,7 +89,7 @@
 </head>
 
 <body>
-  <div class="app">
+  <div class="app" role="main">
 
     <!-- Top Bar: Logo | Page Title | Actions -->
     <div class="topbar">
@@ -303,8 +303,8 @@
             <!-- Resume upload -->
             <div>
               <div class="hero-input-label">1 · Your Resume</div>
+              <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt" aria-label="Upload resume file" />
               <div class="file-drop" id="fileDrop" role="button" tabindex="0" aria-label="Upload resume file" style="padding:16px 12px">
-                <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt" aria-label="Upload resume file" />
                 <div class="file-drop-icon" style="margin-bottom:6px"><svg style="width:28px;height:28px;stroke:var(--muted);display:block;margin:0 auto" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
                 <p style="font-size:12px"><strong>Click to upload</strong> or drag &amp; drop</p>
                 <p style="margin-top:3px;font-size:11px;color:var(--muted)">PDF, Word, or plain text</p>
@@ -615,7 +615,7 @@
 
           <div class="tab-content">
             <div class="tab-pane active" id="tab-resume">
-              <div class="resume-output" id="resumeOutput" aria-label="Tailored resume output"></div>
+              <div class="resume-output" id="resumeOutput" role="region" aria-label="Tailored resume output"></div>
             </div>
             <div class="tab-pane" id="tab-keywords">
               <div id="keywordContent"></div>
@@ -624,7 +624,7 @@
               <div id="changesContent"></div>
             </div>
             <div class="tab-pane" id="tab-cover">
-              <div class="resume-output" id="coverOutput" aria-label="Generated cover letter output"></div>
+              <div class="resume-output" id="coverOutput" role="region" aria-label="Generated cover letter output"></div>
             </div>
           </div>
 
@@ -1090,7 +1090,7 @@
     </div>
 
     <!-- Footer -->
-    <div id="appFooter"
+    <div id="appFooter" role="contentinfo"
       style="display:flex;align-items:center;justify-content:center;gap:20px;padding:10px 20px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0">
       <a href="https://www.youtube.com/@1ststepdotai" target="_blank" rel="noopener"
         style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);text-decoration:none;transition:color 0.15s"
