@@ -33,6 +33,28 @@
       box-sizing: border-box;
     }
 
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 3px solid #FBBF24;
+      outline-offset: 3px;
+    }
+
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--bg);
@@ -203,6 +225,8 @@
     .settings-link {
       display: inline-block;
       padding: 2px 6px;
+      border: 0;
+      background: transparent;
       color: var(--brand);
       text-decoration: none;
       border-bottom: 1px dotted var(--brand);
@@ -425,10 +449,10 @@
   <div class="container">
     <div class="header">
       <div class="logo">1stStep.ai</div>
-      <div class="status-badge" id="statusBadge">Checking...</div>
+      <div class="status-badge" id="statusBadge" role="status" aria-live="polite">Checking...</div>
     </div>
 
-    <div id="loadingState" class="loading">
+    <div id="loadingState" class="loading" role="status" aria-live="polite">
       <div class="spinner"></div>
       <span>Loading...</span>
     </div>
@@ -436,7 +460,7 @@
     <div id="unauthState" class="auth-section" style="display: none;">
       <div class="auth-title">Sign In Required</div>
       <div class="auth-desc">
-        Visit <a class="settings-link" id="openAppLink">1stStep.ai</a> to sign in and enable the extension.
+        Visit <button type="button" class="settings-link" id="openAppLink">1stStep.ai</button> to sign in and enable the extension.
       </div>
     </div>
 
@@ -452,8 +476,10 @@
         <!-- Job info edit form — shown when title is missing or user clicks edit -->
         <div id="jobInfoForm" class="job-info-form" style="display:none;">
           <div class="job-info-form-label">We couldn't detect the job title — please confirm:</div>
-          <input type="text" id="jobTitleInput" class="job-info-input" placeholder="Job Title (required)" autocomplete="off">
-          <input type="text" id="companyInput" class="job-info-input" placeholder="Company Name (optional)" autocomplete="off" style="margin-bottom:0;">
+          <label class="sr-only" for="jobTitleInput">Job title</label>
+          <input type="text" id="jobTitleInput" class="job-info-input" aria-label="Job title" placeholder="Job Title (required)" autocomplete="off">
+          <label class="sr-only" for="companyInput">Company name</label>
+          <input type="text" id="companyInput" class="job-info-input" aria-label="Company name" placeholder="Company Name (optional)" autocomplete="off" style="margin-bottom:0;">
         </div>
 
         <!-- Tracker strip — shows pipeline status + quick-stage buttons -->
@@ -488,8 +514,8 @@
         <div class="empty-state-desc">We couldn't detect the full job post. Paste the job description manually.</div>
 
         <div class="manual-section" id="manualSection">
-          <div class="manual-label">Job description:</div>
-          <textarea id="manualJdInput" class="manual-textarea" placeholder="Paste the full job description here…"></textarea>
+          <label class="manual-label" for="manualJdInput">Job description:</label>
+          <textarea id="manualJdInput" class="manual-textarea" aria-label="Job description" placeholder="Paste the full job description here…"></textarea>
           <button class="btn-primary" id="manualOpenBtn" style="width:100%; margin-top:8px; flex:none;">Open in 1stStep.ai</button>
         </div>
 

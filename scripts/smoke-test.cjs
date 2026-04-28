@@ -227,6 +227,56 @@ if (html) {
 }
 
 // ── Summary ───────────────────────────────────────────────────────────────────
+section('Accessibility smoke checks');
+
+function readIfExists(rel) {
+  const abs = path.join(ROOT, rel);
+  return fs.existsSync(abs) ? fs.readFileSync(abs, 'utf8') : '';
+}
+
+const A11Y_FILES = [
+  'index.html',
+  'funnel.html',
+  'admin.html',
+  path.join('1ststep-extension', 'popup.html'),
+  path.join('1ststep-extension', 'sidepanel.html'),
+].filter(rel => fs.existsSync(path.join(ROOT, rel)));
+
+function escRe(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+A11Y_FILES.forEach(rel => {
+  const src = readIfExists(rel);
+  const markup = src.split(/<script\b/i)[0];
+  if (/<html\b[^>]*\blang=["'][^"']+["']/i.test(markup)) pass(rel + ' has <html lang>');
+  else fail(rel + ' is missing <html lang>');
+
+  const ids = [...markup.matchAll(/<[a-zA-Z][^>]*\bid=["']([^"']+)["']/g)].map(m => m[1]);
+  const counts = {};
+  ids.forEach(id => counts[id] = (counts[id] || 0) + 1);
+  Object.entries(counts).filter(([, n]) => n > 1)
+    .forEach(([id, n]) => fail(rel + ' duplicate ID "' + id + '" appears ' + n + ' times'));
+
+  const missingAlt = [...markup.matchAll(/<img\b(?![^>]*\balt=)[^>]*>/gi)];
+  if (missingAlt.length === 0) pass(rel + ' has no <img> without alt');
+  else fail(rel + ' has ' + missingAlt.length + ' <img> tag(s) missing alt');
+
+  const unlabeledFields = [...markup.matchAll(/<(input|textarea|select)\b(?![^>]*(?:aria-label|aria-labelledby|type=["']hidden["']|aria-hidden=["']true["']))[^>]*\bid=["']([^"']+)["'][^>]*>/gi)]
+    .filter(([, , id]) => !new RegExp(`<label\\b[^>]*\\bfor=["']${escRe(id)}["']`, 'i').test(markup));
+  if (unlabeledFields.length === 0) pass(rel + ' has no obvious unlabeled fields');
+  else unlabeledFields.forEach(([, tag, id]) => fail(rel + ' <' + tag.toLowerCase() + '> #' + id + ' has no obvious accessible label'));
+
+  const unnamedIconButtons = [...markup.matchAll(/<button\b(?![^>]*(?:aria-label|aria-labelledby))[^>]*>([\s\S]*?)<\/button>/gi)]
+    .filter(([, body]) => {
+      const text = body.replace(/<[^>]+>/g, '').trim();
+      const hasOnlySvg = /<svg\b/i.test(body) && text.length === 0;
+      return hasOnlySvg || ['×', '✕', '★', 'â˜…', '↻', '?'].includes(text);
+    });
+  if (unnamedIconButtons.length === 0) pass(rel + ' has no obvious unnamed icon-only buttons');
+  else fail(rel + ' has ' + unnamedIconButtons.length + ' obvious unnamed icon-only button(s)');
+});
+
 console.log('\n' + '─'.repeat(50));
 console.log('Failures:', failures, '  Warnings:', warnings);
 if (failures > 0) {

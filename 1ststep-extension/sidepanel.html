@@ -35,6 +35,28 @@
       box-sizing: border-box;
     }
 
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 3px solid #FBBF24;
+      outline-offset: 3px;
+    }
+
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--bg);
@@ -272,19 +294,19 @@
     <div class="subtitle">Customize your resume for this role</div>
   </div>
 
-  <div id="alert" class="alert" style="display: none;"></div>
+  <div id="alert" class="alert" role="alert" aria-live="assertive" style="display: none;"></div>
 
   <div id="contentArea">
     <!-- Job Detection Section -->
     <div class="section">
       <div class="section-title">Detected Job</div>
       <div class="form-group">
-        <label>Job Title</label>
-        <input type="text" id="detectedTitle" readonly>
+        <label for="detectedTitle">Job Title</label>
+        <input type="text" id="detectedTitle" aria-label="Detected job title" readonly>
       </div>
       <div class="form-group">
-        <label>Company</label>
-        <input type="text" id="detectedCompany" readonly>
+        <label for="detectedCompany">Company</label>
+        <input type="text" id="detectedCompany" aria-label="Detected company" readonly>
       </div>
     </div>
 
@@ -292,8 +314,8 @@
     <div class="section">
       <div class="section-title">Job Description</div>
       <div class="form-group">
-        <label>Job Description <span style="color: #6b7591;">(auto-detected or paste)</span></label>
-        <textarea id="jobDescription" placeholder="Job description will appear here or paste manually..."></textarea>
+        <label for="jobDescription">Job Description <span style="color: #6b7591;">(auto-detected or paste)</span></label>
+        <textarea id="jobDescription" aria-label="Job description" placeholder="Job description will appear here or paste manually..."></textarea>
       </div>
     </div>
 
@@ -306,7 +328,7 @@
     </div>
 
     <!-- Result Section -->
-    <div id="resultCard" class="result-card">
+    <div id="resultCard" class="result-card" role="region" aria-live="polite" aria-label="Tailored resume result">
       <div class="result-title">✓ Tailored Resume</div>
       <div id="resultContent" class="result-content"></div>
       <div class="button-group">

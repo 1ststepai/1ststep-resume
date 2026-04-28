@@ -816,7 +816,6 @@
     function refreshSetupSteps() {
       const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
       const hasJob = !!(document.getElementById('jobText')?.value.trim());
-      btn.setAttribute('aria-disabled', String(!(hasResume && hasJob)));
 
       function applyStep(id, displayNum, done) {
         const row = document.getElementById(`setupStep${id}`);
@@ -1117,6 +1116,7 @@ ${resume.slice(0, 3000)}
       if (btn.disabled) return; // don't override state while running
       const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
       const hasJob = !!(document.getElementById('jobText')?.value.trim());
+      document.getElementById('runBtn')?.setAttribute('aria-disabled', String(!(hasResume && hasJob)));
 
       // Show resume choice card when JD is present but no resume loaded
       const choiceCard = document.getElementById('resumeChoiceCard');
@@ -7180,4 +7180,5 @@ ${_PRINT_BTN}
       const saved = localStorage.getItem('1ststep_theme') || 'dark';
       applyTheme(saved);
     })();
-
+
+
