@@ -3659,20 +3659,36 @@
     .star-btn {
       font-size: 30px;
       cursor: pointer;
-      opacity: 0.25;
-      transition: opacity 0.12s, transform 0.12s;
+      color: rgba(251, 191, 36, 0.16);
+      text-shadow:
+        0 0 0 #FBBF24,
+        0 0 10px rgba(251, 191, 36, 0.22);
+      transition: color 0.12s, transform 0.12s, text-shadow 0.12s;
       border: none;
       background: none;
       padding: 2px;
     }
 
     .star-btn.lit {
-      opacity: 1;
+      color: #FBBF24;
+      text-shadow: 0 0 12px rgba(251, 191, 36, 0.42);
       transform: scale(1.12);
     }
 
     .star-btn:hover {
-      opacity: 0.8;
+      color: #FCD34D;
+      text-shadow: 0 0 14px rgba(252, 211, 77, 0.48);
+    }
+
+    [data-theme="light"] .star-btn {
+      color: rgba(146, 64, 14, 0.20);
+      text-shadow: 0 0 0 #D97706;
+    }
+
+    [data-theme="light"] .star-btn.lit,
+    [data-theme="light"] .star-btn:hover {
+      color: #D97706;
+      text-shadow: 0 0 8px rgba(217, 119, 6, 0.25);
     }
 
     /* Review platform buttons */
