@@ -1912,6 +1912,38 @@ ${resume.slice(0, 3000)}
       return sanitizeProse(lines.join('\n'), 1100);
     }
 
+    function stripPositioningCodeFences(text) {
+      return String(text || '')
+        .trim()
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/```\s*$/i, '')
+        .trim();
+    }
+
+    function parseLooseJsonObjectFromText(text) {
+      const raw = String(text || '').trim();
+      if (!raw) return null;
+      const extractJsonObject = value => {
+        const start = value.indexOf('{');
+        const end = value.lastIndexOf('}');
+        return start >= 0 && end > start ? value.slice(start, end + 1) : '';
+      };
+      const repairJson = value => value
+        .replace(/,\s*([}\]])/g, '$1')
+        .replace(/[â€œâ€]/g, '"')
+        .replace(/[â€˜â€™]/g, "'");
+      const cleaned = stripPositioningCodeFences(raw.replace(/```json|```/gi, '').trim());
+      const objectCandidate = extractJsonObject(cleaned);
+      const attempts = [cleaned, objectCandidate, repairJson(cleaned), repairJson(objectCandidate)].filter(Boolean);
+      for (const candidate of attempts) {
+        try {
+          const parsed = JSON.parse(candidate);
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+        } catch { }
+      }
+      return null;
+    }
+
     function normalizePositioningBrief(raw) {
       const fallback = {
         valueProposition: '',
@@ -1922,10 +1954,19 @@ ${resume.slice(0, 3000)}
         missingProofPoints: [],
       };
       if (typeof raw === 'string') {
-        const rawText = sanitizeProse(raw, 5000);
+        const parsed = parseLooseJsonObjectFromText(raw);
+        if (parsed) return normalizePositioningBrief(parsed);
+        const rawText = sanitizeProse(stripPositioningCodeFences(raw), 5000);
         return rawText ? { ...fallback, rawText } : fallback;
       }
       if (!raw || typeof raw !== 'object') return fallback;
+
+      const getField = (...keys) => {
+        for (const key of keys) {
+          if (Object.prototype.hasOwnProperty.call(raw, key)) return raw[key];
+        }
+        return undefined;
+      };
 
       const toText = (value, max = 260) => {
         if (value == null) return '';
@@ -1945,22 +1986,30 @@ ${resume.slice(0, 3000)}
         return arr.map(item => {
           if (typeof item === 'string') return { original: sanitizeProse(item, 220), improved: '' };
           if (!item || typeof item !== 'object') return { original: toText(item, 220), improved: '' };
-          const original = toText(item.original || item.weak || item.before || item.phrase || item.bullet || item.issue, 220);
-          const improved = toText(item.improved || item.rewrite || item.after || item.suggestion || item.stronger, 260);
+          const original = toText(item.original || item.Original || item.weak || item.Weak || item.before || item.Before || item.phrase || item.Phrase || item.bullet || item.Bullet || item.issue || item.Issue, 220);
+          const improved = toText(item.improved || item.Improved || item.rewrite || item.Rewrite || item.after || item.After || item.suggestion || item.Suggestion || item.stronger || item.Stronger, 260);
           if (original || improved) return { original, improved };
           const useful = toText(item, 320);
           return { original: useful, improved: '' };
         }).filter(item => item.original || item.improved).slice(0, 5);
       };
 
+      const hasStructuredFields = brief => !!(brief && (brief.valueProposition || brief.strongestAngle || brief.impactOpportunities.length || brief.genericBulletWarnings.length || brief.differentiationNotes || brief.missingProofPoints.length));
+      const rawTextValue = getField('rawText', 'RawText', 'raw_text');
+      const parsedRawText = rawTextValue ? parseLooseJsonObjectFromText(rawTextValue) : null;
+      if (parsedRawText) {
+        const parsedBrief = normalizePositioningBrief(parsedRawText);
+        if (hasStructuredFields(parsedBrief)) return parsedBrief;
+      }
+
       return {
-        valueProposition: toText(raw.valueProposition, 900),
-        strongestAngle: toText(raw.strongestAngle, 700),
-        impactOpportunities: toList(raw.impactOpportunities, 5),
-        genericBulletWarnings: toWarnings(raw.genericBulletWarnings),
-        differentiationNotes: toText(raw.differentiationNotes, 900),
-        missingProofPoints: toList(raw.missingProofPoints, 7),
-        ...(raw.rawText ? { rawText: toText(raw.rawText, 5000) } : {}),
+        valueProposition: toText(getField('valueProposition', 'ValueProposition', 'value_proposition', 'value proposition', 'CandidateValueProposition'), 900),
+        strongestAngle: toText(getField('strongestAngle', 'StrongestAngle', 'strongest_angle', 'strongest angle'), 700),
+        impactOpportunities: toList(getField('impactOpportunities', 'ImpactOpportunities', 'impact_opportunities', 'impact opportunities'), 5),
+        genericBulletWarnings: toWarnings(getField('genericBulletWarnings', 'GenericBulletWarnings', 'generic_bullet_warnings', 'generic bullet warnings')),
+        differentiationNotes: toText(getField('differentiationNotes', 'DifferentiationNotes', 'differentiation_notes', 'differentiation notes'), 900),
+        missingProofPoints: toList(getField('missingProofPoints', 'MissingProofPoints', 'missing_proof_points', 'missing proof points'), 7),
+        ...(rawTextValue ? { rawText: toText(stripPositioningCodeFences(rawTextValue), 5000) } : {}),
       };
     }
 
@@ -2051,7 +2100,7 @@ ${resume.slice(0, 3000)}
       const list = items => items?.length ? `<ul>${items.map(item => `<li>${escHtml(item)}</li>`).join('')}</ul>` : '';
       const summary = `<summary><span>Positioning Brief Available</span>${usedPositioningBrief ? '<span class="positioning-used-pill">Used for this resume</span>' : ''}</summary>`;
       const warnings = safeBrief.genericBulletWarnings.length
-        ? safeBrief.genericBulletWarnings.map(item => `<div class="positioning-rewrite">${item.original ? `<div><strong>Watch:</strong> ${escHtml(item.original)}</div>` : ''}${item.improved ? `<div><strong>Try:</strong> ${escHtml(item.improved)}</div>` : ''}</div>`).join('')
+        ? safeBrief.genericBulletWarnings.map(item => `<div class="positioning-rewrite">${item.original ? `<div><strong>Original:</strong> ${escHtml(item.original)}</div>` : ''}${item.improved ? `<div><strong>Improved:</strong> ${escHtml(item.improved)}</div>` : ''}</div>`).join('')
         : '';
       if (safeBrief.rawText && !safeBrief.valueProposition && !safeBrief.strongestAngle && !safeBrief.impactOpportunities.length && !warnings && !safeBrief.differentiationNotes && !safeBrief.missingProofPoints.length) {
         return `<details class="saved-positioning-brief">${summary}<div class="positioning-raw-text">${escHtml(safeBrief.rawText)}</div></details>`;
@@ -2059,7 +2108,7 @@ ${resume.slice(0, 3000)}
       return `<details class="saved-positioning-brief">
         ${summary}
         ${safeBrief.valueProposition ? `<div class="positioning-section"><h4>Candidate Value Proposition</h4><p>${escHtml(safeBrief.valueProposition)}</p></div>` : ''}
-        ${safeBrief.strongestAngle ? `<div class="positioning-section"><h4>Strongest Angle for This Job</h4><p>${escHtml(safeBrief.strongestAngle)}</p></div>` : ''}
+        ${safeBrief.strongestAngle ? `<div class="positioning-section"><h4>Strongest Angle</h4><p>${escHtml(safeBrief.strongestAngle)}</p></div>` : ''}
         ${safeBrief.impactOpportunities.length ? `<div class="positioning-section"><h4>Impact Opportunities</h4>${list(safeBrief.impactOpportunities)}</div>` : ''}
         ${warnings ? `<div class="positioning-section"><h4>Generic Bullet Warnings</h4>${warnings}</div>` : ''}
         ${safeBrief.differentiationNotes ? `<div class="positioning-section"><h4>Differentiation Notes</h4><p>${escHtml(safeBrief.differentiationNotes)}</p></div>` : ''}

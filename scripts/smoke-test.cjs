@@ -138,6 +138,52 @@ if (js) {
 
   if (/positioningBriefUsedAt\s*:\s*usingPositioningBrief/.test(js)) pass('positioningBriefUsedAt metadata is saved when bridge is used');
   else fail('positioningBriefUsedAt metadata handling is missing');
+
+  try {
+    const start = js.indexOf('function stripPositioningCodeFences');
+    const end = js.indexOf('function attachPositioningBriefToLatestEntry');
+    if (start < 0 || end < 0 || end <= start) throw new Error('Could not isolate positioning brief helpers');
+
+    const helperSource = js.slice(start, end);
+    const sanitizeProse = (value, max = 9999) => String(value || '').trim().slice(0, max);
+    const escHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    })[ch]);
+    const helpers = new Function('sanitizeProse', 'escHtml', helperSource + '; return { normalizePositioningBrief, renderSavedPositioningBrief };')(sanitizeProse, escHtml);
+
+    const fencedJson = '```json\n{"ValueProposition":"Procurement operator","StrongestAngle":"Construction procurement","ImpactOpportunities":["Negotiate supplier terms","Improve contract compliance"],"GenericBulletWarnings":[{"Original":"Managed vendors","Improved":"Managed supplier performance across capital projects"}],"DifferentiationNotes":"Lead with sourcing and contracts.","MissingProofPoints":["Annual spend managed"]}\n```';
+    const normalizedFenced = helpers.normalizePositioningBrief(fencedJson);
+    if (normalizedFenced.valueProposition === 'Procurement operator' && normalizedFenced.impactOpportunities.length === 2) pass('normalizePositioningBrief handles fenced JSON string');
+    else fail('normalizePositioningBrief does not parse fenced JSON string');
+
+    const normalizedPascal = helpers.normalizePositioningBrief({
+      ValueProposition: 'Capital procurement operator',
+      StrongestAngle: 'Construction and supplier performance',
+      ImpactOpportunities: ['Reduce vendor risk'],
+      GenericBulletWarnings: [{ Original: 'Helped purchasing', Improved: 'Improved purchasing workflows' }],
+      DifferentiationNotes: 'Use procurement depth.',
+      MissingProofPoints: ['Savings results'],
+    });
+    if (normalizedPascal.valueProposition && normalizedPascal.strongestAngle && normalizedPascal.genericBulletWarnings[0]?.improved) pass('normalizePositioningBrief handles PascalCase keys');
+    else fail('normalizePositioningBrief does not map PascalCase keys');
+
+    const normalizedRawText = helpers.normalizePositioningBrief({ rawText: fencedJson });
+    if (normalizedRawText.valueProposition === 'Procurement operator' && !normalizedRawText.rawText) pass('normalizePositioningBrief handles object.rawText containing fenced JSON');
+    else fail('normalizePositioningBrief does not parse object.rawText fenced JSON');
+
+    const savedHtml = helpers.renderSavedPositioningBrief({ rawText: fencedJson }, true);
+    if (!/```json/i.test(savedHtml)) pass('saved-entry renderer does not output literal ```json for parseable content');
+    else fail('saved-entry renderer leaked literal ```json');
+
+    if (!/<div class="positioning-raw-text">\s*\{/.test(savedHtml) && /Candidate Value Proposition/.test(savedHtml) && /Used for this resume/.test(savedHtml)) pass('saved-entry renderer sections parseable fields instead of raw braces');
+    else fail('saved-entry renderer shows raw braces as primary UI for parseable fields');
+  } catch (err) {
+    fail('Career Positioning Brief normalization regression checks errored: ' + err.message);
+  }
 }
 
 // ── 5. Required global functions ──────────────────────────────────────────────
