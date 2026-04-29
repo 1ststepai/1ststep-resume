@@ -87,7 +87,7 @@ export default async function handler(req, res) {
 
   const tags = EVENT_TAGS[event] || (/^streak_\d+$/.test(event) ? [event] : null);
   if (!tags) {
-    return res.status(400).json({ error: `Unknown event: ${event}` });
+    return res.status(200).json({ ok: true, result: 'ignored', event });
   }
 
   const apiKey     = process.env.GHL_API_KEY;
