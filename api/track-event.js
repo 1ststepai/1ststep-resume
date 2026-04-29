@@ -85,7 +85,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Valid email required' });
   }
 
-  const tags = EVENT_TAGS[event];
+  const tags = EVENT_TAGS[event] || (/^streak_\d+$/.test(event) ? [event] : null);
   if (!tags) {
     return res.status(400).json({ error: `Unknown event: ${event}` });
   }
