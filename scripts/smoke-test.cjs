@@ -77,10 +77,11 @@ const REQUIRED_IDS = [
   'fileInput', 'fileDrop', 'resumeText', 'clearFileBtn',
 
   // Main action buttons
-  'runBtn', 'searchBtn',
+  'runBtn', 'searchBtn', 'positioningAnalyzeBtn', 'positioningUseBtn', 'positioningClearBtn', 'positioningActiveBadge',
 
   // Results panels
   'resultsPanel', 'resumeOutput', 'coverOutput', 'jobResultsPanel',
+  'positioningBriefCard', 'positioningBriefContent',
 
   // Navigation (desktop sidebar)
   'modeResume', 'modeTailored', 'modeJobs', 'modeLinkedIn',
@@ -115,6 +116,30 @@ if (html) {
   });
 }
 
+section('Career Positioning Brief smoke');
+
+if (html) {
+  if (/Analyze My Positioning/.test(html)) pass('Analyze My Positioning CTA is present');
+  else fail('Analyze My Positioning CTA is missing');
+
+  if (/Career Positioning Brief/.test(html)) pass('Career Positioning Brief panel is present');
+  else fail('Career Positioning Brief panel is missing');
+
+  if (/Use This Positioning/.test(html)) pass('Use This Positioning bridge CTA is present');
+  else fail('Use This Positioning bridge CTA is missing');
+
+  if (/Remove positioning context/.test(html)) pass('Remove positioning context control is present');
+  else fail('Remove positioning context control is missing');
+}
+
+if (js) {
+  if (/usedPositioningBrief\s*:\s*usingPositioningBrief/.test(js)) pass('usedPositioningBrief metadata is saved from active bridge state');
+  else fail('usedPositioningBrief metadata handling is missing');
+
+  if (/positioningBriefUsedAt\s*:\s*usingPositioningBrief/.test(js)) pass('positioningBriefUsedAt metadata is saved when bridge is used');
+  else fail('positioningBriefUsedAt metadata handling is missing');
+}
+
 // ── 5. Required global functions ──────────────────────────────────────────────
 section('Required global functions');
 
@@ -133,6 +158,11 @@ const REQUIRED_FUNCTIONS = [
   'handleJsFileSelect',
   'toggleJobType',
   'openJobBoard',
+  'generatePositioningBrief',
+  'normalizePositioningBrief',
+  'renderPositioningBrief',
+  'useCurrentPositioningBrief',
+  'clearActivePositioningContext',
 ];
 
 if (js) {

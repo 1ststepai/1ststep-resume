@@ -1142,6 +1142,260 @@
       }
     }
 
+    .btn-positioning {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px 14px;
+      border: 1.5px solid rgba(99, 102, 241, 0.35);
+      border-radius: 8px;
+      background: rgba(99, 102, 241, 0.07);
+      color: var(--brand);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+    }
+
+    .btn-positioning:hover:not(:disabled) {
+      background: rgba(99, 102, 241, 0.12);
+      border-color: rgba(99, 102, 241, 0.55);
+    }
+
+    .btn-positioning:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .btn-positioning-compact {
+      width: auto;
+      margin-top: 0;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .positioning-brief-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .positioning-inline-status {
+      min-height: 16px;
+      margin-top: 6px;
+      text-align: center;
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--muted);
+    }
+
+    .positioning-helper {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    .positioning-active-badge {
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 7px 10px;
+      border: 1px solid rgba(16, 185, 129, 0.28);
+      border-radius: 8px;
+      background: rgba(16, 185, 129, 0.08);
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.35;
+      flex-wrap: wrap;
+    }
+
+    .positioning-active-badge button {
+      border: none;
+      background: transparent;
+      color: var(--text2);
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 0;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .positioning-active-badge button:hover {
+      color: var(--text);
+    }
+
+    .positioning-brief-card {
+      margin: 14px 16px 0;
+      padding: 16px;
+      background: var(--card-bg);
+      border: 1px solid rgba(99, 102, 241, 0.24);
+      border-radius: 12px;
+    }
+
+    .positioning-brief-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+
+    .positioning-eyebrow {
+      margin-bottom: 4px;
+      color: var(--brand);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .positioning-brief-header h3 {
+      margin: 0;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .positioning-brief-header p {
+      max-width: 620px;
+      margin: 5px 0 0;
+      color: var(--text2);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .positioning-brief-header .positioning-education {
+      max-width: 640px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .positioning-brief-status {
+      display: none;
+      margin-bottom: 12px;
+      padding: 9px 11px;
+      border-radius: 8px;
+      background: rgba(99, 102, 241, 0.08);
+      color: var(--text2);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .positioning-section {
+      padding: 13px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .positioning-section:first-child {
+      border-top: none;
+      padding-top: 0;
+    }
+
+    .positioning-section h4 {
+      margin: 0 0 8px;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .positioning-section p,
+    .positioning-section li {
+      color: var(--text2);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .positioning-section p {
+      margin: 0;
+    }
+
+    .positioning-section ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .positioning-rewrite {
+      display: grid;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 10px;
+      border-radius: 8px;
+      background: var(--surface2);
+    }
+
+    .positioning-rewrite strong {
+      color: var(--text);
+      font-size: 12px;
+    }
+
+    .positioning-raw-text {
+      margin-top: 8px;
+      padding: 12px;
+      border-radius: 8px;
+      background: var(--surface2);
+      color: var(--text2);
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .saved-positioning-brief {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid rgba(99, 102, 241, 0.22);
+      border-radius: 8px;
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    .saved-positioning-brief summary {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: var(--brand);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .positioning-used-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--green);
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 768px) {
+      .positioning-brief-header {
+        flex-direction: column;
+      }
+
+      .btn-positioning-compact {
+        width: 100%;
+      }
+
+      .positioning-brief-actions {
+        width: 100%;
+      }
+    }
+
     /* Keyword pills */
     .kw-section {
       margin-bottom: 24px;

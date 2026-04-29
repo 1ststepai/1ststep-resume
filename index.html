@@ -365,6 +365,15 @@
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="runIcon"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                 <span id="runBtnLabel">✦ Generate Tailored Resume</span>
               </button>
+              <button class="btn-positioning" id="positioningAnalyzeBtn" type="button" disabled>
+                Analyze My Positioning
+              </button>
+              <div id="positioningActiveBadge" class="positioning-active-badge" style="display:none">
+                <span>Positioning active</span>
+                <button id="positioningClearBtn" type="button">Remove positioning context</button>
+              </div>
+              <p class="positioning-helper">Use this before generating or sending a resume to sharpen your story, impact, and proof points.</p>
+              <div id="positioningInlineStatus" class="positioning-inline-status" role="status" aria-live="polite"></div>
               <span id="runBtnStatus" class="sr-only">Upload a resume and paste a job description to generate a tailored resume.</span>
               <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:8px">Takes 20–45 seconds · <span style="color:var(--green)">ATS-friendly output</span></p>
               <div id="tailorUsageMeter" style="margin-top:12px">
@@ -594,6 +603,23 @@
           <!-- Skill Gap Analysis Card — populated by renderSkillGapCard() after tailoring -->
           <div id="skillGapCard"
             style="display:none;margin:14px 16px 0;padding:16px;background:var(--card-bg);border:1px solid var(--border);border-radius:12px">
+          </div>
+
+          <div id="positioningBriefCard" class="positioning-brief-card" style="display:none">
+            <div class="positioning-brief-header">
+              <div>
+                <div class="positioning-eyebrow">Strategy Layer</div>
+                <h3>Career Positioning Brief</h3>
+                <p>See the strongest angle, missing proof points, and impact gaps before you send your resume.</p>
+                <p class="positioning-education">Most resumes fail because they list responsibilities instead of proving value. This brief helps you sharpen the story before generating your tailored resume.</p>
+              </div>
+              <div class="positioning-brief-actions">
+                <button class="btn-positioning btn-positioning-compact" id="positioningUseBtn" type="button" disabled>Use This Positioning</button>
+                <button class="btn-positioning btn-positioning-compact" id="positioningResultBtn" type="button" disabled>Analyze My Positioning</button>
+              </div>
+            </div>
+            <div id="positioningBriefStatus" class="positioning-brief-status" role="status" aria-live="polite"></div>
+            <div id="positioningBriefContent"></div>
           </div>
 
           <div class="tabs">
