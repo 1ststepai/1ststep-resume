@@ -3705,9 +3705,43 @@
       background: rgba(99, 102, 241, 0.12);
     }
 
+    .google-review-platform {
+      border-color: rgba(66, 133, 244, 0.35);
+    }
+
+    .google-review-platform:hover {
+      border-color: #4285F4;
+      background: rgba(66, 133, 244, 0.14);
+    }
+
     .btn-review-platform .platform-icon {
       font-size: 20px;
       flex-shrink: 0;
+    }
+
+    .google-review-platform .platform-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      background: #FFFFFF;
+      color: #4285F4;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1;
+      box-shadow: inset 0 0 0 1px rgba(66, 133, 244, 0.24);
+    }
+
+    [data-theme="light"] .google-review-platform {
+      border-color: rgba(66, 133, 244, 0.4);
+      background: #F8FBFF;
+    }
+
+    [data-theme="light"] .google-review-platform:hover {
+      border-color: #4285F4;
+      background: #EEF6FF;
     }
 
     .btn-review-platform .platform-text {
