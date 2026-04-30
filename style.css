@@ -109,6 +109,7 @@
       --objectivebar-h: 36px;
       --workflow-strip-h: 36px;
       --app-header-offset: calc(var(--topbar-h) + var(--objectivebar-h));
+      --header-stack-h: var(--app-header-offset);
       --resume-scroll-top-safe-space: calc(var(--objectivebar-h) + var(--workflow-strip-h) + 48px);
       --fixed-bottom-safe-space: 96px;
       --mobile-fixed-bottom-safe-space: 168px;
@@ -178,8 +179,9 @@
     .app {
       display: flex;
       flex-direction: column;
-      height: 100vh;
-      min-height: 0;
+      height: 100dvh;
+      min-height: 100dvh;
+      overflow: hidden;
     }
 
     .topbar {
@@ -249,10 +251,13 @@
       flex-direction: column;
       align-items: center;
       flex: 1;
+      height: auto;
+      min-height: 0;
+      max-height: calc(100dvh - var(--header-stack-h));
       overflow-y: auto;
+      overflow-x: hidden;
       background: var(--bg);
       padding: 20px 20px 48px;
-      min-height: 0;
     }
 
     /* ── INPUT PANEL (was "left panel") ──────────────────── */
@@ -5639,7 +5644,7 @@
       gap: 10px;
       position: sticky;
       top: 16px;
-      max-height: calc(100vh - var(--app-header-offset) - 32px);
+      max-height: calc(100dvh - var(--header-stack-h) - 32px);
       overflow-y: auto;
       padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     }
@@ -5722,12 +5727,29 @@
       width: 100%;
       min-width: 0;
       min-height: 0;
+      max-height: calc(100dvh - var(--header-stack-h));
       flex-direction: column !important;
-      align-items: center !important;
+      align-items: stretch !important;
+      justify-content: flex-start !important;
       padding-top: 24px !important;
       padding-bottom: calc(64px + var(--fixed-bottom-safe-space) + env(safe-area-inset-bottom, 0px)) !important;
       scroll-padding-top: var(--resume-scroll-top-safe-space);
       scroll-padding-bottom: calc(var(--fixed-bottom-safe-space) + env(safe-area-inset-bottom, 0px));
+    }
+
+    .hero-action-panel {
+      align-items: start;
+      overflow: visible;
+    }
+
+    .hero-left,
+    .hero-right {
+      align-self: start;
+      min-height: 0;
+    }
+
+    .hero-left {
+      justify-content: flex-start;
     }
 
     #fileDrop,
@@ -5741,7 +5763,7 @@
     #resumeGrid {
       min-width: 0;
       box-sizing: border-box;
-      margin-top: 16px;
+      margin: 16px auto 0;
     }
 
     #quickSidebar,
@@ -5789,6 +5811,11 @@
       #resumeGrid {
         max-width: 1280px;
         grid-template-columns: minmax(640px, 1fr) minmax(var(--right-sidebar-min), var(--right-sidebar-max));
+      }
+
+      #quickSidebar {
+        top: calc(var(--header-stack-h) + 16px);
+        max-height: calc(100dvh - var(--header-stack-h) - 32px);
       }
     }
 

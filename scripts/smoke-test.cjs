@@ -309,6 +309,7 @@ if (css) {
     '--topbar-h',
     '--objectivebar-h',
     '--app-header-offset',
+    '--header-stack-h',
     '--resume-scroll-top-safe-space',
     '--fixed-bottom-safe-space',
     '--mobile-fixed-bottom-safe-space',
@@ -339,8 +340,14 @@ if (css) {
   if (/\.main[\s\S]*scroll-padding-top:\s*var\(--resume-scroll-top-safe-space\)/.test(css) && /#jobText[\s\S]*scroll-margin-top:\s*var\(--resume-scroll-top-safe-space\)/.test(css)) pass('Workflow fields reserve sticky-header scroll space');
   else fail('Workflow field scroll safe spacing is missing');
 
-  if (/#quickSidebar[\s\S]*max-height:\s*calc\(100vh - var\(--app-header-offset\) - 32px\)/.test(css)) pass('Right rail height respects header/objective stack');
+  if (/#quickSidebar[\s\S]*max-height:\s*calc\(100dvh - var\(--header-stack-h\) - 32px\)/.test(css)) pass('Right rail height respects header/objective stack');
   else fail('Right rail safe height is missing');
+
+  if (/height:\s*100dvh/.test(css) && /max-height:\s*calc\(100dvh - var\(--header-stack-h\)/.test(css)) pass('Main app shell uses dynamic viewport height with header-aware content sizing');
+  else fail('Dynamic viewport/header-aware sizing is missing');
+
+  if (/\.hero-action-panel[\s\S]*overflow:\s*visible/.test(css) && /\.hero-left[\s\S]*justify-content:\s*flex-start/.test(css)) pass('Resume Tailor hero card is top-aligned and not clipping inputs');
+  else fail('Resume Tailor hero card may still clip or center the input workflow');
 }
 
 if (html) {
@@ -523,6 +530,7 @@ const REQUIRED_FUNCTIONS = [
   'updateCurrentObjectiveBar',
   'scrollWorkflowTargetIntoView',
   'scrollMainToTop',
+  'resetMainScroll',
   'revealResumeUploadArea',
   'revealJobDescriptionField',
   'scheduleResumeModeAutoReveal',

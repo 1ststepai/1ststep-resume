@@ -2089,13 +2089,27 @@ ${resume.slice(0, 3000)}
       }
     }
 
+    function resetMainScroll() {
+      scrollMainToTop({ behavior: 'auto' });
+    }
+
+    function getWorkflowTopOffset() {
+      try {
+        const raw = getComputedStyle(document.documentElement).getPropertyValue('--resume-scroll-top-safe-space').trim();
+        const parsed = parseFloat(raw);
+        return Number.isFinite(parsed) ? parsed : 136;
+      } catch {
+        return 136;
+      }
+    }
+
     function scheduleMainScrollToTop(delays = [0, 180, 650]) {
       delays.forEach(delay => {
         setTimeout(() => {
           if (currentMode !== 'resume') return;
-          scrollMainToTop();
+          resetMainScroll();
           requestAnimationFrame(() => {
-            if (currentMode === 'resume') scrollMainToTop();
+            if (currentMode === 'resume') resetMainScroll();
           });
         }, delay);
       });
@@ -2104,7 +2118,7 @@ ${resume.slice(0, 3000)}
     function scrollWorkflowTargetIntoView(target, options = {}) {
       if (!target) return;
       const container = getWorkflowScrollContainer();
-      const topOffset = Number.isFinite(options.topOffset) ? options.topOffset : 136;
+      const topOffset = Number.isFinite(options.topOffset) ? options.topOffset : getWorkflowTopOffset();
       const behavior = options.behavior || 'smooth';
       if (container && container !== document.documentElement && container !== document.body) {
         const containerRect = container.getBoundingClientRect();
