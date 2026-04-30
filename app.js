@@ -1946,6 +1946,11 @@ ${resume.slice(0, 3000)}
           reason: shouldShowDisabledReason(target.actionKey, target.buttonId, reason, workflowState) ? reason : '',
         };
       });
+      const generateResumeReason = visibleReasons.find(item => item.reasonId === 'smartActionReason')?.reason || '';
+      const analyzeReason = visibleReasons.find(item => item.reasonId === 'analyzePositioningReason');
+      if (generateResumeReason && analyzeReason?.reason === generateResumeReason) {
+        analyzeReason.reason = '';
+      }
       const renderKey = JSON.stringify(visibleReasons.map(item => [item.reasonId, item.reason]));
       if (_lastDisabledReasonsRenderKey === renderKey) return;
 

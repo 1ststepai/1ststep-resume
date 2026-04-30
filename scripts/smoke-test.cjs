@@ -433,6 +433,15 @@ if (html) {
   if (!/id="retailorBtn"[^>]*>\s*ao/i.test(html)) pass('Re-tailor toolbar button has no corrupt prefix');
   else fail('Re-tailor toolbar button contains corrupt prefix text');
 
+  if (!/font-size:48px;margin-bottom:16px">\s*a\s*</i.test(html)) pass('Resume placeholder uses a real SVG icon');
+  else fail('Resume placeholder still renders a stray letter instead of an icon');
+
+  if (/generateResumeReason[\s\S]{0,220}analyzeReason[\s\S]{0,160}analyzeReason\.reason\s*=\s*''/.test(js)) {
+    pass('Duplicate visible disabled reasons are suppressed for resume/positioning prerequisites');
+  } else {
+    fail('Duplicate visible disabled-reason suppression is missing');
+  }
+
   const targetBlankWithoutRel = [...html.matchAll(/<a\b[^>]*target=["']_blank["'][^>]*>/gi)]
     .filter(m => !/\brel=["'][^"']*\bnoopener\b/i.test(m[0]));
   if (targetBlankWithoutRel.length === 0) pass('App target="_blank" links include rel="noopener"');
