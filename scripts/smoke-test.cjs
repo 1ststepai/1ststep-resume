@@ -407,16 +407,28 @@ if (apiSubscription) {
 
   if (/X-Owner-Access-Secret/.test(apiSubscription) && /timingSafeEqual/.test(apiSubscription)) pass('Owner restore code is sent by header and compared safely');
   else fail('Owner restore code header or safe comparison is missing');
+
+  if (/action === 'restore-code'/.test(apiSubscription) && /sendSubscriptionRestoreCode/.test(apiSubscription) && /verification_code_sent/.test(apiSubscription)) pass('Subscription restore sends an email verification code');
+  else fail('Subscription restore email-code flow is missing');
+
+  if (/X-Subscription-Restore-Code/.test(apiSubscription) && /X-Subscription-Restore-Challenge/.test(apiSubscription) && /verifyRestoreChallenge/.test(apiSubscription)) pass('Paid restore requires a signed email-code challenge');
+  else fail('Paid restore does not require a signed email-code challenge');
 }
 
 if (js) {
   if (!/email\s*&&\s*email\.toLowerCase\(\)\s*===\s*['"]evan@1ststep\.ai['"][\s\S]{0,120}return\s+['"]complete['"]/.test(apiClaude)) pass('Claude API has no hardcoded owner email bypass');
   else fail('Claude API still has a hardcoded owner email bypass');
 
+  if (!/Slow path:[\s\S]{0,220}direct Stripe check/.test(apiClaude) && /Paid API access requires a signed tier[\s\S]{0,120}token/.test(apiClaude)) pass('Claude API does not restore paid access by email-only Stripe fallback');
+  else fail('Claude API still appears to allow email-only Stripe fallback');
+
   if (/IS_LOCAL_DEV\s*&&\s*loadProfile\(\)\?\.email\s*===\s*DEV_EMAIL/.test(js)) pass('Client owner fixture is limited to local development');
   else fail('Client owner fixture is not clearly restricted to local development');
 
-  if (/ownerRestoreCode/.test(js) && /X-Owner-Access-Secret/.test(js)) pass('Subscription restore can send an optional owner access code');
+  if (/requestSubscriptionRestoreCode/.test(js) && /subscriptionRestoreChallenge/.test(js) && /X-Subscription-Restore-Code/.test(js)) pass('Client subscription restore uses passwordless email-code verification');
+  else fail('Client subscription restore email-code verification is missing');
+
+  if (/ownerRestoreCode/.test(js) && /X-Owner-Access-Secret/.test(js)) pass('Subscription restore can still send an optional owner access code');
   else fail('Subscription restore owner access code plumbing is missing');
 }
 

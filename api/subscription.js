@@ -19,13 +19,14 @@
  */
 
 import Stripe from 'stripe';
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHmac, randomBytes, randomInt, timingSafeEqual } from 'crypto';
 import { alertOnAbuse } from './_alert.js';
 
 // ── Tier token helpers ────────────────────────────────────────────────────────
 // A tierToken is: base64(email + "|" + tier + "|" + expiry) + "." + HMAC
 // Valid for 20 minutes. claude.js verifies without contacting Stripe.
 const TOKEN_TTL_MS = 20 * 60 * 1000;
+const RESTORE_CODE_TTL_MS = 10 * 60 * 1000;
 
 function signTierToken(email, tier) {
   const secret = process.env.TIER_SECRET;
@@ -63,6 +64,52 @@ function isBetaEmail(email) {
   return list.includes(email.toLowerCase());
 }
 
+function signPayload(payload) {
+  const secret = process.env.TIER_SECRET;
+  if (!secret) return '';
+  const sig = createHmac('sha256', secret).update(payload).digest('hex');
+  return `${payload}.${sig}`;
+}
+
+function verifySignedPayload(token) {
+  const secret = process.env.TIER_SECRET;
+  if (!secret || !token) return null;
+  try {
+    const [payload, sig] = token.split('.');
+    if (!payload || !sig) return null;
+    const expected = createHmac('sha256', secret).update(payload).digest('hex');
+    if (!safeSecretEquals(sig, expected)) return null;
+    return JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function hashRestoreCode(email, code) {
+  const secret = process.env.TIER_SECRET;
+  if (!secret || !email || !code) return '';
+  return createHmac('sha256', secret)
+    .update(`${String(email).toLowerCase()}|${String(code).trim()}`)
+    .digest('hex');
+}
+
+function createRestoreChallenge(email, code) {
+  const payload = Buffer.from(JSON.stringify({
+    email: String(email).toLowerCase(),
+    codeHash: hashRestoreCode(email, code),
+    exp: Date.now() + RESTORE_CODE_TTL_MS,
+    nonce: randomBytes(12).toString('hex'),
+  })).toString('base64url');
+  return signPayload(payload);
+}
+
+function verifyRestoreChallenge(email, code, challenge) {
+  const data = verifySignedPayload(challenge);
+  if (!data || Date.now() > Number(data.exp)) return false;
+  if (String(data.email || '').toLowerCase() !== String(email || '').toLowerCase()) return false;
+  return safeSecretEquals(data.codeHash, hashRestoreCode(email, code));
+}
+
 // ── Owner restore access ─────────────────────────────────────────────────────
 // Server-side only. Email alone never grants access; the request must include a
 // private restore code that matches OWNER_ACCESS_SECRET.
@@ -86,6 +133,44 @@ function hasOwnerAccess(email, restoreCode) {
   const ownerEmails = getOwnerAccessEmails();
   if (!ownerEmails.includes(String(email || '').toLowerCase())) return false;
   return safeSecretEquals(restoreCode, process.env.OWNER_ACCESS_SECRET);
+}
+
+async function sendSubscriptionRestoreCode(email, code) {
+  const resendKey = process.env.RESEND_API_KEY;
+  if (!resendKey) {
+    console.error('RESEND_API_KEY not set. Subscription restore email unavailable.');
+    return false;
+  }
+
+  const from = process.env.RESEND_FROM || 'onboarding@resend.dev';
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${resendKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from,
+      to: email,
+      subject: 'Your 1stStep.ai access code',
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#0f172a">
+          <h2 style="margin:0 0 12px">Verify your Job Hunt Pass access</h2>
+          <p style="margin:0 0 16px;color:#475569">Enter this one-time code in 1stStep.ai to restore your subscription access.</p>
+          <div style="font-size:28px;font-weight:800;letter-spacing:0.18em;background:#f1f5f9;border-radius:12px;padding:16px 20px;text-align:center">${code}</div>
+          <p style="margin:16px 0 0;color:#64748b;font-size:13px">This code expires in 10 minutes. If you did not request it, you can ignore this email.</p>
+        </div>
+      `,
+      text: `Your 1stStep.ai access code is ${code}. It expires in 10 minutes.`,
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    console.error('Subscription restore email failed:', response.status, body.slice(0, 300));
+    return false;
+  }
+  return true;
 }
 
 // ── Per-IP rate limiter — prevents email enumeration / customer probing ──────
@@ -118,7 +203,7 @@ function corsHeaders(req) {
   return {
     'Access-Control-Allow-Origin':  allowed ? origin : ALLOWED_ORIGINS[0],
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Owner-Access-Secret',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Owner-Access-Secret, X-Subscription-Restore-Code, X-Subscription-Restore-Challenge',
   };
 }
 
@@ -364,6 +449,35 @@ export default async function handler(req, res) {
       tierToken: signTierToken(email, 'complete'),
       expiresAt: null,
       expiresInDays: null,
+    });
+  }
+
+  if (action === 'restore-code') {
+    const code = String(randomInt(100000, 1000000));
+    const restoreChallenge = createRestoreChallenge(email, code);
+    if (!restoreChallenge) {
+      console.error('TIER_SECRET not set. Subscription restore challenge unavailable.');
+      return res.status(500).json({ tier: 'free', error: 'Restore verification unavailable.' });
+    }
+    const sent = await sendSubscriptionRestoreCode(email, code);
+    if (!sent) {
+      return res.status(503).json({ tier: 'free', error: 'Could not send verification code.' });
+    }
+    return res.status(200).json({
+      tier: 'free',
+      status: 'verification_code_sent',
+      verificationRequired: true,
+      restoreChallenge,
+    });
+  }
+
+  const subscriptionRestoreCode = req.headers['x-subscription-restore-code'] || '';
+  const subscriptionRestoreChallenge = req.headers['x-subscription-restore-challenge'] || '';
+  if (!verifyRestoreChallenge(email, subscriptionRestoreCode, subscriptionRestoreChallenge)) {
+    return res.status(200).json({
+      tier: 'free',
+      status: 'verification_required',
+      verificationRequired: true,
     });
   }
 

@@ -6580,6 +6580,7 @@ ${desc}`;
     // -- Subscription Verification ---------------------------------------------
     const SUB_CACHE_KEY = '1ststep_sub_cache';
     const SUB_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+    let subscriptionRestoreChallenge = '';
 
     function hasActiveSubscription() {
       try {
@@ -6594,6 +6595,8 @@ ${desc}`;
       try {
         // Check cache first to avoid hammering the API
         const ownerRestoreCode = String(options.ownerRestoreCode || '').trim();
+        const subscriptionRestoreCode = String(options.subscriptionRestoreCode || '').trim();
+        const restoreChallenge = String(options.restoreChallenge || '').trim();
         const shouldBypassCache = !!ownerRestoreCode;
         const cached = JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || 'null');
         if (cached?.status === 'beta') {
@@ -6604,21 +6607,38 @@ ${desc}`;
         if (!shouldBypassCache && cached && cached.email === email && Date.now() - cached.ts < SUB_CACHE_TTL) {
           _applySubscriptionTier(cached.tier, false);
           renderPricingCard();
-          return;
+          return cached;
+        }
+        if (!ownerRestoreCode && (!subscriptionRestoreCode || !restoreChallenge)) {
+          return null;
         }
         const fetchOptions = ownerRestoreCode
           ? { headers: { 'X-Owner-Access-Secret': ownerRestoreCode } }
+          : subscriptionRestoreCode && restoreChallenge
+            ? { headers: { 'X-Subscription-Restore-Code': subscriptionRestoreCode, 'X-Subscription-Restore-Challenge': restoreChallenge } }
           : undefined;
         const resp = await fetch(`/api/subscription?email=${encodeURIComponent(email)}`, fetchOptions);
-        if (!resp.ok) return;
+        if (!resp.ok) return null;
         const data = await resp.json();
         const tier = data.tier || 'free';
         // Cache the result
         localStorage.setItem(SUB_CACHE_KEY, JSON.stringify({ email, tier, ts: Date.now(), tierToken: data.tierToken || '', expiresInDays: data.expiresInDays ?? null, status: data.status || '' }));
         _applySubscriptionTier(tier, true);
+        return { ...data, tier };
       } catch (err) {
         console.warn('Subscription check failed:', err.message);
+        return null;
       }
+    }
+
+    async function requestSubscriptionRestoreCode(email) {
+      const resp = await fetch(`/api/subscription?action=restore-code&email=${encodeURIComponent(email)}`);
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok || !data.restoreChallenge) {
+        throw new Error(data.error || 'Could not send verification code.');
+      }
+      subscriptionRestoreChallenge = data.restoreChallenge;
+      return data;
     }
 
     function _applySubscriptionTier(tier, notify) {
@@ -7400,6 +7420,7 @@ ${job.jd.slice(0, 1000)}
     function openPaywallVerify(surface = 'unknown') {
       const panel = document.getElementById('paywallVerify');
       const emailEl = document.getElementById('paywallEmail');
+      const ownerCodeEl = document.getElementById('paywallOwnerCode');
       const errorEl = document.getElementById('paywallError');
       if (!panel || !emailEl) return;
 
@@ -7407,7 +7428,15 @@ ${job.jd.slice(0, 1000)}
         const profileEmail = loadProfile()?.email || '';
         if (profileEmail) emailEl.value = profileEmail;
       }
-      if (errorEl) errorEl.style.display = 'none';
+      subscriptionRestoreChallenge = '';
+      if (ownerCodeEl) {
+        ownerCodeEl.value = '';
+        ownerCodeEl.placeholder = 'Code from email or support';
+      }
+      if (errorEl) {
+        errorEl.style.display = 'none';
+        errorEl.style.color = 'var(--red)';
+      }
       panel.style.display = 'flex';
       trackProductEvent('SUBSCRIPTION_VERIFY_STARTED', { surface });
       setTimeout(() => emailEl.focus(), 0);
@@ -7428,6 +7457,7 @@ ${job.jd.slice(0, 1000)}
       if (errorEl) errorEl.style.display = 'none';
       if (emailEl) emailEl.value = '';
       if (ownerCodeEl) ownerCodeEl.value = '';
+      subscriptionRestoreChallenge = '';
     }
 
     async function submitPaywallVerify() {
@@ -7437,24 +7467,42 @@ ${job.jd.slice(0, 1000)}
       const btn = document.getElementById('paywallVerifyBtn');
       if (!emailEl || !errorEl || !btn) return;
       const email = emailEl.value.trim().toLowerCase();
-      const ownerRestoreCode = ownerCodeEl?.value?.trim() || '';
+      const enteredCode = ownerCodeEl?.value?.trim() || '';
 
       errorEl.style.display = 'none';
+      errorEl.style.color = 'var(--red)';
       if (!email || !email.includes('@')) {
         errorEl.textContent = 'Please enter a valid email address.';
         errorEl.style.display = 'block';
         return;
       }
 
-      btn.textContent = 'Checking...';
+      btn.textContent = subscriptionRestoreChallenge || enteredCode ? 'Checking...' : 'Sending code...';
       btn.disabled = true;
 
       try {
+        if (!subscriptionRestoreChallenge && !enteredCode) {
+          await requestSubscriptionRestoreCode(email);
+          errorEl.textContent = 'Check your email for a 6-digit code, then enter it here.';
+          errorEl.style.display = 'block';
+          errorEl.style.color = 'var(--brand)';
+          if (ownerCodeEl) {
+            ownerCodeEl.value = '';
+            ownerCodeEl.placeholder = '6-digit code';
+            ownerCodeEl.focus();
+          }
+          btn.textContent = 'Verify Code';
+          btn.disabled = false;
+          return;
+        }
+
         // Clear cache so verifySubscription does a fresh check
         localStorage.removeItem(SUB_CACHE_KEY);
-        await verifySubscription(email, { ownerRestoreCode });
+        const verifyResult = await verifySubscription(email, subscriptionRestoreChallenge
+          ? { subscriptionRestoreCode: enteredCode, restoreChallenge: subscriptionRestoreChallenge }
+          : { ownerRestoreCode: enteredCode });
 
-        const tier = localStorage.getItem('1ststep_tier') || 'free';
+        const tier = verifyResult?.tier || 'free';
         if (tier !== 'free') {
           // Access restored - hide both overlays
           const verifyPanel = document.getElementById('paywallVerify');
@@ -7470,16 +7518,21 @@ ${job.jd.slice(0, 1000)}
           updateWorkflowGuidanceUI?.();
           showTierBadge(tier);
           if (ownerCodeEl) ownerCodeEl.value = '';
+          subscriptionRestoreChallenge = '';
           showToast('Done Job Hunt Pass restored - welcome back!', 'success');
         } else {
-          errorEl.textContent = 'No active subscription found for that email. Check your inbox or choose a plan below.';
+          errorEl.style.color = 'var(--red)';
+          errorEl.textContent = subscriptionRestoreChallenge
+            ? 'That code did not verify an active subscription. Check the code or choose a plan below.'
+            : 'No active subscription found for that email. Check your inbox or choose a plan below.';
           errorEl.style.display = 'block';
         }
       } catch {
+        errorEl.style.color = 'var(--red)';
         errorEl.textContent = 'Could not verify - please try again.';
         errorEl.style.display = 'block';
       } finally {
-        btn.textContent = 'Restore Access ->';
+        btn.textContent = subscriptionRestoreChallenge ? 'Verify Code' : 'Send Code';
         btn.disabled = false;
       }
     }

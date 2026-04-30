@@ -60,44 +60,8 @@ async function getVerifiedTier(email, tierToken) {
     }
   }
 
-  // ── Slow path: fall back to direct Stripe check (token absent or expired) ─
-  if (!email || !email.includes('@')) return 'free';
-  const key = email.toLowerCase();
-  const cached = subCache.get(key);
-  if (cached && Date.now() - cached.ts < SUB_CACHE_TTL_MS) return cached.tier;
-
-  const stripeKey = process.env.STRIPE_SECRET_KEY;
-  if (!stripeKey) return 'free'; // fail open if Stripe not configured
-
-  try {
-    const { default: Stripe } = await import('stripe');
-    const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' });
-    const customers = await stripe.customers.list({ email: key, limit: 3 });
-    for (const customer of customers.data) {
-      const subs = await stripe.subscriptions.list({
-        customer: customer.id, status: 'active', limit: 3,
-        expand: ['data.items.data.price.product'],
-      });
-      for (const sub of subs.data) {
-        for (const item of sub.items.data) {
-          const name = (item.price.product.name || '').toLowerCase();
-          if (name.includes('job hunt pass') || name.includes('pro') || name.includes('complete') || name.includes('essential')) {
-            const tier = 'complete';
-            subCache.set(key, { tier, ts: Date.now() });
-            if (subCache.size > 5000) {
-              const oldest = [...subCache.keys()].slice(0, 500);
-              oldest.forEach(k => subCache.delete(k));
-            }
-            return tier;
-          }
-        }
-      }
-    }
-  } catch (err) {
-    console.error('Server-side tier check failed:', err.message);
-    return 'free'; // fail open — don't block users if Stripe is temporarily down
-  }
-  subCache.set(key, { tier: 'free', ts: Date.now() });
+  // No email-only Stripe fallback here. Paid API access requires a signed tier
+  // token issued after checkout restore email verification or owner restore.
   return 'free';
 }
 
