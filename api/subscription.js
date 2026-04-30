@@ -53,7 +53,7 @@ export function verifyTierToken(token) {
   }
 }
 
-// ── Beta email override — BETA_EMAILS env var (comma-separated) ──────────────
+// ── Legacy private-access email list — these users now resolve to free. ──────
 function isBetaEmail(email) {
   const list = (process.env.BETA_EMAILS || '')
     .split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
@@ -328,9 +328,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'A valid email address is required.', tier: 'free' });
   }
 
-  // Beta override — no Stripe lookup needed
+  // Legacy private-access users no longer receive paid entitlement by email alone.
   if (isBetaEmail(email)) {
-    return res.status(200).json({ tier: 'complete', status: 'beta', expiresAt: null, expiresInDays: null, tierToken: signTierToken(email, 'complete') });
+    return res.status(200).json({ tier: 'free', status: 'legacy_access_free', expiresAt: null, expiresInDays: null });
   }
 
   if (!process.env.STRIPE_SECRET_KEY) {

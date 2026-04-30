@@ -6492,19 +6492,14 @@ ${desc}`;
       if (!email || IS_LOCAL_DEV) return; // skip in local dev
       if (email === DEV_EMAIL) return; // dev bypass - tier already set in checkBetaAccess
 
-      // If user has an active beta token, skip Stripe - beta tier is already set
-      // and Stripe would return 'free' (beta users haven't paid), triggering a false downgrade toast
-      try {
-        const betaRaw = localStorage.getItem('1ststep_beta');
-        if (betaRaw) {
-          const beta = JSON.parse(betaRaw);
-          if (beta.expiresAt && Date.now() < beta.expiresAt) return;
-        }
-      } catch { }
-
       try {
         // Check cache first to avoid hammering the API
         const cached = JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || 'null');
+        if (cached?.status === 'beta') {
+          localStorage.removeItem(SUB_CACHE_KEY);
+          localStorage.removeItem('1ststep_tier');
+          currentTier = 'free';
+        } else
         if (cached && cached.email === email && Date.now() - cached.ts < SUB_CACHE_TTL) {
           _applySubscriptionTier(cached.tier, false);
           renderPricingCard();
@@ -7091,9 +7086,7 @@ ${job.jd.slice(0, 1000)}
 
     const BETA_KEY = '1ststep_beta';
 
-    // Grace period for existing private-access users whose tokens have expired.
-    // While true, any user who ever completed private access (has grantedAt) keeps Job Hunt Pass access.
-    // To remove: set to false - expired users will see the access-expired screen instead.
+    // Existing private-access users now continue as free users unless Stripe verifies an active subscription.
     const BETA_GRACE_PERIOD = true;
 
     // Tally feedback form URL - paste your Tally form share link here after creating it at tally.so
@@ -7254,7 +7247,7 @@ ${job.jd.slice(0, 1000)}
       const sub = (() => {
         try { return JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || 'null'); } catch { return null; }
       })();
-      if (sub && sub.tier && sub.tier !== 'free' && sub.email) {
+      if (sub && sub.tier && sub.tier !== 'free' && sub.email && sub.status !== 'beta') {
         _log(`paid subscriber (${sub.tier}) -> access`);
         currentTier = sub.tier;
         localStorage.setItem('1ststep_tier', sub.tier);
@@ -7267,32 +7260,21 @@ ${job.jd.slice(0, 1000)}
 
       const beta = getBetaState();
 
-      // -- Rule 3: Grace period - existing private-access user, token expired ---
-      // Protects users who signed up before public launch but whose window has closed.
-      // Remove: set BETA_GRACE_PERIOD = false to enforce expiry and show the expired screen.
-      if (BETA_GRACE_PERIOD && beta && beta.grantedAt) {
-          _log(`legacy access expired ${new Date(beta.expiresAt).toLocaleDateString()}, granted ${new Date(beta.grantedAt).toLocaleDateString()} -> Job Hunt Pass`);
-        currentTier = 'complete';
-        localStorage.setItem('1ststep_tier', 'complete');
+      // -- Rule 3: Existing private-access users now continue as free users ------
+      if (beta && beta.grantedAt) {
+        _log('legacy private-access user -> free tier');
+        localStorage.removeItem(BETA_KEY);
+        localStorage.removeItem(SUB_CACHE_KEY);
+        currentTier = 'free';
+        localStorage.setItem('1ststep_tier', 'free');
         updateTailorUsageMeter?.();
         updateSearchUsageMeter?.();
         updateTierLockIcon?.();
+        updateWorkflowGuidanceUI?.();
         return;
       }
 
-      // -- Rule 4: Valid active legacy token -> Job Hunt Pass --------------------
-      if (beta && Date.now() <= beta.expiresAt) {
-        _log(`active legacy access (expires ${new Date(beta.expiresAt).toLocaleDateString()}) -> Job Hunt Pass`);
-        currentTier = 'complete';
-        localStorage.setItem('1ststep_tier', 'complete');
-        updateTailorUsageMeter?.();
-        updateSearchUsageMeter?.();
-        updateTierLockIcon?.();
-        updateBetaBadge(beta.expiresAt);
-        return;
-      }
-
-      // -- Rule 5: New user - show appropriate gate ------------------------------
+      // -- Rule 4: New user - show appropriate gate ------------------------------
       const config = await getAppConfig();
       if (!config.betaMode) {
         _log('live mode: no subscription -> free tier');
@@ -7435,13 +7417,16 @@ ${job.jd.slice(0, 1000)}
         const data = await resp.json();
 
         if (data.valid) {
-          // Store beta state
+          const accessTier = data.tier || 'free';
+
+          // Store legacy access state for audit only; it no longer grants paid access.
           saveBetaState({ email, expiresAt: data.expiresAt, grantedAt: Date.now() });
 
-          // Store in sub cache so callClaude() picks up the tierToken automatically
+          // Store free status so old private-access signups do not inherit paid limits.
           localStorage.setItem(SUB_CACHE_KEY, JSON.stringify({
             email,
-            tier: 'complete',
+            tier: accessTier,
+            status: data.status || 'legacy_access_free',
             ts: Date.now(),
             tierToken: data.tierToken || '',
           }));
@@ -7452,22 +7437,21 @@ ${job.jd.slice(0, 1000)}
             lastName,
           }));
 
-          // Apply Pro access immediately
-          currentTier = 'complete';
-          localStorage.setItem('1ststep_tier', 'complete');
+          currentTier = accessTier;
+          localStorage.setItem('1ststep_tier', accessTier);
           updateTailorUsageMeter?.();
           updateSearchUsageMeter?.();
 
-          // Hide gate, show badge
+          // Hide private access gate and continue on the public free account.
           document.getElementById('betaGate').style.display = 'none';
-          updateBetaBadge(data.expiresAt);
           updateProfileBadge();
+          showTierBadge(accessTier);
 
           // Show welcome overlay for new users, or just toast for returning ones
           if (!localStorage.getItem('1ststep_welcomed')) {
             document.getElementById('welcomeOverlay').classList.add('visible');
           } else {
-          showToast('Access unlocked - welcome! Job Hunt Pass is active.', 'success');
+          showToast('Free account ready - welcome!', 'success');
           }
         } else {
           errorEl.textContent = data.error || 'Invalid code - please check your invite and try again.';

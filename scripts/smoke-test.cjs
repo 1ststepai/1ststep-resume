@@ -36,6 +36,10 @@ const ghlCro = fs.existsSync(path.join(ROOT, 'resume-tailor-landing', 'ghl-cro-c
   ? fs.readFileSync(path.join(ROOT, 'resume-tailor-landing', 'ghl-cro-custom-code.html'), 'utf8') : '';
 const ghlDefault = fs.existsSync(path.join(ROOT, 'resume-tailor-landing', 'ghl-custom-code.html'))
   ? fs.readFileSync(path.join(ROOT, 'resume-tailor-landing', 'ghl-custom-code.html'), 'utf8') : '';
+const apiSubscription = fs.existsSync(path.join(ROOT, 'api', 'subscription.js'))
+  ? fs.readFileSync(path.join(ROOT, 'api', 'subscription.js'), 'utf8') : '';
+const apiBeta = fs.existsSync(path.join(ROOT, 'api', 'beta.js'))
+  ? fs.readFileSync(path.join(ROOT, 'api', 'beta.js'), 'utf8') : '';
 
 // ── 2. HTML structure ─────────────────────────────────────────────────────────
 section('HTML structure');
@@ -357,6 +361,19 @@ if (js) {
 
   if (/function _activateCoverLetter[\s\S]*openUpgradeModal\('coverLetter'\)/.test(js)) pass('Cover letter upgrade trigger is present');
   else fail('Cover letter upgrade trigger is missing');
+
+  if (/legacy private-access user -> free tier/.test(js) && !/BETA_GRACE_PERIOD && beta && beta\.grantedAt[\s\S]{0,240}currentTier = 'complete'/.test(js)) pass('Legacy beta signups are forced to free in the client');
+  else fail('Legacy beta signups can still become paid in the client');
+}
+
+if (apiSubscription) {
+  if (/isBetaEmail\(email\)[\s\S]{0,180}tier: 'free'/.test(apiSubscription)) pass('Beta email override resolves to free');
+  else fail('Beta email override may still grant paid access');
+}
+
+if (apiBeta) {
+  if (/tier:\s+'free'/.test(apiBeta) && !/signTierToken\(cleanEmail,\s*'complete'/.test(apiBeta)) pass('Legacy beta endpoint returns free only');
+  else fail('Legacy beta endpoint may still issue paid access');
 }
 
 section('Landing conversion tracking smoke');
