@@ -36,6 +36,10 @@ const ghlCro = fs.existsSync(path.join(ROOT, 'resume-tailor-landing', 'ghl-cro-c
   ? fs.readFileSync(path.join(ROOT, 'resume-tailor-landing', 'ghl-cro-custom-code.html'), 'utf8') : '';
 const ghlDefault = fs.existsSync(path.join(ROOT, 'resume-tailor-landing', 'ghl-custom-code.html'))
   ? fs.readFileSync(path.join(ROOT, 'resume-tailor-landing', 'ghl-custom-code.html'), 'utf8') : '';
+const pricing = fs.existsSync(path.join(ROOT, 'pricing.html'))
+  ? fs.readFileSync(path.join(ROOT, 'pricing.html'), 'utf8') : '';
+const terms = fs.existsSync(path.join(ROOT, 'terms.html'))
+  ? fs.readFileSync(path.join(ROOT, 'terms.html'), 'utf8') : '';
 const apiSubscription = fs.existsSync(path.join(ROOT, 'api', 'subscription.js'))
   ? fs.readFileSync(path.join(ROOT, 'api', 'subscription.js'), 'utf8') : '';
 const apiBeta = fs.existsSync(path.join(ROOT, 'api', 'beta.js'))
@@ -405,6 +409,42 @@ if (js) {
   else fail(name + ' is missing engagement events');
   if (/firststep_attribution/.test(source) && /fs_vid/.test(source)) pass(name + ' persists attribution and app handoff visitor ID');
   else fail(name + ' is missing attribution handoff');
+});
+
+section('Live copy, link, and icon polish smoke');
+
+const productionMarkup = [
+  ['index.html', html],
+  ['GHL CRO landing', ghlCro],
+  ['GHL default landing', ghlDefault],
+  ['pricing.html', pricing],
+  ['terms.html', terms],
+].filter(([, source]) => source);
+
+productionMarkup.forEach(([name, source]) => {
+  if (!/Role\/AI Match Score|AI Match Score/i.test(source)) pass(name + ' uses Role Match Score naming');
+  else fail(name + ' still contains old Role/AI or AI Match Score naming');
+
+  if (!/beta workflow|Chrome extension beta/i.test(source)) pass(name + ' has no visible beta workflow copy');
+  else fail(name + ' still contains visible beta workflow copy');
+});
+
+if (html) {
+  if (!/id="retailorBtn"[^>]*>\s*ao/i.test(html)) pass('Re-tailor toolbar button has no corrupt prefix');
+  else fail('Re-tailor toolbar button contains corrupt prefix text');
+
+  const targetBlankWithoutRel = [...html.matchAll(/<a\b[^>]*target=["']_blank["'][^>]*>/gi)]
+    .filter(m => !/\brel=["'][^"']*\bnoopener\b/i.test(m[0]));
+  if (targetBlankWithoutRel.length === 0) pass('App target="_blank" links include rel="noopener"');
+  else fail(targetBlankWithoutRel.length + ' app target="_blank" link(s) missing rel="noopener"');
+}
+
+[['GHL CRO landing', ghlCro], ['GHL default landing', ghlDefault]].forEach(([name, source]) => {
+  if (!source) return;
+  const svgOpens = (source.match(/<svg\b/gi) || []).length;
+  const svgCloses = (source.match(/<\/svg>/gi) || []).length;
+  if (svgOpens === svgCloses) pass(name + ' SVG tags are balanced');
+  else fail(name + ' has unbalanced SVG tags');
 });
 
 section('Required global functions');

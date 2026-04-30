@@ -4222,12 +4222,12 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       <p style="margin-bottom:6px"><strong>You've used all ${limit} searches for this month.</strong></p>
       <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Upgrade to Job Hunt Pass for unlimited resume tailoring, unlimited cover letters, and full tracking, or search directly on job boards in the meantime.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-        <button onclick="openUpgradeModal()" style="padding:8px 16px;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;border:none;cursor:pointer">^ Upgrade My Plan</button>
+        <button onclick="openUpgradeModal()" style="padding:8px 16px;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;border:none;cursor:pointer">Upgrade to Job Hunt Pass</button>
       </div>
       <div class="quick-links" style="justify-content:flex-start">
-        <a class="quick-link-btn" href="#" onclick="openJobBoard('indeed'); return false">Search Indeed open</a>
-        <a class="quick-link-btn" href="#" onclick="openJobBoard('linkedin'); return false">Search LinkedIn open</a>
-        <a class="quick-link-btn" href="#" onclick="openJobBoard('glassdoor'); return false">Search Glassdoor open</a>
+        <a class="quick-link-btn" href="#" onclick="openJobBoard('indeed'); return false">Search Indeed</a>
+        <a class="quick-link-btn" href="#" onclick="openJobBoard('linkedin'); return false">Search LinkedIn</a>
+        <a class="quick-link-btn" href="#" onclick="openJobBoard('glassdoor'); return false">Search Glassdoor</a>
       </div>
     </div>`;
       showToast('Monthly search limit reached', 'warning');
@@ -4795,8 +4795,8 @@ ${_resumeSlice}
       <div class="no-jobs-box">
         <p><strong>Search failed:</strong> ${escHtml(err.message)}</p>
         <div class="quick-links" style="justify-content:flex-start;margin-top:8px">
-          <a class="quick-link-btn" href="#" onclick="openJobBoard('indeed'); return false">Search Indeed open</a>
-          <a class="quick-link-btn" href="#" onclick="openJobBoard('linkedin'); return false">Search LinkedIn open</a>
+          <a class="quick-link-btn" href="#" onclick="openJobBoard('indeed'); return false">Search Indeed</a>
+          <a class="quick-link-btn" href="#" onclick="openJobBoard('linkedin'); return false">Search LinkedIn</a>
         </div>
       </div>`;
         document.getElementById('jobResultsTitle').textContent = 'Search error';
@@ -5139,9 +5139,9 @@ ${_resumeSlice}
         <p>${hiddenCount > 0 ? `All ${hiddenCount} matching job${hiddenCount !== 1 ? 's' : ''} in this area ${hiddenCount !== 1 ? 'have' : 'has'} already been applied to - nice work!` : `No jobs found within <strong>${currentRadius} miles</strong> matching your criteria.`}</p>
         <p style="margin-bottom:16px">${hiddenCount > 0 ? 'Try different keywords or expand your search radius to find more.' : 'Try expanding your radius or using different keywords.'}</p>
         <div class="quick-links" style="justify-content:flex-start">
-          <a class="quick-link-btn" href="#" onclick="openJobBoard('indeed'); return false">Search Indeed open</a>
-          <a class="quick-link-btn" href="#" onclick="openJobBoard('linkedin'); return false">Search LinkedIn open</a>
-          <a class="quick-link-btn" href="#" onclick="openJobBoard('glassdoor'); return false">Search Glassdoor open</a>
+          <a class="quick-link-btn" href="#" onclick="openJobBoard('indeed'); return false">Search Indeed</a>
+          <a class="quick-link-btn" href="#" onclick="openJobBoard('linkedin'); return false">Search LinkedIn</a>
+          <a class="quick-link-btn" href="#" onclick="openJobBoard('glassdoor'); return false">Search Glassdoor</a>
         </div>
       </div>`;
         return;
