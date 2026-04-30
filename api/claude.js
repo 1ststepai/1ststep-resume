@@ -23,7 +23,7 @@ const ALLOWED_ORIGINS = [
 // COST-02: 'tailor' added — prevents free users from running unlimited Sonnet
 //          tailoring by clearing localStorage. Free users can still use Haiku
 //          for search analysis and salary estimation (callType: 'search'/'utility').
-const PAID_ONLY_TYPES = new Set(['tailor', 'coverLetter', 'linkedin']);
+const PAID_ONLY_TYPES = new Set(['linkedin']);
 const COMPLETE_ONLY_TYPES = new Set(['linkedin']); // linkedin requires Complete plan
 
 // ── Subscription verification cache (in-memory, per warm instance) ───────────
@@ -86,8 +86,8 @@ async function getVerifiedTier(email, tierToken) {
       for (const sub of subs.data) {
         for (const item of sub.items.data) {
           const name = (item.price.product.name || '').toLowerCase();
-          if (name.includes('complete') || name.includes('essential')) {
-            const tier = name.includes('complete') ? 'complete' : 'essential';
+          if (name.includes('job hunt pass') || name.includes('pro') || name.includes('complete') || name.includes('essential')) {
+            const tier = 'complete';
             subCache.set(key, { tier, ts: Date.now() });
             if (subCache.size > 5000) {
               const oldest = [...subCache.keys()].slice(0, 500);
@@ -137,14 +137,19 @@ let kvAlertFired = false;
 //   Free: 3 tailors / 3 searches   →  a free abuser clears localStorage ~66x before hitting 200
 //   Essential: 25 tailors / 40 searches  →  server limit is 8x above plan
 //   Complete: ~unlimited tailors / 80 searches  →  server limit is well above plan
-const MONTHLY_IP_LIMITS = {
-  // tailor + coverLetter are PAID_ONLY_TYPES — free users never reach these.
-  // These limits only apply to paid users, so keep them well above any plan ceiling.
-  tailor:      150,  // Complete plan ~25/month avg — 150 is abuse backstop only
+const MONTHLY_FREE_LIMITS = {
+  tailor:       3,
+  coverLetter:  1,
+  search:      10,
+  linkedin:     0,
+  autofill:    10,
+};
+const MONTHLY_PAID_LIMITS = {
+  tailor:      150,
   coverLetter: 150,
-  search:       10,  // NOT paid-gated — free users can reach this. Client shows 5; server backstop at 10.
-  linkedin:     50,  // Complete only — 50 is well above normal usage
-  autofill:     10,  // NOT paid-gated — extension autofill, Haiku-based. Tighten from 100.
+  search:       80,
+  linkedin:     50,
+  autofill:     50,
 };
 
 // callType values that are counted against monthly limits
@@ -159,13 +164,18 @@ function getMonthlyKey(ip) {
   return `${ip}:${currentMonth()}`;
 }
 
-function checkAndIncrementMonthly(ip, callType) {
+function isPaidTier(tier) {
+  return tier === 'essential' || tier === 'complete' || tier === 'pro';
+}
+
+function checkAndIncrementMonthly(ip, callType, tier = 'free') {
   // Only count meaningful call types
   if (!COUNTED_TYPES.has(callType)) return { allowed: true };
 
   const key   = getMonthlyKey(ip);
-  const usage = monthlyIpUsage.get(key) || { tailor: 0, coverLetter: 0, search: 0, linkedin: 0 };
-  const limit = MONTHLY_IP_LIMITS[callType] ?? 999;
+  const usage = monthlyIpUsage.get(key) || { tailor: 0, coverLetter: 0, search: 0, linkedin: 0, autofill: 0 };
+  const limits = isPaidTier(tier) ? MONTHLY_PAID_LIMITS : MONTHLY_FREE_LIMITS;
+  const limit = limits[callType] ?? 999;
 
   if (usage[callType] >= limit) {
     // Track unique blocked IPs — when enough accumulate, recommend persistent KV banning
@@ -330,7 +340,7 @@ export default async function handler(req, res) {
   // linkedin: Sonnet LinkedIn optimizer (Complete-only, checked below)
   const SONNET_ALLOWED_TYPES = new Set(['tailor', 'coverLetter', 'linkedin']);
   if (model === 'claude-sonnet-4-6' && !SONNET_ALLOWED_TYPES.has(callType)) {
-    alertOnAbuse('model_restricted', ip, `callType:${callType} email:${userEmail}`);
+    alertOnAbuse('model_restricted', ip, `callType:${callType}`);
     return res.status(403).json({
       error: 'Model not available for this request type.',
       code:  'MODEL_RESTRICTED',
@@ -341,20 +351,23 @@ export default async function handler(req, res) {
   // Premium callTypes require a verified paid subscription regardless of what
   // the client claims. This prevents localStorage tier spoofing and callType
   // manipulation from bypassing feature gates.
+  const verifiedTierForRequest = (userEmail || tierToken)
+    ? await getVerifiedTier(userEmail, tierToken)
+    : 'free';
+
   if (PAID_ONLY_TYPES.has(callType)) {
-    const verifiedTier = await getVerifiedTier(userEmail, tierToken);
-    if (verifiedTier === 'free') {
-      alertOnAbuse('tier_required', ip, `callType:${callType} email:${userEmail}`);
+    if (verifiedTierForRequest === 'free') {
+      alertOnAbuse('tier_required', ip, `callType:${callType}`);
       return res.status(403).json({
         error: 'This feature requires an active paid subscription.',
         code:  'TIER_REQUIRED',
         callType,
       });
     }
-    if (COMPLETE_ONLY_TYPES.has(callType) && verifiedTier !== 'complete') {
-      alertOnAbuse('tier_required', ip, `callType:${callType} email:${userEmail} tier:${verifiedTier}`);
+    if (COMPLETE_ONLY_TYPES.has(callType) && verifiedTierForRequest !== 'complete') {
+      alertOnAbuse('tier_required', ip, `callType:${callType} tier:${verifiedTierForRequest}`);
       return res.status(403).json({
-        error: 'This feature requires the Complete plan.',
+        error: 'This feature requires Job Hunt Pass.',
         code:  'COMPLETE_REQUIRED',
         callType,
       });
@@ -365,9 +378,9 @@ export default async function handler(req, res) {
   // This is the server-side enforcement that backs up the client-side usage meter.
   // A user who clears localStorage to bypass client limits will still be blocked here
   // once they've consumed their monthly server-side allowance for this IP.
-  const limitCheck = checkAndIncrementMonthly(ip, callType);
+  const limitCheck = checkAndIncrementMonthly(ip, callType, verifiedTierForRequest);
   if (!limitCheck.allowed) {
-    alertOnAbuse('monthly_limit', ip, `callType:${callType} used:${limitCheck.used} email:${userEmail}`);
+    alertOnAbuse('monthly_limit', ip, `callType:${callType} used:${limitCheck.used} tier:${verifiedTierForRequest}`);
     return res.status(429).json({
       error: `Monthly limit reached for this IP address. Upgrade to continue.`,
       code: 'MONTHLY_LIMIT',
@@ -398,7 +411,7 @@ export default async function handler(req, res) {
     model,
     maxTokens: clampedTokens,
     ip:       ip.slice(0, 45), // truncate IPv6 for log readability
-    email:    userEmail ? userEmail.slice(0, 60) : null,
+    hasEmail: Boolean(userEmail),
     msgCount: messages.length,
     promptLen: messages.reduce((n, m) => n + (m.content?.length || 0), 0),
   };

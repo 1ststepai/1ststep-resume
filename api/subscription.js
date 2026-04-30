@@ -97,7 +97,7 @@ function corsHeaders(req) {
 /** Map Stripe product name → app tier */
 function productToTier(productName = '') {
   const name = productName.toLowerCase();
-  if (name.includes('job hunt pass') || name.includes('complete')) return 'complete';
+  if (name.includes('job hunt pass') || name.includes('pro') || name.includes('complete')) return 'complete';
   if (name.includes('essential')) return 'essential';
   return 'free';
 }
@@ -304,7 +304,7 @@ export default async function handler(req, res) {
         linkedinUrl: profile.sub ? `linkedin.com/in/${profile.sub}` : '', // Construct URL if sub is available
       };
 
-      console.log(`✅ LinkedIn auth success for email: ${data.email}`);
+      console.log('LinkedIn auth success');
       return res.status(200).send(renderPopupHtml({ profile: data }));
     } catch (err) {
       console.error('LinkedIn callback error:', err.message);
@@ -404,7 +404,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ tier: 'free', status: 'no_active_subscription' });
 
   } catch (err) {
-    console.error('Stripe subscription check error:', err.message, { email }); // Log email for context
+    console.error('Stripe subscription check error:', err.message);
     // Fail open — don't block the user if Stripe is temporarily down or an unexpected error occurs
     return res.status(200).json({ tier: 'free', error: 'Subscription check failed.' });
   }

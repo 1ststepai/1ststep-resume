@@ -161,93 +161,56 @@
     <h1>Stop sending the same resume<br>to every job. <em>Start landing them.</em></h1>
     <p>AI-tailored resumes and cover letters for every role you apply to. Start free, upgrade when you're ready.</p>
     <div class="hero-note">No credit card required to get started.</div>
-
-    <!-- Billing Toggle -->
-    <div class="billing-toggle">
-      <button class="toggle-btn active" id="btn-monthly" onclick="setBilling('monthly')">Monthly</button>
-      <button class="toggle-btn" id="btn-annual" onclick="setBilling('annual')">
-        Annual &nbsp;<span class="save-badge">Save 40%</span>
-      </button>
-    </div>
   </div>
 
   <!-- Pricing Cards -->
   <div class="pricing-section">
     <div class="pricing-grid">
-
-      <!-- FREE -->
       <div class="plan-card">
         <div class="plan-name">Free</div>
         <div class="plan-price">
           <span class="amount">$0</span>
           <span class="period">&nbsp;/ month</span>
         </div>
-        <div class="annual-note" id="free-note">&nbsp;</div>
-        <p class="plan-tagline">Try it out. No commitment, no card.</p>
+        <div class="annual-note">No credit card required</div>
+        <p class="plan-tagline">Get a real win before you upgrade.</p>
         <a href="/" class="plan-cta cta-outline">Get started free</a>
         <hr class="plan-divider">
         <div class="plan-features-label">What's included</div>
         <ul class="plan-features">
-          <li><span class="check">✓</span><span><span class="highlight-val">3 AI resume tailors</span> per month</span></li>
-          <li><span class="check">✓</span><span><span class="highlight-val">3 cover letters</span> per month</span></li>
-          <li><span class="check">✓</span><span>ATS keyword gap analysis</span></li>
-          <li><span class="check">✓</span><span>Job application tracker</span></li>
-          <li><span class="check">✓</span><span>Job search (limited)</span></li>
-          <li class="muted-feature"><span class="dash">–</span><span>Unlimited tailors</span></li>
-          <li class="muted-feature"><span class="dash">–</span><span>LinkedIn optimization</span></li>
-          <li class="muted-feature"><span class="dash">–</span><span>Priority support</span></li>
+          <li><span class="check">&#10003;</span><span><span class="highlight-val">3 tailored resumes</span> per month</span></li>
+          <li><span class="check">&#10003;</span><span>Career Positioning Brief</span></li>
+          <li><span class="check">&#10003;</span><span>Role/AI Match Score</span></li>
+          <li><span class="check">&#10003;</span><span><span class="highlight-val">1 cover letter</span> per month</span></li>
+          <li><span class="check">&#10003;</span><span>Resume vault preview</span></li>
+          <li><span class="check">&#10003;</span><span>Save 3 jobs</span></li>
+          <li class="muted-feature"><span class="dash">-</span><span>Unlimited tailoring</span></li>
+          <li class="muted-feature"><span class="dash">-</span><span>Full vault and extension workflow</span></li>
         </ul>
       </div>
 
-      <!-- ESSENTIAL — Featured -->
       <div class="plan-card featured">
         <div class="featured-badge">Most Popular</div>
-        <div class="plan-name">Essential</div>
+        <div class="plan-name">Job Hunt Pass</div>
         <div class="plan-price">
           <span class="currency">$</span>
-          <span class="amount" id="essential-price">49</span>
+          <span class="amount">24.99</span>
           <span class="period">&nbsp;/ month</span>
         </div>
-        <div class="annual-note" id="essential-note">&nbsp;</div>
-        <p class="plan-tagline">For active job seekers applying to multiple roles per week.</p>
-        <a href="/" class="plan-cta cta-primary" id="essential-cta">Start Essential</a>
+        <div class="annual-note">Cancel anytime</div>
+        <p class="plan-tagline">For active job seekers who want a full application workspace.</p>
+        <a href="https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00" class="plan-cta cta-primary">Start Job Hunt Pass</a>
         <hr class="plan-divider">
         <div class="plan-features-label">Everything in Free, plus</div>
         <ul class="plan-features">
-          <li><span class="check">✓</span><span><span class="highlight-val">25 AI resume tailors</span> per month</span></li>
-          <li><span class="check">✓</span><span><span class="highlight-val">25 cover letters</span> per month</span></li>
-          <li><span class="check">✓</span><span>Full job search access</span></li>
-          <li><span class="check">✓</span><span>Unlimited application tracking</span></li>
-          <li><span class="check">✓</span><span>Extra instructions per tailor</span></li>
-          <li><span class="check">✓</span><span>Email support</span></li>
-          <li class="muted-feature"><span class="dash">–</span><span>LinkedIn optimization</span></li>
-          <li class="muted-feature"><span class="dash">–</span><span>Dedicated support</span></li>
+          <li><span class="check">&#10003;</span><span><span class="highlight-val">Unlimited</span> resume tailoring</span></li>
+          <li><span class="check">&#10003;</span><span><span class="highlight-val">Unlimited</span> cover letters</span></li>
+          <li><span class="check">&#10003;</span><span>Application tracker</span></li>
+          <li><span class="check">&#10003;</span><span>Career Positioning Brief</span></li>
+          <li><span class="check">&#10003;</span><span>Full resume vault</span></li>
+          <li><span class="check">&#10003;</span><span>Chrome extension workflow</span></li>
         </ul>
       </div>
-
-      <!-- COMPLETE -->
-      <div class="plan-card">
-        <div class="plan-name">Complete</div>
-        <div class="plan-price">
-          <span class="currency">$</span>
-          <span class="amount" id="complete-price">99</span>
-          <span class="period">&nbsp;/ month</span>
-        </div>
-        <div class="annual-note" id="complete-note">&nbsp;</div>
-        <p class="plan-tagline">Full power for serious job seekers who want every edge.</p>
-        <a href="/" class="plan-cta cta-outline" id="complete-cta">Start Complete</a>
-        <hr class="plan-divider">
-        <div class="plan-features-label">Everything in Essential, plus</div>
-        <ul class="plan-features">
-          <li><span class="check">✓</span><span><span class="highlight-val">Unlimited</span> resume tailors</span></li>
-          <li><span class="check">✓</span><span><span class="highlight-val">Unlimited</span> cover letters</span></li>
-          <li><span class="check">✓</span><span>LinkedIn profile optimization</span></li>
-          <li><span class="check">✓</span><span>Early access to new features</span></li>
-          <li><span class="check">✓</span><span>Priority dedicated support</span></li>
-          <li><span class="check">✓</span><span>Bulk apply mode</span></li>
-        </ul>
-      </div>
-
     </div>
 
     <div class="compare-note">
@@ -260,23 +223,23 @@
     <h2>Frequently asked questions</h2>
 
     <div class="faq-item">
-      <h3>How does the free tier work?</h3>
-      <p>You get 3 AI-tailored resumes and 3 cover letters every month at no cost — no credit card required. It resets on the first of each month. If you're applying to a handful of jobs it may be all you need.</p>
+      <h3>How does the free account work?</h3>
+      <p>You get 3 tailored resumes, 1 cover letter, a Career Positioning Brief, Role/AI Match Score, and vault preview every month at no cost. No credit card required.</p>
     </div>
 
     <div class="faq-item">
-      <h3>What is an "AI tailor"?</h3>
-      <p>Each tailor is one resume rewrite. You paste in your base resume and a job description, and the AI rewrites your resume to match that specific role — closing keyword gaps, reordering priorities, and reframing your experience to beat ATS filters. A cover letter counts separately.</p>
+      <h3>What is an AI tailor?</h3>
+      <p>Each tailor is one resume rewrite. You paste in your base resume and a job description, and the AI rewrites your resume to match that specific role by closing keyword gaps, reordering priorities, and reframing your experience for the role.</p>
     </div>
 
     <div class="faq-item">
-      <h3>What's the difference between monthly and annual billing?</h3>
-      <p>Annual billing locks in a 40% discount — Essential drops from $49/mo to $29/mo (billed $348/year) and Complete drops from $99/mo to $59/mo (billed $708/year). You can cancel at any time; you'll keep access until the end of the period you paid for.</p>
+      <h3>What does Job Hunt Pass unlock?</h3>
+      <p>Job Hunt Pass is $24.99/month and unlocks unlimited resume tailoring, unlimited cover letters, the application tracker, full resume vault, Career Positioning Brief, and Chrome extension workflow.</p>
     </div>
 
     <div class="faq-item">
       <h3>Can I cancel anytime?</h3>
-      <p>Yes. Cancel from your account settings at any time. You keep access until the end of your billing period and won't be charged again.</p>
+      <p>Yes. Cancel from your account settings or contact support at any time. You keep access until the end of your billing period and won't be charged again.</p>
     </div>
 
     <div class="faq-item">
@@ -290,8 +253,8 @@
     </div>
 
     <div class="faq-item">
-      <h3>What if I hit my monthly limit?</h3>
-      <p>You'll see your usage meter in the app. When you reach your limit you can upgrade to a higher plan at any time, or wait for the next month's reset.</p>
+      <h3>What if I hit my free limit?</h3>
+      <p>You'll see your usage meter in the app. When you reach a free limit, you can upgrade to Job Hunt Pass at any time or wait for the next month's reset.</p>
     </div>
   </div>
 
@@ -299,8 +262,8 @@
   <div class="cta-banner">
     <div class="cta-banner-inner">
       <h2>Ready to tailor your first resume?</h2>
-      <p>Join job seekers who stopped sending generic applications and started landing interviews.</p>
-      <a href="/">Start free — no card needed</a>
+      <p>Start free with a real tailored resume, then upgrade when your search needs more momentum.</p>
+      <a href="/">Start free - no card needed</a>
     </div>
   </div>
 
@@ -311,43 +274,5 @@
     <a href="/privacy">Privacy Policy</a>
     <a href="mailto:evan@1ststep.ai">Contact</a>
   </footer>
-
-  <script>
-    const LINKS = {
-      essential: {
-        monthly: 'https://buy.stripe.com/28E00k7OFfCXd0E1MPfIs01',
-        annual:  'https://buy.stripe.com/28E3cwfh78av6CgezBfIs02',
-      },
-      complete: {
-        monthly: 'https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00',
-        annual:  'https://buy.stripe.com/00w3cw2ul8ave4I1MPfIs03',
-      },
-    };
-
-    function setBilling(mode) {
-      const isAnnual = mode === 'annual';
-
-      // Toggle button states
-      document.getElementById('btn-monthly').classList.toggle('active', !isAnnual);
-      document.getElementById('btn-annual').classList.toggle('active', isAnnual);
-
-      const period = isAnnual ? 'annual' : 'monthly';
-
-      // Essential
-      document.getElementById('essential-price').textContent = isAnnual ? '29' : '49';
-      document.getElementById('essential-note').textContent = isAnnual ? 'Billed $348/year — save $240' : '\u00a0';
-      document.getElementById('essential-cta').textContent = isAnnual ? 'Start Essential — Annual' : 'Start Essential';
-      document.getElementById('essential-cta').href = LINKS.essential[period];
-
-      // Complete
-      document.getElementById('complete-price').textContent = isAnnual ? '59' : '99';
-      document.getElementById('complete-note').textContent = isAnnual ? 'Billed $708/year — save $480' : '\u00a0';
-      document.getElementById('complete-cta').textContent = isAnnual ? 'Start Complete — Annual' : 'Start Complete';
-      document.getElementById('complete-cta').href = LINKS.complete[period];
-    }
-
-    // Set monthly links on load
-    setBilling('monthly');
-  </script>
 </body>
 </html>

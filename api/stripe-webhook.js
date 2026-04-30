@@ -115,7 +115,7 @@ async function pushToGHL({ email, name, tier }) {
   const nameParts = (name || '').trim().split(/\s+/);
   const firstName = nameParts[0] || '';
   const lastName  = nameParts.slice(1).join(' ') || '';
-  const tierLabel = tier === 'complete' ? 'Complete' : 'Essential';
+  const tierLabel = 'Job Hunt Pass';
 
   // 1. Upsert contact (create or update by email)
   let contactId;
@@ -149,9 +149,7 @@ async function pushToGHL({ email, name, tier }) {
   if (!pipelineId || !contactId) return;
 
   // Pick stage based on tier
-  const stageId = tier === 'complete'
-    ? process.env.GHL_STAGE_CONVERTED_COMPLETE
-    : process.env.GHL_STAGE_CONVERTED_ESSENTIAL;
+  const stageId = process.env.GHL_STAGE_CONVERTED_COMPLETE || process.env.GHL_STAGE_CONVERTED_ESSENTIAL;
 
   try {
     // Check if they already have an opportunity (came through beta)
@@ -252,10 +250,13 @@ async function getTierFromSession(stripe, sessionId) {
       expand: ['line_items.data.price.product'],
     });
     const productName = session.line_items?.data?.[0]?.price?.product?.name || '';
-    return productName.toLowerCase().includes('complete') ? 'complete' : 'essential';
+    const normalized = productName.toLowerCase();
+    return (normalized.includes('job hunt pass') || normalized.includes('pro') || normalized.includes('complete') || normalized.includes('essential'))
+      ? 'complete'
+      : 'complete';
   } catch (err) {
     console.error('Could not determine tier from session:', err.message);
-    return 'essential'; // safe default
+    return 'complete'; // single paid plan: Job Hunt Pass
   }
 }
 
@@ -299,10 +300,10 @@ export default async function handler(req, res) {
       const email        = session.customer_details?.email || session.customer_email || '';
       const name         = session.customer_details?.name  || '';
       const amountPaid   = session.amount_total ? `$${(session.amount_total / 100).toFixed(2)}` : 'unknown';
-      console.log(`✅ Checkout complete — email: ${email}`);
+      console.log('Checkout complete');
 
       const tier      = await getTierFromSession(stripe, session.id);
-      const tierLabel = tier === 'complete' ? 'Complete' : 'Essential';
+      const tierLabel = 'Job Hunt Pass';
       console.log(`   Tier: ${tier}`);
 
       // Sync to GHL CRM

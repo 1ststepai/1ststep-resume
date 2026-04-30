@@ -5,61 +5,61 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- ── Primary SEO ──────────────────────────────────────────────── -->
-  <title>1stStep.ai — AI Resume Tailor &amp; Job Search Platform</title>
+  <!-- -- Primary SEO ------------------------------------------------ -->
+  <title>1stStep.ai - AI Resume Tailor &amp; Job Search Platform</title>
   <meta name="description"
-    content="Tailor your resume to any job in 30 seconds. See your exact skill gaps, beat the ATS with AI keywords, and get a personalized cover letter — free to start. $19/mo after." />
+    content="Tailor your resume to any job in 30 seconds. Start free with 3 resume tailors, a Career Positioning Brief, 1 cover letter, and vault preview. Upgrade to Job Hunt Pass for unlimited tailoring and full tracking." />
   <meta name="keywords"
     content="AI resume tailor, ATS resume optimizer, resume keyword tool, skill gap analysis, AI cover letter generator, job search platform, resume builder AI, LinkedIn resume import" />
   <link rel="canonical" href="https://app.1ststep.ai/" />
   <meta name="theme-color" content="#0D0F18" />
   <meta name="robots" content="noindex, follow" />
 
-  <!-- ── Open Graph (Facebook, LinkedIn, Slack previews) ─────────── -->
+  <!-- -- Open Graph (Facebook, LinkedIn, Slack previews) ----------- -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://app.1ststep.ai/" />
-  <meta property="og:title" content="1stStep.ai — Tailor Your Resume to Any Job in 30 Seconds" />
+  <meta property="og:title" content="1stStep.ai - Tailor Your Resume to Any Job in 30 Seconds" />
   <meta property="og:description"
-    content="Stop sending the same resume to every job. 1stStep.ai shows your exact skill gaps, rewrites your resume for each role, and writes a cover letter — in 30 seconds. Free to start." />
+    content="Stop sending the same resume to every job. 1stStep.ai helps tailor your resume to each role, improve keyword alignment, and manage your applications." />
   <meta property="og:image" content="https://1ststep.ai/og-image.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:site_name" content="1stStep.ai" />
 
-  <!-- ── Twitter / X Card ─────────────────────────────────────────── -->
+  <!-- -- Twitter / X Card ------------------------------------------- -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:url" content="https://app.1ststep.ai/" />
-  <meta name="twitter:title" content="1stStep.ai — AI Resume Tailor" />
+  <meta name="twitter:title" content="1stStep.ai - AI Resume Tailor" />
   <meta name="twitter:description"
-    content="See exactly why you're not getting callbacks. 1stStep.ai finds your skill gaps, rewrites your resume, and writes a cover letter in 30 seconds. Free to start." />
+    content="Tailor your resume to each role, improve keyword alignment, and keep your application workflow organized. Free to start." />
   <meta name="twitter:image" content="https://1ststep.ai/og-image.png" />
 
-  <!-- ── Structured Data — WebApplication ─────────────────────────── -->
+  <!-- -- Structured Data - WebApplication --------------------------- -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
     "name": "1stStep.ai",
     "url": "https://1ststep.ai/",
-    "description": "AI-powered resume tailoring and job search platform. See your exact skill gaps, optimize your resume for ATS, and generate cover letters in 30 seconds. Free to start — Essential $19/mo, Complete $39/mo.",
+    "description": "AI-powered resume tailoring and job search platform. Start free with 3 resume tailors, a Career Positioning Brief, 1 cover letter, and vault preview. Upgrade to Job Hunt Pass for unlimited tailoring and full tracking.",
     "applicationCategory": "BusinessApplication",
     "operatingSystem": "Web",
     "offers": [
       {
         "@type": "Offer",
-        "name": "Essential",
-        "price": "19",
+        "name": "Job Hunt Pass",
+        "price": "24.99",
         "priceCurrency": "USD",
         "billingDuration": "P1M",
-        "description": "60 job searches and 30 resume tailors per month, plus cover letters and skill gap analysis"
+        "description": "Unlimited resume tailoring, unlimited cover letters, full resume vault, application tracker, and Chrome extension workflow"
       },
       {
         "@type": "Offer",
-        "name": "Complete",
-        "price": "39",
+        "name": "Free",
+        "price": "0",
         "priceCurrency": "USD",
         "billingDuration": "P1M",
-        "description": "Unlimited job searches and resume tailors, plus cover letters, resume templates, and all AI features"
+        "description": "3 tailored resumes, Career Positioning Brief, Role/AI Match Score, 1 cover letter, resume vault preview, and save 3 jobs"
       }
     ],
     "featureList": [
@@ -109,7 +109,7 @@
           <button class="mode-btn" id="modeJobs"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Job Search</button>
           <button class="mode-btn" id="modeTailored"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M2 4h8a1 1 0 011 1v10a1 1 0 01-1 1H2a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M4 8h5M4 10.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Job Tracker <span id="tailoredBadge" style="display:none;background:rgba(99,102,241,0.3);color:#a5b4fc;border-radius:100px;padding:1px 6px;font-size:10px;margin-left:2px">0</span></button>
           <div class="mode-more" id="modeMoreWrap">
-            <button class="mode-btn" id="modeMoreBtn" title="More tools">More <span style="font-size:9px;opacity:0.7">▾</span><span id="moreActiveDot" style="display:none;width:6px;height:6px;border-radius:50%;background:#60A5FA;margin-left:2px"></span></button>
+            <button class="mode-btn" id="modeMoreBtn" title="More tools">More <span class="ui-icon" style="opacity:.75" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span><span id="moreActiveDot" style="display:none;width:6px;height:6px;border-radius:50%;background:#60A5FA;margin-left:2px"></span></button>
             <div class="mode-more-menu" id="moreMenu">
               <button class="mode-more-item" id="modeTracker"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Applications <span id="trackerBadge" style="display:none;background:var(--blue);color:white;border-radius:100px;padding:1px 6px;font-size:10px;margin-left:4px">0</span></button>
               <button class="mode-more-item" id="modeLinkedIn"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 6.5v5M4 4v.5M7 11.5V9c0-1.1.9-2 2-2s2 .9 2 2v2.5M7 6.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> LinkedIn Profile</button>
@@ -118,14 +118,14 @@
           </div>
         </div>
 
-        <!-- Beta badge (shown during beta) -->
-        <div id="betaBadge" style="display:none;align-items:center;gap:5px;padding:4px 9px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);border-radius:7px;font-size:11px;font-weight:600;color:#818CF8;cursor:default" title="Beta access active">
-          <span>🧪</span><span id="betaDaysLeft" class="hide-mobile">Beta</span>
+        <!-- Legacy access badge -->
+        <div id="betaBadge" style="display:none;align-items:center;gap:5px;padding:4px 9px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);border-radius:7px;font-size:11px;font-weight:600;color:#818CF8;cursor:default" title="Access active">
+          <span></span><span id="betaDaysLeft" class="hide-mobile">Access</span>
         </div>
 
-        <!-- Feedback (beta only) -->
+        <!-- Feedback -->
         <button id="feedbackBtn" class="hover-feedback" style="display:none;align-items:center;gap:5px;padding:5px 11px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s">
-          <span>💬</span><span class="badge-label hide-mobile">Feedback</span>
+          <span></span><span class="badge-label hide-mobile">Feedback</span>
         </button>
 
         <!-- Upgrade CTA -->
@@ -142,7 +142,7 @@
 
         <!-- Backup -->
         <div class="api-badge" id="topbarBackupBtn" title="Download data backup" role="button" tabindex="0" aria-label="Download data backup" style="padding:5px 10px;cursor:pointer">
-          <span>💾</span><span class="badge-label hide-mobile">Backup</span>
+          <span></span><span class="badge-label hide-mobile">Backup</span>
         </div>
 
         <!-- Avatar / Account -->
@@ -152,11 +152,11 @@
 
         <!-- Help menu -->
         <div id="helpDropdownWrap" style="position:relative">
-          <button id="helpBtn" title="How to use 1stStep.ai" aria-label="Open help menu" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;color:var(--text2);font-family:'Inter',sans-serif;transition:all 0.15s">?</button>
+          <button id="helpBtn" title="How to use 1stStep.ai" aria-label="Open help menu" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;color:var(--text2);font-family:'Inter',sans-serif;transition:all 0.15s"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 1 1 5.8 1c-.5 1-1.5 1.5-2.3 2.1-.5.4-.6.8-.6 1.4"/><path d="M12 17h.01"/></svg></span></button>
           <div id="helpDropdown" style="display:none;position:absolute;right:0;top:calc(100% + 6px);width:320px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:200;overflow:hidden">
             <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
               <span style="font-size:13px;font-weight:700;color:var(--text)">How to use 1stStep.ai</span>
-              <button id="helpDropdownClose" aria-label="Close help menu" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0">✕</button>
+              <button id="helpDropdownClose" aria-label="Close help menu" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
             </div>
             <div style="max-height:420px;overflow-y:auto" id="helpDropdownItems"></div>
           </div>
@@ -165,27 +165,31 @@
       </div>
     </div>
 
-    <!-- First-time flow hint — shown on first visit until user completes first tailor -->
+    <div id="currentObjectiveBar" class="current-objective-bar" role="status" aria-live="polite">
+      <span id="currentObjectiveText">Current objective: Upload your resume to begin.</span>
+    </div>
+
+    <!-- First-time flow hint - shown on first visit until user completes first tailor -->
     <div id="flowHint"
       style="display:none;align-items:center;justify-content:center;gap:0;padding:7px 20px;background:rgba(99,102,241,0.08);border-bottom:1px solid rgba(99,102,241,0.15);font-size:12px;color:var(--text2);flex-wrap:wrap">
       <span style="font-weight:700;color:var(--text);margin-right:10px">How it works:</span>
       <span id="flowStep1"
         style="padding:3px 10px;border-radius:100px;background:rgba(67,56,202,0.12);color:var(--brand);font-weight:600">1
-        · Upload resume</span>
-      <span style="margin:0 6px;color:var(--muted)">→</span>
+        - Upload resume</span>
+      <span style="margin:0 6px;color:var(--muted)">-></span>
       <span id="flowStep2" style="padding:3px 10px;border-radius:100px;background:var(--surface2);color:var(--text2)">2
-        · Find a job</span>
-      <span style="margin:0 6px;color:var(--muted)">→</span>
+        - Find a job</span>
+      <span style="margin:0 6px;color:var(--muted)">-></span>
       <span id="flowStep3" style="padding:3px 10px;border-radius:100px;background:var(--surface2);color:var(--text2)">3
-        · Tailor in 30s</span>
-      <span style="margin:0 6px;color:var(--muted)">→</span>
+        - Tailor in 30s</span>
+      <span style="margin:0 6px;color:var(--muted)">-></span>
       <span id="flowStep4" style="padding:3px 10px;border-radius:100px;background:var(--surface2);color:var(--text2)">4
-        · Download &amp; apply</span>
+        - Download &amp; apply</span>
       <button id="flowHintDismiss" aria-label="Dismiss workflow hint"
-        style="margin-left:14px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0;line-height:1;flex-shrink:0">✕</button>
+        style="margin-left:14px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0;line-height:1;flex-shrink:0"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
     </div>
 
-    <!-- ── Desktop Sidebar Nav ── -->
+    <!-- -- Desktop Sidebar Nav -- -->
     <nav id="appSidebar">
       <div class="sb-logo">1stStep<span>.ai</span></div>
       <div class="sb-section">
@@ -230,7 +234,6 @@
     </nav>
 
     <div class="main">
-
       <!-- Resume Mode: 12-column dashboard grid -->
       <div id="resumeGrid">
         <div id="resumeMainCol">
@@ -238,7 +241,7 @@
       <!-- Left Panel: Hero + Inputs -->
       <div class="left-panel">
 
-        <!-- ── Hero Action Panel: 2-column ── -->
+        <!-- -- Hero Action Panel: 2-column -- -->
         <div class="hero-action-panel">
 
           <!-- Left: Value prop + trust signals -->
@@ -264,7 +267,7 @@
               </div>
               <div class="hero-trust-item">
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 8 6 12 14 4"/></svg>
-                3 free tailors — no card needed
+                3 free tailors - no card needed
               </div>
             </div>
             <p style="margin-top:18px;font-size:11px;color:var(--muted);line-height:1.5">Used by job seekers to land<br>interviews faster.</p>
@@ -273,15 +276,15 @@
           <!-- Right: Inputs + CTA -->
           <div class="hero-right">
 
-            <!-- Extension promo banner — hidden once dismissed or extension detected -->
+            <!-- Extension promo banner - hidden once dismissed or extension detected -->
             <div id="extPromoBanner" style="display:none;align-items:center;gap:11px;padding:11px 13px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:10px;margin-bottom:10px">
-              <span style="font-size:18px;flex-shrink:0">🧩</span>
+              <span style="font-size:18px;flex-shrink:0"></span>
               <div style="flex:1;min-width:0">
-                <p style="margin:0 0 3px;font-size:12px;font-weight:600;color:var(--text)">Tailor from any job post — no copy &amp; paste</p>
+                <p style="margin:0 0 3px;font-size:12px;font-weight:600;color:var(--text)">Tailor from any job post - no copy &amp; paste</p>
                 <p style="margin:0;font-size:11px;color:var(--text2)">Click the extension on LinkedIn or Indeed and we tailor your resume automatically.</p>
               </div>
               <a id="extBannerBtn" href="https://chromewebstore.google.com/detail/1ststepai-%E2%80%93-tailor-your-r/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener" style="flex-shrink:0;padding:6px 12px;background:var(--brand);color:white;border-radius:7px;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap;transition:background 0.15s">Install Extension</a>
-              <button id="extBannerDismiss" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;flex-shrink:0;padding:0;opacity:0.6" aria-label="Dismiss">✕</button>
+              <button id="extBannerDismiss" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;flex-shrink:0;padding:0;opacity:0.6" aria-label="Dismiss"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
             </div>
 
             <!-- Job Capture Confirmation (shown when extension delivers a job) -->
@@ -292,17 +295,17 @@
                   <div class="jcc-title" id="jccTitle">Job captured</div>
                   <div class="jcc-sub">Add your resume to tailor it for this role.</div>
                 </div>
-                <button id="jccDismissBtn" class="jcc-dismiss" aria-label="Dismiss">✕</button>
+                <button id="jccDismissBtn" class="jcc-dismiss" aria-label="Dismiss"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
               </div>
               <div class="jcc-actions">
-                <button id="jccUploadBtn" class="jcc-btn-secondary">↑ Upload Resume</button>
-                <button id="jccBuildResumeBtn" class="jcc-btn-secondary" style="color:var(--brand);border-color:rgba(99,102,241,0.4)">✦ Build a Resume</button>
+                <button id="jccUploadBtn" class="jcc-btn-secondary"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8 12 3 7 8"/><path d="M12 3v12"/></svg></span> Upload Resume</button>
+                <button id="jccBuildResumeBtn" class="jcc-btn-secondary" style="color:var(--brand);border-color:rgba(99,102,241,0.4)"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span> Build a Resume</button>
               </div>
             </div>
 
             <!-- Resume upload -->
             <div>
-              <div class="hero-input-label">1 · Your Resume</div>
+              <div class="hero-input-label">1 - Your Resume</div>
               <div class="file-drop" id="fileDrop" role="button" tabindex="0" aria-label="Upload resume file" style="padding:16px 12px">
                 <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt" aria-label="Upload resume file" />
                 <div class="file-drop-icon" style="margin-bottom:6px"><svg style="width:28px;height:28px;stroke:var(--muted);display:block;margin:0 auto" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
@@ -318,37 +321,37 @@
                 <div style="height:1px;flex:1;background:var(--border)"></div>
               </div>
               <div id="wrongFileWarning" role="alert" aria-live="assertive" style="display:none;margin-top:7px;padding:9px 12px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);border-radius:8px;font-size:12px;color:#FCA5A5;">
-                ⚠ Couldn't read that file. Try a different PDF or save as .docx and re-upload.
-                <button id="dismissWrongFileBtn" aria-label="Dismiss file type warning" style="margin-left:8px;font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;">✕</button>
+                Warning: Couldn't read that file. Try a different PDF or save as .docx and re-upload.
+                <button id="dismissWrongFileBtn" aria-label="Dismiss file type warning" style="margin-left:8px;font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
               </div>
               <div id="fileLoaded" class="file-loaded" role="status" aria-live="polite" style="display:none">
                 <span id="fileName">resume.txt</span>
-                <button id="clearFileBtn">✕ Remove</button>
+                <button id="clearFileBtn">x Remove</button>
               </div>
               <textarea id="resumeText" rows="1" style="display:none;height:0;padding:0;border:none;resize:none" placeholder="" aria-hidden="true" tabindex="-1"></textarea>
             </div>
 
-            <!-- Resume choice — shown when JD exists but no resume loaded -->
+            <!-- Resume choice - shown when JD exists but no resume loaded -->
             <div id="resumeChoiceCard" style="display:none;flex-direction:column;gap:10px;padding:14px 16px;background:rgba(99,102,241,0.07);border:1.5px dashed rgba(99,102,241,0.3);border-radius:10px;margin-bottom:4px">
               <p style="margin:0;font-size:13px;font-weight:600;color:var(--text)">Job description added. Now choose a resume to tailor.</p>
               <div style="display:flex;flex-wrap:wrap;gap:8px">
-                <button id="resumeChoiceUploadBtn" style="padding:7px 13px;background:var(--brand);color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background 0.15s">↑ Upload Resume</button>
+                <button id="resumeChoiceUploadBtn" style="padding:7px 13px;background:var(--brand);color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background 0.15s"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8 12 3 7 8"/><path d="M12 3v12"/></svg></span> Upload Resume</button>
                 <button id="resumeChoiceExistingBtn" style="padding:7px 13px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s">Use Existing Resume</button>
                 <button id="resumeChoiceLinkedInBtn" style="padding:7px 13px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:5px;transition:all 0.15s"><svg width="11" height="11" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 6.5v5M4 4v.5M7 11.5V9c0-1.1.9-2 2-2s2 .9 2 2v2.5M7 6.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Import LinkedIn PDF</button>
-                <button id="resumeChoiceBuildBtn" style="padding:7px 13px;background:var(--surface2);color:var(--brand);border:1px solid rgba(99,102,241,0.4);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s">✦ Build a Resume</button>
+                <button id="resumeChoiceBuildBtn" style="padding:7px 13px;background:var(--surface2);color:var(--brand);border:1px solid rgba(99,102,241,0.4);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span> Build a Resume</button>
               </div>
             </div>
 
             <!-- Job Description -->
             <div id="jdSection">
-              <div class="hero-input-label">2 · Job Description</div>
+              <div class="hero-input-label">2 - Job Description</div>
               <div id="jobContextBanner" role="status" aria-live="polite" style="display:none;align-items:center;gap:8px;padding:9px 12px;background:rgba(99,102,241,0.12);border:1.5px solid rgba(99,102,241,0.25);border-radius:9px;margin-bottom:8px;font-size:12px;color:var(--brand);font-weight:500">
                 <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-flex;align-items:center;gap:6px" id="jobContextLabel"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg> Tailoring for: Role at Company</span>
-                <button id="clearJobContextBtn" aria-label="Clear selected job context" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;flex-shrink:0;padding:0">✕</button>
+                <button id="clearJobContextBtn" aria-label="Clear selected job context" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;flex-shrink:0;padding:0"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
               </div>
-              <textarea id="jobText" rows="5" aria-label="Job description" placeholder="Paste the full job description here — the more detail, the better the result."></textarea>
+              <textarea id="jobText" rows="5" aria-label="Job description" placeholder="Paste the full job description here - the more detail, the better the result."></textarea>
               <div id="trackerPickerWrap" style="position:relative;margin-top:6px;">
-                <button id="pickTrackedJobBtn" style="background:none;border:none;padding:0;font-size:12px;color:var(--brand);cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;">📋 Pick from Job Tracker</button>
+                <button id="pickTrackedJobBtn" style="background:none;border:none;padding:0;font-size:12px;color:var(--brand);cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;"> Pick from Job Tracker</button>
                 <div id="trackerPickerDropdown" style="display:none;position:absolute;left:0;right:0;top:22px;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.12);max-height:220px;overflow-y:auto;"></div>
               </div>
               <p id="jobHelperText" style="display:none;margin:5px 0 0;font-size:12px;color:var(--muted)">Add the job posting to tailor your resume to it</p>
@@ -363,29 +366,32 @@
               </div>
               <button class="btn-run" id="runBtn" type="button" aria-describedby="runBtnStatus">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="runIcon"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                <span id="runBtnLabel">✦ Generate Tailored Resume</span>
+                <span id="runBtnLabel">Generate Tailored Resume</span>
               </button>
+              <p id="smartActionReason" class="disabled-reason smart-action-reason" data-disabled-reason-for="generateResume" aria-live="polite" hidden></p>
               <button class="btn-positioning" id="positioningAnalyzeBtn" type="button" disabled>
                 Analyze My Positioning
               </button>
+              <p id="analyzePositioningReason" class="disabled-reason" data-disabled-reason-for="analyzePositioning" aria-live="polite" hidden></p>
               <div id="positioningActiveBadge" class="positioning-active-badge" style="display:none">
                 <span>Positioning active</span>
                 <button id="positioningClearBtn" type="button">Remove positioning context</button>
               </div>
+              <p id="clearPositioningReason" class="disabled-reason" data-disabled-reason-for="clearPositioning" aria-live="polite" hidden></p>
               <p class="positioning-helper">Use this before generating or sending a resume to sharpen your story, impact, and proof points.</p>
               <div id="positioningInlineStatus" class="positioning-inline-status" role="status" aria-live="polite"></div>
               <span id="runBtnStatus" class="sr-only">Upload a resume and paste a job description to generate a tailored resume.</span>
-              <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:8px">Takes 20–45 seconds · <span style="color:var(--green)">ATS-friendly output</span></p>
+              <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:8px">Takes 20-45 seconds - <span style="color:var(--green)">ATS-friendly output</span></p>
               <div id="tailorUsageMeter" style="margin-top:12px">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-                  <span style="font-size:11px;color:var(--text2)" id="tailorUsageLabel">3 free tailors · No card needed</span>
+                  <span style="font-size:11px;color:var(--text2)" id="tailorUsageLabel">3 free tailors - No card needed</span>
                   <span style="font-size:10px;color:var(--muted)" id="tailorUsageReset">resets monthly</span>
                 </div>
                 <div style="height:4px;background:var(--border);border-radius:100px;overflow:hidden">
                   <div id="tailorUsageBar" style="height:100%;width:0%;background:var(--green);border-radius:100px;transition:width 0.4s ease,background 0.4s ease"></div>
                 </div>
               </div>
-              <!-- Pricing status card — rendered by renderPricingCard() -->
+              <!-- Pricing status card - rendered by renderPricingCard() -->
               <div id="pricingStatusCard" style="margin-top:10px"></div>
             </div>
 
@@ -393,11 +399,11 @@
 
         </div><!-- /hero-action-panel -->
 
-        <!-- Extra context — collapsible card below hero -->
+        <!-- Extra context - collapsible card below hero -->
         <div class="panel-section" style="padding:14px 20px">
           <details id="advancedSection">
             <summary style="font-size:11px;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;color:var(--label);cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;user-select:none">
-              <span id="advArrow" style="font-size:9px;transition:transform 0.15s;color:var(--muted)">▶</span> Extra Context <span style="font-size:11px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(Optional)</span>
+              <span id="advArrow" style="font-size:9px;transition:transform 0.15s;color:var(--muted)">></span> Extra Context <span style="font-size:11px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(Optional)</span>
             </summary>
             <div style="margin-top:12px">
               <textarea id="notesText" rows="3" aria-label="Additional tailoring notes" placeholder="e.g. I'm changing careers from finance to tech. Emphasize transferable skills and downplay unrelated experience."></textarea>
@@ -413,7 +419,7 @@
         <!-- Empty state -->
         <div class="empty-state" id="emptyState">
           <div style="text-align:center;padding:60px 24px">
-            <div style="font-size:48px;margin-bottom:16px">✨</div>
+            <div style="font-size:48px;margin-bottom:16px">a </div>
             <h2 style="font-size:18px;font-weight:700;color:var(--text);margin:0 0 8px">Your tailored resume will appear here</h2>
             <p style="font-size:13px;color:var(--muted);margin:0 auto;line-height:1.6;max-width:300px">Takes about 30 seconds. We rewrite your bullets, surface the right keywords, and format it to pass ATS.</p>
           </div>
@@ -425,27 +431,27 @@
           <div class="steps">
             <div class="step-item" id="step1">
               <div class="step-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-              <div class="step-text"><strong>Analyzing what this role actually needs…</strong><span>Identifying must-have skills and keywords</span></div>
+              <div class="step-text"><strong>Analyzing what this role actually needs...</strong><span>Identifying must-have skills and keywords</span></div>
             </div>
             <div class="step-item" id="step2">
               <div class="step-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></div>
-              <div class="step-text"><strong>Finding your strongest matches…</strong><span>Connecting your experience to this role</span></div>
+              <div class="step-text"><strong>Finding your strongest matches...</strong><span>Connecting your experience to this role</span></div>
             </div>
             <div class="step-item" id="step3">
               <div class="step-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
-              <div class="step-text"><strong>Rewriting to get past ATS filters…</strong><span>Optimizing bullets, summary &amp; keywords</span></div>
+              <div class="step-text"><strong>Rewriting to get past ATS filters...</strong><span>Optimizing bullets, summary &amp; keywords</span></div>
             </div>
             <div class="step-item" id="step4">
               <div class="step-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-              <div class="step-text"><strong>Final polish — formatting &amp; flow…</strong><span>Making sure it reads clean and scans fast</span></div>
+              <div class="step-text"><strong>Final polish - formatting &amp; flow...</strong><span>Making sure it reads clean and scans fast</span></div>
             </div>
             <div class="step-item" id="step5" style="display:none">
               <div class="step-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
-              <div class="step-text"><strong>Writing your personalized cover letter…</strong><span>Tailored to this specific role and company</span></div>
+              <div class="step-text"><strong>Writing your personalized cover letter...</strong><span>Tailored to this specific role and company</span></div>
             </div>
           </div>
 
-          <!-- Skill Gap Preview — injected after Step 2 completes -->
+          <!-- Skill Gap Preview - injected after Step 2 completes -->
           <div id="skillGapPreview"
             style="display:none;margin-top:16px;padding:14px 16px;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;animation:fadeIn 0.3s ease">
             <div
@@ -458,7 +464,7 @@
         <!-- Results -->
         <div class="results-panel" id="resultsPanel" role="region" aria-live="polite" aria-label="Tailored resume results">
 
-          <!-- Sticky action bar — shown after results generate, hidden during new run -->
+          <!-- Sticky action bar - shown after results generate, hidden during new run -->
           <div id="resultActionBar" style="display:none">
             <span class="rab-label">Ready to apply?</span>
             <button class="rab-btn rab-btn-primary" id="rabDownload">
@@ -483,29 +489,29 @@
             </button>
           </div>
 
-          <!-- Tracker auto-save confirmation — shown briefly after each tailor -->
+          <!-- Tracker auto-save confirmation - shown briefly after each tailor -->
           <div id="trackerSaveConfirm" style="display:none;align-items:center;gap:8px;padding:8px 16px;background:rgba(99,102,241,0.07);border-bottom:1px solid rgba(99,102,241,0.15);font-size:12px;color:var(--text2)">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Added to Tracker as <strong style="color:var(--text)">Resume Ready</strong></span>
-            <button id="trackerConfirmViewBtn" style="margin-left:auto;background:none;border:none;color:var(--brand);font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;padding:0;white-space:nowrap">View Tracker →</button>
-            <button id="trackerConfirmDismissBtn" aria-label="Dismiss tracker confirmation" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0;flex-shrink:0">✕</button>
+            <button id="trackerConfirmViewBtn" style="margin-left:auto;background:none;border:none;color:var(--brand);font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;padding:0;white-space:nowrap">View Tracker -></button>
+            <button id="trackerConfirmDismissBtn" aria-label="Dismiss tracker confirmation" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0;flex-shrink:0"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
           </div>
 
-          <!-- Cover letter nudge — shown after tailoring when outputMode is 'essential' -->
+          <!-- Cover letter nudge - shown after tailoring when outputMode is 'essential' -->
           <div id="clNudge" style="display:none">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-            <span>Want a matching cover letter? <button id="clNudgeBtn">Add it in one click →</button></span>
+            <span>Want a matching cover letter? <button id="clNudgeBtn">Add it in one click -></button></span>
           </div>
 
-          <!-- Post-result upgrade card — shown for free users after a successful tailor -->
+          <!-- Post-result upgrade card - shown for free users after a successful tailor -->
           <div id="postResultPassCard" style="display:none;margin:8px 16px 0;padding:12px 16px;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.18);border-radius:10px">
             <div style="font-size:13px;font-weight:600;color:var(--text)">Applying to more jobs?</div>
-            <div style="font-size:12px;color:var(--text2);margin:4px 0 10px;line-height:1.45">Unlock unlimited tailoring — cancel anytime.</div>
-            <button id="postResultPassBtn" style="padding:8px 16px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border:none;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer">Get Job Hunt Pass</button>
+            <div style="font-size:12px;color:var(--text2);margin:4px 0 10px;line-height:1.45">Unlock unlimited tailoring - cancel anytime.</div>
+            <button id="postResultPassBtn" style="padding:8px 16px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border:none;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer">Upgrade to Job Hunt Pass</button>
           </div>
 
           <div class="results-topbar">
-            <div id="matchBadge" class="match-score-badge good">✓ Resume Tailored</div>
+            <div id="matchBadge" class="match-score-badge good">- Resume Tailored</div>
             <div class="topbar-actions">
               <!-- Tools dropdown -->
               <div style="position:relative" id="toolsDropdownWrap">
@@ -536,28 +542,28 @@
               </div>
               <button class="btn-sm btn-sm-primary" id="downloadDocxBtn"
                 style="white-space:nowrap;gap:6px;display:inline-flex;align-items:center"
-                title="Plain text — best for uploading to job boards &amp; ATS systems">
+                title="Plain text - best for uploading to job boards &amp; ATS systems">
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"
                   stroke-linecap="round">
                   <path d="M8 2v8M5 7l3 3 3-3M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1" />
                 </svg>
                 ATS Plain Text (.docx)
               </button>
-              <button class="btn-sm btn-sm-outline" id="retailorBtn" style="white-space:nowrap">↺
+              <button class="btn-sm btn-sm-outline" id="retailorBtn" style="white-space:nowrap">ao
                 Re-tailor</button>
               <button class="btn-sm btn-sm-outline" id="toolbarJobsBtn" style="white-space:nowrap;display:inline-flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Jobs</button>
               <button class="btn-sm btn-sm-outline" id="toolbarHistoryBtn" style="white-space:nowrap;display:inline-flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> History</button>
             </div>
           </div>
 
-          <!-- What's Next nudge — shown after tailoring, dismissed on action -->
+          <!-- What's Next nudge - shown after tailoring, dismissed on action -->
           <div id="whatsNextBar"
             style="display:none;align-items:center;gap:6px;padding:10px 18px;background:rgba(16,185,129,0.08);border-bottom:1px solid rgba(16,185,129,0.2);flex-wrap:wrap">
             <span style="font-size:12px;font-weight:600;color:var(--green);margin-right:4px;white-space:nowrap">What's next?</span>
             <button id="wnTemplate"
               style="display:inline-flex;align-items:center;gap:5px;padding:4px 13px;border-radius:20px;border:2px solid var(--brand);background:rgba(99,102,241,0.15);font-size:12px;font-weight:700;cursor:pointer;color:var(--brand);transition:all 0.15s;font-family:'Inter',sans-serif"
               class="hover-indigo-pill">
-              🎨 Formatted Resume
+               Formatted Resume
             </button>
             <button id="wnDownload"
               style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1.5px solid rgba(16,185,129,0.4);background:transparent;font-size:12px;font-weight:500;cursor:pointer;color:var(--green);transition:all 0.15s;font-family:'Inter',sans-serif"
@@ -568,39 +574,39 @@
             <button id="wnInterview"
               style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1.5px solid rgba(16,185,129,0.4);background:transparent;font-size:12px;font-weight:500;cursor:pointer;color:var(--green);transition:all 0.15s;font-family:'Inter',sans-serif"
               class="hover-green-pill">
-              🎤 Prep for interview
+               Prep for interview
             </button>
             <button id="wnTrack"
               style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1.5px solid rgba(16,185,129,0.4);background:transparent;font-size:12px;font-weight:500;cursor:pointer;color:var(--green);transition:all 0.15s;font-family:'Inter',sans-serif"
               class="hover-green-pill">
-              📁 Save to history
+               Save to history
             </button>
             <button id="wnDismissBtn" aria-label="Dismiss next steps"
-              style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0;flex-shrink:0">✕</button>
+              style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0;flex-shrink:0"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
           </div>
 
-          <!-- Extension post-gen nudge — shown after tailoring for non-extension users -->
+          <!-- Extension post-gen nudge - shown after tailoring for non-extension users -->
           <div id="extPostGenNudge" style="display:none;align-items:center;gap:10px;padding:10px 18px;background:rgba(99,102,241,0.07);border-bottom:1px solid rgba(99,102,241,0.18);flex-wrap:wrap">
-            <span style="font-size:12px;color:var(--text2);flex:1;min-width:200px">🧩 Skip copy &amp; paste next time — use the <strong style="color:var(--text)">Chrome Extension</strong> to tailor resumes directly from job posts.</span>
+            <span style="font-size:12px;color:var(--text2);flex:1;min-width:200px"> Skip copy &amp; paste next time - use the <strong style="color:var(--text)">Chrome Extension</strong> to tailor resumes directly from job posts.</span>
             <a href="https://chromewebstore.google.com/detail/1ststepai-%E2%80%93-tailor-your-r/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener" style="flex-shrink:0;padding:4px 14px;border-radius:20px;border:1.5px solid rgba(99,102,241,0.4);background:transparent;font-size:12px;font-weight:600;color:var(--brand);text-decoration:none;white-space:nowrap;transition:all 0.15s">Install Extension</a>
-            <button id="extPostGenDismiss" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;flex-shrink:0;padding:0;margin-left:2px" aria-label="Dismiss">✕</button>
+            <button id="extPostGenDismiss" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;flex-shrink:0;padding:0;margin-left:2px" aria-label="Dismiss"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
           </div>
 
-          <!-- Post-tailor account nudge — hidden once account is set -->
+          <!-- Post-tailor account nudge - hidden once account is set -->
           <div id="accountNudge"
             style="display:none;align-items:center;gap:10px;padding:10px 16px;background:rgba(99,102,241,0.1);border-bottom:1px solid rgba(99,102,241,0.25);font-size:13px;flex-wrap:wrap">
-            <span style="color:#a5b4fc;flex:1;min-width:0" id="accountNudgeText">📌 Your resume and history are saved in
-              <strong style="color:#c7d2fe">this browser only</strong> — clearing your browser removes them. Download a
+            <span style="color:#a5b4fc;flex:1;min-width:0" id="accountNudgeText"> Your resume and history are saved in
+              <strong style="color:#c7d2fe">this browser only</strong> - clearing your browser removes them. Download a
               backup to keep your data safe.</span>
             <button id="accountNudgeBackupBtn"
-              style="flex-shrink:0;padding:4px 12px;background:#6366F1;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">💾
-              Backup →</button>
+              style="flex-shrink:0;padding:4px 12px;background:#6366F1;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">
+              Backup -></button>
             <button id="accountNudgeDismissBtn" aria-label="Dismiss account reminder"
-              style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;flex-shrink:0">✕</button>
+              style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;flex-shrink:0"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
           </div>
 
 
-          <!-- Skill Gap Analysis Card — populated by renderSkillGapCard() after tailoring -->
+          <!-- Skill Gap Analysis Card - populated by renderSkillGapCard() after tailoring -->
           <div id="skillGapCard"
             style="display:none;margin:14px 16px 0;padding:16px;background:var(--card-bg);border:1px solid var(--border);border-radius:12px">
           </div>
@@ -617,6 +623,8 @@
                 <button class="btn-positioning btn-positioning-compact" id="positioningUseBtn" type="button" disabled>Use This Positioning</button>
                 <button class="btn-positioning btn-positioning-compact" id="positioningResultBtn" type="button" disabled>Analyze My Positioning</button>
               </div>
+              <p id="usePositioningReason" class="disabled-reason" data-disabled-reason-for="usePositioning" aria-live="polite" hidden></p>
+              <p id="analyzePositioningResultReason" class="disabled-reason" data-disabled-reason-for="analyzePositioning" aria-live="polite" hidden></p>
             </div>
             <div id="positioningBriefStatus" class="positioning-brief-status" role="status" aria-live="polite"></div>
             <div id="positioningBriefContent"></div>
@@ -624,18 +632,18 @@
 
           <div class="tabs">
             <button class="tab-btn active" id="tabResume">
-              📄 Tailored Resume
+               Tailored Resume
             </button>
             <button class="tab-btn" id="kwTab">
-              🔍 Keywords
-              <span class="tab-badge green" id="matchCount">–</span>
-              <span class="tab-badge red" id="gapCount">–</span>
+               Keywords
+              <span class="tab-badge green" id="matchCount">-</span>
+              <span class="tab-badge red" id="gapCount">-</span>
             </button>
             <button class="tab-btn" id="tabChanges">
-              📝 What Changed
+               What Changed
             </button>
             <button class="tab-btn" id="coverTab" style="display:none">
-              ✉️ Cover Letter
+              ai  Cover Letter
             </button>
           </div>
 
@@ -654,16 +662,16 @@
             </div>
           </div>
 
-          <!-- Chrome extension nudge — mobile only, dismissable -->
+          <!-- Chrome extension nudge - mobile only, dismissable -->
           <div class="mobile-ext-promo" id="mobileExtPromo">
-            <span class="mobile-ext-promo-icon">🖥️</span>
+            <span class="mobile-ext-promo-icon"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span></span>
             <div class="mobile-ext-promo-body">
               <p class="mobile-ext-promo-text">Applying on desktop? Install the Chrome extension to tailor resumes directly from job posts.</p>
               <a class="mobile-ext-promo-link" href="https://chromewebstore.google.com/detail/1ststepai-%E2%80%93-tailor-your-r/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener">
-                Get Chrome Extension →
+                Get Chrome Extension ->
               </a>
             </div>
-            <button class="mobile-ext-promo-dismiss" aria-label="Dismiss">×</button>
+            <button class="mobile-ext-promo-dismiss" aria-label="Dismiss"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
           </div>
         </div>
 
@@ -675,10 +683,40 @@
         <div>
           <aside id="quickSidebar">
 
+        <div id="whatsNextRestoreWrap" class="whats-next-restore" style="display:none">
+          <button id="whatsNextRestoreBtn" type="button">Show guide</button>
+        </div>
+
+        <section id="whatsNextCard" class="whats-next-card" aria-live="polite" aria-labelledby="whatsNextTitle">
+          <div class="whats-next-copy">
+            <div class="whats-next-eyebrow">Next step</div>
+            <h2 id="whatsNextTitle">Start with your resume</h2>
+            <p id="whatsNextText">Upload your current resume so 1stStep can understand your experience.</p>
+            <div id="whatsNextProgress" class="whats-next-progress" aria-hidden="true"></div>
+          </div>
+          <div class="whats-next-actions">
+            <button id="whatsNextPrimaryBtn" class="whats-next-btn whats-next-btn-primary" type="button">Upload Resume</button>
+            <button id="whatsNextSecondaryBtn" class="whats-next-btn whats-next-btn-secondary" type="button" style="display:none"></button>
+            <button id="whatsNextDismissBtn" class="whats-next-dismiss" type="button" aria-label="Hide What's Next guide">Hide guide</button>
+          </div>
+        </section>
+
+        <section id="applicationChecklistCard" class="application-checklist-card" aria-live="polite" aria-labelledby="applicationChecklistTitle">
+          <div class="application-checklist-header">
+            <div>
+              <div class="application-checklist-eyebrow">Application checklist</div>
+              <h2 id="applicationChecklistTitle">Progress to apply</h2>
+            </div>
+            <span id="applicationChecklistCount" class="application-checklist-count">0/5</span>
+          </div>
+          <div id="applicationChecklistProgress" class="application-checklist-progress" aria-hidden="true"><span></span></div>
+          <div id="applicationChecklistItems" class="application-checklist-items"></div>
+        </section>
+
         <div class="qs-card">
           <div class="qs-title">Quick Actions</div>
           <button class="qs-btn qs-btn-primary" id="qsGenerateBtn">
-            <span class="qs-icon">✦</span> Generate Another
+            <span class="qs-icon"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z"/></svg></span></span> Generate Another
           </button>
           <button class="qs-btn" id="qsReoptimizeBtn">
             <span class="qs-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></span> Re-optimize Resume
@@ -699,27 +737,27 @@
           <div class="qs-title">Your Stats</div>
           <div class="qs-stat-row">
             <span class="qs-stat-label">Tailors this month</span>
-            <span class="qs-stat-value" id="qsStatTailors">—</span>
+            <span class="qs-stat-value" id="qsStatTailors">-</span>
           </div>
           <div class="qs-stat-row">
             <span class="qs-stat-label">This week</span>
-            <span class="qs-stat-value qs-streak-value" id="qsStatStreak">—</span>
+            <span class="qs-stat-value qs-streak-value" id="qsStatStreak">-</span>
           </div>
           <div class="qs-stat-row">
             <span class="qs-stat-label">Best match score</span>
-            <span class="qs-stat-value" id="qsStatScore">—</span>
+            <span class="qs-stat-value" id="qsStatScore">-</span>
           </div>
           <div class="qs-stat-row">
             <span class="qs-stat-label">Applications</span>
-            <span class="qs-stat-value" id="qsStatApps">—</span>
+            <span class="qs-stat-value" id="qsStatApps">-</span>
           </div>
         </div>
 
         <div class="qs-card" style="background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(139,92,246,0.08));border-color:rgba(99,102,241,0.2)">
           <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px">Get more interviews</div>
-          <p style="font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:10px">Unlimited tailors, cover letters &amp; templates — from $19/mo</p>
+          <p style="font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:10px">Unlimited tailors, cover letters &amp; templates - $24.99/month</p>
           <button class="qs-btn qs-btn-primary" id="qsViewPlansBtn" style="margin-bottom:0;font-size:12px">
-            <span class="qs-icon">⚡</span> View Plans
+            <span class="qs-icon"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span></span> View Plans
           </button>
         </div>
 
@@ -736,7 +774,7 @@
 
           <!-- AI Analyze (uses resume from Resume Tailor) -->
           <button class="btn-analyze-resume" id="autoDetectBtn">
-            <span id="autoDetectBtnIcon">🤖</span> <span id="autoDetectBtnLabel">Auto-detect matching jobs from
+            <span id="autoDetectBtnIcon"></span> <span id="autoDetectBtnLabel">Auto-detect matching jobs from
               resume</span>
           </button>
           <!-- Status message under analyze button -->
@@ -747,8 +785,8 @@
 
           <!-- Hidden inputs (still needed by JS) -->
           <div id="jsResumeLoaded" class="file-loaded" style="display:none">
-            <span id="jsResumeLoadedText">Resume carried over ✓</span>
-            <button id="jsResumeClearBtn">✕ Clear</button>
+            <span id="jsResumeLoadedText">Resume carried over -</span>
+            <button id="jsResumeClearBtn">x Clear</button>
           </div>
           <div id="jsResumePaste" style="display:none">
             <input type="file" id="jsFileInput" accept=".pdf,.docx,.doc,.txt" aria-label="Upload resume for job search" style="display:none"
@@ -763,7 +801,7 @@
               style="font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--label);display:block;margin-bottom:8px">Location</label>
             <div class="location-row">
               <input type="text" id="locationInput" aria-label="Location" placeholder="City, State or ZIP code" />
-              <button class="btn-locate" title="Use my location" aria-label="Use my current location">📍</button>
+              <button class="btn-locate" title="Use my location" aria-label="Use my current location"></button>
             </div>
             <div id="locationStatus" style="font-size:11px;color:var(--muted);margin-top:6px;display:none"></div>
           </div>
@@ -789,7 +827,7 @@
               Keywords <span
                 style="font-size:10px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(Auto-filled
                 by AI above)</span></label>
-            <input type="text" id="jobKeywords" aria-label="Job keywords" placeholder="e.g. Product Manager, Software Engineer React…"
+            <input type="text" id="jobKeywords" aria-label="Job keywords" placeholder="e.g. Product Manager, Software Engineer React..."
               onkeydown="if(event.key==='Enter') searchJobs()" />
             <div style="margin-top:6px;font-size:11.5px;color:var(--muted);line-height:1.5">
               Start with your <strong style="color:var(--text2)">job title</strong>, then add industry or skills.
@@ -841,31 +879,31 @@
 
         <!-- Empty state -->
         <div class="job-search-empty" id="jobEmptyState">
-          <div class="empty-icon">📍</div>
+          <div class="empty-icon"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 12h20"/></svg></span></div>
           <h2>Find jobs near you</h2>
           <p>Enter your location and search radius on the left, then click <strong>Find Jobs Near Me</strong>.</p>
           <div
             style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;max-width:360px;width:100%">
             <div
               style="background:var(--dark2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center">
-              <div style="font-size:18px;margin-bottom:4px">📍</div>
+              <div style="font-size:18px;margin-bottom:4px"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span></div>
               <div style="font-size:11px;color:var(--muted);">Radius filter</div>
             </div>
             <div
               style="background:var(--dark2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center">
-              <div style="font-size:18px;margin-bottom:4px">💼</div>
+              <div style="font-size:18px;margin-bottom:4px"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-7"/></svg></span></div>
               <div style="font-size:11px;color:var(--muted);">Live listings</div>
             </div>
             <div
               style="background:var(--dark2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center">
-              <div style="font-size:18px;margin-bottom:4px">✍️</div>
+              <div style="font-size:18px;margin-bottom:4px"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z"/></svg></span></div>
               <div style="font-size:11px;color:var(--muted);">1-click tailor</div>
             </div>
           </div>
           <div class="quick-links">
-            <a class="quick-link-btn" id="quickIndeed" href="#" target="_blank">Open on Indeed ↗</a>
-            <a class="quick-link-btn" id="quickLinkedIn" href="#" target="_blank">Open on LinkedIn ↗</a>
-            <a class="quick-link-btn" id="quickGlassdoor" href="#" target="_blank">Open on Glassdoor ↗</a>
+            <a class="quick-link-btn" id="quickIndeed" href="#" target="_blank">Open on Indeed open</a>
+            <a class="quick-link-btn" id="quickLinkedIn" href="#" target="_blank">Open on LinkedIn open</a>
+            <a class="quick-link-btn" id="quickGlassdoor" href="#" target="_blank">Open on Glassdoor open</a>
           </div>
           <p style="font-size:11px;color:var(--dark3);margin-top:12px;">No results? Try the quick links above with your
             location pre-filled.</p>
@@ -884,7 +922,7 @@
               <h3 id="jobResultsTitle">Jobs near you</h3>
               <span id="jobResultsSubtitle"></span>
             </div>
-            <button id="jobRefreshBtn" class="btn-sm btn-sm-outline">↺ Refresh</button>
+            <button id="jobRefreshBtn" class="btn-sm btn-sm-outline">ao Refresh</button>
           </div>
           <div class="job-list" id="jobList"></div>
         </div>
@@ -896,8 +934,8 @@
         <div style="max-width:860px;width:100%;margin:0 auto;padding:24px 16px;box-sizing:border-box">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
             <div>
-              <h2 style="font-size:18px;font-weight:700;margin:0 0 4px">📋 Job Tracker</h2>
-              <p style="font-size:13px;color:var(--muted);margin:0">Track every application — from tailored to offer.</p>
+              <h2 style="font-size:18px;font-weight:700;margin:0 0 4px"> Job Tracker</h2>
+              <p style="font-size:13px;color:var(--muted);margin:0">Track every application - from tailored to offer.</p>
             </div>
             <div style="display:flex;gap:8px;align-items:center">
               <button id="addManualJobBtn"
@@ -915,7 +953,7 @@
         <div style="max-width:860px;width:100%;margin:0 auto;padding:24px 16px;box-sizing:border-box">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:12px">
             <div>
-              <h2 style="font-size:18px;font-weight:700;margin:0 0 4px">💼 LinkedIn Profile Optimizer</h2>
+              <h2 style="font-size:18px;font-weight:700;margin:0 0 4px"> LinkedIn Profile Optimizer</h2>
               <p style="font-size:13px;color:var(--muted);margin:0">AI-rewrites your headline &amp; About section to
                 attract recruiters for your target role.</p>
             </div>
@@ -924,7 +962,7 @@
           <!-- Resume source indicator -->
           <div id="liResumeIndicator"
             style="display:none;padding:10px 14px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;font-size:12px;color:#6ee7b7;margin-bottom:16px">
-            ✓ Resume from Resume Tailor loaded
+            - Resume from Resume Tailor loaded
           </div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
@@ -962,7 +1000,7 @@
               </div>
               <button id="liRunBtn"
                 style="width:100%;padding:12px;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">
-                ✨ Optimize My LinkedIn
+                a  Optimize My LinkedIn
               </button>
             </div>
 
@@ -992,7 +1030,7 @@
                 <div id="liKeywordTags" style="margin-top:10px"></div>
               </div>
               <div id="liLoading" style="display:none;text-align:center;padding:40px 0;color:var(--muted)">
-                <div style="font-size:28px;margin-bottom:8px">⚙️</div>
+                <div style="font-size:28px;margin-bottom:8px"><span class="ui-icon ui-icon-spin" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.56"/></svg></span></div>
                 <div id="liLoadingMsg" style="font-size:13px">Analyzing your profile...</div>
               </div>
               <div id="liEmpty" style="text-align:center;padding:40px 0;color:var(--muted);font-size:13px">
@@ -1004,8 +1042,8 @@
           <!-- Tips bar -->
           <div
             style="padding:12px 16px;background:rgba(26,86,219,0.06);border:1px solid rgba(26,86,219,0.15);border-radius:8px;font-size:12px;color:var(--muted)">
-            💡 <strong style="color:var(--fg)">Tips:</strong> Your headline is the #1 thing recruiters search by. The
-            About section should open strong — no "Hi, I'm a passionate..." openings. Aim for 200-250 words with your
+            Tip: <strong style="color:var(--fg)">Tips:</strong> Your headline is the #1 thing recruiters search by. The
+            About section should open strong - no "Hi, I'm a passionate..." openings. Aim for 200-250 words with your
             top 5-7 keywords woven in naturally.
           </div>
         </div>
@@ -1016,39 +1054,37 @@
         <div style="max-width:900px;width:100%;margin:0 auto;padding:24px 16px;box-sizing:border-box">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;gap:12px">
             <div>
-              <h2 style="font-size:18px;font-weight:700;margin:0 0 4px">⚡ Bulk Apply</h2>
+              <h2 style="font-size:18px;font-weight:700;margin:0 0 4px"> Bulk Apply</h2>
               <p style="font-size:13px;color:var(--muted);margin:0">Tailor your resume for multiple jobs at once. Paste
                 up to 5 job descriptions, we'll generate a custom resume for each.</p>
             </div>
             <span id="bulkTierBadge"
-              style="display:none;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;white-space:nowrap">Complete
-              Plan</span>
+              style="display:none;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;white-space:nowrap">Job Hunt Pass</span>
           </div>
 
-          <!-- Upgrade gate for non-Complete users -->
+          <!-- Upgrade gate for free users -->
           <div id="bulkUpgradeGate"
             style="display:none;text-align:center;padding:60px 24px;background:rgba(99,102,241,0.04);border:1px dashed rgba(99,102,241,0.3);border-radius:12px;margin-bottom:20px">
-            <div style="font-size:36px;margin-bottom:12px">⚡</div>
-            <h3 style="font-size:16px;font-weight:700;margin:0 0 8px;color:var(--fg)">Bulk Apply is a Complete plan
+            <div style="font-size:36px;margin-bottom:12px"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span></div>
+            <h3 style="font-size:16px;font-weight:700;margin:0 0 8px;color:var(--fg)">Bulk Apply is a Job Hunt Pass
               feature</h3>
             <p
               style="font-size:13px;color:var(--muted);margin:0 0 20px;max-width:320px;margin-left:auto;margin-right:auto">
-              Process up to 5 jobs in one click — get a tailored resume for every application in minutes.</p>
+              Process up to 5 jobs in one click - get a tailored resume for every application in minutes.</p>
             <button id="bulkUpgradeBtn"
-              style="padding:10px 24px;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">⬆
-              Upgrade to Complete</button>
+              style="padding:10px 24px;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span> Upgrade to Job Hunt Pass</button>
           </div>
 
-          <!-- Main bulk apply UI (Complete users) -->
+          <!-- Main bulk apply UI (Job Hunt Pass users) -->
           <div id="bulkApplyMain">
             <!-- No-resume notice for bulk apply -->
             <div id="bulkNoResumeNotice" style="display:none;padding:12px 14px;background:rgba(99,102,241,0.07);border:1.5px dashed rgba(99,102,241,0.3);border-radius:9px;margin-bottom:12px">
               <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:var(--text)">No resume loaded yet.</p>
               <p style="margin:0 0 10px;font-size:12px;color:var(--text2)">Add your jobs first. We'll ask for your resume before tailoring.</p>
               <div style="display:flex;flex-wrap:wrap;gap:8px">
-                <button id="bulkUploadResumeBtn" style="padding:6px 12px;background:var(--brand);color:white;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">↑ Upload Resume</button>
+                <button id="bulkUploadResumeBtn" style="padding:6px 12px;background:var(--brand);color:white;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8 12 3 7 8"/><path d="M12 3v12"/></svg></span> Upload Resume</button>
                 <button id="bulkUseExistingBtn" style="padding:6px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">Use Existing Resume</button>
-                <button id="bulkBuildResumeBtn" style="padding:6px 12px;background:var(--surface2);color:var(--brand);border:1px solid rgba(99,102,241,0.4);border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">✦ Build a Resume</button>
+                <button id="bulkBuildResumeBtn" style="padding:6px 12px;background:var(--surface2);color:var(--brand);border:1px solid rgba(99,102,241,0.4);border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span> Build a Resume</button>
               </div>
             </div>
             <div id="bulkJobInputs" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
@@ -1061,7 +1097,7 @@
             <div style="display:flex;gap:10px;margin-bottom:20px">
               <button id="bulkRunBtn"
                 style="flex:1;padding:12px;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">
-                ⚡ Tailor All Jobs
+                 Tailor All Jobs
               </button>
             </div>
 
@@ -1088,23 +1124,23 @@
       <div class="tracker-panel js-panel" id="trackerPanel">
         <div class="tracker-header">
           <div>
-            <h2>📋 Job Applications</h2>
+            <h2> Job Applications</h2>
             <div class="tracker-count" id="trackerCountLabel">Track jobs you've applied to</div>
           </div>
           <div class="tracker-header-actions">
             <button id="trackerRefreshBtn" class="btn-sm btn-sm-outline"
-              title="Re-read localStorage for any external updates">🔄 Refresh</button>
+              title="Re-read localStorage for any external updates"> Refresh</button>
             <button id="trackerAddJobsBtn" class="btn-sm btn-sm-primary">+ Add from Job Search</button>
           </div>
         </div>
         <div class="tracker-body" id="trackerBody">
           <div class="tracker-empty" id="trackerEmpty">
-            <div class="empty-icon">📭</div>
+            <div class="empty-icon"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 12h20"/></svg></span></div>
             <h2>No applications tracked yet</h2>
             <p>Tailor your first resume and we'll automatically add it here as <strong>Resume Ready</strong>.</p>
             <button id="trackerEmptyTailorBtn"
               style="margin-top:16px;padding:10px 24px;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.15s;display:block;margin-left:auto;margin-right:auto"
-              onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">✦ Tailor my first resume</button>
+              onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z"/></svg></span> Tailor my first resume</button>
             <button id="trackerEmptyJdBtn"
               style="margin-top:8px;padding:8px 20px;background:none;color:var(--brand);border:1.5px solid rgba(99,102,241,0.4);border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;display:block;margin-left:auto;margin-right:auto"
               onmouseover="this.style.background='rgba(99,102,241,0.08)'" onmouseout="this.style.background='none'">Paste a job description</button>
@@ -1127,7 +1163,7 @@
         </svg>
         Watch tutorials
       </a>
-      <span style="color:var(--border)">·</span>
+      <span style="color:var(--border)">-</span>
       <a href="mailto:evan@1ststep.ai?subject=Bug Report / Feedback&body=Hi, I found an issue with 1stStep.ai:%0A%0A"
         style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);text-decoration:none;transition:color 0.15s"
         onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">
@@ -1137,20 +1173,20 @@
         </svg>
         Report a bug
       </a>
-      <span style="color:var(--border)">·</span>
-      <span style="font-size:11px;color:var(--muted)">© 2026 1stStep.ai</span>
-      <span style="color:var(--border)">·</span>
+      <span style="color:var(--border)">-</span>
+      <span style="font-size:11px;color:var(--muted)">(c) 2026 1stStep.ai</span>
+      <span style="color:var(--border)">-</span>
       <a href="/terms" target="_blank"
         style="font-size:12px;color:var(--muted);text-decoration:none;transition:color 0.15s"
         onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">Terms</a>
-      <span style="color:var(--border)">·</span>
+      <span style="color:var(--border)">-</span>
       <a href="/privacy" target="_blank"
         style="font-size:12px;color:var(--muted);text-decoration:none;transition:color 0.15s"
         onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">Privacy</a>
-      <span style="color:var(--border)">·</span>
+      <span style="color:var(--border)">-</span>
       <button id="footerFeedbackBtn"
         style="background:none;border:none;font-size:12px;color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif;padding:0;transition:color 0.15s"
-        onmouseover="this.style.color='#FCD34D'" onmouseout="this.style.color='var(--muted)'">⭐ Leave a review</button>
+        onmouseover="this.style.color='#FCD34D'" onmouseout="this.style.color='var(--muted)'"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.3L5.8 21 7 14.2 2 9.3l6.9-1L12 2Z"/></svg></span> Leave a review</button>
     </div>
 
   </div>
@@ -1158,10 +1194,10 @@
   <!-- Mark as Applied Modal -->
   <div class="apply-modal-overlay" id="applyModal" role="dialog" aria-modal="true" aria-labelledby="applyModalTitle">
     <div class="apply-modal">
-      <h2 id="applyModalTitle">✓ Mark as Applied</h2>
+      <h2 id="applyModalTitle"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Mark as Applied</h2>
       <div class="job-ref" id="applyModalJobRef">Job title at Company</div>
       <label for="applyContactName">Contact Person (optional)</label>
-      <input type="text" id="applyContactName" aria-label="Contact person" placeholder="e.g. Sarah Johnson — Hiring Manager" />
+      <input type="text" id="applyContactName" aria-label="Contact person" placeholder="e.g. Sarah Johnson - Hiring Manager" />
       <label for="applyContactEmail">Contact Email (optional)</label>
       <input type="email" id="applyContactEmail" aria-label="Contact email" placeholder="e.g. sarah@company.com" />
       <label for="applyFollowUp">Follow-up Date</label>
@@ -1175,14 +1211,14 @@
     </div>
   </div>
 
-  <!-- ── Job Hunt Pass Modal ──────────────────────────────────────────────── -->
+  <!-- -- Job Hunt Pass Modal ------------------------------------------------ -->
   <div class="modal-overlay" id="upgradeModal" role="dialog" aria-modal="true" aria-labelledby="paywallHeadline" style="display:none">
     <div class="modal" style="max-width:440px;width:100%;padding:32px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <h2 style="font-size:19px;font-weight:800;margin:0;color:var(--text)" id="paywallHeadline">Keep your job search moving</h2>
-        <button id="upgradeModalCloseBtn" aria-label="Close upgrade modal" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1">✕</button>
+        <h2 style="font-size:19px;font-weight:800;margin:0;color:var(--text)" id="paywallHeadline">Upgrade to Job Hunt Pass</h2>
+        <button id="upgradeModalCloseBtn" aria-label="Close upgrade modal" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
       </div>
-      <p style="color:var(--text2);font-size:13px;margin:0 0 20px;line-height:1.5" id="paywallSubheadline">You've used your free credits. Unlock unlimited resume tailoring, cover letters, and job tracking — cancel anytime.</p>
+      <p style="color:var(--text2);font-size:13px;margin:0 0 20px;line-height:1.5" id="paywallSubheadline">Unlock unlimited resume tailoring, unlimited cover letters, full vault access, full tracking, and the Chrome extension workflow.</p>
 
       <!-- Pass offer card -->
       <div style="border:2px solid var(--brand);border-radius:14px;padding:20px;background:rgba(99,102,241,0.04);margin-bottom:14px">
@@ -1190,23 +1226,23 @@
           <div>
             <div style="font-size:11px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Job Hunt Pass</div>
             <div style="display:flex;align-items:baseline;gap:3px">
-              <span style="font-size:30px;font-weight:800;color:var(--text)">$24.99</span><span style="font-size:13px;color:var(--text2)">/mo</span>
+              <span style="font-size:30px;font-weight:800;color:var(--text)">$24.99</span><span style="font-size:13px;color:var(--text2)">/month</span>
             </div>
-            <div style="font-size:11.5px;color:var(--text2);margin-top:3px">Cancel anytime · Secure checkout via Stripe</div>
+            <div style="font-size:11.5px;color:var(--text2);margin-top:3px">Cancel anytime - Secure checkout via Stripe</div>
           </div>
           <div style="background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;font-size:10px;font-weight:700;padding:4px 10px;border-radius:100px;letter-spacing:0.04em;white-space:nowrap;margin-top:2px">MONTHLY</div>
         </div>
         <ul style="list-style:none;padding:0;margin:0 0 16px;display:flex;flex-direction:column;gap:7px">
-          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Unlimited tailored resumes</li>
-          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Unlimited cover letters</li>
-          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Full Job Tracker</li>
-          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Full Application Tracker</li>
-          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Chrome extension workflow</li>
-          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);font-size:13px;font-weight:700">✓</span> Match score for every job</li>
+          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);display:inline-flex;font-size:13px;font-weight:700"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span> Unlimited tailored resumes</li>
+          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);display:inline-flex;font-size:13px;font-weight:700"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span> Unlimited cover letters</li>
+          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);display:inline-flex;font-size:13px;font-weight:700"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span> Full application tracker</li>
+          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);display:inline-flex;font-size:13px;font-weight:700"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span> Full resume vault and version history</li>
+          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);display:inline-flex;font-size:13px;font-weight:700"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span> Chrome extension workflow</li>
+          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);display:inline-flex;font-size:13px;font-weight:700"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span> Match score for every job</li>
         </ul>
         <a id="paywallUnlockBtn" href="https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00" target="_blank"
           style="display:block;text-align:center;padding:13px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none">
-          🔒 Start Job Hunt Pass
+          Start Job Hunt Pass - $24.99/month
         </a>
       </div>
 
@@ -1238,7 +1274,7 @@
           </div>
         </div>
         <button id="liImportModalCloseBtn" aria-label="Close LinkedIn import modal"
-          style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;padding:0">✕</button>
+          style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;padding:0"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
       </div>
 
       <!-- Steps -->
@@ -1257,7 +1293,7 @@
             <a href="https://www.linkedin.com/in/" target="_blank" rel="noopener noreferrer"
               style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:6px 14px;background:rgba(0,119,181,0.12);border:1px solid rgba(0,119,181,0.3);color:#60A5FA;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;transition:all 0.15s"
               class="hover-linkedin">
-              Open LinkedIn ↗
+              Open LinkedIn open
             </a>
           </div>
         </div>
@@ -1271,15 +1307,15 @@
             <div style="font-size:13px;font-weight:700;color:var(--fg);margin-bottom:3px">Save your profile as a PDF
             </div>
             <div style="font-size:12px;color:var(--muted);line-height:1.6">
-              On your profile page, click <strong style="color:var(--fg)">More</strong> → <strong
+              On your profile page, click <strong style="color:var(--fg)">More</strong> -> <strong
                 style="color:var(--fg)">Save to PDF</strong>.<br>
               LinkedIn generates a PDF of your full profile in seconds.
             </div>
             <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
               <span
                 style="padding:4px 10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:6px;font-size:11px;color:#818CF8;font-weight:600">More
-                ▾</span>
-              <span style="padding:4px 6px;font-size:12px;color:var(--muted)">→</span>
+                v</span>
+              <span style="padding:4px 6px;font-size:12px;color:var(--muted)">-></span>
               <span
                 style="padding:4px 10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:6px;font-size:11px;color:#818CF8;font-weight:600">Save
                 to PDF</span>
@@ -1311,9 +1347,9 @@
 
       <div
         style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:8px">
-        <span style="font-size:14px">💡</span>
+        <span style="font-size:14px">Tip:</span>
         <p style="font-size:11px;color:var(--muted);margin:0;line-height:1.5">
-          <strong style="color:#6EE7B7">Tip:</strong> LinkedIn PDFs work best when your profile is fully filled in —
+          <strong style="color:#6EE7B7">Tip:</strong> LinkedIn PDFs work best when your profile is fully filled in -
           summary, all jobs with descriptions, skills, and education.
         </p>
       </div>
@@ -1326,7 +1362,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
         <h2 id="profileModalTitle" style="margin:0">Your Account</h2>
         <button id="profileModalCloseBtn" aria-label="Close account modal"
-          style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:2px">✕</button>
+          style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:2px"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
       </div>
       <p style="margin:0 0 20px;color:var(--muted);font-size:14px">Saves your progress and verifies your subscription.
       </p>
@@ -1345,7 +1381,7 @@
           <input type="email" id="profileEmail" aria-label="Email address" placeholder="jane@email.com" />
         </div>
       </div>
-      <!-- Honeypot — hidden from real users, bots fill it automatically -->
+      <!-- Honeypot - hidden from real users, bots fill it automatically -->
       <div style="position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none" aria-hidden="true">
         <input type="text" id="hp_website" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
       </div>
@@ -1356,7 +1392,7 @@
       <div
         style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);text-align:center;display:flex;flex-direction:column;gap:10px">
         <button id="profileReopenWelcomeBtn"
-          style="background:none;border:none;color:var(--brand);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-family:'Inter',sans-serif">↩
+          style="background:none;border:none;color:var(--brand);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-family:'Inter',sans-serif">a
           Change my starting path</button>
         <button id="profileSignOutBtn"
           style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:2px">Sign
@@ -1369,22 +1405,22 @@
   <div class="modal-overlay" id="feedbackModal" role="dialog" aria-modal="true" aria-labelledby="feedbackModalTitle">
     <div class="feedback-modal">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <h2 id="feedbackModalTitle">⭐ Enjoying 1stStep.ai?</h2>
+        <h2 id="feedbackModalTitle"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.3L5.8 21 7 14.2 2 9.3l6.9-1L12 2Z"/></svg></span> Enjoying 1stStep.ai?</h2>
         <button id="feedbackModalCloseBtn" aria-label="Close feedback modal"
-          style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:2px">✕</button>
+          style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:2px"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
       </div>
       <p class="subtitle">Your feedback helps us improve and helps other job seekers find us. Takes 30 seconds.</p>
 
       <!-- Star rating -->
       <div class="star-row" id="starRow">
-        <button class="star-btn" data-val="1" aria-label="Rate 1 star">★</button>
-        <button class="star-btn" data-val="2" aria-label="Rate 2 stars">★</button>
-        <button class="star-btn" data-val="3" aria-label="Rate 3 stars">★</button>
-        <button class="star-btn" data-val="4" aria-label="Rate 4 stars">★</button>
-        <button class="star-btn" data-val="5" aria-label="Rate 5 stars">★</button>
+        <button class="star-btn" data-val="1" aria-label="Rate 1 star"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.3L5.8 21 7 14.2 2 9.3l6.9-1L12 2Z"/></svg></span></button>
+        <button class="star-btn" data-val="2" aria-label="Rate 2 stars"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.3L5.8 21 7 14.2 2 9.3l6.9-1L12 2Z"/></svg></span></button>
+        <button class="star-btn" data-val="3" aria-label="Rate 3 stars"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.3L5.8 21 7 14.2 2 9.3l6.9-1L12 2Z"/></svg></span></button>
+        <button class="star-btn" data-val="4" aria-label="Rate 4 stars"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.3L5.8 21 7 14.2 2 9.3l6.9-1L12 2Z"/></svg></span></button>
+        <button class="star-btn" data-val="5" aria-label="Rate 5 stars"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.3L5.8 21 7 14.2 2 9.3l6.9-1L12 2Z"/></svg></span></button>
       </div>
 
-      <!-- Review platform links (shown when 4–5 stars selected) -->
+      <!-- Review platform links (shown when 4-5 stars selected) -->
       <div id="reviewPlatforms" style="display:none">
         <p style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px">Awesome! Where would you like
           to leave your review?</p>
@@ -1392,26 +1428,26 @@
           <a class="btn-review-platform google-review-platform" id="googleReviewBtn"
             href="https://g.page/r/CfdTIVLfW3goEAI/review"
             target="_blank" rel="noopener">
-            <span class="platform-icon">G</span>
+            <span class="platform-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3Z" fill="#4285F4"/><path d="M12 22c2.7 0 5-0.9 6.6-2.5L15.4 17c-.9.6-2 .9-3.4.9-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22Z" fill="#34A853"/><path d="M6.4 13.8A6 6 0 0 1 6.1 12c0-.6.1-1.2.3-1.8V7.6H3.1A10 10 0 0 0 2 12c0 1.6.4 3.1 1.1 4.4l3.3-2.6Z" fill="#FBBC05"/><path d="M12 6.1c1.5 0 2.8.5 3.8 1.5l2.9-2.9A9.8 9.8 0 0 0 12 2 10 10 0 0 0 3.1 7.6l3.3 2.6C7.2 7.9 9.4 6.1 12 6.1Z" fill="#EA4335"/></svg></span>
             <span class="platform-text">Google Reviews<span>Leave a public Google review</span></span>
-            <span class="platform-arrow">↗</span>
+            <span class="platform-arrow">open</span>
           </a>
           <a class="btn-review-platform" id="feedbackTrustpilotBtn" href="https://www.trustpilot.com/review/1ststep.ai" target="_blank">
-            <span class="platform-icon">🟢</span>
+            <span class="platform-icon"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2 14.8 8.6l7 .1-5.6 4.1 2.1 6.7L12 15.5 5.7 19.5l2.1-6.7-5.6-4.1 7-.1L12 2Z"/></svg></span>
             <span class="platform-text">Trustpilot<span>Public review platform</span></span>
-            <span class="platform-arrow">↗</span>
+            <span class="platform-arrow">open</span>
           </a>
           <a class="btn-review-platform" id="feedbackProductHuntBtn" href="https://www.producthunt.com" target="_blank">
-            <span class="platform-icon">🟠</span>
+            <span class="platform-icon"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M10.3 17.8V6.2h3.1a4.4 4.4 0 0 1 0 8.8h-1.5v2.8h-1.6Zm1.6-4.4h1.4a2.8 2.8 0 0 0 0-5.6h-1.4v5.6Z" fill="var(--surface)"/></svg></span>
             <span class="platform-text">Product Hunt<span>Upvote or leave a comment</span></span>
-            <span class="platform-arrow">↗</span>
+            <span class="platform-arrow">open</span>
           </a>
         </div>
       </div>
 
-      <!-- Quick text feedback (shown when 1–3 stars or always) -->
+      <!-- Quick text feedback (shown when 1-3 stars or always) -->
       <div id="quickFeedback">
-        <div class="feedback-divider" id="feedbackDivider">— or tell us how we can improve —</div>
+        <div class="feedback-divider" id="feedbackDivider">or tell us how we can improve</div>
         <textarea id="feedbackText" rows="3" aria-label="Feedback message" placeholder="What could we do better? Any features you wish we had?"
           style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;padding:10px 12px;resize:vertical;outline:none;transition:border-color 0.15s"
           onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'"></textarea>
@@ -1423,7 +1459,7 @@
 
       <!-- Sent confirmation -->
       <div class="feedback-sent" id="feedbackSent">
-        <div class="sent-icon">🙏</div>
+        <div class="sent-icon"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
         <p>Thank you! Your feedback means a lot and helps us build a better product for job seekers everywhere.</p>
         <button id="feedbackSentCloseBtn" class="btn-modal-save" style="margin-top:14px">Close</button>
       </div>
@@ -1431,18 +1467,16 @@
   </div>
 
   <!-- Welcome / Onboarding Modal (first visit only) -->
-  <!-- ── Beta Gate Overlay ──────────────────────────────────────────────────── -->
-  <!-- Shown to visitors who don't have a valid beta token in localStorage.     -->
-  <!-- Hidden entirely once beta period ends and app goes public.               -->
+  <!-- -- Legacy Access Overlay ------------------------------------------------ -->
+  <!-- Hidden during public launch; kept for older private-access links.         -->
   <div id="betaGate" role="dialog" aria-modal="true" aria-labelledby="betaGateTitle"
     style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.92);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:24px">
     <div
       style="background:var(--surface);border-radius:20px;padding:40px 36px;max-width:400px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.3);text-align:center">
-      <div style="font-size:28px;margin-bottom:12px">🧪</div>
-      <div id="betaGateTitle" style="font-weight:800;font-size:20px;color:var(--text);margin-bottom:6px">1stStep.ai Beta</div>
+      <div style="font-size:28px;margin-bottom:12px"></div>
+      <div id="betaGateTitle" style="font-weight:800;font-size:20px;color:var(--text);margin-bottom:6px">1stStep.ai Access</div>
       <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 28px">
-        This is an invite-only beta. Enter your email and the invite code you received to get <strong
-          style="color:var(--text)">15 days of free Complete access.</strong>
+        Enter your email and access code to restore an existing private-access account.
       </p>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <input id="betaFirstName" type="text" aria-label="First name" placeholder="First name" autocomplete="given-name" required
@@ -1455,7 +1489,7 @@
       <input id="betaEmail" type="email" aria-label="Email address" placeholder="Email address" autocomplete="email" required
         style="width:100%;margin-bottom:10px;padding:13px 16px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-family:'Inter',sans-serif;font-size:14px;color:var(--text);outline:none;box-sizing:border-box"
         onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--border)'">
-      <input id="betaCode" type="text" aria-label="Invite code" placeholder="Invite code" autocomplete="off" spellcheck="false"
+      <input id="betaCode" type="text" aria-label="Access code" placeholder="Access code" autocomplete="off" spellcheck="false"
         style="width:100%;margin-bottom:16px;padding:13px 16px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-family:'Inter',sans-serif;font-size:14px;color:var(--text);letter-spacing:0.05em;outline:none;box-sizing:border-box;text-transform:uppercase"
         onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--border)'"
         onkeydown="if(event.key==='Enter')submitBetaCode()">
@@ -1464,45 +1498,43 @@
       </div>
       <button id="betaSubmitBtn"
         style="width:100%;padding:13px;background:linear-gradient(135deg,#4338CA,#6366F1);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity 0.15s">
-        Unlock Beta Access →
+        Unlock Access ->
       </button>
-      <p style="font-size:11px;color:var(--muted);margin:14px 0 0">Got an invite? <a href="mailto:evan@1ststep.ai"
-          style="color:var(--brand);text-decoration:none">Contact us</a> to request one.</p>
+      <p style="font-size:11px;color:var(--muted);margin:14px 0 0">Need help? <a href="mailto:evan@1ststep.ai"
+          style="color:var(--brand);text-decoration:none">Contact support</a>.</p>
     </div>
   </div>
 
-  <!-- ── Beta Expired Overlay ───────────────────────────────────────────────── -->
+  <!-- -- Legacy Access Expired Overlay ---------------------------------------- -->
   <div id="betaExpired"
     style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.92);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:24px">
     <div
       style="background:var(--surface);border-radius:20px;padding:40px 36px;max-width:400px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.3);text-align:center">
-      <div style="font-size:28px;margin-bottom:12px">⏰</div>
-      <div style="font-weight:800;font-size:20px;color:var(--text);margin-bottom:6px">Your beta has ended</div>
+      <div style="font-size:28px;margin-bottom:12px"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></span></div>
+      <div style="font-weight:800;font-size:20px;color:var(--text);margin-bottom:6px">Your access period has ended</div>
       <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 24px">
-        Thanks for being an early tester! Your 15-day beta period has expired.<br>Keep your skill gap analysis, resume
-        rewrites, and cover letters going — starting at $19/mo.
+        Continue with Job Hunt Pass for unlimited resume tailoring, unlimited cover letters, full tracking, and follow-up workflows.
       </p>
       <a id="betaUpgradeBtn" href="https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00" target="_blank"
         style="display:block;width:100%;padding:13px;background:linear-gradient(135deg,#4338CA,#6366F1);color:white;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;box-sizing:border-box;margin-bottom:10px">
-        See Plans — from $19/mo →
+        Start Job Hunt Pass - $24.99/month ->
       </a>
       <button id="betaNewCodeBtn"
-        style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline">Use
-        a new invite code</button>
+        style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline">Enter
+        a different access code</button>
     </div>
   </div>
 
-  <!-- ── Paywall Gate Overlay (shown when BETA_MODE=false and user has no subscription) ── -->
-  <!-- Replaces the beta gate when the app goes public. Users go straight to Stripe. -->
+  <!-- -- Paywall Gate Overlay ------------------------------------------------- -->
+  <!-- Public launch access screen. Users can start free or upgrade through Stripe. -->
   <div id="paywallGate" role="dialog" aria-modal="true" aria-labelledby="paywallGateTitle"
     style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.92);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:24px;overflow-y:auto">
     <div
       style="background:var(--surface);border-radius:20px;padding:40px 36px;max-width:520px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.3);text-align:center">
       <div style="margin-bottom:10px;display:flex;justify-content:center;color:#818CF8"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></div>
-      <div id="paywallGateTitle" style="font-weight:800;font-size:22px;color:var(--text);margin-bottom:8px">See exactly why you're not getting
-        callbacks.</div>
+      <div id="paywallGateTitle" style="font-weight:800;font-size:22px;color:var(--text);margin-bottom:8px">Turn each application into a tracked, tailored version.</div>
       <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 8px">
-        1stStep.ai finds your skill gaps, rewrites your resume for each role, and writes a cover letter — in 30 seconds.
+        Start free with 3 tailored resumes, a Career Positioning Brief, Role/AI Match Score, 1 cover letter, and vault preview. Upgrade to Job Hunt Pass for unlimited tailoring, unlimited cover letters, full tracking, and follow-up workflows.
       </p>
       <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-bottom:20px">
         <span
@@ -1521,71 +1553,60 @@
 
       <!-- Plan cards -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;text-align:left">
-        <!-- Essential -->
+        <!-- Free -->
         <div
           style="border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:8px">
-          <div style="font-size:11px;font-weight:700;color:var(--blue);letter-spacing:0.06em;text-transform:uppercase">
-            Essential</div>
-          <div><span style="font-size:26px;font-weight:800;color:var(--text)">$19</span><span
-              style="font-size:12px;color:var(--muted)">/mo</span></div>
+          <div style="font-size:11px;font-weight:700;color:var(--blue);letter-spacing:0.06em;text-transform:uppercase">Free</div>
+          <div><span style="font-size:26px;font-weight:800;color:var(--text)">$0</span><span style="font-size:12px;color:var(--muted)">/month</span></div>
           <ul
             style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:5px">
-            <li>✓ <strong style="color:var(--text)">30</strong> resume tailors / mo</li>
-            <li>✓ <strong style="color:var(--text)">60</strong> job searches / mo</li>
-            <li>✓ Cover letter generator</li>
-            <li>✓ ATS keyword optimizer</li>
-            <li>✓ Skill gap analysis</li>
-            <li>✓ Resume builder wizard</li>
-            <li>✓ Interview prep</li>
+            <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> <strong style="color:var(--text)">3</strong> resume tailors / month</li>
+            <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Career Positioning Brief</li>
+            <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Role/AI Match Score</li>
+            <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> 1 cover letter</li>
+            <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Save 3 jobs</li>
+            <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Resume vault preview</li>
           </ul>
-          <a href="https://buy.stripe.com/28E00k7OFfCXd0E1MPfIs01" target="_blank"
+          <a href="/"
             style="margin-top:auto;display:block;text-align:center;padding:10px;background:var(--blue);color:white;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none">
-            Get Essential →
-          </a>
+            Start Free</a>
         </div>
-        <!-- Complete -->
+        <!-- Job Hunt Pass -->
         <div
           style="border:2px solid #6366F1;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:8px;position:relative">
           <div
             style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#4338CA,#6366F1);color:white;font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;white-space:nowrap;letter-spacing:0.04em">
             BEST VALUE</div>
-          <div style="font-size:11px;font-weight:700;color:#818CF8;letter-spacing:0.06em;text-transform:uppercase">
-            Complete</div>
-          <div><span style="font-size:26px;font-weight:800;color:var(--text)">$39</span><span
-              style="font-size:12px;color:var(--muted)">/mo</span></div>
+          <div style="font-size:11px;font-weight:700;color:#818CF8;letter-spacing:0.06em;text-transform:uppercase">Job Hunt Pass</div>
+          <div><span style="font-size:26px;font-weight:800;color:var(--text)">$24.99</span><span style="font-size:12px;color:var(--muted)">/month</span></div>
           <ul
             style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:5px">
-            <li>✓ <strong style="color:var(--text)">Unlimited</strong> tailors</li>
-            <li>✓ <strong style="color:var(--text)">Unlimited</strong> job searches</li>
-            <li>✓ Cover letter generator</li>
-            <li>✓ ATS keyword optimizer</li>
-            <li>✓ Skill gap analysis</li>
-            <li>✓ Resume builder wizard</li>
-            <li>✓ Interview prep</li>
-            <li>✓ <strong style="color:var(--text)">Resume templates</strong> (4 formats)</li>
-            <li>✓ AI responsibility suggestions</li>
+            <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> <strong style="color:var(--text)">Unlimited</strong> resume tailoring</li>
+            <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> <strong style="color:var(--text)">Unlimited</strong> cover letters</li>
+            <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Application tracker</li>
+            <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Full resume vault</li>
+            <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Career Positioning Brief</li>
+            <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Chrome extension workflow</li>
           </ul>
           <a href="https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00" target="_blank"
             style="margin-top:auto;display:block;text-align:center;padding:10px;background:linear-gradient(135deg,#4338CA,#6366F1);color:white;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none">
-            Get Complete →
-          </a>
+            Start Job Hunt Pass</a>
         </div>
       </div>
-
-      <p style="font-size:11px;color:var(--muted);margin:0 0 12px">Cancel anytime · Secure checkout via Stripe</p>
+      <p style="font-size:11px;color:var(--muted);margin:0 0 12px">Cancel anytime - Secure checkout via Stripe</p>
       <button id="paywallVerifyLinkBtn"
         style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:2px">
-        Already subscribed? Verify access →
+        Already subscribed? Verify access
       </button>
     </div>
   </div>
 
-  <!-- ── Paywall Verify Panel (inside paywallGate flow) ────────────────────── -->
+  <!-- -- Paywall Verify Panel (inside paywallGate flow) ---------------------- -->
   <div id="paywallVerify" role="dialog" aria-modal="true" aria-labelledby="paywallVerifyTitle"
     style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.92);backdrop-filter:blur(6px);z-index:10000;align-items:center;justify-content:center;padding:24px">
     <div
       style="background:var(--surface);border-radius:20px;padding:40px 36px;max-width:380px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.3);text-align:center">
-      <div style="font-size:28px;margin-bottom:10px">🔑</div>
+      <div style="font-size:28px;margin-bottom:10px"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span></div>
       <div id="paywallVerifyTitle" style="font-weight:800;font-size:18px;color:var(--text);margin-bottom:8px">Verify your subscription</div>
       <p style="font-size:13px;color:var(--muted);margin:0 0 20px">Enter the email you used at checkout to restore your
         access.</p>
@@ -1598,11 +1619,10 @@
       </div>
       <button id="paywallVerifyBtn"
         style="width:100%;padding:13px;background:linear-gradient(135deg,#4338CA,#6366F1);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity 0.15s">
-        Restore Access →
+        Restore Access ->
       </button>
       <button id="paywallBackBtn"
-        style="margin-top:14px;background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline">←
-        Back to plans</button>
+        style="margin-top:14px;background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline">Back to plans</button>
     </div>
   </div>
 
@@ -1616,18 +1636,18 @@
           callbacks.</span>
       </h2>
       <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 20px">
-        AI-powered skill gap analysis, resume rewrites &amp; cover letters — in <strong style="color:var(--text)">30
+        AI-powered skill gap analysis, resume rewrites &amp; cover letters - in <strong style="color:var(--text)">30
           seconds</strong>.
       </p>
 
-      <!-- Two-path onboarding: existing resume vs. build from scratch — FIRST -->
+      <!-- Two-path onboarding: existing resume vs. build from scratch - FIRST -->
       <div id="welcomePathGrid" class="welcome-path-grid" style="margin-bottom:20px">
         <button id="welcomeUploadBtn" style="
         padding:16px;border-radius:14px;font-size:14px;font-weight:700;cursor:pointer;
         background:linear-gradient(135deg,#3B82F6,#6366F1);color:#fff;border:none;
         line-height:1.35;text-align:center;width:100%;
       ">
-          📄 I have a resume<br>
+           I have a resume<br>
           <span style="font-size:11px;font-weight:400;opacity:.85">Upload, paste, or import from LinkedIn</span>
         </button>
         <button id="welcomeBuildBtn" style="
@@ -1641,7 +1661,7 @@
         </button>
       </div>
 
-      <!-- Feature tiles — small 3-col grid, below the CTA -->
+      <!-- Feature tiles - small 3-col grid, below the CTA -->
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
         <div style="padding:10px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;text-align:center">
           <div style="margin-bottom:4px;display:flex;align-items:center;justify-content:center;color:#34D399"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></div>
@@ -1669,16 +1689,16 @@
         </div>
       </div>
 
-      <p style="font-size:11px;color:var(--muted);margin:0 0 6px">Free to try · No credit card · 3 tailors + 5 searches
+      <p style="font-size:11px;color:var(--muted);margin:0 0 6px">Free to try - No credit card - 3 tailors + 5 searches
         on us</p>
       <p style="font-size:11px;color:var(--muted);margin:0">
         Returning user?
         <button id="welcomeRestoreBtn"
           style="background:none;border:none;color:var(--brand);font-size:11px;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;font-family:'Inter',sans-serif">Restore
-          from backup →</button>
+          from backup -></button>
       </p>
 
-      <!-- Step 2: paste JD — shown after resume is detected -->
+      <!-- Step 2: paste JD - shown after resume is detected -->
       <div id="welcomeStep2" style="display:none;margin-top:4px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
           <div style="width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
@@ -1688,13 +1708,13 @@
           </div>
         </div>
         <textarea id="welcomeJdInput" aria-label="Job posting"
-          placeholder="Paste any job posting here — LinkedIn, Indeed, company site…"
+          placeholder="Paste any job posting here - LinkedIn, Indeed, company site..."
           rows="5"
           style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;font-family:'Inter',sans-serif;resize:vertical;line-height:1.5;outline:none;transition:border-color 0.15s"
           onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--border)'"></textarea>
         <button id="welcomeRunBtn" disabled
           style="margin-top:10px;width:100%;padding:13px;border-radius:12px;border:none;cursor:pointer;font-size:14px;font-weight:800;font-family:'Inter',sans-serif;background:linear-gradient(135deg,#3B82F6,#6366F1);color:#fff;opacity:0.45;transition:opacity 0.15s">
-          ✦ Generate My Tailored Resume →
+          <span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z"/></svg></span> Generate My Tailored Resume ->
         </button>
       </div>
     </div>
@@ -1704,7 +1724,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 
-  <!-- ── Interview Prep Modal ──────────────────────────────────────────────────── -->
+  <!-- -- Interview Prep Modal ---------------------------------------------------- -->
   <div id="interviewModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="interviewModalTitle" style="display:none;z-index:1200">
     <div class="modal" style="max-width:680px;width:100%">
       <div class="modal-header">
@@ -1712,21 +1732,21 @@
           <h3 id="interviewModalTitle" style="margin:0;font-size:16px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg> Interview Cheat Sheet</h3>
           <div id="interviewRoleMeta" style="font-size:12px;color:var(--muted);margin-top:2px"></div>
         </div>
-        <button class="modal-close" id="interviewModalCloseBtn" aria-label="Close interview prep modal">×</button>
+        <button class="modal-close" id="interviewModalCloseBtn" aria-label="Close interview prep modal"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
       </div>
 
       <!-- Loading -->
       <div id="interviewLoading" style="text-align:center;padding:48px 20px">
         <div class="spinner" style="margin:0 auto 14px"></div>
-        <div style="font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:4px">Building your cheat sheet…
+        <div style="font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:4px">Building your cheat sheet...
         </div>
-        <div style="font-size:12px;color:var(--muted)">Predicting questions · Drafting talking points · Spotting red
+        <div style="font-size:12px;color:var(--muted)">Predicting questions - Drafting talking points - Spotting red
           flags</div>
       </div>
 
       <!-- Error -->
       <div id="interviewError" style="display:none;text-align:center;padding:40px 20px">
-        <div style="font-size:32px;margin-bottom:10px">⚠️</div>
+        <div style="font-size:32px;margin-bottom:10px"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></span></div>
         <div style="font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:6px">Couldn't generate your cheat
           sheet</div>
         <div style="font-size:12.5px;color:var(--text2);margin-bottom:16px">Something went wrong. Please try again.
@@ -1754,12 +1774,12 @@
     </div>
   </div>
 
-  <!-- ── Before / After Diff Modal ────────────────────────────────────────────── -->
+  <!-- -- Before / After Diff Modal ---------------------------------------------- -->
   <div id="diffModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="diffModalTitle" style="display:none;z-index:1200">
     <div class="modal" style="max-width:640px;width:100%">
       <div class="modal-header">
-        <h3 id="diffModalTitle" style="margin:0;font-size:16px;font-weight:700;color:var(--text)">📊 What Changed</h3>
-        <button class="modal-close" id="diffModalCloseBtn" aria-label="Close changes modal">×</button>
+        <h3 id="diffModalTitle" style="margin:0;font-size:16px;font-weight:700;color:var(--text)"> What Changed</h3>
+        <button class="modal-close" id="diffModalCloseBtn" aria-label="Close changes modal"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
       </div>
       <div style="padding:16px 20px 0">
         <div id="diffStats" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
@@ -1784,7 +1804,7 @@
     </div>
   </div>
 
-  <!-- ── LinkedIn PDF Import Modal ─────────────────────────────────────────────── -->
+  <!-- -- LinkedIn PDF Import Modal ----------------------------------------------- -->
   <div id="linkedInPdfModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="liPdfModalTitle" style="display:none;z-index:1300">
     <div class="modal" style="max-width:520px;width:100%">
       <div class="modal-header">
@@ -1795,13 +1815,13 @@
           </svg>
           <h3 id="liPdfModalTitle" style="margin:0;font-size:16px;font-weight:700;color:var(--text)">Import Resume from LinkedIn</h3>
         </div>
-        <button class="modal-close" id="liPdfModalCloseBtn" aria-label="Close LinkedIn import modal">×</button>
+        <button class="modal-close" id="liPdfModalCloseBtn" aria-label="Close LinkedIn import modal"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
       </div>
 
       <!-- Step: Instructions -->
       <div id="liPdfInstructions" style="padding:20px">
         <p style="font-size:13.5px;color:var(--text2);line-height:1.65;margin:0 0 20px">
-          LinkedIn lets you download your profile as a PDF — we'll turn it into a ready-to-tailor resume in seconds.
+          LinkedIn lets you download your profile as a PDF - we'll turn it into a ready-to-tailor resume in seconds.
         </p>
 
         <!-- Steps -->
@@ -1823,7 +1843,7 @@
               style="min-width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">
               2</div>
             <div>
-              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Click "More" → "Save to
+              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Click "More" -> "Save to
                 PDF"</div>
               <div style="font-size:12px;color:var(--text2)">On your profile page, click the <strong>More</strong>
                 button (next to Connect/Follow), then select <strong>Save to PDF</strong>.</div>
@@ -1835,7 +1855,7 @@
               3</div>
             <div>
               <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Upload it here</div>
-              <div style="font-size:12px;color:var(--text2)">Come back and upload the downloaded PDF — we'll handle the
+              <div style="font-size:12px;color:var(--text2)">Come back and upload the downloaded PDF - we'll handle the
                 rest.</div>
             </div>
           </div>
@@ -1844,7 +1864,7 @@
         <!-- Upload zone -->
         <div id="liPdfDrop" role="button" tabindex="0" aria-label="Upload LinkedIn PDF resume"
           style="border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:all 0.15s;margin-bottom:6px">
-          <div style="font-size:28px;margin-bottom:8px">📄</div>
+          <div style="font-size:28px;margin-bottom:8px"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8 12 3 7 8"/><path d="M12 3v12"/></svg></span></div>
           <div style="font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:4px">Drop your LinkedIn PDF here
           </div>
           <div style="font-size:12px;color:var(--muted)">or click to browse</div>
@@ -1857,46 +1877,46 @@
       <div id="liPdfProcessing" style="display:none;text-align:center;padding:48px 20px">
         <div class="spinner" style="margin:0 auto 14px"></div>
         <div style="font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:4px">Importing your LinkedIn
-          profile…</div>
+          profile...</div>
         <div style="font-size:12px;color:var(--muted)">Extracting experience, education &amp; skills</div>
       </div>
 
       <!-- Success state -->
       <div id="liPdfSuccess" style="display:none;padding:32px 24px;text-align:center">
-        <div style="font-size:40px;margin-bottom:12px">🎉</div>
+        <div style="font-size:40px;margin-bottom:12px"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
         <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">Resume imported!</div>
         <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:24px">Your LinkedIn profile has been
           converted to a resume.<br>Now search for a job and we'll tailor it for you.</div>
         <button id="liPdfSuccessJobsBtn" class="btn-sm btn-sm-primary" style="width:100%;padding:12px">
-          Search for Jobs →
+          Search for Jobs ->
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ── Resume Template Picker Modal ────────────────────────────────────────── -->
+  <!-- -- Resume Template Picker Modal ------------------------------------------ -->
   <div id="templatePickerOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="templateModalTitle" style="display:none;z-index:1200">
     <div class="modal" style="max-width:860px;width:100%">
       <div class="modal-header">
-        <h3 id="templateModalTitle" style="margin:0;font-size:16px;font-weight:700;color:var(--text)">🎨 Choose a Resume Template</h3>
-        <button class="modal-close" id="templateModalCloseBtn" aria-label="Close template modal">×</button>
+        <h3 id="templateModalTitle" style="margin:0;font-size:16px;font-weight:700;color:var(--text)"> Choose a Resume Template</h3>
+        <button class="modal-close" id="templateModalCloseBtn" aria-label="Close template modal"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
       </div>
       <div style="padding:20px;display:flex;gap:24px;align-items:flex-start">
         <!-- Left: grid + instructions -->
         <div style="flex:1;min-width:0">
           <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">Select a template to apply to
-            your tailored resume. Opens in a new window — use <strong>Print → Save as PDF</strong> to download.</p>
+            your tailored resume. Opens in a new window - use <strong>Print -> Save as PDF</strong> to download.</p>
           <div id="templateGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
 
           <!-- Contact info confirmation step -->
           <div id="templateContactStep" style="display:none">
             <p style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:14px">
-              Confirm your contact details — they'll appear in the template header. Fields are saved for next time.
+              Confirm your contact details - they'll appear in the template header. Fields are saved for next time.
             </p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
               <div>
                 <label for="tplEmail"
-                  style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">📧
+                  style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">
                   Email</label>
                 <input id="tplEmail" type="email" aria-label="Template email" placeholder="you@email.com"
                   style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;color:var(--text);background:var(--surface,#fff);outline:none"
@@ -1904,7 +1924,7 @@
               </div>
               <div>
                 <label for="tplPhone"
-                  style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">📱
+                  style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">
                   Phone</label>
                 <input id="tplPhone" type="tel" aria-label="Template phone" placeholder="(555) 000-0000"
                   style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;color:var(--text);background:var(--surface,#fff);outline:none"
@@ -1912,7 +1932,7 @@
               </div>
               <div>
                 <label for="tplLocation"
-                  style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">📍
+                  style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">
                   Location</label>
                 <input id="tplLocation" aria-label="Template location" placeholder="City, State"
                   style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;color:var(--text);background:var(--surface,#fff);outline:none"
@@ -1920,7 +1940,7 @@
               </div>
               <div>
                 <label for="tplLinkedin"
-                  style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">🔗
+                  style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">
                   LinkedIn URL</label>
                 <input id="tplLinkedin" aria-label="Template LinkedIn URL" placeholder="linkedin.com/in/yourname"
                   style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;color:var(--text);background:var(--surface,#fff);outline:none"
@@ -1928,7 +1948,7 @@
               </div>
               <div style="grid-column:1/-1">
                 <label for="tplWebsite"
-                  style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">🌐
+                  style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">
                   Website / Portfolio <span
                     style="font-weight:400;opacity:.65;text-transform:none">(optional)</span></label>
                 <input id="tplWebsite" aria-label="Template website or portfolio" placeholder="yourportfolio.com"
@@ -1939,22 +1959,21 @@
             <div style="display:flex;align-items:center;gap:10px">
               <button id="templateBackBtn"
                 style="padding:9px 16px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:13px;cursor:pointer;color:var(--text);font-weight:500">
-                ← Back
-              </button>
+                Back</button>
               <button id="templateConfirmBtn"
                 style="flex:1;padding:10px 16px;border-radius:8px;border:none;background:#4338CA;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s"
                 class="hover-indigo-btn">
-                Apply Template →
+                Apply Template ->
               </button>
             </div>
             <p style="font-size:11px;color:var(--text2);margin-top:10px;line-height:1.5;opacity:.8">
-              💡 Leave any field blank to let the AI pull it from your resume text.
+              Tip: Leave any field blank to let the AI pull it from your resume text.
             </p>
           </div>
 
           <div id="templateLoadingMsg" style="display:none;text-align:center;padding:32px 20px">
             <div class="spinner" style="margin:0 auto 12px"></div>
-            <div style="font-size:13px;color:var(--text2)">Parsing your resume…</div>
+            <div style="font-size:13px;color:var(--text2)">Parsing your resume...</div>
           </div>
         </div>
         <!-- Right: live preview pane -->
@@ -1966,10 +1985,10 @@
             style="width:260px;height:336px;border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#f8fafc;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,0.07);position:relative">
             <div id="templatePreviewEmpty"
               style="text-align:center;color:#94a3b8;font-size:12px;padding:20px;line-height:1.6">
-              <div style="font-size:32px;margin-bottom:10px">🖱️</div>
+              <div style="font-size:32px;margin-bottom:10px"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span></div>
               Hover a template<br>to preview
             </div>
-            <!-- inner wrapper: 104×134 scaled ×2.5 → 260×335 -->
+            <!-- inner wrapper: 104A134 scaled A2.5 -> 260A335 -->
             <div id="templatePreviewContent"
               style="display:none;position:absolute;top:0;left:0;width:104px;height:134px;transform:scale(2.5);transform-origin:top left;overflow:hidden">
             </div>
@@ -1981,7 +2000,7 @@
     </div>
   </div>
 
-<!-- Mobile Quick Actions Bar — Re-tailor + Download, shown when results visible on mobile -->
+<!-- Mobile Quick Actions Bar - Re-tailor + Download, shown when results visible on mobile -->
 <div id="mobileQuickBar">
   <button class="btn-sm btn-sm-outline" id="mqbRetailorBtn" style="flex:1;justify-content:center;display:flex;align-items:center;gap:6px">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
@@ -1993,7 +2012,7 @@
   </button>
 </div>
 
-<!-- Mobile Bottom Navigation — all 5 primary tools visible, no "More" -->
+<!-- Mobile Bottom Navigation - all 5 primary tools visible, no "More" -->
 <nav class="mobile-bottom-nav">
   <button class="mobile-nav-item active" id="mobileNavResume">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -2043,7 +2062,7 @@
   </button>
 </nav>
 
-<!-- Mobile More Bottom Sheet — LinkedIn, Bulk Apply, Account, Backup -->
+<!-- Mobile More Bottom Sheet - LinkedIn, Bulk Apply, Account, Backup -->
 <div id="mobileMoreSheet"
   style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.5);backdrop-filter:blur(2px)">
   <div id="mobileMoreSheetPanel"
@@ -2055,26 +2074,26 @@
     <button id="mobileSheetLinkedIn"
       style="width:100%;display:flex;align-items:center;gap:14px;padding:13px 24px;background:none;border:none;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;text-align:left;transition:background 0.1s"
       class="hover-surface2">
-      <span style="font-size:20px;width:28px;text-align:center">💼</span>
+      <span style="font-size:20px;width:28px;text-align:center"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 6.5v5M4 4v.5M7 11.5V9c0-1.1.9-2 2-2s2 .9 2 2v2.5M7 6.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></span>
       <span>LinkedIn Profile Optimizer</span>
     </button>
     <button id="mobileSheetBulkApply"
       style="width:100%;display:flex;align-items:center;gap:14px;padding:13px 24px;background:none;border:none;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;text-align:left;transition:background 0.1s"
       class="hover-surface2">
-      <span style="font-size:20px;width:28px;text-align:center">⚡</span>
-      <span>Bulk Apply <span style="font-size:11px;font-weight:500;color:var(--muted)">· Complete plan</span></span>
+      <span style="font-size:20px;width:28px;text-align:center"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 12h20"/></svg></span></span>
+      <span>Bulk Apply <span style="font-size:11px;font-weight:500;color:var(--muted)">- Job Hunt Pass</span></span>
     </button>
     <div style="height:1px;background:var(--border);margin:8px 24px"></div>
     <button id="mobileSheetAccount"
       style="width:100%;display:flex;align-items:center;gap:14px;padding:13px 24px;background:none;border:none;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:var(--text2);cursor:pointer;text-align:left;transition:background 0.1s"
       class="hover-surface2">
-      <span style="font-size:20px;width:28px;text-align:center">👤</span>
+      <span style="font-size:20px;width:28px;text-align:center"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span></span>
       <span>Account &amp; Subscription</span>
     </button>
     <button id="mobileSheetBackup"
       style="width:100%;display:flex;align-items:center;gap:14px;padding:13px 24px;background:none;border:none;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:var(--text2);cursor:pointer;text-align:left;transition:background 0.1s"
       class="hover-surface2">
-      <span style="font-size:20px;width:28px;text-align:center">💾</span>
+      <span style="font-size:20px;width:28px;text-align:center"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></span></span>
       <span>Backup My Data</span>
     </button>
   </div>
@@ -2085,7 +2104,7 @@
   data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
   data-widget-id="69dc254ad0d6ea2d59ad3b08"></script>
 
-<!-- Resume Builder Wizard — loaded last so all helpers (saveResume, showToast, etc.) are defined -->
+<!-- Resume Builder Wizard - loaded last so all helpers (saveResume, showToast, etc.) are defined -->
 <script src="app.js?v=ada-a11y-20260428"></script>
 <script src="resume-builder.js?v=28cd652"></script>
 

@@ -30,6 +30,12 @@ const html = fs.existsSync(path.join(ROOT, 'index.html'))
   ? fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8') : '';
 const js   = fs.existsSync(path.join(ROOT, 'app.js'))
   ? fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8') : '';
+const css  = fs.existsSync(path.join(ROOT, 'style.css'))
+  ? fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8') : '';
+const ghlCro = fs.existsSync(path.join(ROOT, 'resume-tailor-landing', 'ghl-cro-custom-code.html'))
+  ? fs.readFileSync(path.join(ROOT, 'resume-tailor-landing', 'ghl-cro-custom-code.html'), 'utf8') : '';
+const ghlDefault = fs.existsSync(path.join(ROOT, 'resume-tailor-landing', 'ghl-custom-code.html'))
+  ? fs.readFileSync(path.join(ROOT, 'resume-tailor-landing', 'ghl-custom-code.html'), 'utf8') : '';
 
 // ── 2. HTML structure ─────────────────────────────────────────────────────────
 section('HTML structure');
@@ -78,6 +84,13 @@ const REQUIRED_IDS = [
 
   // Main action buttons
   'runBtn', 'searchBtn', 'positioningAnalyzeBtn', 'positioningUseBtn', 'positioningClearBtn', 'positioningActiveBadge',
+
+  // Contextual guidance
+  'currentObjectiveBar', 'currentObjectiveText',
+  'whatsNextCard', 'whatsNextTitle', 'whatsNextPrimaryBtn', 'whatsNextSecondaryBtn', 'whatsNextRestoreBtn',
+  'applicationChecklistCard', 'applicationChecklistItems', 'applicationChecklistCount', 'smartActionReason',
+  'analyzePositioningReason', 'usePositioningReason', 'analyzePositioningResultReason', 'clearPositioningReason',
+  'trackerEmpty', 'tailoredHistoryList', 'jobEmptyState', 'jobList', 'appList',
 
   // Results panels
   'resultsPanel', 'resumeOutput', 'coverOutput', 'jobResultsPanel',
@@ -187,6 +200,195 @@ if (js) {
 }
 
 // ── 5. Required global functions ──────────────────────────────────────────────
+section('Workflow guidance smoke');
+
+if (html) {
+  if (/id="currentObjectiveBar"/.test(html) && /id="currentObjectiveText"/.test(html)) pass('Current objective bar is present');
+  else fail('Current objective bar is missing');
+
+  if (/Application checklist/i.test(html)) pass('Application checklist card copy is present');
+  else fail('Application checklist card copy is missing');
+
+  if (/id="smartActionReason"/.test(html)) pass('Smart disabled reason live region is present');
+  else fail('Smart disabled reason live region is missing');
+}
+
+if (js) {
+  if (/function getApplicationWorkflowState\s*\(/.test(js)) pass('Shared workflow state snapshot exists');
+  else fail('Shared workflow state snapshot is missing');
+
+  if (/function getDisabledReason\s*\(/.test(js)) pass('Disabled reason helper exists');
+  else fail('Disabled reason helper is missing');
+
+  if (/function updateDisabledButtonReasons\s*\(/.test(js)) pass('Disabled reason updater exists');
+  else fail('Disabled reason updater is missing');
+
+  if (/function getApplicationChecklistItems\s*\(/.test(js)) pass('Application checklist item builder exists');
+  else fail('Application checklist item builder is missing');
+
+  if (/function updateApplicationChecklist\s*\(/.test(js)) pass('Application checklist updater exists');
+  else fail('Application checklist updater is missing');
+
+  if (/function getCurrentObjective\s*\(/.test(js)) pass('Current objective helper exists');
+  else fail('Current objective helper is missing');
+
+  if (/function updateCurrentObjectiveBar\s*\(/.test(js)) pass('Current objective updater exists');
+  else fail('Current objective updater is missing');
+
+  if (/let lastCurrentObjectiveRenderKey\s*=/.test(js)) pass('Current objective render-key guard exists');
+  else fail('Current objective render-key guard is missing');
+
+  if (/function updateWorkflowGuidanceUI[\s\S]*updateCurrentObjectiveBar\(workflowState\)/.test(js)) pass('Central workflow guidance refresh updates current objective');
+  else fail('Central workflow guidance refresh does not update current objective');
+
+  if (/function renderEmptyState\s*\(/.test(js)) pass('Reusable empty-state renderer exists');
+  else fail('Reusable empty-state renderer is missing');
+
+  if (/function handleEmptyStateAction\s*\(/.test(js)) pass('Empty-state action router exists');
+  else fail('Empty-state action router is missing');
+
+  if (/function updateEmptyStates\s*\(/.test(js)) pass('Central empty-state refresh exists');
+  else fail('Central empty-state refresh is missing');
+
+  if (/EMPTY_STATE_SHOWN/.test(js)) pass('Empty-state shown analytics event is present');
+  else fail('EMPTY_STATE_SHOWN analytics event is missing');
+
+  if (/EMPTY_STATE_ACTION_CLICKED/.test(js)) pass('Empty-state action analytics event is present');
+  else fail('EMPTY_STATE_ACTION_CLICKED analytics event is missing');
+
+  if (/getWhatsNextState\(workflowState\)/.test(js)) pass('What’s Next reuses shared workflow state');
+  else fail('What’s Next does not appear to reuse shared workflow state');
+
+  if (/function updateWorkflowGuidanceUI\s*\(/.test(js)) pass('Central workflow guidance refresh exists');
+  else fail('Central workflow guidance refresh is missing');
+
+  if (/function getWhatsNextElements\s*\(/.test(js) && /function getApplicationChecklistElements\s*\(/.test(js) && /if \(!els\) return/.test(js) && /return card && items && count/.test(js)) pass('Missing guide/checklist nodes no-op structurally');
+  else fail('Missing guide/checklist no-op guards are missing or unclear');
+}
+
+section('Meaningful empty states smoke');
+
+if (html) {
+  if (/id="trackerEmpty"/.test(html)) pass('Tracker empty-state hook exists');
+  else fail('Tracker empty-state hook is missing');
+
+  if (/id="tailoredHistoryList"/.test(html)) pass('Vault/history empty-state hook exists');
+  else fail('Vault/history empty-state hook is missing');
+
+  if (/id="resumeOutput"/.test(html)) pass('Resume output empty-state hook exists');
+  else fail('Resume output empty-state hook is missing');
+
+  if (/id="coverOutput"/.test(html)) pass('Cover letter empty-state hook exists');
+  else fail('Cover letter empty-state hook is missing');
+
+  if (/id="jobEmptyState"/.test(html) && /id="jobList"/.test(html)) pass('Search/results empty-state hooks exist');
+  else fail('Search/results empty-state hooks are missing');
+}
+
+if (css) {
+  ['empty-state', 'empty-state-title', 'empty-state-text', 'empty-state-actions', 'empty-state-button', 'empty-state-secondary-button'].forEach(cls => {
+    if (new RegExp('\\.' + cls + '\\b').test(css)) pass('.' + cls);
+    else fail('Missing CSS class .' + cls);
+  });
+}
+
+section('Layout collision smoke');
+
+if (css) {
+  [
+    '--sidebar-width',
+    '--fixed-bottom-safe-space',
+    '--mobile-fixed-bottom-safe-space',
+    '--z-sidebar',
+    '--z-objective-bar',
+    '--z-guide-sheet',
+    '--z-chat'
+  ].forEach(variable => {
+    if (new RegExp(variable + '\\s*:').test(css)) pass(variable + ' CSS variable exists');
+    else fail(variable + ' CSS variable is missing');
+  });
+
+  if (/\.debug-layout\s+\*/.test(css)) pass('Debug layout helper exists');
+  else fail('Debug layout helper is missing');
+
+  if (/#resumeGrid[\s\S]*minmax\(0,\s*1fr\)/.test(css)) pass('Resume grid uses minmax(0, 1fr) for safe shrink');
+  else fail('Resume grid does not include minmax(0, 1fr) safe column sizing');
+
+  if (/#currentObjectiveBar[\s\S]*margin-left:\s*var\(--sidebar-width\)/.test(css)) pass('Objective bar reserves desktop sidebar space');
+  else fail('Objective bar does not reserve desktop sidebar space');
+
+  if (/overflow-wrap:\s*anywhere/.test(css)) pass('Long guidance text has overflow wrapping');
+  else fail('Missing overflow wrapping for guidance text');
+
+  if (/env\(safe-area-inset-bottom/.test(css) && /--fixed-bottom-safe-space/.test(css)) pass('Fixed bottom safe spacing is present');
+  else fail('Fixed bottom safe spacing is missing');
+}
+
+section('Free-to-Pro conversion smoke');
+
+if (html) {
+  if (/\$24\.99/.test(html)) pass('Job Hunt Pass price appears in upgrade/paywall copy');
+  else fail('Job Hunt Pass price $24.99 is missing from upgrade/paywall copy');
+
+  if (/Upgrade to Job Hunt Pass/.test(html) || /Start Job Hunt Pass/.test(html)) pass('Single-plan Job Hunt Pass upgrade CTA copy exists');
+  else fail('Job Hunt Pass upgrade CTA copy is missing');
+}
+
+if (js) {
+  [
+    'FREE_TO_PRO_PRICE',
+    'PRO_TIER_ALIASES',
+    'getPlanState',
+    'guardProFeature',
+    'canSaveTrackedJob'
+  ].forEach(symbol => {
+    if (new RegExp(symbol).test(js)) pass(symbol + ' exists');
+    else fail(symbol + ' is missing');
+  });
+
+  if (/free:\s*\{\s*searches:\s*5,\s*tailors:\s*3,\s*coverLetters:\s*1,\s*savedJobs:\s*3/.test(js)) pass('Free plan limits are explicit');
+  else fail('Free plan limits are not explicit or changed unexpectedly');
+
+  if (/UPGRADE_PROMPT_VIEWED/.test(js) && /PRO_FEATURE_LOCKED/.test(js) && /UPGRADE_CTA_CLICKED/.test(js)) pass('Conversion analytics events are present');
+  else fail('Conversion analytics events are missing');
+
+  if (!/generatePositioningBrief[\s\S]*?guardProFeature\('positioningBrief'/.test(js)) pass('Positioning Brief is included in the free plan');
+  else fail('Positioning Brief should not be gated as a paid-only feature');
+
+  if (/function _activateCoverLetter[\s\S]*openUpgradeModal\('coverLetter'\)/.test(js)) pass('Cover letter upgrade trigger is present');
+  else fail('Cover letter upgrade trigger is missing');
+}
+
+section('Landing conversion tracking smoke');
+
+if (js) {
+  if (/typeof window\.gtag === 'function'/.test(js) && /window\.dataLayer/.test(js)) pass('App analytics can forward safe events to GA4/GTM');
+  else fail('App analytics does not forward events to GA4/GTM');
+
+  if (/APP_GA_ID\s*=\s*'G-RYPRPJDLVE'/.test(js) && /initAppGoogleAnalytics/.test(js)) pass('App GA4 measurement ID is configured');
+  else fail('App GA4 measurement ID is missing or changed unexpectedly');
+}
+
+[
+  ['GHL CRO landing', ghlCro],
+  ['GHL default landing', ghlDefault],
+].forEach(([name, source]) => {
+  if (!source) {
+    fail(name + ' source is missing');
+    return;
+  }
+  if (/FIRSTSTEP_GA_ID/.test(source)) pass(name + ' has configurable GA4 measurement ID');
+  else fail(name + ' is missing configurable GA4 measurement ID');
+  if (/firstStepTrack/.test(source)) pass(name + ' exposes firstStepTrack()');
+  else fail(name + ' is missing firstStepTrack()');
+  if (/LANDING_PAGE_VIEW/.test(source) && /START_FREE_CLICKED/.test(source) && /CHECKOUT_STARTED/.test(source)) pass(name + ' tracks page, free CTA, and checkout intent');
+  else fail(name + ' is missing core conversion events');
+  if (/SCROLL_DEPTH_REACHED/.test(source) && /PRICING_VIEWED/.test(source)) pass(name + ' tracks scroll depth and pricing views');
+  else fail(name + ' is missing engagement events');
+  if (/firststep_attribution/.test(source) && /fs_vid/.test(source)) pass(name + ' persists attribution and app handoff visitor ID');
+  else fail(name + ' is missing attribution handoff');
+});
+
 section('Required global functions');
 
 // Functions called from HTML inline handlers or dynamically generated HTML.
@@ -209,6 +411,21 @@ const REQUIRED_FUNCTIONS = [
   'renderPositioningBrief',
   'useCurrentPositioningBrief',
   'clearActivePositioningContext',
+  'getApplicationWorkflowState',
+  'getDisabledReason',
+  'updateDisabledButtonReasons',
+  'getApplicationChecklistItems',
+  'updateApplicationChecklist',
+  'getCurrentObjective',
+  'updateCurrentObjectiveBar',
+  'renderEmptyState',
+  'handleEmptyStateAction',
+  'updateEmptyStates',
+  'updateWorkflowGuidanceUI',
+  'updateWhatsNextGuide',
+  'getPlanState',
+  'guardProFeature',
+  'canSaveTrackedJob',
 ];
 
 if (js) {

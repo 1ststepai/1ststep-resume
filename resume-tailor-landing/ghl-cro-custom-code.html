@@ -1,0 +1,1562 @@
+<!-- 1stStep.ai CRO Landing Page - GHL Custom HTML Block -->
+<style>
+  #stp-cro {
+    --ink: #0f172a;
+    --text: #334155;
+    --muted: #64748b;
+    --line: #dbe3ef;
+    --soft: #f8fafc;
+    --blue: #2563eb;
+    --blue-dark: #1d4ed8;
+    --green: #10b981;
+    --green-soft: #ecfdf5;
+    --rose-soft: #fff1f2;
+    --rose: #e11d48;
+    --shadow: 0 24px 80px rgba(15, 23, 42, 0.14);
+    color: var(--ink);
+    background: var(--soft);
+    font-family: Inter, Geist, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.5;
+    letter-spacing: 0;
+  }
+
+  #stp-cro * { box-sizing: border-box; }
+  #stp-cro a { color: inherit; }
+  #stp-cro a:focus-visible,
+  #stp-cro textarea:focus-visible,
+  #stp-cro summary:focus-visible {
+    outline: 3px solid #f59e0b;
+    outline-offset: 3px;
+    border-radius: 8px;
+  }
+  #stp-cro .stp-wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  #stp-cro .stp-section { padding: 96px 0; }
+  #stp-cro .stp-kicker {
+    margin: 0 0 12px;
+    color: var(--blue);
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  #stp-cro h1,
+  #stp-cro h2,
+  #stp-cro h3,
+  #stp-cro p { margin-top: 0; }
+  #stp-cro h1 {
+    margin-bottom: 24px;
+    max-width: 760px;
+    font-size: clamp(44px, 6vw, 76px);
+    line-height: 0.98;
+    font-weight: 950;
+    letter-spacing: 0;
+  }
+  #stp-cro h2 {
+    margin-bottom: 18px;
+    max-width: 820px;
+    font-size: clamp(34px, 4.2vw, 54px);
+    line-height: 1.04;
+    font-weight: 950;
+    letter-spacing: 0;
+  }
+  #stp-cro h3 {
+    margin-bottom: 10px;
+    font-size: 22px;
+    line-height: 1.15;
+    font-weight: 900;
+    letter-spacing: 0;
+  }
+  #stp-cro .stp-copy {
+    max-width: 720px;
+    color: var(--text);
+    font-size: 19px;
+    font-weight: 650;
+    line-height: 1.65;
+  }
+
+  #stp-cro .stp-nav {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    border-bottom: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(16px);
+  }
+  #stp-cro .stp-nav-inner {
+    min-height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  #stp-cro .stp-logo {
+    text-decoration: none;
+    color: var(--blue) !important;
+    -webkit-text-fill-color: var(--blue) !important;
+    font-size: 21px;
+    font-weight: 950;
+  }
+  #stp-cro .stp-logo span {
+    color: var(--ink) !important;
+    -webkit-text-fill-color: var(--ink) !important;
+  }
+  #stp-cro .stp-nav-links {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 900;
+  }
+  #stp-cro .stp-nav-links a { text-decoration: none; }
+
+  #stp-cro .stp-btn {
+    display: inline-flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: 0 20px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 950;
+    white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  #stp-cro .stp-btn:hover { transform: translateY(-1px); }
+  #stp-cro .stp-btn-primary {
+    background: var(--blue);
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+    box-shadow: 0 16px 34px rgba(37, 99, 235, 0.26);
+  }
+  #stp-cro .stp-btn-primary:hover { background: var(--blue-dark); }
+  #stp-cro .stp-btn-secondary {
+    background: #fff;
+    border-color: #cbd5e1;
+    color: var(--ink) !important;
+    -webkit-text-fill-color: var(--ink) !important;
+  }
+  #stp-cro .stp-btn-secondary:hover { border-color: #94a3b8; }
+
+  #stp-cro .stp-hero {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(90deg, #ffffff 0%, #ffffff 52%, #eff6ff 52%, #eff6ff 100%);
+  }
+  #stp-cro .stp-hero-grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 0.95fr 1.05fr;
+    gap: 46px;
+    align-items: center;
+    padding-top: 88px;
+    padding-bottom: 96px;
+  }
+  #stp-cro .stp-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    margin-bottom: 20px;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    background: #eff6ff;
+    padding: 0 13px;
+    color: #1e40af;
+    font-size: 13px;
+    font-weight: 950;
+  }
+  #stp-cro .stp-signal-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-top: 18px;
+  }
+  #stp-cro .stp-signal {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: #fff;
+    padding: 0 11px;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 900;
+  }
+  #stp-cro .stp-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 26px 0 16px;
+  }
+  #stp-cro .stp-privacy {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: #fff;
+    padding: 9px 12px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 850;
+  }
+  #stp-cro .stp-privacy strong {
+    color: var(--ink);
+    font-weight: 950;
+  }
+  #stp-cro .stp-hero-microcopy {
+    margin: -4px 0 14px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 850;
+  }
+  #stp-cro .stp-drop {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    max-width: 560px;
+    margin-top: 30px;
+    border: 1px dashed #93c5fd;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.92);
+    padding: 16px;
+    text-decoration: none;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+  }
+  #stp-cro .stp-drop:hover { border-color: var(--blue); background: #eff6ff; }
+  #stp-cro .stp-drop-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 46px;
+    height: 46px;
+    border-radius: 8px;
+    background: var(--blue);
+    color: #fff;
+  }
+  #stp-cro .stp-drop strong {
+    display: block;
+    color: var(--ink);
+    font-size: 16px;
+    font-weight: 950;
+  }
+  #stp-cro .stp-drop span {
+    display: block;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 750;
+  }
+  #stp-cro .stp-drop-start {
+    margin-left: auto;
+    color: var(--blue);
+    font-size: 13px;
+    font-weight: 950;
+  }
+
+  #stp-cro .stp-preview {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    padding: 14px;
+    box-shadow: var(--shadow);
+  }
+  #stp-cro .stp-preview-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid #eef2f7;
+    padding-bottom: 13px;
+    margin-bottom: 14px;
+  }
+  #stp-cro .stp-preview-label {
+    color: var(--blue);
+    font-size: 12px;
+    font-weight: 950;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  #stp-cro .stp-score {
+    border-radius: 999px;
+    background: var(--green-soft);
+    padding: 8px 12px;
+    color: #047857;
+    font-size: 14px;
+    font-weight: 950;
+  }
+  #stp-cro .stp-score-ring {
+    display: grid;
+    place-items: center;
+    width: 76px;
+    height: 76px;
+    border-radius: 999px;
+    background:
+      radial-gradient(circle at center, #fff 0 56%, transparent 57%),
+      conic-gradient(#10b981 0 92%, #dbe3ef 92% 100%);
+    color: #047857;
+    font-size: 18px;
+    font-weight: 950;
+    box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.18);
+  }
+  #stp-cro .stp-score-ring span {
+    display: block;
+    margin-top: 1px;
+    color: #64748b;
+    font-size: 9px;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  #stp-cro .stp-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  #stp-cro .stp-pane {
+    min-height: 280px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 18px;
+  }
+  #stp-cro .stp-pane-left { background: #f8fafc; }
+  #stp-cro .stp-pane-right { border-color: #bfdbfe; background: #eff6ff; }
+  #stp-cro .stp-pane-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 13px;
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 950;
+  }
+  #stp-cro .stp-dot { width: 10px; height: 10px; border-radius: 999px; background: #fb7185; }
+  #stp-cro .stp-dot.green { background: #34d399; }
+  #stp-cro .stp-pane p {
+    margin-bottom: 12px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 650;
+    line-height: 1.7;
+  }
+  #stp-cro mark {
+    border-radius: 5px;
+    padding: 1px 5px;
+    font-weight: 900;
+  }
+  #stp-cro .stp-pane-left mark { background: #fef3c7; color: #92400e; }
+  #stp-cro .stp-pane-right mark { background: #d1fae5; color: #065f46; }
+
+  #stp-cro .stp-authority {
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: #fff;
+    padding: 28px 0;
+  }
+  #stp-cro .stp-authority-title {
+    margin-bottom: 16px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 950;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  #stp-cro .stp-logos {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 12px;
+  }
+  #stp-cro .stp-logo-card {
+    border: 1px solid #eef2f7;
+    border-radius: 8px;
+    background: #f8fafc;
+    padding: 14px 10px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 18px;
+    font-weight: 950;
+    filter: grayscale(1);
+  }
+  #stp-cro .stp-beta-row {
+    margin-top: 20px;
+    text-align: center;
+  }
+  #stp-cro .stp-beta-link {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    background: #eff6ff;
+    padding: 0 18px;
+    color: #1d4ed8 !important;
+    -webkit-text-fill-color: #1d4ed8 !important;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 950;
+  }
+  #stp-cro .stp-beta-link:hover {
+    border-color: var(--blue);
+    background: #dbeafe;
+  }
+
+  #stp-cro .stp-stats {
+    background: var(--ink);
+    color: #fff;
+  }
+  #stp-cro .stp-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+  #stp-cro .stp-stat {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 28px;
+  }
+  #stp-cro .stp-stat strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #fff;
+    font-size: 42px;
+    line-height: 1;
+    font-weight: 950;
+  }
+  #stp-cro .stp-stat span { color: #cbd5e1; font-weight: 750; }
+
+  #stp-cro .stp-interactive {
+    background: #fff;
+  }
+  #stp-cro .stp-widget-grid {
+    display: grid;
+    grid-template-columns: 1.08fr 0.92fr;
+    gap: 24px;
+    align-items: stretch;
+  }
+  #stp-cro .stp-widget-card,
+  #stp-cro .stp-founder-card {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 18px 54px rgba(15, 23, 42, 0.08);
+  }
+  #stp-cro .stp-widget-card { padding: 24px; }
+  #stp-cro .stp-widget-form {
+    display: grid;
+    gap: 14px;
+    margin-top: 22px;
+  }
+  #stp-cro .stp-widget-label {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 950;
+  }
+  #stp-cro .stp-widget-card textarea {
+    width: 100%;
+    min-height: 118px;
+    resize: vertical;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #f8fafc;
+    padding: 13px;
+    color: var(--ink) !important;
+    -webkit-text-fill-color: var(--ink) !important;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 650;
+    line-height: 1.5;
+    outline: none;
+  }
+  #stp-cro .stp-widget-card textarea:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+  }
+  #stp-cro .stp-score-box {
+    display: grid;
+    place-items: center;
+    min-height: 100%;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #eff6ff, #fff);
+    padding: 28px;
+    text-align: center;
+  }
+  #stp-cro .stp-score-number {
+    color: var(--blue);
+    font-size: 68px;
+    line-height: 1;
+    font-weight: 950;
+  }
+  #stp-cro .stp-score-box p {
+    margin: 10px 0 0;
+    color: var(--text);
+    font-weight: 750;
+  }
+  #stp-cro .stp-keyword-matches {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 18px;
+  }
+  #stp-cro .stp-keyword-matches span {
+    border-radius: 999px;
+    background: #dbeafe;
+    padding: 6px 10px;
+    color: #1e40af;
+    font-size: 12px;
+    font-weight: 950;
+  }
+  #stp-cro .stp-widget-note {
+    margin: 12px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 750;
+  }
+  #stp-cro .stp-founder-card {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 18px;
+    margin-top: 24px;
+    padding: 22px;
+    background: #f8fafc;
+  }
+  #stp-cro .stp-founder-avatar {
+    width: 58px;
+    height: 58px;
+    border-radius: 999px;
+    overflow: hidden;
+    border: 2px solid #fff;
+    background: var(--ink);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+  }
+  #stp-cro .stp-founder-avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  #stp-cro .stp-founder-card strong {
+    display: block;
+    color: var(--ink);
+    font-size: 16px;
+    font-weight: 950;
+  }
+  #stp-cro .stp-founder-card p {
+    margin: 6px 0 0;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 650;
+    line-height: 1.7;
+  }
+  #stp-cro .stp-rewrite-card {
+    margin-top: 24px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #0f172a;
+    padding: 24px;
+    color: #fff;
+    box-shadow: 0 22px 60px rgba(15, 23, 42, 0.16);
+  }
+  #stp-cro .stp-rewrite-card h3 {
+    color: #fff;
+  }
+  #stp-cro .stp-rewrite-card p {
+    color: #cbd5e1;
+    font-size: 15px;
+    font-weight: 650;
+  }
+  #stp-cro .stp-rewrite-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 18px;
+  }
+  #stp-cro .stp-rewrite-card label {
+    display: block;
+  }
+  #stp-cro .stp-rewrite-card .stp-widget-label {
+    color: #e2e8f0;
+  }
+  #stp-cro .stp-rewrite-card textarea {
+    width: 100%;
+    min-height: 96px;
+    resize: vertical;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 13px;
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 650;
+    line-height: 1.5;
+    outline: none;
+  }
+  #stp-cro .stp-rewrite-output {
+    margin-top: 14px;
+    border: 1px solid rgba(16, 185, 129, 0.36);
+    border-radius: 8px;
+    background: rgba(16, 185, 129, 0.1);
+    padding: 18px;
+    color: #ecfdf5;
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.6;
+  }
+  #stp-cro .stp-rewrite-note {
+    margin-top: 12px !important;
+    color: #94a3b8 !important;
+    font-size: 13px !important;
+  }
+
+  #stp-cro .stp-trust-grid,
+  #stp-cro .stp-ba-grid,
+  #stp-cro .stp-pricing-grid {
+    display: grid;
+    gap: 22px;
+  }
+  #stp-cro .stp-trust-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #stp-cro .stp-ba-grid,
+  #stp-cro .stp-pricing-grid { grid-template-columns: 1fr 1fr; }
+  #stp-cro .stp-ba-card {
+    border-radius: 8px;
+    padding: 26px;
+  }
+  #stp-cro .stp-before { border: 1px solid #fecdd3; background: var(--rose-soft); }
+  #stp-cro .stp-after { border: 2px solid var(--blue); background: #eff6ff; box-shadow: 0 22px 60px rgba(37, 99, 235, 0.14); }
+  #stp-cro .stp-status {
+    display: inline-flex;
+    margin-bottom: 18px;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 950;
+  }
+  #stp-cro .stp-status.bad { background: #ffe4e6; color: var(--rose); }
+  #stp-cro .stp-status.good { background: var(--blue); color: #fff; }
+  #stp-cro .stp-resume-lines {
+    border-radius: 8px;
+    background: #fff;
+    padding: 20px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  }
+  #stp-cro .stp-line { height: 12px; margin: 12px 0; border-radius: 999px; background: #e2e8f0; }
+  #stp-cro .stp-after .stp-line { background: #a7f3d0; }
+  #stp-cro .stp-w1 { width: 70%; }
+  #stp-cro .stp-w2 { width: 100%; }
+  #stp-cro .stp-w3 { width: 86%; }
+  #stp-cro .stp-w4 { width: 62%; }
+  #stp-cro .stp-result {
+    margin-top: 18px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    padding: 16px;
+  }
+  #stp-cro .stp-result strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 14px;
+    font-weight: 950;
+  }
+  #stp-cro .stp-result p {
+    margin: 0;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 650;
+  }
+
+  #stp-cro .stp-demo { background: #f8fafc; }
+  #stp-cro .stp-video {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: var(--shadow);
+  }
+  #stp-cro .stp-video video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: var(--ink);
+  }
+
+  #stp-cro .stp-trust {
+    background: #fff;
+  }
+  #stp-cro .stp-trust-card {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #f8fafc;
+    padding: 24px;
+  }
+  #stp-cro .stp-trust-icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    background: #eff6ff;
+    color: var(--blue);
+    font-size: 20px;
+    font-weight: 950;
+  }
+  #stp-cro .stp-trust-card p {
+    margin: 0;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 650;
+    line-height: 1.7;
+  }
+  #stp-cro .stp-trust-note {
+    margin-top: 22px;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    background: #eff6ff;
+    padding: 18px 20px;
+    color: #1e3a8a;
+    font-size: 15px;
+    font-weight: 850;
+  }
+
+  #stp-cro .stp-price-card {
+    position: relative;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    padding: 30px;
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.07);
+  }
+  #stp-cro .stp-price-card.popular {
+    border: 2px solid var(--blue);
+    background: #eff6ff;
+    box-shadow: 0 24px 70px rgba(37, 99, 235, 0.16);
+  }
+  #stp-cro .stp-popular {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    border-radius: 999px;
+    background: var(--blue);
+    padding: 6px 10px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 950;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  #stp-cro .stp-price {
+    margin: 26px 0 20px;
+    color: var(--ink);
+    font-size: 48px;
+    line-height: 1;
+    font-weight: 950;
+  }
+  #stp-cro .stp-price small {
+    color: var(--muted);
+    font-size: 16px;
+    font-weight: 800;
+  }
+  #stp-cro .stp-checks {
+    display: grid;
+    gap: 12px;
+    padding: 0;
+    margin: 0 0 28px;
+    list-style: none;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+    font-size: 14px;
+    font-weight: 800;
+  }
+  #stp-cro .stp-checks.two { grid-template-columns: 1fr 1fr; }
+  #stp-cro .stp-checks li {
+    display: flex;
+    gap: 10px;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+  }
+  #stp-cro .stp-price-card .stp-checks,
+  #stp-cro .stp-price-card .stp-checks li,
+  #stp-cro .stp-price-card p,
+  #stp-cro .stp-price-card small {
+    color: #334155 !important;
+    -webkit-text-fill-color: #334155 !important;
+  }
+  #stp-cro .stp-price-card h3,
+  #stp-cro .stp-price-card .stp-price {
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+  }
+  #stp-cro .stp-price-card .stp-btn-primary {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+  }
+  #stp-cro .stp-price-card .stp-btn-secondary {
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+  }
+  #stp-cro .stp-check {
+    flex: 0 0 auto;
+    width: 17px;
+    height: 17px;
+    margin-top: 2px;
+    border-right: 3px solid var(--green);
+    border-bottom: 3px solid var(--green);
+    transform: rotate(45deg);
+  }
+
+  #stp-cro .stp-faq { background: #f8fafc; }
+  #stp-cro .stp-accordion {
+    overflow: hidden;
+    max-width: 860px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+  }
+  #stp-cro details {
+    border-bottom: 1px solid var(--line);
+    padding: 20px;
+  }
+  #stp-cro details:last-child { border-bottom: 0; }
+  #stp-cro summary {
+    cursor: pointer;
+    color: var(--ink);
+    font-size: 16px;
+    font-weight: 950;
+    list-style: none;
+  }
+  #stp-cro summary::-webkit-details-marker { display: none; }
+  #stp-cro details p {
+    margin: 12px 0 0;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 650;
+    line-height: 1.7;
+  }
+
+  #stp-cro .stp-final {
+    background: var(--ink);
+    color: #fff;
+  }
+  #stp-cro .stp-final-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+  }
+  #stp-cro .stp-final h2 { color: #fff; }
+  #stp-cro .stp-final p { color: #cbd5e1; }
+  #stp-cro .stp-final .stp-btn-secondary {
+    border-color: #fff;
+    background: #fff;
+  }
+
+  #stp-cro .stp-mobile-sticky { display: none; }
+  #stp-cro .stp-beta-pulse {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 80;
+    max-width: 330px;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 18px 48px rgba(15, 23, 42, 0.16);
+    padding: 14px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 750;
+    backdrop-filter: blur(14px);
+  }
+  #stp-cro .stp-beta-pulse strong {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 950;
+  }
+  #stp-cro .stp-beta-pulse a {
+    color: var(--blue) !important;
+    -webkit-text-fill-color: var(--blue) !important;
+    font-weight: 950;
+    text-decoration: none;
+  }
+
+  @media (max-width: 960px) {
+    #stp-cro .stp-hero { background: #fff; }
+    #stp-cro .stp-hero-grid,
+    #stp-cro .stp-split,
+    #stp-cro .stp-widget-grid,
+    #stp-cro .stp-rewrite-grid,
+    #stp-cro .stp-trust-grid,
+    #stp-cro .stp-ba-grid,
+    #stp-cro .stp-pricing-grid,
+    #stp-cro .stp-stat-grid { grid-template-columns: 1fr; }
+    #stp-cro .stp-logos { grid-template-columns: repeat(3, 1fr); }
+    #stp-cro .stp-nav-links { display: none; }
+    #stp-cro .stp-final-row { align-items: flex-start; flex-direction: column; }
+  }
+
+  @media (max-width: 640px) {
+    #stp-cro .stp-wrap { padding: 0 18px; }
+    #stp-cro .stp-section { padding: 72px 0; }
+    #stp-cro .stp-hero-grid { padding-top: 62px; padding-bottom: 72px; }
+    #stp-cro h1 { font-size: 44px; }
+    #stp-cro h2 { font-size: 34px; }
+    #stp-cro .stp-nav .stp-btn { display: none; }
+    #stp-cro .stp-hero-actions .stp-btn,
+    #stp-cro .stp-price-card .stp-btn { width: 100%; }
+    #stp-cro .stp-logos { grid-template-columns: repeat(2, 1fr); }
+    #stp-cro .stp-checks.two { grid-template-columns: 1fr; }
+    #stp-cro .stp-founder-card { grid-template-columns: 1fr; }
+    #stp-cro .stp-mobile-sticky {
+      display: block;
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 90;
+      border-top: 1px solid var(--line);
+      background: #fff;
+      padding: 12px;
+      box-shadow: 0 -18px 40px rgba(15, 23, 42, 0.16);
+    }
+    #stp-cro .stp-mobile-sticky .stp-btn { width: 100%; }
+    #stp-cro .stp-beta-pulse { display: none; }
+  }
+</style>
+
+<div id="stp-cro">
+  <header class="stp-nav">
+    <div class="stp-wrap stp-nav-inner">
+      <a class="stp-logo" href="https://resume.1ststep.ai" aria-label="1stStep.ai Resume Builder home">1stStep<span>.ai</span></a>
+      <nav class="stp-nav-links" aria-label="Main navigation">
+        <a href="#stp-preview">Preview</a>
+        <a href="#stp-proof">Proof</a>
+        <a href="#stp-trust">Trust</a>
+        <a href="#stp-pricing">Pricing</a>
+        <a href="#stp-faq">FAQ</a>
+      </nav>
+      <a class="stp-btn stp-btn-primary" href="https://app.1ststep.ai">Start Free</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="stp-hero">
+      <div class="stp-wrap stp-hero-grid">
+        <div>
+          <div class="stp-pill">AI resume tailoring with an instant Match Score</div>
+          <h1>Tailor your resume around your strongest angle for every job.</h1>
+          <p class="stp-copy">1stStep.ai helps you clarify your value, prove your impact, and generate role-specific resumes that do more than match keywords.</p>
+          <div class="stp-signal-row" aria-label="Trust signals">
+            <span class="stp-signal">Free positioning strategy</span>
+            <span class="stp-signal">Human-readable output checks</span>
+            <span class="stp-signal">Built to avoid generic AI fluff</span>
+            <span class="stp-signal">Chrome extension beta available</span>
+          </div>
+          <p class="stp-copy" style="margin-top:16px;font-size:16px;line-height:1.6;">
+            <strong>Career Positioning Brief</strong><br>
+            Free users can review their strongest angle, missing proof points, weak bullets, and impact gaps before generating a tailored resume.
+          </p>
+
+          <a class="stp-drop" href="https://app.1ststep.ai">
+            <span class="stp-drop-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 3v12M7 8l5-5 5 5M5 21h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span>
+              <strong>Drop Resume Here</strong>
+              <span>Start free. Get 3 tailored resumes included.</span>
+            </span>
+            <span class="stp-drop-start">Start</span>
+          </a>
+
+          <div class="stp-hero-actions">
+            <a class="stp-btn stp-btn-primary" href="https://app.1ststep.ai">
+              Start Free — 3 Resumes Included
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+            <a class="stp-btn stp-btn-secondary" href="#stp-preview">See Live Preview</a>
+          </div>
+          <p class="stp-hero-microcopy">No credit card required to start.</p>
+
+          <div class="stp-privacy">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect x="4" y="10" width="16" height="10" rx="2" stroke="currentColor" stroke-width="2.2"/>
+              <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+            <span><strong>Private &amp; secure:</strong> We never sell your resume info. Page previews stay in your browser.</span>
+          </div>
+        </div>
+
+        <div id="stp-preview" class="stp-preview">
+          <div class="stp-preview-head">
+            <div>
+              <div class="stp-preview-label">Live Preview</div>
+              <strong>AI tailoring engine</strong>
+            </div>
+            <div class="stp-score-ring" role="img" aria-label="Match score 92 percent">92%<span>Match</span></div>
+          </div>
+          <div class="stp-split">
+            <div class="stp-pane stp-pane-left">
+              <div class="stp-pane-title"><span class="stp-dot"></span>Raw Job Description</div>
+              <p>Seeking a marketing manager with experience in:</p>
+              <p><mark>campaign analytics</mark>, stakeholder communication, budget ownership, and AI-assisted workflow optimization.</p>
+              <p>Responsibilities include reporting, lifecycle testing, and cross-functional launch planning.</p>
+            </div>
+            <div class="stp-pane stp-pane-right">
+              <div class="stp-pane-title"><span class="stp-dot green"></span>Tailored Resume</div>
+              <p>Led <mark>campaign analytics</mark> reporting across paid and lifecycle channels.</p>
+              <p>Owned <mark>stakeholder communication</mark> for weekly launch reviews and performance updates.</p>
+              <p>Managed <mark>budget ownership</mark> across growth experiments and vendor spend.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="stp-authority">
+      <div class="stp-wrap">
+        <p class="stp-authority-title">Built for resumes used across the job boards and ATS systems you already use</p>
+        <div class="stp-logos" aria-label="Company examples">
+          <div class="stp-logo-card">LinkedIn</div>
+          <div class="stp-logo-card">Indeed</div>
+          <div class="stp-logo-card">ZipRecruiter</div>
+          <div class="stp-logo-card">Greenhouse</div>
+          <div class="stp-logo-card">Lever</div>
+          <div class="stp-logo-card">Workday</div>
+        </div>
+        <div class="stp-beta-row">
+          <a class="stp-beta-link" href="https://app.1ststep.ai/funnel">Try the Chrome extension beta</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="stp-proof" class="stp-section stp-stats">
+      <div class="stp-wrap stp-stat-grid">
+        <div class="stp-stat"><strong>15,000+</strong><span>keywords optimized this week</span></div>
+        <div class="stp-stat"><strong>42%</strong><span>average match score increase</span></div>
+        <div class="stp-stat"><strong>3 steps</strong><span>resume, job description, tailored output</span></div>
+      </div>
+    </section>
+
+    <section class="stp-section stp-interactive">
+      <div class="stp-wrap">
+        <p class="stp-kicker">Try the Match Score</p>
+        <h2>Give visitors a tiny win before they sign up.</h2>
+        <p class="stp-copy">Paste a few resume skills and a job description snippet. This preview runs in the browser and shows why the full 1stStep workflow is useful.</p>
+
+        <div class="stp-widget-grid">
+          <div class="stp-widget-card">
+            <div class="stp-widget-form">
+              <label for="stp-resume-preview">
+                <span class="stp-widget-label">Resume skills or experience</span>
+                <textarea id="stp-resume-preview" placeholder="Example: campaign analytics, stakeholder communication, lifecycle marketing, paid media, budget reporting">campaign analytics, stakeholder communication, paid media, lifecycle marketing, budget reporting</textarea>
+              </label>
+              <label for="stp-job-preview">
+                <span class="stp-widget-label">Job description snippet</span>
+                <textarea id="stp-job-preview" placeholder="Paste 2-4 lines from a job description">We are looking for a marketing manager with campaign analytics, stakeholder communication, budget ownership, lifecycle testing, and AI workflow optimization experience.</textarea>
+              </label>
+            </div>
+            <p class="stp-widget-note">Preview only. Nothing typed here is submitted or saved.</p>
+          </div>
+
+          <div class="stp-score-box">
+            <div>
+              <div id="stp-live-score" class="stp-score-number" aria-live="polite">78%</div>
+              <p id="stp-score-label" aria-live="polite">Estimated resume-to-job match</p>
+              <div id="stp-keyword-matches" class="stp-keyword-matches" aria-live="polite">
+                <span>campaign</span>
+                <span>analytics</span>
+                <span>stakeholder</span>
+              </div>
+              <a class="stp-btn stp-btn-primary" style="margin-top:22px;" href="https://app.1ststep.ai">Get the full AI Match Score</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="stp-rewrite-card">
+          <p class="stp-kicker" style="color:#93c5fd;">Mini demo</p>
+          <h3>Rewrite one resume bullet for the job before signing up.</h3>
+          <p>Paste one plain resume bullet and one line from a job description. This local preview shows the kind of role-specific rewrite the full product creates.</p>
+          <div class="stp-rewrite-grid">
+            <label for="stp-bullet-preview">
+              <span class="stp-widget-label">Current resume bullet</span>
+              <textarea id="stp-bullet-preview">Managed weekly marketing reports and helped the team improve campaign performance.</textarea>
+            </label>
+            <label for="stp-role-preview">
+              <span class="stp-widget-label">Target job description line</span>
+              <textarea id="stp-role-preview">Own lifecycle campaign analytics, stakeholder reporting, and budget performance across paid acquisition channels.</textarea>
+            </label>
+          </div>
+          <div id="stp-rewrite-output" class="stp-rewrite-output" role="status" aria-live="polite">Rewritten bullet will appear here.</div>
+          <p class="stp-rewrite-note">Preview only. For real tailoring, 1stStep compares the full resume against the full job description.</p>
+        </div>
+
+        <div class="stp-founder-card">
+          <div class="stp-founder-avatar">
+            <img src="https://assets.cdn.filesafe.space/ER85bbRj2EUSuMtO0uFQ/media/69f030920d66f2a665ca8fc4.png" alt="Evan, founder of 1stStep.ai">
+          </div>
+          <div>
+            <strong>Built by Evan for people applying in the real world.</strong>
+            <p>I built 1stStep because tailoring every resume by hand is tedious, but sending the same generic resume everywhere is how good candidates get ignored. The goal is simple: help you apply smarter without turning your resume into fake AI fluff.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="stp-section">
+      <div class="stp-wrap">
+        <p class="stp-kicker">Before and After</p>
+        <h2>Turn a generic resume into an application that looks built for the role.</h2>
+        <div class="stp-ba-grid">
+          <article class="stp-ba-card stp-before">
+            <div class="stp-status bad">Generic Resume</div>
+            <div class="stp-resume-lines">
+              <div class="stp-line stp-w1"></div>
+              <div class="stp-line stp-w2"></div>
+              <div class="stp-line stp-w3"></div>
+              <div class="stp-line stp-w4"></div>
+            </div>
+            <div class="stp-result">
+              <strong style="color:#be123c;">ATS status: Rejected</strong>
+              <p>Missing role-specific keywords and measurable alignment.</p>
+            </div>
+          </article>
+
+          <article class="stp-ba-card stp-after">
+            <div class="stp-status good">1stStep Resume</div>
+            <div class="stp-resume-lines">
+              <div class="stp-line stp-w1"></div>
+              <div class="stp-line stp-w2"></div>
+              <div class="stp-line stp-w3"></div>
+              <div class="stp-line stp-w4"></div>
+            </div>
+            <div class="stp-result">
+              <strong style="color:#047857;">ATS status: Passed. Interview invite likely.</strong>
+              <p>Stronger keyword coverage, clearer relevance, and a saved application version.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="stp-section stp-demo">
+      <div class="stp-wrap">
+        <p class="stp-kicker">Watch the workflow</p>
+        <h2>See the match score, tailoring, cover letter, and resume vault in action.</h2>
+        <div class="stp-video">
+          <video controls preload="metadata" poster="https://assets.cdn.filesafe.space/ER85bbRj2EUSuMtO0uFQ/media/69f01abf0d66f2a665c559d4.png">
+            <source src="https://assets.cdn.filesafe.space/ER85bbRj2EUSuMtO0uFQ/media/69f0192a05d41990012a808c.mp4" type="video/mp4">
+          </video>
+        </div>
+      </div>
+    </section>
+
+    <section id="stp-trust" class="stp-section stp-trust">
+      <div class="stp-wrap">
+        <p class="stp-kicker">Trust and privacy</p>
+        <h2>Your resume is personal. The page should say that plainly.</h2>
+        <p class="stp-copy">1stStep.ai is designed for sensitive career data: resumes, job descriptions, cover letters, and application history. The product should make people feel safe before they upload anything.</p>
+        <div class="stp-trust-grid">
+          <article class="stp-trust-card">
+            <div class="stp-trust-icon">1</div>
+            <h3>Private by default</h3>
+            <p>Your resume info is treated as private application data, not a public profile or a marketing list.</p>
+          </article>
+          <article class="stp-trust-card">
+            <div class="stp-trust-icon">2</div>
+            <h3>No fake experience</h3>
+            <p>The goal is to reframe your real background around the job, not invent credentials, titles, companies, or skills.</p>
+          </article>
+          <article class="stp-trust-card">
+            <div class="stp-trust-icon">3</div>
+            <h3>Built by a real person</h3>
+            <p>The founder note, video, and product walkthrough show there is a human behind the tool, not just a faceless AI form.</p>
+          </article>
+        </div>
+        <div class="stp-trust-note">No fake badges or inflated promises. We would rather be clear about what the product does than use trust claims we have not earned yet.</div>
+      </div>
+    </section>
+
+    <section id="stp-pricing" class="stp-section">
+      <div class="stp-wrap">
+        <p class="stp-kicker">Pricing</p>
+        <h2>Start free. Upgrade when your job hunt gets serious.</h2>
+        <div class="stp-pricing-grid">
+          <article class="stp-price-card">
+            <h3>Free Account</h3>
+            <p class="stp-copy">Best for testing the workflow on your next few applications.</p>
+            <div class="stp-price">$0</div>
+            <ul class="stp-checks">
+              <li><span class="stp-check"></span>3 tailored resumes included</li>
+              <li><span class="stp-check"></span>Career Positioning Brief</li>
+              <li><span class="stp-check"></span>Role/AI Match Score</li>
+              <li><span class="stp-check"></span>1 cover letter included</li>
+              <li><span class="stp-check"></span>Resume vault preview</li>
+              <li><span class="stp-check"></span>Save 3 jobs</li>
+            </ul>
+            <a class="stp-btn stp-btn-secondary" href="https://app.1ststep.ai">Start Free</a>
+          </article>
+
+          <article class="stp-price-card popular">
+            <div class="stp-popular">Most Popular</div>
+            <h3>Job Hunt Pass</h3>
+            <p class="stp-copy">For active applicants who want the full job-search workspace.</p>
+            <div class="stp-price">$24.99<small>/month</small></div>
+            <ul class="stp-checks two">
+              <li><span class="stp-check"></span>Unlimited resume tailoring</li>
+              <li><span class="stp-check"></span>Career Positioning Brief</li>
+              <li><span class="stp-check"></span>Unlimited cover letters</li>
+              <li><span class="stp-check"></span>Full resume vault and version history</li>
+              <li><span class="stp-check"></span>Application tracker and follow-up workflow</li>
+              <li><span class="stp-check"></span>Chrome extension workflow</li>
+              <li><span class="stp-check"></span>Cancel anytime</li>
+            </ul>
+            <a class="stp-btn stp-btn-primary" href="https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00">Start Job Hunt Pass</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="stp-faq" class="stp-section stp-faq">
+      <div class="stp-wrap">
+        <p class="stp-kicker">FAQ</p>
+        <h2>Questions before you start?</h2>
+        <div class="stp-accordion">
+          <details open>
+            <summary>Is 1stStep.ai just another AI resume writer?</summary>
+            <p>No. It is built around the application workflow: upload your resume, paste a job description, get a match score, tailor the resume, create a cover letter, and save the version you used.</p>
+          </details>
+          <details>
+            <summary>Will it make things up?</summary>
+            <p>The goal is to reframe your real experience around the target role, not invent companies, titles, credentials, or skills you do not have.</p>
+          </details>
+          <details>
+            <summary>Do I need a credit card to start?</summary>
+            <p>No. The free account includes 3 tailored resumes so you can test the workflow before upgrading.</p>
+          </details>
+          <details>
+            <summary>Is my resume information private?</summary>
+            <p>Your resume is treated as private application data. The promise is simple: we do not sell your resume information.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="stp-section stp-final">
+      <div class="stp-wrap stp-final-row">
+        <div>
+          <h2>Tailor your next resume before you apply.</h2>
+          <p class="stp-copy">Start free with 3 resumes included. No credit card required.</p>
+        </div>
+        <a class="stp-btn stp-btn-secondary" href="https://app.1ststep.ai">Start Free</a>
+      </div>
+    </section>
+  </main>
+
+  <div class="stp-beta-pulse">
+    <strong>Chrome extension beta is live</strong>
+    Tailor while browsing LinkedIn or job boards. <a href="https://app.1ststep.ai/funnel">Try the beta workflow</a>.
+  </div>
+
+  <div class="stp-mobile-sticky">
+    <a class="stp-btn stp-btn-primary" href="https://app.1ststep.ai">Start Free — 3 Resumes Included</a>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var root = document.getElementById("stp-cro");
+    if (!root) return;
+
+    var resumeInput = root.querySelector("#stp-resume-preview");
+    var jobInput = root.querySelector("#stp-job-preview");
+    var scoreEl = root.querySelector("#stp-live-score");
+    var labelEl = root.querySelector("#stp-score-label");
+    var matchesEl = root.querySelector("#stp-keyword-matches");
+    var bulletInput = root.querySelector("#stp-bullet-preview");
+    var roleInput = root.querySelector("#stp-role-preview");
+    var rewriteOutput = root.querySelector("#stp-rewrite-output");
+    if (!resumeInput || !jobInput || !scoreEl || !matchesEl) return;
+
+    var stopWords = {
+      the: true, and: true, for: true, with: true, are: true, you: true, your: true,
+      our: true, this: true, that: true, from: true, into: true, role: true, job: true,
+      looking: true, manager: true, experience: true, responsibilities: true, include: true
+    };
+
+    function words(value) {
+      var seen = {};
+      return String(value || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, " ")
+        .split(/\s+/)
+        .filter(function (word) {
+          if (!word || word.length < 4 || stopWords[word]) return false;
+          if (seen[word]) return false;
+          seen[word] = true;
+          return true;
+        });
+    }
+
+    function updateScore() {
+      var resumeWords = words(resumeInput.value);
+      var jobWords = words(jobInput.value);
+      var resumeSet = {};
+      resumeWords.forEach(function (word) { resumeSet[word] = true; });
+
+      var matches = jobWords.filter(function (word) { return resumeSet[word]; });
+      var base = jobWords.length ? Math.round((matches.length / jobWords.length) * 100) : 0;
+      var score = Math.max(12, Math.min(96, Math.round(base * 0.72 + 24)));
+
+      scoreEl.textContent = score + "%";
+      if (labelEl) {
+        labelEl.textContent = score >= 82
+          ? "Strong early match. Full tailoring can sharpen it."
+          : score >= 58
+            ? "Good start. Tailoring can close the keyword gaps."
+            : "Low match. The full tool can show what is missing.";
+      }
+
+      matchesEl.innerHTML = "";
+      var shown = matches.slice(0, 6);
+      if (!shown.length) shown = ["paste", "compare", "tailor"];
+      shown.forEach(function (word) {
+        var item = document.createElement("span");
+        item.textContent = word;
+        matchesEl.appendChild(item);
+      });
+    }
+
+    resumeInput.addEventListener("input", updateScore);
+    jobInput.addEventListener("input", updateScore);
+    updateScore();
+
+    function titleCase(value) {
+      return String(value || "").replace(/\w\S*/g, function (word) {
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      });
+    }
+
+    function updateRewrite() {
+      if (!bulletInput || !roleInput || !rewriteOutput) return;
+      var bullet = String(bulletInput.value || "").trim();
+      var role = String(roleInput.value || "").trim();
+      var roleWords = words(role);
+      var resumeWords = words(bullet);
+      var resumeSet = {};
+      resumeWords.forEach(function (word) { resumeSet[word] = true; });
+      var additions = roleWords.filter(function (word) { return !resumeSet[word]; }).slice(0, 4);
+      var focus = additions.length ? additions.map(titleCase).join(", ") : "Role-Specific Priorities";
+      var cleanedBullet = bullet
+        .replace(/\.$/, "")
+        .replace(/^responsible for\s+/i, "")
+        .replace(/^helped\s+/i, "Supported ");
+
+      if (!cleanedBullet) {
+        rewriteOutput.textContent = "Add a resume bullet to see a role-specific rewrite.";
+        return;
+      }
+
+      rewriteOutput.textContent =
+        cleanedBullet + ", aligning the work to " + focus + " for the target role.";
+    }
+
+    if (bulletInput && roleInput && rewriteOutput) {
+      bulletInput.addEventListener("input", updateRewrite);
+      roleInput.addEventListener("input", updateRewrite);
+      updateRewrite();
+    }
+  })();
+</script>
+<script>
+  (function () {
+    if (window.__firstStepLandingTrackingInstalled) return;
+    window.__firstStepLandingTrackingInstalled = true;
+
+    var GA_ID = window.FIRSTSTEP_GA_ID || "G-HPNKBGBCVR"; // GA4 Measurement ID for resume.1ststep.ai
+    var META_PIXEL_ID = window.FIRSTSTEP_META_PIXEL_ID || ""; // Optional Meta Pixel ID
+    var UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid", "fbclid"];
+    var SCROLL_DEPTHS = [25, 50, 75, 90];
+    var trackedScrollDepths = {};
+
+    function isConfiguredGaId(value) {
+      return /^G-[A-Z0-9]+$/i.test(String(value || "")) && String(value).indexOf("REPLACE") === -1;
+    }
+
+    function loadScript(src) {
+      var s = document.createElement("script");
+      s.async = true;
+      s.src = src;
+      document.head.appendChild(s);
+    }
+
+    if (isConfiguredGaId(GA_ID)) {
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+      window.gtag("js", new Date());
+      window.gtag("config", GA_ID, { send_page_view: true });
+      loadScript("https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(GA_ID));
+    }
+
+    if (META_PIXEL_ID && !window.fbq) {
+      window.fbq = function () {
+        window.fbq.callMethod ? window.fbq.callMethod.apply(window.fbq, arguments) : window.fbq.queue.push(arguments);
+      };
+      window.fbq.queue = [];
+      window.fbq.loaded = true;
+      window.fbq.version = "2.0";
+      loadScript("https://connect.facebook.net/en_US/fbevents.js");
+      window.fbq("init", META_PIXEL_ID);
+      window.fbq("track", "PageView");
+    }
+
+    function getVisitorId() {
+      try {
+        var key = "firststep_visitor_id";
+        var existing = localStorage.getItem(key);
+        if (existing) return existing;
+        var created = "fs_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10);
+        localStorage.setItem(key, created);
+        return created;
+      } catch {
+        return "fs_session";
+      }
+    }
+
+    function scrub(value, max) {
+      return String(value || "")
+        .replace(/[\r\n\t]+/g, " ")
+        .replace(/[^\w .:/?#=&%+-]/g, "")
+        .trim()
+        .slice(0, max || 120);
+    }
+
+    function getAttribution() {
+      var params = new URLSearchParams(window.location.search);
+      var stored = {};
+      try { stored = JSON.parse(localStorage.getItem("firststep_attribution") || "{}"); } catch {}
+      UTM_KEYS.forEach(function (key) {
+        if (params.has(key)) stored[key] = scrub(params.get(key), 160);
+      });
+      if (!stored.landing_page) stored.landing_page = scrub(window.location.pathname, 160);
+      if (!stored.referrer && document.referrer) {
+        try { stored.referrer = scrub(new URL(document.referrer).hostname, 120); } catch {}
+      }
+      try { localStorage.setItem("firststep_attribution", JSON.stringify(stored)); } catch {}
+      return stored;
+    }
+
+    function getSectionName(node) {
+      var section = node && node.closest ? node.closest("section") : null;
+      if (!section) return "page";
+      return scrub(section.id || section.className || "section", 80);
+    }
+
+    function track(event, props) {
+      var attribution = getAttribution();
+      var payload = Object.assign({
+        page_path: scrub(window.location.pathname, 160),
+        visitor_id: getVisitorId()
+      }, attribution, props || {});
+
+      try {
+        if (typeof window.gtag === "function") window.gtag("event", event, payload);
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push(Object.assign({ event: event }, payload));
+      } catch {}
+
+      try {
+        if (window.fbq) {
+          if (event === "CHECKOUT_STARTED") window.fbq("track", "InitiateCheckout");
+          else if (event === "START_FREE_CLICKED") window.fbq("trackCustom", "StartFreeClicked");
+          else window.fbq("trackCustom", event, payload);
+        }
+      } catch {}
+    }
+
+    window.firstStepTrack = track;
+
+    function appendAttributionToAppLinks() {
+      var attribution = getAttribution();
+      var visitorId = getVisitorId();
+      document.querySelectorAll('a[href*="app.1ststep.ai"]').forEach(function (link) {
+        try {
+          var url = new URL(link.href);
+          url.searchParams.set("fs_vid", visitorId);
+          UTM_KEYS.forEach(function (key) {
+            if (attribution[key]) url.searchParams.set(key, attribution[key]);
+          });
+          link.href = url.toString();
+        } catch {}
+      });
+    }
+
+    function classifyLink(link) {
+      var href = link.href || "";
+      var label = scrub(link.textContent || link.getAttribute("aria-label") || "", 80);
+      if (/buy\.stripe\.com/i.test(href)) return { event: "CHECKOUT_STARTED", destination: "stripe_checkout", label: label };
+      if (/app\.1ststep\.ai/i.test(href)) return { event: "START_FREE_CLICKED", destination: "app", label: label };
+      if (/mailto:/i.test(href)) return { event: "CONTACT_CLICKED", destination: "email", label: label };
+      if (/^https?:\/\//i.test(href) && href.indexOf(location.hostname) === -1) return { event: "OUTBOUND_CLICKED", destination: "external", label: label };
+      return { event: "LANDING_CTA_CLICKED", destination: "internal", label: label };
+    }
+
+    document.addEventListener("click", function (event) {
+      var link = event.target && event.target.closest ? event.target.closest("a,button") : null;
+      if (!link) return;
+      var meta = classifyLink(link);
+      track(meta.event, {
+        label: meta.label,
+        destination: meta.destination,
+        section: getSectionName(link)
+      });
+    }, true);
+
+    if ("IntersectionObserver" in window) {
+      var pricing = document.getElementById("stp-pricing");
+      if (pricing) {
+        var observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              track("PRICING_VIEWED", { section: "pricing" });
+              observer.disconnect();
+            }
+          });
+        }, { threshold: 0.35 });
+        observer.observe(pricing);
+      }
+    }
+
+    window.addEventListener("scroll", function () {
+      var doc = document.documentElement;
+      var height = Math.max(1, doc.scrollHeight - window.innerHeight);
+      var depth = Math.round((window.scrollY / height) * 100);
+      SCROLL_DEPTHS.forEach(function (target) {
+        if (depth >= target && !trackedScrollDepths[target]) {
+          trackedScrollDepths[target] = true;
+          track("SCROLL_DEPTH_REACHED", { depth: target });
+        }
+      });
+    }, { passive: true });
+
+    appendAttributionToAppLinks();
+    track("LANDING_PAGE_VIEW", { page_title: scrub(document.title, 120) });
+  })();
+</script>

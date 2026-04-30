@@ -6,7 +6,7 @@
  *   betaMode — true while the invite-only beta is active, false when the app is public
  *
  * To switch from beta to live:
- *   1. Set BETA_MODE=false in Vercel Environment Variables
+ *   1. Set BETA_MODE=true in Vercel Environment Variables only for invite-only beta builds
  *   2. Redeploy (or let the next deploy pick it up)
  *
  * Response is cached for 5 minutes (CDN + browser) to avoid hammering this
@@ -41,8 +41,19 @@ export default function handler(req, res) {
   // Cache for 5 minutes — fast propagation after an env var change + redeploy
   res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300');
 
-  // BETA_MODE defaults to true if the env var is not set (safe default)
-  const betaMode = process.env.BETA_MODE !== 'false';
+  // Live launch default is public. Set BETA_MODE=true only for invite-only beta builds.
+  const betaMode = process.env.BETA_MODE === 'true';
+  const analyticsUrl = (process.env.AGENT_ANALYTICS_URL || '').trim().replace(/\/+$/, '');
+  const analyticsProject = (process.env.AGENT_ANALYTICS_PROJECT || '').trim();
+  const analyticsToken = (process.env.AGENT_ANALYTICS_TOKEN || '').trim();
+  const analytics = analyticsUrl && analyticsProject && analyticsToken
+    ? {
+        enabled: true,
+        url: analyticsUrl,
+        project: analyticsProject,
+        token: analyticsToken,
+      }
+    : { enabled: false };
 
-  return res.status(200).json({ betaMode });
+  return res.status(200).json({ betaMode, analytics });
 }
