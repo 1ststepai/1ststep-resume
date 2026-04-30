@@ -436,6 +436,23 @@ if (html) {
   if (!/font-size:48px;margin-bottom:16px">\s*a\s*</i.test(html)) pass('Resume placeholder uses a real SVG icon');
   else fail('Resume placeholder still renders a stray letter instead of an icon');
 
+  if (!/jobRefreshBtn[^>]*>\s*ao\s+Refresh/i.test(html)) pass('Job refresh button has no corrupt prefix');
+  else fail('Job refresh button contains corrupt prefix text');
+
+  const corruptVisibleTokens = [
+    />\s*a Edit\s*</i,
+    />\s*A\s*</,
+    />\s*\*\s+Tailor my first resume\s*</i,
+    />\s*View open\s*</i,
+    />\s*View job open\s*</i,
+    />\s*Indeed open\s*</i,
+    />\s*Search Indeed open\s*</i,
+    /btn-tailor-delete[^>]*>\s*x\s*</i,
+  ];
+  const hasCorruptGeneratedCopy = corruptVisibleTokens.some(pattern => pattern.test(js));
+  if (!hasCorruptGeneratedCopy) pass('Generated action labels have no stray icon/text prefixes');
+  else fail('Generated action labels still contain stray icon/text prefixes');
+
   if (/generateResumeReason[\s\S]{0,220}analyzeReason[\s\S]{0,160}analyzeReason\.reason\s*=\s*''/.test(js)) {
     pass('Duplicate visible disabled reasons are suppressed for resume/positioning prerequisites');
   } else {

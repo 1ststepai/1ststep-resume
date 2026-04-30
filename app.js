@@ -5279,8 +5279,8 @@ ${jobList}`,
     <div class="job-card-footer">
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn-applied-check ${isApplied(job.id) ? 'is-applied' : ''}" id="applied-btn-${jobId}" onclick="event.stopPropagation(); ${isApplied(job.id) ? `openApplyModal('${jobId}')` : `quickLogApplied('${jobId}')`}">${isApplied(job.id) ? 'Applied' : 'Applied?'}</button>
-        ${jobUrl !== '#' ? `<a class="btn-view-job" href="${escHtml(jobUrl)}" target="_blank" onclick="event.stopPropagation()">View open</a>` : ''}
-        ${job.indeed_url ? `<a class="btn-indeed ${job.indeed_easy_apply ? 'easy' : ''}" href="${escHtml(job.indeed_url)}" target="_blank" onclick="event.stopPropagation()" title="${job.indeed_easy_apply ? 'Indeed Easy Apply - apply without leaving Indeed' : 'Apply on Indeed'}">Indeed ${job.indeed_easy_apply ? ' Easy Apply' : 'open'}</a>` : ''}
+        ${jobUrl !== '#' ? `<a class="btn-view-job" href="${escHtml(jobUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">View job</a>` : ''}
+        ${job.indeed_url ? `<a class="btn-indeed ${job.indeed_easy_apply ? 'easy' : ''}" href="${escHtml(job.indeed_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="${job.indeed_easy_apply ? 'Indeed Easy Apply - apply without leaving Indeed' : 'Apply on Indeed'}">Indeed${job.indeed_easy_apply ? ' Easy Apply' : ''}</a>` : ''}
         <button class="btn-tailor-job" onclick="event.stopPropagation(); tailorForJob('${jobId}')">Tailor Resume</button>
       </div>
     </div>
@@ -5667,9 +5667,9 @@ ${desc}`;
         </select>
         <span class="${followUpCls}">${followUpLabel}</span>
         <div style="display:flex;gap:4px;margin-top:2px">
-          ${app.jobUrl ? `<a class="btn-view-job" href="${escHtml(app.jobUrl)}" target="_blank" style="font-size:11px;padding:3px 8px">View open</a>` : ''}
-          <button onclick="editApplication('${app.id}')" class="btn-view-job" style="font-size:11px;padding:3px 8px">a Edit</button>
-          <button onclick="removeApplication('${app.id}')" class="btn-view-job" style="font-size:11px;padding:3px 8px;color:#FCA5A5">x</button>
+          ${app.jobUrl ? `<a class="btn-view-job" href="${escHtml(app.jobUrl)}" target="_blank" rel="noopener" style="font-size:11px;padding:3px 8px">View job</a>` : ''}
+          <button onclick="editApplication('${app.id}')" class="btn-view-job" style="font-size:11px;padding:3px 8px">Edit</button>
+          <button onclick="removeApplication('${app.id}')" class="btn-view-job" style="font-size:11px;padding:3px 8px;color:#FCA5A5" aria-label="Remove application">Remove</button>
         </div>
       </div>
     </div>`;
@@ -5946,7 +5946,7 @@ ${desc}`;
           <div class="empty-icon"></div>
           <h2 style="margin:8px 0 6px;font-size:16px;font-weight:700;color:var(--text)">Your Job Tracker is empty</h2>
           <p>Every resume you tailor is saved here - track your applications from tailored to offer.</p>
-          <button id="vaultEmptyCtaBtn" style="margin-top:14px;padding:10px 24px;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.15s" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">* Tailor my first resume</button>
+          <button id="vaultEmptyCtaBtn" style="margin-top:14px;padding:10px 24px;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.15s" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Tailor my first resume</button>
         </div>`;
         document.getElementById('vaultEmptyCtaBtn')?.addEventListener('click', _emptyVaultCta);
         return;
@@ -6023,7 +6023,7 @@ ${desc}`;
             </div>
             <div class="tailor-card-meta">
               ${date}${entry.location ? ` - ${escHtml(entry.location)}` : ''}
-              ${entry.jobUrl ? ` &nbsp;<a href="${escHtml(entry.jobUrl)}" target="_blank" style="color:var(--blue);font-size:11px;text-decoration:none">View job open</a>` : ''}
+              ${entry.jobUrl ? ` &nbsp;<a href="${escHtml(entry.jobUrl)}" target="_blank" rel="noopener" style="color:var(--blue);font-size:11px;text-decoration:none">View job</a>` : ''}
               ${followupBadge}
             </div>
             ${nextHint}
@@ -6039,7 +6039,7 @@ ${desc}`;
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
             <div class="tailor-card-date">${date}</div>
-            <button class="btn-tailor-delete" onclick="deleteTailorEntry('${entry.id}')" title="Remove">x</button>
+            <button class="btn-tailor-delete" onclick="deleteTailorEntry('${entry.id}')" title="Remove" aria-label="Remove saved resume">Remove</button>
           </div>
         </div>`;
       }
@@ -6878,7 +6878,7 @@ Rules:
       wrapper.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <span style="font-size:11px;font-weight:700;color:var(--muted)">JOB ${container.children.length + 1}</span>
-      <button onclick="removeBulkJob(${idx})" style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;line-height:1;padding:0" title="Remove">A</button>
+      <button onclick="removeBulkJob(${idx})" style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;line-height:1;padding:0" title="Remove" aria-label="Remove job">Remove</button>
     </div>
     <input type="text" id="bulkTitle_${idx}" placeholder="Job title (optional - for labeling)" style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--border);padding:4px 0 8px;font-size:12px;color:var(--fg);margin-bottom:8px;box-sizing:border-box;outline:none">
     <textarea id="bulkJD_${idx}" placeholder="Paste job description here..." style="width:100%;height:120px;background:transparent;border:none;font-size:12px;color:var(--fg);resize:vertical;font-family:'Inter',sans-serif;box-sizing:border-box;outline:none"></textarea>
@@ -8021,7 +8021,7 @@ Output plain text only - no markdown, no asterisks, no hashtags.`,
         </div>`;
           } else if (l.type === 'remove') {
             html += `<div style="display:flex;gap:0;margin:1px 0">
-          <div style="width:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#b91c1c;background:#fee2e2;border-radius:4px 0 0 4px;border:1px solid #fecaca;border-right:none">a</div>
+          <div style="width:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#b91c1c;background:#fee2e2;border-radius:4px 0 0 4px;border:1px solid #fecaca;border-right:none">-</div>
           <div style="flex:1;background:#fee2e2;padding:4px 10px;font-size:12.5px;line-height:1.55;border-radius:0 4px 4px 0;border:1px solid #fecaca;color:#7f1d1d;text-decoration:line-through;opacity:0.8;word-break:break-word">${_e(l.text)}</div>
         </div>`;
           }
@@ -8038,7 +8038,7 @@ Output plain text only - no markdown, no asterisks, no hashtags.`,
         </div>`;
           } else if (l.type === 'remove') {
             html += `<div style="display:flex;gap:0;margin:1px 0">
-          <div style="width:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#b91c1c;background:#fee2e2;border-radius:4px 0 0 4px;border:1px solid #fecaca;border-right:none">a</div>
+          <div style="width:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#b91c1c;background:#fee2e2;border-radius:4px 0 0 4px;border:1px solid #fecaca;border-right:none">-</div>
           <div style="flex:1;background:#fee2e2;padding:4px 10px;font-size:12.5px;line-height:1.55;border-radius:0 4px 4px 0;border:1px solid #fecaca;color:#7f1d1d;text-decoration:line-through;opacity:0.8;word-break:break-word">${_e(l.text)}</div>
         </div>`;
           } else {
