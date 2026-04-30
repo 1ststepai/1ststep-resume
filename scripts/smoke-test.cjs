@@ -331,6 +331,9 @@ if (css) {
 
   if (/env\(safe-area-inset-bottom/.test(css) && /--fixed-bottom-safe-space/.test(css)) pass('Fixed bottom safe spacing is present');
   else fail('Fixed bottom safe spacing is missing');
+
+  if (/\.main[\s\S]*scroll-padding-top:\s*96px/.test(css) && /#jobText[\s\S]*scroll-margin-top:\s*96px/.test(css)) pass('Workflow fields reserve sticky-header scroll space');
+  else fail('Workflow field scroll safe spacing is missing');
 }
 
 section('Free-to-Pro conversion smoke');
@@ -369,6 +372,9 @@ if (js) {
 
   if (/legacy private-access user -> free tier/.test(js) && !/BETA_GRACE_PERIOD && beta && beta\.grantedAt[\s\S]{0,240}currentTier = 'complete'/.test(js)) pass('Legacy beta signups are forced to free in the client');
   else fail('Legacy beta signups can still become paid in the client');
+
+  if (/await res\.json\(\)\),\s*betaMode:\s*false/.test(js)) pass('Public launch app config cannot force the private access gate');
+  else fail('Private access gate may still block public/free users');
 }
 
 if (apiSubscription) {
@@ -503,6 +509,10 @@ const REQUIRED_FUNCTIONS = [
   'updateApplicationChecklist',
   'getCurrentObjective',
   'updateCurrentObjectiveBar',
+  'scrollWorkflowTargetIntoView',
+  'revealResumeUploadArea',
+  'revealJobDescriptionField',
+  'scheduleResumeModeAutoReveal',
   'renderEmptyState',
   'handleEmptyStateAction',
   'updateEmptyStates',

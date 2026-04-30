@@ -4350,6 +4350,11 @@
       font-weight: 900;
     }
 
+    .application-checklist-check {
+      width: 12px;
+      height: 12px;
+    }
+
     .application-checklist-item.is-complete {
       color: var(--text);
     }
@@ -5710,7 +5715,16 @@
       flex-direction: column !important;
       align-items: center !important;
       padding-bottom: calc(64px + var(--fixed-bottom-safe-space) + env(safe-area-inset-bottom, 0px)) !important;
+      scroll-padding-top: 96px;
       scroll-padding-bottom: calc(var(--fixed-bottom-safe-space) + env(safe-area-inset-bottom, 0px));
+    }
+
+    #fileDrop,
+    #fileLoaded,
+    #jobText,
+    #runBtn,
+    #resumeChoiceCard {
+      scroll-margin-top: 96px;
     }
 
     #resumeGrid {

@@ -271,28 +271,16 @@
     // -- Empty-state CTAs ------------------------------------------------------
     function _emptyTrackerCta() {
       _pingTracker('empty_tracker_cta_click');
-      switchMode('resume');
       const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
-      setTimeout(() => {
-        if (hasResume) {
-          document.getElementById('jobText')?.focus();
-        } else {
-          document.getElementById('fileDrop')?.click();
-        }
-      }, 150);
+      if (hasResume) revealJobDescriptionField();
+      else revealResumeUploadArea({ openPicker: true });
     }
 
     function _emptyVaultCta() {
       _pingTracker('empty_vault_cta_click');
-      switchMode('resume');
       const hasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
-      setTimeout(() => {
-        if (hasResume) {
-          document.getElementById('jobText')?.focus();
-        } else {
-          document.getElementById('fileDrop')?.click();
-        }
-      }, 150);
+      if (hasResume) revealJobDescriptionField();
+      else revealResumeUploadArea({ openPicker: true });
     }
 
     function renderEmptyState({
@@ -352,24 +340,32 @@
       });
       switch (action) {
         case 'uploadResume':
-          switchMode('resume');
-          setTimeout(() => (document.getElementById('fileInput') || document.getElementById('fileDrop'))?.click(), 120);
+          revealResumeUploadArea({ openPicker: true });
           break;
         case 'focusJobDescription':
         case 'startWithJobDescription':
-          switchMode('resume');
-          setTimeout(() => focusJobDescriptionField(), 120);
+          revealJobDescriptionField();
           break;
         case 'generateResume':
           switchMode('resume');
           if (getApplicationWorkflowState().hasResume && getApplicationWorkflowState().hasJobDescription) runTailoring();
-          else updateRunButton();
+          else {
+            const state = getApplicationWorkflowState();
+            if (!state.hasResume) revealResumeUploadArea();
+            else revealJobDescriptionField();
+            updateRunButton();
+          }
           break;
         case 'generateCoverLetter':
           switchMode('resume');
           setTier('complete');
           if (getApplicationWorkflowState().hasResume && getApplicationWorkflowState().hasJobDescription) runTailoring();
-          else updateRunButton();
+          else {
+            const state = getApplicationWorkflowState();
+            if (!state.hasResume) revealResumeUploadArea();
+            else revealJobDescriptionField();
+            updateRunButton();
+          }
           break;
         case 'switchToTracker':
           switchMode('tracker');
@@ -1097,8 +1093,7 @@
       document.getElementById('bulkAddBtn')?.addEventListener('click', addBulkJob);
       document.getElementById('bulkRunBtn')?.addEventListener('click', runBulkApply);
       document.getElementById('bulkUploadResumeBtn')?.addEventListener('click', () => {
-        switchMode('resume');
-        setTimeout(() => document.getElementById('fileInput')?.click(), 200);
+        revealResumeUploadArea({ openPicker: true });
       });
       document.getElementById('bulkUseExistingBtn')?.addEventListener('click', () => {
         const has = !!(fileContent || document.getElementById('resumeText')?.value.trim());
@@ -1120,8 +1115,7 @@
             updateRunButton();
             showToast('Resume loaded -');
           } else {
-            switchMode('resume');
-            setTimeout(() => document.getElementById('fileInput')?.click(), 200);
+            revealResumeUploadArea({ openPicker: true });
           }
         }
       });
@@ -1134,8 +1128,7 @@
       document.getElementById('trackerEmptyTailorBtn')?.addEventListener('click', _emptyTrackerCta);
       document.getElementById('trackerEmptyJdBtn')?.addEventListener('click', () => {
         _pingTracker('empty_tracker_cta_click');
-        switchMode('resume');
-        setTimeout(() => document.getElementById('jobText')?.focus(), 150);
+        revealJobDescriptionField();
       });
 
       // Resume builder - openResumeBuilder() is defined in resume-builder.js
@@ -1526,7 +1519,7 @@ ${resume.slice(0, 3000)}
           showToast('Resume uploaded. Click Tailor My Resume to generate your tailored version.', 'success');
           const runBtn = document.getElementById('runBtn');
           if (runBtn) {
-            runBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            scrollWorkflowTargetIntoView(runBtn);
             runBtn.classList.add('pulse-cta');
             setTimeout(() => runBtn.classList.remove('pulse-cta'), 3000);
           }
@@ -1826,7 +1819,7 @@ ${resume.slice(0, 3000)}
           item.key === firstIncompleteKey ? 'is-current' : '',
           item.optional ? 'is-optional' : '',
         ].filter(Boolean).join(' ');
-        const icon = item.complete ? '-' : (item.key === firstIncompleteKey ? 'a' : '');
+        const icon = item.complete ? inlineSvgIcon('check', 'ui-icon application-checklist-check') : '';
         return `<div class="${classes}">
           <span class="application-checklist-icon">${icon}</span>
           <span><span class="application-checklist-label">${escHtml(item.label)}${item.optional ? ' <em>Optional</em>' : ''}</span><span class="application-checklist-hint">${escHtml(item.hint)}</span></span>
@@ -1948,7 +1941,7 @@ ${resume.slice(0, 3000)}
       });
       const generateResumeReason = visibleReasons.find(item => item.reasonId === 'smartActionReason')?.reason || '';
       const analyzeReason = visibleReasons.find(item => item.reasonId === 'analyzePositioningReason');
-      if (generateResumeReason && analyzeReason?.reason === generateResumeReason) {
+      if (generateResumeReason && analyzeReason?.reason && (analyzeReason.reason === generateResumeReason || !workflowState.hasJobDescription)) {
         analyzeReason.reason = '';
       }
       const renderKey = JSON.stringify(visibleReasons.map(item => [item.reasonId, item.reason]));
@@ -2055,14 +2048,95 @@ ${resume.slice(0, 3000)}
       updateWorkflowGuidanceUI();
     }
 
+    function getWorkflowScrollContainer() {
+      const main = document.querySelector('.main');
+      if (main && getComputedStyle(main).overflowY !== 'visible') return main;
+      return document.scrollingElement || document.documentElement;
+    }
+
+    function scrollWorkflowTargetIntoView(target, options = {}) {
+      if (!target) return;
+      const container = getWorkflowScrollContainer();
+      const topOffset = Number.isFinite(options.topOffset) ? options.topOffset : 92;
+      const behavior = options.behavior || 'smooth';
+      if (container && container !== document.documentElement && container !== document.body) {
+        const containerRect = container.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+        const nextTop = container.scrollTop + (targetRect.top - containerRect.top) - topOffset;
+        container.scrollTo({ top: Math.max(0, nextTop), behavior });
+      } else {
+        const nextTop = window.scrollY + target.getBoundingClientRect().top - topOffset;
+        window.scrollTo({ top: Math.max(0, nextTop), behavior });
+      }
+    }
+
+    function pulseWorkflowTarget(target, duration = 1800) {
+      if (!target) return;
+      target.classList.add('pulse-cta');
+      setTimeout(() => target.classList.remove('pulse-cta'), duration);
+    }
+
+    function highlightWorkflowField(field, duration = 1600) {
+      if (!field) return;
+      field.style.transition = 'box-shadow 0.2s';
+      field.style.boxShadow = '0 0 0 2px rgba(99,102,241,0.45)';
+      setTimeout(() => { field.style.boxShadow = ''; }, duration);
+    }
+
+    function revealResumeUploadArea(options = {}) {
+      suppressNextResumeAutoReveal = true;
+      switchMode('resume');
+      const openPicker = !!options.openPicker;
+      setTimeout(() => {
+        const fileDrop = document.getElementById('fileDrop');
+        const fileLoaded = document.getElementById('fileLoaded');
+        const target = (fileLoaded && fileLoaded.style.display !== 'none' ? fileLoaded : null)
+          || (fileDrop && fileDrop.style.display !== 'none' ? fileDrop : null)
+          || fileDrop
+          || fileLoaded
+          || document.getElementById('resumeText');
+        scrollWorkflowTargetIntoView(target);
+        pulseWorkflowTarget(target);
+        if (openPicker) setTimeout(() => document.getElementById('fileInput')?.click(), 220);
+      }, 140);
+    }
+
+    function revealJobDescriptionField(options = {}) {
+      suppressNextResumeAutoReveal = true;
+      switchMode('resume');
+      const shouldFocus = options.focus !== false;
+      setTimeout(() => {
+        const jobText = document.getElementById('jobText');
+        if (!jobText) return;
+        scrollWorkflowTargetIntoView(jobText);
+        if (shouldFocus) jobText.focus({ preventScroll: true });
+        highlightWorkflowField(jobText);
+      }, 140);
+    }
+
     function focusJobDescriptionField() {
-      const jobText = document.getElementById('jobText');
-      if (!jobText) return;
-      jobText.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      jobText.focus();
-      jobText.style.transition = 'box-shadow 0.2s';
-      jobText.style.boxShadow = '0 0 0 2px rgba(99,102,241,0.45)';
-      setTimeout(() => { jobText.style.boxShadow = ''; }, 1600);
+      revealJobDescriptionField();
+    }
+
+    function scheduleResumeModeAutoReveal() {
+      if (suppressNextResumeAutoReveal) {
+        suppressNextResumeAutoReveal = false;
+        return;
+      }
+      setTimeout(() => {
+        if (currentMode !== 'resume') return;
+        const state = getApplicationWorkflowState();
+        if (!state.hasResume) {
+          const fileDrop = document.getElementById('fileDrop');
+          const fileLoaded = document.getElementById('fileLoaded');
+          const target = (fileDrop && fileDrop.style.display !== 'none' ? fileDrop : null) || fileLoaded || fileDrop;
+          scrollWorkflowTargetIntoView(target);
+        } else if (!state.hasJobDescription) {
+          scrollWorkflowTargetIntoView(document.getElementById('jobText'));
+        } else {
+          scrollWorkflowTargetIntoView(document.getElementById('runBtn'));
+        }
+      }, 120);
     }
 
     function findLatestMutableTrackedItem() {
@@ -2100,17 +2174,11 @@ ${resume.slice(0, 3000)}
     function runWhatsNextAction(action) {
       switch (action) {
         case 'uploadResume': {
-          const drop = document.getElementById('fileDrop');
-          if (drop) {
-            drop.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            drop.classList.add('pulse-cta');
-            setTimeout(() => drop.classList.remove('pulse-cta'), 1800);
-          }
-          setTimeout(() => document.getElementById('fileInput')?.click(), 250);
+          revealResumeUploadArea({ openPicker: true });
           break;
         }
         case 'pasteJob':
-          focusJobDescriptionField();
+          revealJobDescriptionField();
           break;
         case 'analyzePositioning':
           generatePositioningBrief();
@@ -2133,8 +2201,7 @@ ${resume.slice(0, 3000)}
           showToast('Saved versions and tracker details are in Job Tracker.', 'info');
           break;
         case 'startAnother':
-          switchMode('resume');
-          focusJobDescriptionField();
+          revealJobDescriptionField();
           break;
         case 'markApplied':
           markLatestTrackedApplicationApplied();
@@ -2194,63 +2261,42 @@ ${resume.slice(0, 3000)}
         btn.style.opacity = '0.7';
         btn.style.cursor = 'pointer';
         btn.classList.remove('pulse-cta');
-        lbl.textContent = '^ Upload Your Resume to Start';
+        lbl.textContent = 'Upload Your Resume to Start';
         btn.setAttribute('aria-label', 'Upload your resume to start tailoring');
         if (jdSec) jdSec.style.opacity = '0.45';
         if (helpTxt) helpTxt.style.display = 'none';
         btn.onclick = () => {
-          const drop = document.getElementById('fileDrop');
-          const inp  = document.getElementById('fileInput');
-          if (drop) {
-            drop.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            drop.classList.add('pulse-cta');
-            setTimeout(() => drop.classList.remove('pulse-cta'), 2000);
-          }
-          setTimeout(() => inp?.click(), 300);
+          revealResumeUploadArea({ openPicker: true });
         };
       } else if (hasJob && !hasResume) {
         // State C: job but no resume - prompt upload
         btn.style.opacity = '0.7';
         btn.style.cursor = 'pointer';
         btn.classList.remove('pulse-cta');
-        lbl.textContent = '^ Upload Your Resume to Tailor This Job';
+        lbl.textContent = 'Upload Your Resume to Tailor This Job';
         btn.setAttribute('aria-label', 'Upload your resume to tailor this job');
         if (jdSec) jdSec.style.opacity = '';
         if (helpTxt) helpTxt.style.display = 'none';
         btn.onclick = () => {
-          const drop = document.getElementById('fileDrop');
-          const inp  = document.getElementById('fileInput');
-          if (drop) {
-            drop.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            drop.classList.add('pulse-cta');
-            setTimeout(() => drop.classList.remove('pulse-cta'), 2000);
-          }
-          setTimeout(() => inp?.click(), 300);
+          revealResumeUploadArea({ openPicker: true });
         };
       } else if (!hasJob && hasResume) {
         // State B: resume but no job - point to job textarea
         btn.style.opacity = '0.7';
         btn.style.cursor = 'pointer';
         btn.classList.remove('pulse-cta');
-        lbl.textContent = 'Paste a Job Description Below a';
+        lbl.textContent = 'Paste a Job Description Below';
         btn.setAttribute('aria-label', 'Paste a job description before generating a tailored resume');
         if (jdSec) jdSec.style.opacity = '';
         if (helpTxt) helpTxt.style.display = 'block';
         btn.onclick = () => {
-          const jt = document.getElementById('jobText');
-          if (jt) {
-            jt.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            jt.focus();
-            jt.style.transition = 'box-shadow 0.2s';
-            jt.style.boxShadow = '0 0 0 2px rgba(99,102,241,0.6)';
-            setTimeout(() => { jt.style.boxShadow = ''; }, 1800);
-          }
+          revealJobDescriptionField();
         };
       } else {
         // State D: both present - ready to tailor
         btn.style.opacity = '';
         btn.style.cursor = '';
-        lbl.textContent = '* Tailor My Resume';
+        lbl.textContent = 'Tailor My Resume';
         btn.setAttribute('aria-label', outputMode === 'complete' ? 'Tailor my resume and generate a cover letter' : 'Tailor my resume');
         if (jdSec) jdSec.style.opacity = '';
         if (helpTxt) helpTxt.style.display = 'none';
@@ -2342,7 +2388,7 @@ ${resume.slice(0, 3000)}
       if (hasResume && hasJobDesc) {
         const roleLabel = [jobData.jobTitle, jobData.company].filter(Boolean).join(' at ');
         showToast(roleLabel ? `Tailoring your resume for ${roleLabel}...` : 'Tailoring your resume...', 'success');
-        document.getElementById('runBtn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        scrollWorkflowTargetIntoView(document.getElementById('runBtn'));
         // Re-inject jobDescription into #jobText immediately before firing (race-condition guard)
         const jt = document.getElementById('jobText');
         if (jt && !jt.value.trim()) {
@@ -2532,6 +2578,7 @@ ${resume.slice(0, 3000)}
       } else {
         // No resume - show the capture confirm so they can upload
         showJobCaptureConfirm(jobData);
+        revealResumeUploadArea();
         showToast('Job captured. Upload your resume and we\'ll tailor it instantly.', 'info');
       }
       updateWhatsNextGuide();
@@ -4297,6 +4344,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
     let activeJobTypes = new Set(['full_time', 'part_time', 'contract', 'remote']);
     let userCoords = null; // { lat, lon, displayName }
     let currentMode = 'resume';
+    let suppressNextResumeAutoReveal = false;
 
     // -- Mode Switching --------------------------------------------------------
     function switchMode(mode) {
@@ -4381,6 +4429,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
         renderTracker();
         _pingTracker('tracker_viewed', { applicationCount: applications.length });
       }
+      if (mode === 'resume') scheduleResumeModeAutoReveal();
       updateWhatsNextGuide();
     }
 
@@ -5328,7 +5377,7 @@ ${desc}`;
         showToast('- Job loaded - tailoring now...');
         setTimeout(() => runTailoring(), 350);
       } else {
-        document.getElementById('jobText').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        revealResumeUploadArea();
         showToast('- Job loaded - add your resume above and click Tailor');
       }
     }
@@ -5868,7 +5917,7 @@ ${desc}`;
               window._capturedJob = { title: entry.jobTitle, company: entry.company, url: entry.jobUrl };
               if (entry.jobTitle) showJobContext(entry.jobTitle, entry.company || '');
               dropdown.style.display = 'none';
-              jt?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              revealJobDescriptionField();
             });
           });
         }
@@ -7121,8 +7170,9 @@ ${job.jd.slice(0, 1000)}
       localStorage.removeItem('1ststep_tier');
       currentTier = 'free';
       document.getElementById('betaExpired').style.display = 'none';
-      document.getElementById('betaGate').style.display = 'flex';
-      document.getElementById('betaEmail').focus();
+      document.getElementById('betaGate').style.display = 'none';
+      renderPricingCard?.();
+      updateWorkflowGuidanceUI?.();
     }
 
     let _betaTickerInterval = null;
@@ -7177,7 +7227,7 @@ ${job.jd.slice(0, 1000)}
       if (_appConfig !== null) return _appConfig;
       try {
         const res = await fetch('/api/app-config');
-        if (res.ok) _appConfig = await res.json();
+        if (res.ok) _appConfig = { ...(await res.json()), betaMode: false };
         else _appConfig = { betaMode: false };
       } catch {
         _appConfig = { betaMode: false };
