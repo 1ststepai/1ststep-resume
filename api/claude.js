@@ -32,11 +32,6 @@ const subCache = new Map(); // email → { tier, ts }
 const SUB_CACHE_TTL_MS = 10 * 60 * 1000;
 
 async function getVerifiedTier(email, tierToken) {
-  // ── Beta bypass: evan@1ststep.ai gets Complete tier for testing ──
-  if (email && email.toLowerCase() === 'evan@1ststep.ai') {
-    return 'complete';
-  }
-
   // ── Fast path: verify HMAC tier token (no Stripe call needed) ────────────
   // The token was signed by api/subscription.js using TIER_SECRET and is valid for 20 min.
   // This closes the email impersonation gap — the token is bound to the verified email.

@@ -4120,7 +4120,8 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       window.location.hostname === 'localhost' ||
       window.location.hostname === '127.0.0.1';
 
-    // Developer bypass - this email always gets Pro access, skips all gates
+    // Local developer fixture only. Production owner access is verified server-side
+    // by /api/subscription using a private restore code; email alone never unlocks paid access.
     const DEV_EMAIL = 'evan@1ststep.ai';
 
     // -- Dev-only DOM integrity check ------------------------------------------
@@ -6587,29 +6588,33 @@ ${desc}`;
       } catch { return false; }
     }
 
-    async function verifySubscription(email) {
+    async function verifySubscription(email, options = {}) {
       if (!email || IS_LOCAL_DEV) return; // skip in local dev
-      if (email === DEV_EMAIL) return; // dev bypass - tier already set in checkBetaAccess
 
       try {
         // Check cache first to avoid hammering the API
+        const ownerRestoreCode = String(options.ownerRestoreCode || '').trim();
+        const shouldBypassCache = !!ownerRestoreCode;
         const cached = JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || 'null');
         if (cached?.status === 'beta') {
           localStorage.removeItem(SUB_CACHE_KEY);
           localStorage.removeItem('1ststep_tier');
           currentTier = 'free';
         } else
-        if (cached && cached.email === email && Date.now() - cached.ts < SUB_CACHE_TTL) {
+        if (!shouldBypassCache && cached && cached.email === email && Date.now() - cached.ts < SUB_CACHE_TTL) {
           _applySubscriptionTier(cached.tier, false);
           renderPricingCard();
           return;
         }
-        const resp = await fetch(`/api/subscription?email=${encodeURIComponent(email)}`);
+        const fetchOptions = ownerRestoreCode
+          ? { headers: { 'X-Owner-Access-Secret': ownerRestoreCode } }
+          : undefined;
+        const resp = await fetch(`/api/subscription?email=${encodeURIComponent(email)}`, fetchOptions);
         if (!resp.ok) return;
         const data = await resp.json();
         const tier = data.tier || 'free';
         // Cache the result
-        localStorage.setItem(SUB_CACHE_KEY, JSON.stringify({ email, tier, ts: Date.now(), tierToken: data.tierToken || '', expiresInDays: data.expiresInDays - null, status: data.status || '' }));
+        localStorage.setItem(SUB_CACHE_KEY, JSON.stringify({ email, tier, ts: Date.now(), tierToken: data.tierToken || '', expiresInDays: data.expiresInDays ?? null, status: data.status || '' }));
         _applySubscriptionTier(tier, true);
       } catch (err) {
         console.warn('Subscription check failed:', err.message);
@@ -7331,9 +7336,9 @@ ${job.jd.slice(0, 1000)}
       // Dev-only logger - silent in production
       const _log = IS_LOCAL_DEV ? (rule) => console.log('[1ststep access]', rule) : () => {};
 
-      // -- Rule 1: Owner/admin -> always Pro ---------------------------------
-      if (loadProfile()?.email === DEV_EMAIL) {
-        _log('owner bypass -> complete');
+      // -- Rule 1: Local developer fixture only -------------------------------
+      if (IS_LOCAL_DEV && loadProfile()?.email === DEV_EMAIL) {
+        _log('local dev fixture -> complete');
         currentTier = 'complete';
         localStorage.setItem('1ststep_tier', 'complete');
         updateTailorUsageMeter?.();
@@ -7418,17 +7423,21 @@ ${job.jd.slice(0, 1000)}
       const panel = document.getElementById('paywallVerify');
       const errorEl = document.getElementById('paywallError');
       const emailEl = document.getElementById('paywallEmail');
+      const ownerCodeEl = document.getElementById('paywallOwnerCode');
       if (panel) panel.style.display = 'none';
       if (errorEl) errorEl.style.display = 'none';
       if (emailEl) emailEl.value = '';
+      if (ownerCodeEl) ownerCodeEl.value = '';
     }
 
     async function submitPaywallVerify() {
       const emailEl = document.getElementById('paywallEmail');
+      const ownerCodeEl = document.getElementById('paywallOwnerCode');
       const errorEl = document.getElementById('paywallError');
       const btn = document.getElementById('paywallVerifyBtn');
       if (!emailEl || !errorEl || !btn) return;
       const email = emailEl.value.trim().toLowerCase();
+      const ownerRestoreCode = ownerCodeEl?.value?.trim() || '';
 
       errorEl.style.display = 'none';
       if (!email || !email.includes('@')) {
@@ -7443,7 +7452,7 @@ ${job.jd.slice(0, 1000)}
       try {
         // Clear cache so verifySubscription does a fresh check
         localStorage.removeItem(SUB_CACHE_KEY);
-        await verifySubscription(email);
+        await verifySubscription(email, { ownerRestoreCode });
 
         const tier = localStorage.getItem('1ststep_tier') || 'free';
         if (tier !== 'free') {
@@ -7460,6 +7469,7 @@ ${job.jd.slice(0, 1000)}
           renderPricingCard?.();
           updateWorkflowGuidanceUI?.();
           showTierBadge(tier);
+          if (ownerCodeEl) ownerCodeEl.value = '';
           showToast('Done Job Hunt Pass restored - welcome back!', 'success');
         } else {
           errorEl.textContent = 'No active subscription found for that email. Check your inbox or choose a plan below.';

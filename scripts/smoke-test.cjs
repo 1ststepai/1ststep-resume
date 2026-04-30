@@ -42,6 +42,8 @@ const terms = fs.existsSync(path.join(ROOT, 'terms.html'))
   ? fs.readFileSync(path.join(ROOT, 'terms.html'), 'utf8') : '';
 const apiSubscription = fs.existsSync(path.join(ROOT, 'api', 'subscription.js'))
   ? fs.readFileSync(path.join(ROOT, 'api', 'subscription.js'), 'utf8') : '';
+const apiClaude = fs.existsSync(path.join(ROOT, 'api', 'claude.js'))
+  ? fs.readFileSync(path.join(ROOT, 'api', 'claude.js'), 'utf8') : '';
 const apiBeta = fs.existsSync(path.join(ROOT, 'api', 'beta.js'))
   ? fs.readFileSync(path.join(ROOT, 'api', 'beta.js'), 'utf8') : '';
 
@@ -117,7 +119,7 @@ const REQUIRED_IDS = [
   'applyModal', 'linkedInPdfModal', 'linkedInImportModal',
 
   // Access gates
-  'betaGate', 'betaExpired', 'paywallGate', 'paywallVerify', 'paywallEmail', 'paywallError',
+  'betaGate', 'betaExpired', 'paywallGate', 'paywallVerify', 'paywallEmail', 'paywallOwnerCode', 'paywallError',
   'paywallVerifyBtn', 'paywallBackBtn', 'paywallVerifyLinkBtn', 'upgradeVerifyBtn',
 
   // Onboarding
@@ -399,6 +401,23 @@ if (js) {
 if (apiSubscription) {
   if (/isBetaEmail\(email\)[\s\S]{0,180}tier: 'free'/.test(apiSubscription)) pass('Beta email override resolves to free');
   else fail('Beta email override may still grant paid access');
+
+  if (/OWNER_ACCESS_EMAILS/.test(apiSubscription) && /OWNER_ACCESS_SECRET/.test(apiSubscription)) pass('Owner access is controlled by server environment variables');
+  else fail('Owner access environment controls are missing');
+
+  if (/X-Owner-Access-Secret/.test(apiSubscription) && /timingSafeEqual/.test(apiSubscription)) pass('Owner restore code is sent by header and compared safely');
+  else fail('Owner restore code header or safe comparison is missing');
+}
+
+if (js) {
+  if (!/email\s*&&\s*email\.toLowerCase\(\)\s*===\s*['"]evan@1ststep\.ai['"][\s\S]{0,120}return\s+['"]complete['"]/.test(apiClaude)) pass('Claude API has no hardcoded owner email bypass');
+  else fail('Claude API still has a hardcoded owner email bypass');
+
+  if (/IS_LOCAL_DEV\s*&&\s*loadProfile\(\)\?\.email\s*===\s*DEV_EMAIL/.test(js)) pass('Client owner fixture is limited to local development');
+  else fail('Client owner fixture is not clearly restricted to local development');
+
+  if (/ownerRestoreCode/.test(js) && /X-Owner-Access-Secret/.test(js)) pass('Subscription restore can send an optional owner access code');
+  else fail('Subscription restore owner access code plumbing is missing');
 }
 
 if (apiBeta) {

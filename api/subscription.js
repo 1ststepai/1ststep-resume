@@ -12,12 +12,15 @@
  * Env vars required:
  *   STRIPE_SECRET_KEY    — sk_live_... (Stripe secret key)
  *   TIER_SECRET          — any random 32+ char string, used to sign tier tokens
+ *   OWNER_ACCESS_EMAILS  — optional comma-separated owner emails for manual restore
+ *   OWNER_ACCESS_SECRET  — optional private restore code for owner access
  *   LINKEDIN_CLIENT_ID   — LinkedIn OAuth app client ID
  *   LINKEDIN_CLIENT_SECRET — LinkedIn OAuth app client secret
  */
 
 import Stripe from 'stripe';
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
+import { alertOnAbuse } from './_alert.js';
 
 // ── Tier token helpers ────────────────────────────────────────────────────────
 // A tierToken is: base64(email + "|" + tier + "|" + expiry) + "." + HMAC
@@ -60,6 +63,31 @@ function isBetaEmail(email) {
   return list.includes(email.toLowerCase());
 }
 
+// ── Owner restore access ─────────────────────────────────────────────────────
+// Server-side only. Email alone never grants access; the request must include a
+// private restore code that matches OWNER_ACCESS_SECRET.
+function getOwnerAccessEmails() {
+  return (process.env.OWNER_ACCESS_EMAILS || '')
+    .split(',')
+    .map(e => e.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function safeSecretEquals(input, expected) {
+  const inputValue = String(input || '');
+  const expectedValue = String(expected || '');
+  if (!inputValue || !expectedValue) return false;
+  const inputBuffer = Buffer.from(inputValue);
+  const expectedBuffer = Buffer.from(expectedValue);
+  return inputBuffer.length === expectedBuffer.length && timingSafeEqual(inputBuffer, expectedBuffer);
+}
+
+function hasOwnerAccess(email, restoreCode) {
+  const ownerEmails = getOwnerAccessEmails();
+  if (!ownerEmails.includes(String(email || '').toLowerCase())) return false;
+  return safeSecretEquals(restoreCode, process.env.OWNER_ACCESS_SECRET);
+}
+
 // ── Per-IP rate limiter — prevents email enumeration / customer probing ──────
 const subCheckWindows = new Map();
 const SUB_CHECK_WINDOW_MS  = 60_000; // 1 minute
@@ -90,7 +118,7 @@ function corsHeaders(req) {
   return {
     'Access-Control-Allow-Origin':  allowed ? origin : ALLOWED_ORIGINS[0],
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Owner-Access-Secret',
   };
 }
 
@@ -326,6 +354,17 @@ export default async function handler(req, res) {
   const email = (req.query.email || '').trim().toLowerCase();
   if (!email || !email.includes('@')) {
     return res.status(400).json({ error: 'A valid email address is required.', tier: 'free' });
+  }
+
+  const ownerRestoreCode = req.headers['x-owner-access-secret'] || '';
+  if (hasOwnerAccess(email, ownerRestoreCode)) {
+    return res.status(200).json({
+      tier: 'complete',
+      status: 'owner_access',
+      tierToken: signTierToken(email, 'complete'),
+      expiresAt: null,
+      expiresInDays: null,
+    });
   }
 
   // Legacy private-access users no longer receive paid entitlement by email alone.
