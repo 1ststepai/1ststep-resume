@@ -332,7 +332,7 @@ if (css) {
   if (/env\(safe-area-inset-bottom/.test(css) && /--fixed-bottom-safe-space/.test(css)) pass('Fixed bottom safe spacing is present');
   else fail('Fixed bottom safe spacing is missing');
 
-  if (/\.main[\s\S]*scroll-padding-top:\s*96px/.test(css) && /#jobText[\s\S]*scroll-margin-top:\s*96px/.test(css)) pass('Workflow fields reserve sticky-header scroll space');
+  if (/\.main[\s\S]*scroll-padding-top:\s*136px/.test(css) && /#jobText[\s\S]*scroll-margin-top:\s*136px/.test(css)) pass('Workflow fields reserve sticky-header scroll space');
   else fail('Workflow field scroll safe spacing is missing');
 }
 

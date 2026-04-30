@@ -2057,7 +2057,7 @@ ${resume.slice(0, 3000)}
     function scrollWorkflowTargetIntoView(target, options = {}) {
       if (!target) return;
       const container = getWorkflowScrollContainer();
-      const topOffset = Number.isFinite(options.topOffset) ? options.topOffset : 92;
+      const topOffset = Number.isFinite(options.topOffset) ? options.topOffset : 136;
       const behavior = options.behavior || 'smooth';
       if (container && container !== document.documentElement && container !== document.body) {
         const containerRect = container.getBoundingClientRect();

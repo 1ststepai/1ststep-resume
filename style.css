@@ -5715,7 +5715,7 @@
       flex-direction: column !important;
       align-items: center !important;
       padding-bottom: calc(64px + var(--fixed-bottom-safe-space) + env(safe-area-inset-bottom, 0px)) !important;
-      scroll-padding-top: 96px;
+      scroll-padding-top: 136px;
       scroll-padding-bottom: calc(var(--fixed-bottom-safe-space) + env(safe-area-inset-bottom, 0px));
     }
 
@@ -5724,7 +5724,7 @@
     #jobText,
     #runBtn,
     #resumeChoiceCard {
-      scroll-margin-top: 96px;
+      scroll-margin-top: 136px;
     }
 
     #resumeGrid {
