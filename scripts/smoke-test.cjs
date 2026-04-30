@@ -113,7 +113,8 @@ const REQUIRED_IDS = [
   'applyModal', 'linkedInPdfModal', 'linkedInImportModal',
 
   // Access gates
-  'betaGate', 'betaExpired', 'paywallGate',
+  'betaGate', 'betaExpired', 'paywallGate', 'paywallVerify', 'paywallEmail', 'paywallError',
+  'paywallVerifyBtn', 'paywallBackBtn', 'paywallVerifyLinkBtn', 'upgradeVerifyBtn',
 
   // Onboarding
   'welcomeOverlay',
@@ -420,6 +421,7 @@ const REQUIRED_FUNCTIONS = [
   'closeApplyModal', 'closeTemplateModal',
   'closeLinkedInPdfModal', 'closeLinkedInImportModal',
   'submitBetaCode', 'submitPaywallVerify',
+  'openPaywallVerify', 'closePaywallVerify', 'openUpgradeSubscriptionVerify',
   'handleJsFileSelect',
   'toggleJobType',
   'openJobBoard',
@@ -456,6 +458,28 @@ if (js) {
     if (pattern.test(js)) pass(fn + '()');
     else fail('Required function ' + fn + '() NOT found in app.js');
   });
+}
+
+section('Subscribed access restoration');
+
+if (js) {
+  if (/upgradeVerifyBtn'\)\?\.addEventListener\('click',\s*openUpgradeSubscriptionVerify\)/.test(js)) {
+    pass('Upgrade modal Already subscribed CTA opens subscription verification');
+  } else {
+    fail('Upgrade modal Already subscribed CTA is not wired to subscription verification');
+  }
+
+  if (/paywallVerifyLinkBtn'\)\?\.addEventListener\('click',\s*\(\)\s*=>\s*openPaywallVerify\('paywall_gate'\)\)/.test(js)) {
+    pass('Paywall gate Already subscribed CTA opens subscription verification');
+  } else {
+    fail('Paywall gate Already subscribed CTA is not wired to subscription verification');
+  }
+
+  if (/function\s+openPaywallVerify\s*\([^)]*surface/.test(js) && /loadProfile\(\)\?\.email/.test(js) && /SUBSCRIPTION_VERIFY_STARTED/.test(js)) {
+    pass('Subscription verification pre-fills profile email and tracks restore intent');
+  } else {
+    fail('Subscription verification restore flow is missing prefill or tracking guard');
+  }
 }
 
 // ── 5b. addEventListener bare-reference check ─────────────────────────────────

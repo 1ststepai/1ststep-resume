@@ -969,13 +969,7 @@
       document.getElementById('postResultPassBtn')?.addEventListener('click', () => { _pingTracker('pricing_cta_click'); trackProductEvent('pricing_cta_clicked', { surface: 'post_result' }); openUpgradeModal(); });
       document.getElementById('modal-btn-monthly')?.addEventListener('click', () => setModalBilling('monthly'));
       document.getElementById('modal-btn-annual')?.addEventListener('click', () => setModalBilling('annual'));
-      document.getElementById('upgradeVerifyBtn')?.addEventListener('click', async () => {
-        const p = JSON.parse(localStorage.getItem('1ststep_profile') || '{}');
-        if (!p.email) { showToast('Save your profile email first'); return; }
-        localStorage.removeItem('1ststep_sub_cache');
-        await verifySubscription(p.email);
-        closeUpgradeModal();
-      });
+      document.getElementById('upgradeVerifyBtn')?.addEventListener('click', openUpgradeSubscriptionVerify);
 
       // profileModal (no backdrop close - intentional)
       document.getElementById('profileModalCloseBtn')?.addEventListener('click', closeProfileModal);
@@ -1032,7 +1026,7 @@
       document.getElementById('betaNewCodeBtn')?.addEventListener('click', clearBetaAndShowGate);
 
       // Paywall gate
-      document.getElementById('paywallVerifyLinkBtn')?.addEventListener('click', openPaywallVerify);
+      document.getElementById('paywallVerifyLinkBtn')?.addEventListener('click', () => openPaywallVerify('paywall_gate'));
       document.getElementById('paywallVerifyBtn')?.addEventListener('click', submitPaywallVerify);
       document.getElementById('paywallBackBtn')?.addEventListener('click', closePaywallVerify);
 
@@ -7292,21 +7286,42 @@ ${job.jd.slice(0, 1000)}
 
     // -- Paywall helpers --------------------------------------------------------
 
-    function openPaywallVerify() {
-      document.getElementById('paywallVerify').style.display = 'flex';
-      document.getElementById('paywallEmail').focus();
+    function openPaywallVerify(surface = 'unknown') {
+      const panel = document.getElementById('paywallVerify');
+      const emailEl = document.getElementById('paywallEmail');
+      const errorEl = document.getElementById('paywallError');
+      if (!panel || !emailEl) return;
+
+      if (!emailEl.value) {
+        const profileEmail = loadProfile()?.email || '';
+        if (profileEmail) emailEl.value = profileEmail;
+      }
+      if (errorEl) errorEl.style.display = 'none';
+      panel.style.display = 'flex';
+      trackProductEvent('SUBSCRIPTION_VERIFY_STARTED', { surface });
+      setTimeout(() => emailEl.focus(), 0);
+    }
+
+    function openUpgradeSubscriptionVerify() {
+      _pingTracker('paywall_verify_click');
+      closeUpgradeModal();
+      openPaywallVerify('upgrade_modal');
     }
 
     function closePaywallVerify() {
-      document.getElementById('paywallVerify').style.display = 'none';
-      document.getElementById('paywallError').style.display = 'none';
-      document.getElementById('paywallEmail').value = '';
+      const panel = document.getElementById('paywallVerify');
+      const errorEl = document.getElementById('paywallError');
+      const emailEl = document.getElementById('paywallEmail');
+      if (panel) panel.style.display = 'none';
+      if (errorEl) errorEl.style.display = 'none';
+      if (emailEl) emailEl.value = '';
     }
 
     async function submitPaywallVerify() {
       const emailEl = document.getElementById('paywallEmail');
       const errorEl = document.getElementById('paywallError');
       const btn = document.getElementById('paywallVerifyBtn');
+      if (!emailEl || !errorEl || !btn) return;
       const email = emailEl.value.trim().toLowerCase();
 
       errorEl.style.display = 'none';
@@ -7327,12 +7342,17 @@ ${job.jd.slice(0, 1000)}
         const tier = localStorage.getItem('1ststep_tier') || 'free';
         if (tier !== 'free') {
           // Access restored - hide both overlays
-          document.getElementById('paywallVerify').style.display = 'none';
-          document.getElementById('paywallGate').style.display = 'none';
+          const verifyPanel = document.getElementById('paywallVerify');
+          const gate = document.getElementById('paywallGate');
+          if (verifyPanel) verifyPanel.style.display = 'none';
+          if (gate) gate.style.display = 'none';
+          closeUpgradeModal();
           currentTier = tier;
           updateTailorUsageMeter?.();
           updateSearchUsageMeter?.();
           updateTierLockIcon?.();
+          renderPricingCard?.();
+          updateWorkflowGuidanceUI?.();
           showTierBadge(tier);
           showToast('Done Job Hunt Pass restored - welcome back!', 'success');
         } else {
