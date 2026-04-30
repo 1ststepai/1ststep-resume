@@ -64,6 +64,10 @@
       },
     };
 
+    try {
+      if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    } catch {}
+
     function initAppGoogleAnalytics() {
       try {
         if (window.__firstStepAppGaInstalled) return;
@@ -736,6 +740,7 @@
           else if (hasResume) updateFlowSteps(2);
           else updateFlowSteps(1);
         }
+        scheduleMainScrollToTop([0, 180, 650]);
       }
 
       // -- Phase 4 batch 1: hero panel event listeners -----------------------
@@ -1164,6 +1169,7 @@
       document.body.style.overflow = '';
       _setChatWidgetVisible(true);
       localStorage.setItem('1ststep_welcomed', '1');
+      scheduleMainScrollToTop([0, 160, 520]);
     }
 
     function dismissWelcome(path = false) {
@@ -2049,9 +2055,50 @@ ${resume.slice(0, 3000)}
     }
 
     function getWorkflowScrollContainer() {
-      const main = document.querySelector('.main');
+      const main = document.querySelector('[data-main-scroll]') || document.querySelector('#mainContent') || document.querySelector('.main');
       if (main && getComputedStyle(main).overflowY !== 'visible') return main;
       return document.scrollingElement || document.documentElement;
+    }
+
+    function scrollMainToTop(options = {}) {
+      const behavior = options.behavior || 'auto';
+      const containers = [
+        document.querySelector('[data-main-scroll]'),
+        document.querySelector('#mainContent'),
+        document.querySelector('.app-main'),
+        document.querySelector('main'),
+        document.scrollingElement || document.documentElement
+      ].filter((el, index, list) => el && list.indexOf(el) === index);
+
+      containers.forEach(el => {
+        try {
+          if (typeof el.scrollTo === 'function') {
+            el.scrollTo({ top: 0, left: 0, behavior });
+          } else {
+            el.scrollTop = 0;
+          }
+        } catch (err) {
+          try { el.scrollTop = 0; } catch (innerErr) {}
+        }
+      });
+
+      try {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      } catch (err) {
+        window.scrollTo(0, 0);
+      }
+    }
+
+    function scheduleMainScrollToTop(delays = [0, 180, 650]) {
+      delays.forEach(delay => {
+        setTimeout(() => {
+          if (currentMode !== 'resume') return;
+          scrollMainToTop();
+          requestAnimationFrame(() => {
+            if (currentMode === 'resume') scrollMainToTop();
+          });
+        }, delay);
+      });
     }
 
     function scrollWorkflowTargetIntoView(target, options = {}) {
@@ -2125,17 +2172,7 @@ ${resume.slice(0, 3000)}
       }
       setTimeout(() => {
         if (currentMode !== 'resume') return;
-        const state = getApplicationWorkflowState();
-        if (!state.hasResume) {
-          const fileDrop = document.getElementById('fileDrop');
-          const fileLoaded = document.getElementById('fileLoaded');
-          const target = (fileDrop && fileDrop.style.display !== 'none' ? fileDrop : null) || fileLoaded || fileDrop;
-          scrollWorkflowTargetIntoView(target);
-        } else if (!state.hasJobDescription) {
-          scrollWorkflowTargetIntoView(document.getElementById('jobText'));
-        } else {
-          scrollWorkflowTargetIntoView(document.getElementById('runBtn'));
-        }
+        scheduleMainScrollToTop([0, 140, 420]);
       }, 120);
     }
 
@@ -7564,6 +7601,7 @@ ${job.jd.slice(0, 1000)}
       checkBetaAccess().finally(() => {
         cover.style.opacity = '0';
         setTimeout(() => cover.remove(), 220);
+        scheduleMainScrollToTop([0, 260, 760]);
 
         // Detect Stripe success redirect (?success=1) and optimistically activate subscription
         const urlParams = new URLSearchParams(window.location.search);

@@ -105,6 +105,11 @@
       --sidebar-width: 220px;
       --right-sidebar-min: 260px;
       --right-sidebar-max: 320px;
+      --topbar-h: 52px;
+      --objectivebar-h: 36px;
+      --workflow-strip-h: 36px;
+      --app-header-offset: calc(var(--topbar-h) + var(--objectivebar-h));
+      --resume-scroll-top-safe-space: calc(var(--objectivebar-h) + var(--workflow-strip-h) + 48px);
       --fixed-bottom-safe-space: 96px;
       --mobile-fixed-bottom-safe-space: 168px;
       --z-base: 1;
@@ -174,6 +179,7 @@
       display: flex;
       flex-direction: column;
       height: 100vh;
+      min-height: 0;
     }
 
     .topbar {
@@ -181,7 +187,7 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 20px;
-      height: 52px;
+      height: var(--topbar-h);
       background: var(--surface);
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
@@ -246,6 +252,7 @@
       overflow-y: auto;
       background: var(--bg);
       padding: 20px 20px 48px;
+      min-height: 0;
     }
 
     /* ── INPUT PANEL (was "left panel") ──────────────────── */
@@ -5074,7 +5081,7 @@
         flex-direction: column;
         position: fixed;
         left: 0;
-        top: 52px;
+        top: var(--topbar-h);
         bottom: 0;
         width: 220px;
         background: var(--surface);
@@ -5606,6 +5613,7 @@
       grid-template-columns: 1fr;
       gap: 16px;
       align-items: start;
+      align-self: flex-start;
     }
     @media (min-width: 900px) {
       #resumeGrid {
@@ -5630,9 +5638,10 @@
       flex-direction: column;
       gap: 10px;
       position: sticky;
-      top: 20px;
-      max-height: calc(100vh - 80px);
+      top: 16px;
+      max-height: calc(100vh - var(--app-header-offset) - 32px);
       overflow-y: auto;
+      padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     }
     @media (max-width: 899px) {
       #quickSidebar {
@@ -5712,10 +5721,12 @@
     .main {
       width: 100%;
       min-width: 0;
+      min-height: 0;
       flex-direction: column !important;
       align-items: center !important;
+      padding-top: 24px !important;
       padding-bottom: calc(64px + var(--fixed-bottom-safe-space) + env(safe-area-inset-bottom, 0px)) !important;
-      scroll-padding-top: 136px;
+      scroll-padding-top: var(--resume-scroll-top-safe-space);
       scroll-padding-bottom: calc(var(--fixed-bottom-safe-space) + env(safe-area-inset-bottom, 0px));
     }
 
@@ -5724,12 +5735,13 @@
     #jobText,
     #runBtn,
     #resumeChoiceCard {
-      scroll-margin-top: 136px;
+      scroll-margin-top: var(--resume-scroll-top-safe-space);
     }
 
     #resumeGrid {
       min-width: 0;
       box-sizing: border-box;
+      margin-top: 16px;
     }
 
     #quickSidebar,
@@ -5773,14 +5785,14 @@
       }
     }
 
-    @media (min-width: 1100px) {
+    @media (min-width: 1180px) {
       #resumeGrid {
-        max-width: 1180px;
-        grid-template-columns: minmax(0, 1fr) minmax(var(--right-sidebar-min), var(--right-sidebar-max));
+        max-width: 1280px;
+        grid-template-columns: minmax(640px, 1fr) minmax(var(--right-sidebar-min), var(--right-sidebar-max));
       }
     }
 
-    @media (min-width: 900px) and (max-width: 1099px) {
+    @media (min-width: 900px) and (max-width: 1179px) {
       #resumeGrid {
         grid-template-columns: minmax(0, 1fr);
       }

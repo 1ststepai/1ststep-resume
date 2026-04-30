@@ -306,6 +306,10 @@ section('Layout collision smoke');
 if (css) {
   [
     '--sidebar-width',
+    '--topbar-h',
+    '--objectivebar-h',
+    '--app-header-offset',
+    '--resume-scroll-top-safe-space',
     '--fixed-bottom-safe-space',
     '--mobile-fixed-bottom-safe-space',
     '--z-sidebar',
@@ -332,8 +336,16 @@ if (css) {
   if (/env\(safe-area-inset-bottom/.test(css) && /--fixed-bottom-safe-space/.test(css)) pass('Fixed bottom safe spacing is present');
   else fail('Fixed bottom safe spacing is missing');
 
-  if (/\.main[\s\S]*scroll-padding-top:\s*136px/.test(css) && /#jobText[\s\S]*scroll-margin-top:\s*136px/.test(css)) pass('Workflow fields reserve sticky-header scroll space');
+  if (/\.main[\s\S]*scroll-padding-top:\s*var\(--resume-scroll-top-safe-space\)/.test(css) && /#jobText[\s\S]*scroll-margin-top:\s*var\(--resume-scroll-top-safe-space\)/.test(css)) pass('Workflow fields reserve sticky-header scroll space');
   else fail('Workflow field scroll safe spacing is missing');
+
+  if (/#quickSidebar[\s\S]*max-height:\s*calc\(100vh - var\(--app-header-offset\) - 32px\)/.test(css)) pass('Right rail height respects header/objective stack');
+  else fail('Right rail safe height is missing');
+}
+
+if (html) {
+  if (/class="main"[^>]*id="mainContent"[^>]*data-main-scroll/.test(html)) pass('Main scroll container is explicitly marked');
+  else fail('Main scroll container is not explicitly marked for first-load reset');
 }
 
 section('Free-to-Pro conversion smoke');
@@ -510,6 +522,7 @@ const REQUIRED_FUNCTIONS = [
   'getCurrentObjective',
   'updateCurrentObjectiveBar',
   'scrollWorkflowTargetIntoView',
+  'scrollMainToTop',
   'revealResumeUploadArea',
   'revealJobDescriptionField',
   'scheduleResumeModeAutoReveal',
