@@ -17,7 +17,18 @@
  *   RESEND_API_KEY        — checked for presence + used to send report
  */
 
+import { timingSafeEqual } from 'crypto';
+
 export const maxDuration = 60;
+
+function safeEquals(input, expected) {
+  const inputValue = String(input || '');
+  const expectedValue = String(expected || '');
+  if (!inputValue || !expectedValue) return false;
+  const inputBuffer = Buffer.from(inputValue);
+  const expectedBuffer = Buffer.from(expectedValue);
+  return inputBuffer.length === expectedBuffer.length && timingSafeEqual(inputBuffer, expectedBuffer);
+}
 
 // ── Admin stats helpers ──────────────────────────────────────────────────────
 const GHL_BASE = 'https://services.leadconnectorhq.com';
@@ -187,7 +198,7 @@ export default async function handler(req, res) {
   if (req.query.mode === 'admin') {
     const provided = req.headers['x-admin-secret'] || req.query.secret;
     const expected = process.env.ADMIN_SECRET;
-    if (!expected || provided !== expected) {
+    if (!safeEquals(provided, expected)) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     res.setHeader('Cache-Control', 'no-store');
@@ -220,7 +231,7 @@ export default async function handler(req, res) {
   if (req.query.action === 'blast') {
     const provided = req.headers['x-admin-secret'] || req.query.secret;
     const expected = process.env.ADMIN_SECRET;
-    if (!expected || provided !== expected) return res.status(401).json({ error: 'Unauthorized' });
+    if (!safeEquals(provided, expected)) return res.status(401).json({ error: 'Unauthorized' });
 
     const tag    = req.query.tag    || 'beta';
     const dryRun = req.query.dryRun !== 'false'; // default true — must explicitly pass dryRun=false
@@ -297,7 +308,7 @@ export default async function handler(req, res) {
   if (req.query.action === 'backfill') {
     const provided = req.headers['x-admin-secret'] || req.query.secret;
     const expected = process.env.ADMIN_SECRET;
-    if (!expected || provided !== expected) return res.status(401).json({ error: 'Unauthorized' });
+    if (!safeEquals(provided, expected)) return res.status(401).json({ error: 'Unauthorized' });
 
     const rawEmails = (req.query.emails || '').split(',').map(e => e.trim().toLowerCase()).filter(e => e.includes('@'));
     if (!rawEmails.length) return res.status(400).json({ error: 'No valid emails provided. Use ?emails=a@b.com,c@d.com' });
@@ -328,8 +339,8 @@ export default async function handler(req, res) {
   const cronSecret   = process.env.CRON_SECRET || '';
   const healthSecret = process.env.HEALTH_CHECK_SECRET || '';
 
-  const validQuerySecret = healthSecret && querySecret === healthSecret;
-  const validCronHeader  = cronSecret && authHeader === `Bearer ${cronSecret}`;
+  const validQuerySecret = safeEquals(querySecret, healthSecret);
+  const validCronHeader  = cronSecret && authHeader.startsWith('Bearer ') && safeEquals(authHeader.slice(7), cronSecret);
 
   if (!validQuerySecret && !validCronHeader) {
     return res.status(403).json({ error: 'Forbidden' });

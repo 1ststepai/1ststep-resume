@@ -16,22 +16,25 @@
  *   TALLY_SIGNING_SECRET — (optional) from Tally webhook settings — enables signature verification
  */
 
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 
 export const maxDuration = 15;
 
 // ── Optional signature verification ──────────────────────────────────────────
 // Tally signs webhook payloads with HMAC-SHA256 when a signing secret is set.
 // Set TALLY_SIGNING_SECRET in Vercel to enable verification.
-// If the env var is not set, verification is skipped (still safe — endpoint only writes to GHL).
+// If the env var is not set, fail closed unless ALLOW_UNSIGNED_TALLY_WEBHOOKS=true
+// is set for a temporary local/test environment.
 function verifyTallySignature(rawBody, signature) {
   const secret = process.env.TALLY_SIGNING_SECRET;
-  if (!secret) return true; // not configured — skip
+  if (!secret) return process.env.ALLOW_UNSIGNED_TALLY_WEBHOOKS === 'true';
   if (!signature) return false;
   const expected = createHmac('sha256', secret)
     .update(rawBody)
     .digest('base64');
-  return signature === expected;
+  const expectedBuffer = Buffer.from(expected);
+  const signatureBuffer = Buffer.from(String(signature));
+  return expectedBuffer.length === signatureBuffer.length && timingSafeEqual(expectedBuffer, signatureBuffer);
 }
 
 // ── Parse Tally fields into { email, answers[] } ─────────────────────────────
@@ -159,6 +162,9 @@ export default async function handler(req, res) {
   }
 
   const rawBody  = await getRawBody(req);
+  if (rawBody.length > 256_000) {
+    return res.status(413).json({ error: 'Payload too large' });
+  }
   const bodyStr  = rawBody.toString('utf8');
   const signature = req.headers['tally-signature'] || '';
 
