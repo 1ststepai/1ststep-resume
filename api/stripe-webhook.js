@@ -128,7 +128,7 @@ async function pushToGHL({ email, name, tier }) {
         email,
         firstName,
         lastName,
-        tags:   ['paid', tier],
+        tags:   ['paid', 'converted', 'job_hunt_pass', tier],
         source: `1stStep.ai — ${tierLabel}`,
       }),
     });
@@ -218,8 +218,8 @@ async function updateGHLOnChurn({ customerId, stripe, event }) {
 
   const isPaymentFailed = event === 'payment_failed';
   const tags = isPaymentFailed
-    ? ['payment_failed']
-    : ['churned', 'cancelled'];
+    ? ['payment_failed', 'churn_risk']
+    : ['churned', 'cancelled', 'churn_risk'];
 
   try {
     const r = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {

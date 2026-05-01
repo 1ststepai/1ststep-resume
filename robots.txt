@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://1ststep.ai/sitemap.xml
+Sitemap: https://app.1ststep.ai/sitemap.xml
