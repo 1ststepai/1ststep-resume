@@ -13,7 +13,7 @@
     content="AI resume tailor, ATS resume optimizer, resume keyword tool, skill gap analysis, AI cover letter generator, job search platform, resume builder AI, LinkedIn resume import" />
   <link rel="canonical" href="https://app.1ststep.ai/" />
   <meta name="theme-color" content="#0D0F18" />
-  <meta name="robots" content="noindex, follow" />
+  <meta name="robots" content="index, follow" />
 
   <!-- -- Open Graph (Facebook, LinkedIn, Slack previews) ----------- -->
   <meta property="og:type" content="website" />
@@ -38,9 +38,29 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "1stStep.ai",
-    "url": "https://1ststep.ai/",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://app.1ststep.ai/#organization",
+        "name": "1stStep.ai",
+        "url": "https://app.1ststep.ai/",
+        "logo": "https://1ststep.ai/og-image.png",
+        "email": "evan@1ststep.ai"
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://app.1ststep.ai/#website",
+        "name": "1stStep.ai",
+        "url": "https://app.1ststep.ai/",
+        "publisher": {
+          "@id": "https://app.1ststep.ai/#organization"
+        }
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://app.1ststep.ai/#app",
+        "name": "1stStep.ai",
+        "url": "https://app.1ststep.ai/",
     "description": "AI-powered resume tailoring and job search platform. Start free with 3 resume tailors, a Career Positioning Brief, 1 cover letter, and vault preview. Upgrade to Job Hunt Pass for unlimited tailoring and full tracking.",
     "applicationCategory": "BusinessApplication",
     "operatingSystem": "Web",
@@ -70,11 +90,23 @@
       "Job search with live listings",
       "Application tracker"
     ],
-    "creator": {
-      "@type": "Organization",
-      "name": "1stStep.ai",
-      "email": "evan@1ststep.ai"
-    }
+        "creator": {
+          "@id": "https://app.1ststep.ai/#organization"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://app.1ststep.ai/#breadcrumbs",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Resume Tailor",
+            "item": "https://app.1ststep.ai/"
+          }
+        ]
+      }
+    ]
   }
   </script>
 
@@ -121,12 +153,12 @@
 
         <!-- Legacy access badge -->
         <div id="betaBadge" style="display:none;align-items:center;gap:5px;padding:4px 9px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);border-radius:7px;font-size:11px;font-weight:600;color:#818CF8;cursor:default" title="Access active">
-          <span></span><span id="betaDaysLeft" class="hide-mobile">Access</span>
+          <span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span id="betaDaysLeft" class="hide-mobile">Access</span>
         </div>
 
         <!-- Feedback -->
         <button id="feedbackBtn" class="hover-feedback" style="display:none;align-items:center;gap:5px;padding:5px 11px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s">
-          <span></span><span class="badge-label hide-mobile">Feedback</span>
+          <span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M8 9h8M8 13h5"/></svg></span><span class="badge-label hide-mobile">Feedback</span>
         </button>
 
         <!-- Upgrade CTA -->
@@ -143,7 +175,7 @@
 
         <!-- Backup -->
         <div class="api-badge" id="topbarBackupBtn" title="Download data backup" role="button" tabindex="0" aria-label="Download data backup" style="padding:5px 10px;cursor:pointer">
-          <span></span><span class="badge-label hide-mobile">Backup</span>
+          <span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></span><span class="badge-label hide-mobile">Backup</span>
         </div>
 
         <!-- Avatar / Account -->
@@ -1400,7 +1432,7 @@
       <div
         style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);text-align:center;display:flex;flex-direction:column;gap:10px">
         <button id="profileReopenWelcomeBtn"
-          style="background:none;border:none;color:var(--brand);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-family:'Inter',sans-serif">a
+          style="background:none;border:none;color:var(--brand);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-family:'Inter',sans-serif">
           Change my starting path</button>
         <button id="profileSignOutBtn"
           style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:2px">Sign
@@ -1917,7 +1949,7 @@
         <!-- Left: grid + instructions -->
         <div style="flex:1;min-width:0">
           <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">Select a template to apply to
-            your tailored resume. Opens in a new window - use <strong>Print -> Save as PDF</strong> to download.</p>
+            your tailored resume. Opens in a new window - use <strong>Print &rarr; Save as PDF</strong> to download.</p>
           <div id="templateGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
 
           <!-- Contact info confirmation step -->
@@ -1975,7 +2007,7 @@
               <button id="templateConfirmBtn"
                 style="flex:1;padding:10px 16px;border-radius:8px;border:none;background:#4338CA;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s"
                 class="hover-indigo-btn">
-                Apply Template ->
+                Apply Template &rarr;
               </button>
             </div>
             <p style="font-size:11px;color:var(--text2);margin-top:10px;line-height:1.5;opacity:.8">

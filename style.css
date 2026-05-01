@@ -318,7 +318,10 @@
     /* Inputs: large, high-contrast, shadow-based focus (no border reliance) */
     textarea,
     input[type="text"],
-    input[type="password"] {
+    input[type="password"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="url"] {
       width: 100%;
       background: var(--surface2);
       border: 1.5px solid var(--border);
@@ -1732,6 +1735,41 @@
       color: var(--text2);
       margin-bottom: 20px;
       line-height: 1.6;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 0 16px;
+    }
+
+    .modal-header h3 {
+      min-width: 0;
+      line-height: 1.35;
+    }
+
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      padding: 0;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .modal-close:hover {
+      background: var(--surface2);
+      border-color: var(--border);
+      color: var(--text);
     }
 
     .modal label {
@@ -3798,11 +3836,16 @@
     .profile-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
+      gap: 14px 10px;
     }
 
     .profile-grid .full {
       grid-column: 1 / -1;
+    }
+
+    .profile-grid input {
+      width: 100%;
+      min-width: 0;
     }
 
     /* Freshness badge */
