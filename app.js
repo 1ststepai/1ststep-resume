@@ -3642,6 +3642,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
           setStep(5, 'done');
           // Track cover letter usage + warn if approaching/at limit
           const clCount = incrementUsage('coverLetters');
+          if (clCount === 1) _pingTracker('first_cover_letter');
           if (clCount >= clLimit) {
             setTimeout(() => showToast(`Monthly cover letter limit reached - upgrade for more`, 'warning'), 1200);
           } else if (clCount / clLimit >= 0.8) {
@@ -3713,6 +3714,12 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: _profile.email, event: 'first_tailor' }),
+              }).catch(() => { });
+            } else if (tailorCount === 5) {
+              fetch('/api/track-event', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: _profile.email, event: 'power_user' }),
               }).catch(() => { });
             }
           }
@@ -4275,6 +4282,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       const normalizedContext = context || 'general';
       const copy = getUpgradeContextCopy(normalizedContext);
       trackProductEvent('paywall_viewed', { context: normalizedContext, tier: currentTier });
+      _pingTracker('upgrade_intent', { context: normalizedContext });
       trackUpgradePrompt(normalizedContext);
       const headline = document.getElementById('paywallHeadline');
       const sub = document.getElementById('paywallSubheadline');
@@ -5124,6 +5132,7 @@ ${_resumeSlice}
 
       // Count this session
       const count = incrementSearchUsage();
+      if (count === 1) _pingTracker('first_search');
       trackProductEvent('job_search_started', {
         hasKeywords: !!keywords,
         hasResume: !!resume,
@@ -8304,7 +8313,7 @@ Output plain text only - no markdown, no asterisks, no hashtags.`,
     <div style="font-size:4px;background:#e8e8e8;height:2px;margin-bottom:3px;border-radius:1px;width:80%"></div>
     <div style="font-size:5.5px;font-weight:bold;color:#1E3A5F;text-transform:uppercase;letter-spacing:1px;border-bottom:1.5px solid #1E3A5F;margin-bottom:3px;padding-bottom:1px">Education</div>
     <div style="font-size:5px;font-weight:bold">University Name</div>
-    <div style="font-size:4.5px;color:#555">B.S. Field a 2018</div>
+    <div style="font-size:4.5px;color:#555">B.S. Field &bull; 2018</div>
   </div>`,
 
       modern: `<div style="background:#fff;width:100%;height:100%;display:flex;font-family:Arial,sans-serif">
@@ -8325,12 +8334,12 @@ Output plain text only - no markdown, no asterisks, no hashtags.`,
     <div style="flex:1;padding:7px 8px">
       <div style="font-size:5px;font-weight:bold;color:#4338CA;text-transform:uppercase;letter-spacing:.5px;border-bottom:1.5px solid #4338CA;margin-bottom:3px;padding-bottom:1px">Experience</div>
       <div style="font-size:5px;font-weight:bold;margin-bottom:1px">Company Name</div>
-      <div style="font-size:4.5px;color:#555;font-style:italic;margin-bottom:2px">Job Title a 2020-Present</div>
+      <div style="font-size:4.5px;color:#555;font-style:italic;margin-bottom:2px">Job Title &bull; 2020-Present</div>
       <div style="font-size:3.5px;background:#eee;height:2px;margin-bottom:1.5px;border-radius:1px"></div>
       <div style="font-size:3.5px;background:#eee;height:2px;margin-bottom:3px;border-radius:1px;width:75%"></div>
       <div style="font-size:5px;font-weight:bold;color:#4338CA;text-transform:uppercase;letter-spacing:.5px;border-bottom:1.5px solid #4338CA;margin-bottom:2px;padding-bottom:1px">Education</div>
       <div style="font-size:4.5px;font-weight:bold">University Name</div>
-      <div style="font-size:4px;color:#555">B.S. Field a 2018</div>
+      <div style="font-size:4px;color:#555">B.S. Field &bull; 2018</div>
     </div>
   </div>`,
 
@@ -8348,13 +8357,13 @@ Output plain text only - no markdown, no asterisks, no hashtags.`,
     <div style="height:1px;background:#D1D5DB;margin-bottom:3px"></div>
     <div style="font-size:5px;font-weight:600;color:#374151;margin-bottom:2px;letter-spacing:.8px;text-transform:uppercase">Education</div>
     <div style="font-size:5px;font-weight:600">University Name</div>
-    <div style="font-size:4.5px;color:#6B7280">B.S. Field a 2018</div>
+    <div style="font-size:4.5px;color:#6B7280">B.S. Field &bull; 2018</div>
   </div>`,
 
       executive: `<div style="background:#fff;width:100%;height:100%;font-family:Arial,sans-serif">
     <div style="background:#0F172A;padding:9px 10px">
       <div style="font-size:9px;font-weight:800;color:#fff;letter-spacing:.8px">FULL NAME</div>
-      <div style="font-size:4.5px;color:#94A3B8;margin-top:2px;letter-spacing:.3px">Senior Title &nbsp;a&nbsp; email@example.com &nbsp;a&nbsp; 555-000-0000 &nbsp;a&nbsp; City, State</div>
+      <div style="font-size:4.5px;color:#94A3B8;margin-top:2px;letter-spacing:.3px">Senior Title &nbsp;&bull;&nbsp; email@example.com &nbsp;&bull;&nbsp; 555-000-0000 &nbsp;&bull;&nbsp; City, State</div>
     </div>
     <div style="padding:7px 10px">
       <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">
@@ -8370,7 +8379,7 @@ Output plain text only - no markdown, no asterisks, no hashtags.`,
         <div style="flex:1;height:1px;background:#0F172A"></div>
       </div>
       <div style="font-size:5px;font-weight:bold">University Name</div>
-      <div style="font-size:4.5px;color:#475569">B.S. Field a 2018</div>
+      <div style="font-size:4.5px;color:#475569">B.S. Field &bull; 2018</div>
     </div>
   </div>`,
     };
@@ -8630,8 +8639,8 @@ h1{font-family:'EB Garamond',Georgia,serif;font-size:28px;font-weight:700;color:
 ${d.summary ? `<div style="font-size:12.5px;color:#333;line-height:1.6;margin-bottom:4px">${_e(d.summary)}</div>` : ''}
 ${expHtml ? `<div class="sec-head">Experience</div>${expHtml}` : ''}
 ${eduHtml ? `<div class="sec-head">Education</div>${eduHtml}` : ''}
-${(d.skills || []).length ? `<div class="sec-head">Skills</div><div style="font-size:12.5px;color:#1a1a1a;line-height:1.6">${_e((d.skills || []).join(' a '))}</div>` : ''}
-${(d.certifications || []).length ? `<div class="sec-head">Certifications</div><div style="font-size:12.5px;color:#1a1a1a">${(d.certifications || []).map(_e).join(' a ')}</div>` : ''}
+${(d.skills || []).length ? `<div class="sec-head">Skills</div><div style="font-size:12.5px;color:#1a1a1a;line-height:1.6">${_e((d.skills || []).join(' | ')).replace(/ \| /g, ' &bull; ')}</div>` : ''}
+${(d.certifications || []).length ? `<div class="sec-head">Certifications</div><div style="font-size:12.5px;color:#1a1a1a">${(d.certifications || []).map(_e).join(' &bull; ')}</div>` : ''}
 ${_PRINT_BTN}
 </body></html>`;
     }
@@ -8663,9 +8672,9 @@ ${_PRINT_BTN}
   `).join('');
 
       const contactItems = [
-        d.email ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.8);margin-bottom:4px;word-break:break-all">a ${_e(d.email)}</div>` : '',
-        d.phone ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.8);margin-bottom:4px">a ${_e(d.phone)}</div>` : '',
-        d.location ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.8);margin-bottom:4px">a ${_e(d.location)}</div>` : '',
+        d.email ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.8);margin-bottom:4px;word-break:break-all">&bull; ${_e(d.email)}</div>` : '',
+        d.phone ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.8);margin-bottom:4px">&bull; ${_e(d.phone)}</div>` : '',
+        d.location ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.8);margin-bottom:4px">&bull; ${_e(d.location)}</div>` : '',
         d.linkedin ? `<div style="font-size:11px;margin-bottom:4px"> ${_link(d.linkedin, 'My Profile', 'rgba(255,255,255,0.85)')}</div>` : '',
         d.website ? `<div style="font-size:11px;margin-bottom:4px;word-break:break-all"> ${_link(d.website, d.website, 'rgba(255,255,255,0.85)')}</div>` : '',
       ].filter(Boolean).join('');
@@ -8795,8 +8804,8 @@ ${_PRINT_BTN}
         const col1 = sk.slice(0, half), col2 = sk.slice(half);
         if (!sk.length) return '';
         return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 24px">
-      <div>${col1.map(s => `<div style="font-size:12.5px;color:#1e293b;padding:2px 0;border-bottom:1px solid #F1F5F9">a ${_e(s)}</div>`).join('')}</div>
-      <div>${col2.map(s => `<div style="font-size:12.5px;color:#1e293b;padding:2px 0;border-bottom:1px solid #F1F5F9">a ${_e(s)}</div>`).join('')}</div>
+      <div>${col1.map(s => `<div style="font-size:12.5px;color:#1e293b;padding:2px 0;border-bottom:1px solid #F1F5F9">&bull; ${_e(s)}</div>`).join('')}</div>
+      <div>${col2.map(s => `<div style="font-size:12.5px;color:#1e293b;padding:2px 0;border-bottom:1px solid #F1F5F9">&bull; ${_e(s)}</div>`).join('')}</div>
     </div>`;
       })();
 
