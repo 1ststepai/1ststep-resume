@@ -136,6 +136,48 @@
       }
     }
 
+    function cleanReferralCode(value) {
+      return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_]+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 40)
+        .replace(/^-+|-+$/g, '');
+    }
+
+    function captureReferralAttribution() {
+      try {
+        const params = new URLSearchParams(window.location.search || '');
+        const ref = cleanReferralCode(params.get('ref') || params.get('partner') || params.get('affiliate'));
+        if (!ref) return;
+        const attribution = {
+          referralCode: ref,
+          utmSource: params.get('utm_source') || '',
+          utmMedium: params.get('utm_medium') || '',
+          utmCampaign: params.get('utm_campaign') || '',
+          landingUrl: window.location.href,
+          capturedAt: new Date().toISOString(),
+        };
+        localStorage.setItem('firststep_referral_code', ref);
+        localStorage.setItem('1ststep_referral_attribution', JSON.stringify(attribution));
+      } catch {}
+    }
+
+    function loadReferralAttribution() {
+      try {
+        const attribution = JSON.parse(localStorage.getItem('1ststep_referral_attribution') || '{}');
+        const referralCode = cleanReferralCode(attribution.referralCode || localStorage.getItem('firststep_referral_code') || '');
+        return referralCode ? { ...attribution, referralCode } : {};
+      }
+      catch {
+        const referralCode = cleanReferralCode(localStorage.getItem('firststep_referral_code') || '');
+        return referralCode ? { referralCode } : {};
+      }
+    }
+
     function trackOnce(event, props = {}) {
       if (_trackedActivationEvents.has(event)) return;
       _trackedActivationEvents.add(event);
@@ -581,6 +623,8 @@
 
     // -- Init ------------------------------------------------------------------
     document.addEventListener('DOMContentLoaded', () => {
+      captureReferralAttribution();
+
       // Hide extension promo if already dismissed
       if (localStorage.getItem('1ststep_ext_promo_dismissed')) {
         const el = document.getElementById('mobileExtPromo');
@@ -6478,6 +6522,7 @@ ${desc}`;
         firstName: document.getElementById('profileFirstName').value.trim(),
         lastName: document.getElementById('profileLastName').value.trim(),
         email: document.getElementById('profileEmail').value.trim(),
+        referral: loadReferralAttribution(),
       };
       if (!p.firstName || !p.email) {
         showToast('First name and email are required');
@@ -6521,7 +6566,13 @@ ${desc}`;
       fetch('/api/notify-signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName: p.firstName, lastName: p.lastName, email: p.email }),
+        body: JSON.stringify({
+          firstName: p.firstName,
+          lastName: p.lastName,
+          email: p.email,
+          referralCode: cleanReferralCode((p.referral || loadReferralAttribution()).referralCode || ''),
+          referral: p.referral || loadReferralAttribution()
+        }),
       }).catch(() => { /* silent - non-blocking */ });
 
       // -- Also identify in GHL chat widget if loaded -------------------------

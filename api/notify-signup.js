@@ -7,7 +7,7 @@
  *
  * Also sends an admin email alert via FormSubmit.
  *
- * Body: { firstName, lastName, email }
+ * Body: { firstName, lastName, email, referralCode?, referral? }
  *
  * Env vars required:
  *   GHL_API_KEY      — pit-... (GoHighLevel Private Integration Token)
@@ -65,6 +65,18 @@ function isDisposableEmail(email) {
   return DISPOSABLE_DOMAINS.has(domain);
 }
 
+function cleanReferralCode(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
+    .replace(/^-+|-+$/g, '');
+}
+
 const ALLOWED_ORIGINS = [
   'https://1ststep.ai',
   'https://www.1ststep.ai',
@@ -103,7 +115,7 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: 'Too many requests' });
   }
 
-  const { firstName, lastName, email } = req.body || {};
+  const { firstName, lastName, email, referral = {}, referralCode: bodyReferralCode = '' } = req.body || {};
 
   if (!email || !email.includes('@')) {
     return res.status(400).json({ error: 'Valid email required' });
@@ -118,6 +130,13 @@ export default async function handler(req, res) {
 
   const fullName  = [firstName, lastName].filter(Boolean).join(' ').trim() || email;
   const results   = { ghl: null, email: null };
+  const referralCode = cleanReferralCode(bodyReferralCode || referral.referralCode || referral.ref || '');
+  const referralTags = referralCode ? ['partner_referral', `ref_${referralCode}`] : [];
+
+  // Internal referral verification:
+  // 1. Check the admin signup email for "Referral: partner-code".
+  // 2. Check the GHL contact tags for "partner_referral" and "ref_partner-code".
+  // 3. Search GHL by tag, for example "ref_career-coach-sarah".
 
   // ── 1. Upsert GHL contact ─────────────────────────────────────────────────
   const apiKey     = process.env.GHL_API_KEY;
@@ -130,7 +149,7 @@ export default async function handler(req, res) {
       email,
       firstName: nameParts[0]  || '',
       lastName:  nameParts.slice(1).join(' ') || '',
-      tags:      ['app_user', 'free', 'signup'],
+      tags:      ['app_user', 'free', 'signup', ...referralTags],
       // source omitted — GHL rejects custom source strings with 400
     });
     const ghlHeaders = {
@@ -190,6 +209,8 @@ export default async function handler(req, res) {
                 <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Email</td><td style="padding:8px 0;font-size:14px;font-weight:600;color:#0F172A"><a href="mailto:${escHtml(email)}" style="color:#4338CA">${escHtml(email)}</a></td></tr>
                 <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Time</td><td style="padding:8px 0;font-size:14px;color:#0F172A">${escHtml(time)}</td></tr>
                 <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Plan</td><td style="padding:8px 0;font-size:14px;color:#0F172A">Free</td></tr>
+                <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Referral</td><td style="padding:8px 0;font-size:14px;color:#0F172A">${escHtml(referralCode || 'none')}</td></tr>
+                <tr><td style="padding:8px 0;color:#64748B;font-size:14px">Campaign</td><td style="padding:8px 0;font-size:14px;color:#0F172A">${escHtml(referral.utmCampaign || referral.utm_campaign || '')}</td></tr>
               </table>
               <div style="margin-top:20px;padding:12px 16px;background:#EEF2FF;border-radius:8px;font-size:13px;color:#4338CA">
                 Hit reply to reach ${escHtml(firstName) || 'them'} directly.
