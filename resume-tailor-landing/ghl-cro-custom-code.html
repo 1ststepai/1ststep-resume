@@ -1,4 +1,4 @@
-<!-- 1stStep.ai CRO Landing Page - GHL Custom HTML Block -->
+<!-- 1stStep.ai CRO Landing Page -->
 <style>
   #stp-cro {
     --ink: #0f172a;
@@ -692,6 +692,91 @@
     background: var(--ink);
   }
 
+  #stp-cro .stp-hero-demo {
+    margin-top: 18px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
+  }
+  #stp-cro .stp-hero-demo video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: var(--ink);
+  }
+  #stp-cro .stp-hero-demo-caption {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 13px 15px;
+    border-top: 1px solid #eef2f7;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 850;
+  }
+
+  #stp-cro .stp-compare-grid,
+  #stp-cro .stp-quote-grid {
+    display: grid;
+    gap: 18px;
+  }
+  #stp-cro .stp-compare-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #stp-cro .stp-quote-grid { grid-template-columns: 0.95fr 1.05fr; align-items: stretch; }
+  #stp-cro .stp-quote-slots { display: grid; gap: 12px; }
+  #stp-cro .stp-compare-card,
+  #stp-cro .stp-quote-card {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    padding: 24px;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
+  }
+  #stp-cro .stp-compare-card.featured {
+    border: 2px solid var(--blue);
+    background: #eff6ff;
+    box-shadow: 0 22px 60px rgba(37, 99, 235, 0.14);
+  }
+  #stp-cro .stp-compare-card h3,
+  #stp-cro .stp-quote-card h3 {
+    margin: 0 0 14px;
+    font-size: 22px;
+    line-height: 1.15;
+  }
+  #stp-cro .stp-compare-card ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 12px;
+    color: var(--text);
+    font-weight: 720;
+  }
+  #stp-cro .stp-compare-card li {
+    position: relative;
+    padding-left: 24px;
+  }
+  #stp-cro .stp-compare-card li::before {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 9px;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--blue);
+  }
+  #stp-cro .stp-quote-card {
+    background: #f8fafc;
+    box-shadow: none;
+  }
+  #stp-cro .stp-quote-card p {
+    margin: 0;
+    color: var(--text);
+    font-weight: 650;
+  }
+
   #stp-cro .stp-trust {
     background: #fff;
   }
@@ -903,6 +988,8 @@
     #stp-cro .stp-trust-grid,
     #stp-cro .stp-ba-grid,
     #stp-cro .stp-pricing-grid,
+    #stp-cro .stp-compare-grid,
+    #stp-cro .stp-quote-grid,
     #stp-cro .stp-stat-grid { grid-template-columns: 1fr; }
     #stp-cro .stp-logos { grid-template-columns: repeat(3, 1fr); }
     #stp-cro .stp-nav-links { display: none; }
@@ -959,8 +1046,8 @@
       <div class="stp-wrap stp-hero-grid">
         <div>
           <div class="stp-pill">AI resume tailoring with an instant Match Score</div>
-          <h1>Tailor your resume around your strongest angle for every job.</h1>
-          <p class="stp-copy">1stStep.ai helps you clarify your value, prove your impact, and generate role-specific resumes that do more than match keywords.</p>
+          <h1>Turn one resume into the right resume for each job.</h1>
+          <p class="stp-copy">Paste a role, see the match score, and generate a tailored resume that keeps your real experience specific, relevant, and ATS-friendly.</p>
           <div class="stp-signal-row" aria-label="Trust signals">
             <span class="stp-signal">Free positioning strategy</span>
             <span class="stp-signal">Human-readable output checks</span>
@@ -969,7 +1056,7 @@
           </div>
           <p class="stp-copy" style="margin-top:16px;font-size:16px;line-height:1.6;">
             <strong>Career Positioning Brief</strong><br>
-            Free users can review their strongest angle, missing proof points, weak bullets, and impact gaps before generating a tailored resume.
+            Spot the best story for the role, missing proof points, weak bullets, and impact gaps before you generate.
           </p>
 
           <a class="stp-drop" href="https://app.1ststep.ai">
@@ -1027,6 +1114,15 @@
               <p>Managed <mark>budget ownership</mark> across growth experiments and vendor spend.</p>
             </div>
           </div>
+          <div class="stp-hero-demo">
+            <video controls preload="metadata" poster="https://assets.cdn.filesafe.space/ER85bbRj2EUSuMtO0uFQ/media/69f01abf0d66f2a665c559d4.png">
+              <source src="https://assets.cdn.filesafe.space/ER85bbRj2EUSuMtO0uFQ/media/69f0192a05d41990012a808c.mp4" type="video/mp4">
+            </video>
+            <div class="stp-hero-demo-caption">
+              <span>Watch the workflow</span>
+              <span>2-minute product walkthrough</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -1060,7 +1156,7 @@
       <div class="stp-wrap">
         <p class="stp-kicker">Try the Role Match Score</p>
         <h2>See how your resume lines up with a role.</h2>
-        <p class="stp-copy">Paste a few resume skills and a job description snippet. This preview runs in the browser and shows how the full 1stStep workflow helps.</p>
+        <p class="stp-copy">Paste a few resume skills and a job description snippet. This preview runs in the browser and shows how 1stStep scores role fit.</p>
 
         <div class="stp-widget-grid">
           <div class="stp-widget-card">
@@ -1159,12 +1255,64 @@
 
     <section class="stp-section stp-demo">
       <div class="stp-wrap">
-        <p class="stp-kicker">Watch the workflow</p>
+        <p class="stp-kicker">Demo proof</p>
         <h2>See the match score, tailoring, cover letter, and resume vault in action.</h2>
         <div class="stp-video">
           <video controls preload="metadata" poster="https://assets.cdn.filesafe.space/ER85bbRj2EUSuMtO0uFQ/media/69f01abf0d66f2a665c559d4.png">
             <source src="https://assets.cdn.filesafe.space/ER85bbRj2EUSuMtO0uFQ/media/69f0192a05d41990012a808c.mp4" type="video/mp4">
           </video>
+        </div>
+      </div>
+    </section>
+
+    <section class="stp-section">
+      <div class="stp-wrap">
+        <p class="stp-kicker">Comparison</p>
+        <h2>Built for applications, not just a prettier resume draft.</h2>
+        <p class="stp-copy">ChatGPT can rewrite text. Generic resume builders can format documents. 1stStep.ai connects the application packet to the job you are actually applying for.</p>
+        <div class="stp-compare-grid" style="margin-top:28px;">
+          <article class="stp-compare-card featured">
+            <h3>1stStep.ai</h3>
+            <ul>
+              <li>Scores your resume against the actual job description.</li>
+              <li>Tailors bullets around your real experience and role requirements.</li>
+              <li>Saves each job-specific resume, cover letter, and application record.</li>
+              <li>Includes tracker and Chrome extension tools for repeated applying.</li>
+            </ul>
+          </article>
+          <article class="stp-compare-card">
+            <h3>ChatGPT</h3>
+            <ul>
+              <li>Flexible, but you have to write prompts and manage versions yourself.</li>
+              <li>No built-in match score, vault, application tracker, or job pipeline.</li>
+              <li>Easy to get generic wording unless you guide it carefully.</li>
+              <li>Useful for drafts, less useful for running a full job search.</li>
+            </ul>
+          </article>
+          <article class="stp-compare-card">
+            <h3>Generic Resume Builders</h3>
+            <ul>
+              <li>Good for templates and formatting.</li>
+              <li>Often disconnected from the exact role you want.</li>
+              <li>Usually stop before cover letters, tracking, and follow-up context.</li>
+              <li>Can make one resume look clean without making it role-specific.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="stp-section" style="background:#f8fafc;">
+      <div class="stp-wrap stp-quote-grid">
+        <div>
+          <p class="stp-kicker">Social proof</p>
+          <h2>Built for the messy middle of a real job search.</h2>
+          <p class="stp-copy">Early users are using 1stStep.ai to get unstuck, tailor faster, and keep each application version organized without pretending one resume fits every role.</p>
+        </div>
+        <div class="stp-quote-slots" aria-label="Beta quote checklist">
+          <article class="stp-quote-card"><h3>Clearer positioning</h3><p>Turn a broad resume into a sharper version that speaks directly to the job description.</p></article>
+          <article class="stp-quote-card"><h3>Faster tailoring</h3><p>Move from blank-page edits to a role-specific resume, cover letter, and next-step checklist.</p></article>
+          <article class="stp-quote-card"><h3>Organized applications</h3><p>Save the resume version, cover letter, job details, and notes so every application has a paper trail.</p></article>
         </div>
       </div>
     </section>
@@ -1202,7 +1350,7 @@
         <div class="stp-pricing-grid">
           <article class="stp-price-card">
             <h3>Free Account</h3>
-            <p class="stp-copy">Best for testing the workflow on your next few applications.</p>
+            <p class="stp-copy">Best for testing 1stStep.ai on your next few applications.</p>
             <div class="stp-price">$0</div>
             <ul class="stp-checks">
               <li><span class="stp-check"></span>3 tailored resumes included</li>
@@ -1242,7 +1390,7 @@
         <div class="stp-accordion">
           <details open>
             <summary>Is 1stStep.ai just another AI resume writer?</summary>
-            <p>No. It is built around the application workflow: upload your resume, paste a job description, get a match score, tailor the resume, create a cover letter, and save the version you used.</p>
+            <p>No. It is built for active applications: upload your resume, paste a job description, get a match score, tailor the resume, create a cover letter, and save the version you used.</p>
           </details>
           <details>
             <summary>Will it make things up?</summary>
@@ -1250,7 +1398,7 @@
           </details>
           <details>
             <summary>Do I need a credit card to start?</summary>
-            <p>No. The free account includes 3 tailored resumes so you can test the workflow before upgrading.</p>
+            <p>No. The free account includes 3 tailored resumes so you can test 1stStep.ai before upgrading.</p>
           </details>
           <details>
             <summary>Is my resume information private?</summary>
@@ -1414,9 +1562,12 @@
     if (isConfiguredGaId(GA_ID)) {
       window.dataLayer = window.dataLayer || [];
       window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
-      window.gtag("js", new Date());
-      window.gtag("config", GA_ID, { send_page_view: true });
-      loadScript("https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(GA_ID));
+      if (!window.__firstStepGaConfigured) {
+        window.__firstStepGaConfigured = true;
+        window.gtag("js", new Date());
+        window.gtag("config", GA_ID, { send_page_view: true });
+        loadScript("https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(GA_ID));
+      }
     }
 
     if (META_PIXEL_ID && !window.fbq) {

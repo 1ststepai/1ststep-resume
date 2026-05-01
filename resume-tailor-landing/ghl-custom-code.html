@@ -1,6 +1,6 @@
-<!-- 1stStep.ai GHL Custom HTML Block
-     Paste this entire block into a GoHighLevel Custom JS/HTML element.
-     Hosted product image and demo video URLs are already wired for GHL. -->
+<!-- 1stStep.ai Custom HTML Block
+     Paste this entire block into a Custom JS/HTML element.
+     Hosted product image and demo video URLs are already wired. -->
 <style>
   #stp-landing {
     --ink: #0f172a;
@@ -368,6 +368,60 @@
 
   #stp-landing .stp-feature { padding: 22px; }
 
+  #stp-landing .stp-comparison,
+  #stp-landing .stp-quote-grid {
+    display: grid;
+    gap: 16px;
+  }
+  #stp-landing .stp-comparison { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #stp-landing .stp-quote-grid { grid-template-columns: 0.95fr 1.05fr; align-items: stretch; }
+  #stp-landing .stp-quote-slots { display: grid; gap: 12px; }
+  #stp-landing .stp-compare-card,
+  #stp-landing .stp-quote-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
+  }
+  #stp-landing .stp-compare-card.featured {
+    border: 2px solid var(--blue);
+    background: #eff6ff;
+    box-shadow: 0 20px 58px rgba(37, 99, 235, 0.14);
+  }
+  #stp-landing .stp-compare-card h3,
+  #stp-landing .stp-quote-card h3 {
+    margin: 0 0 12px;
+    font-size: 20px;
+  }
+  #stp-landing .stp-compare-card ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 12px;
+    color: var(--text);
+    font-weight: 650;
+  }
+  #stp-landing .stp-compare-card li {
+    position: relative;
+    padding-left: 24px;
+  }
+  #stp-landing .stp-compare-card li::before {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 9px;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--blue);
+  }
+  #stp-landing .stp-quote-card {
+    background: #f8fafc;
+    box-shadow: none;
+  }
+
   #stp-landing .stp-feature-mark {
     width: 34px;
     height: 34px;
@@ -487,7 +541,9 @@
     #stp-landing .stp-steps,
     #stp-landing .stp-features,
     #stp-landing .stp-pricing,
-    #stp-landing .stp-two-col { grid-template-columns: 1fr; }
+    #stp-landing .stp-two-col,
+    #stp-landing .stp-comparison,
+    #stp-landing .stp-quote-grid { grid-template-columns: 1fr; }
     #stp-landing .stp-features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     #stp-landing .stp-cta-band .stp-wrap { flex-direction: column; align-items: flex-start; }
   }
@@ -538,8 +594,8 @@
       <div class="stp-hero-inner">
         <div class="stp-hero-copy">
           <div class="stp-eyebrow">ATS-friendly resume tailoring for active job seekers</div>
-          <h1>Tailor your resume around your strongest angle for every job.</h1>
-          <p class="stp-hero-subtitle">1stStep.ai helps you clarify your value, prove your impact, and generate role-specific resumes that do more than match keywords.</p>
+          <h1>Turn one resume into the right resume for each job.</h1>
+          <p class="stp-hero-subtitle">Paste a role, see the match score, and generate a tailored resume that keeps your real experience specific, relevant, and ATS-friendly.</p>
           <div class="stp-hero-actions">
             <a class="stp-btn stp-btn-primary" href="https://app.1ststep.ai">Start Free</a>
             <a class="stp-btn stp-btn-secondary" href="#stp-proof">Watch Demo</a>
@@ -551,7 +607,7 @@
             <div class="stp-proof"><strong>3 steps</strong><span>resume, job description, tailored output</span></div>
             <div class="stp-proof"><strong>15-30</strong><span>typical applications before an offer</span></div>
           </div>
-          <p class="stp-microcopy">Start with 3 free tailored resumes, a positioning brief, a match score, one cover letter, and vault preview. Upgrade when you want unlimited tailoring, full tracking, and the Chrome extension workflow.</p>
+          <p class="stp-microcopy">Start with 3 free tailored resumes, a match score, one cover letter, and vault preview. Upgrade when you want unlimited tailoring, full tracking, and the Chrome extension workflow.</p>
         </div>
       </div>
     </section>
@@ -559,9 +615,9 @@
     <section id="stp-proof" class="stp-section">
       <div class="stp-wrap">
         <div class="stp-section-head">
-          <p class="stp-kicker">Watch the demo</p>
+          <p class="stp-kicker">Demo proof</p>
           <h2>See how 1stStep.ai tailors a resume for a real job application.</h2>
-          <p class="stp-section-copy">A quick walkthrough with voiceover, so visitors can immediately see the resume, job description, match score, and tailored output workflow.</p>
+          <p class="stp-section-copy">A quick walkthrough with voiceover, so visitors can immediately see the resume, job description, match score, tailored output, and saved version.</p>
         </div>
         <div class="stp-demo-panel">
           <video controls preload="metadata" poster="https://assets.cdn.filesafe.space/ER85bbRj2EUSuMtO0uFQ/media/69f01abf0d66f2a665c559d4.png">
@@ -609,8 +665,8 @@
         </div>
         <div class="stp-steps">
           <article class="stp-step"><div class="stp-step-number">1</div><h3>Upload your resume</h3><p>Start with the resume you already have. Your original experience stays accurate and intact.</p></article>
-          <article class="stp-step"><div class="stp-step-number">2</div><h3>Paste the job description</h3><p>1stStep.ai reads the role, finds important keywords, and checks how closely your resume matches.</p></article>
-          <article class="stp-step"><div class="stp-step-number">3</div><h3>Apply with stronger materials</h3><p>Get a tailored resume, match score, cover letter, and saved version for your application tracker.</p></article>
+          <article class="stp-step"><div class="stp-step-number">2</div><h3>Paste the job description</h3><p>1stStep.ai reads the role, highlights the required language, and scores your current fit.</p></article>
+          <article class="stp-step"><div class="stp-step-number">3</div><h3>Apply with stronger materials</h3><p>Get a tailored resume, cover letter, and saved version for the exact role.</p></article>
         </div>
       </div>
     </section>
@@ -622,11 +678,41 @@
           <h2>Everything you need to apply faster without sending the same resume everywhere.</h2>
         </div>
         <div class="stp-features">
-          <article class="stp-feature"><div class="stp-feature-mark">1</div><h3>Career Positioning Brief</h3><p>Free users can review their strongest angle, missing proof points, weak bullets, and impact gaps before generating a tailored resume.</p></article>
-          <article class="stp-feature"><div class="stp-feature-mark">2</div><h3>Resume tailoring</h3><p>Reframe your resume around each role while keeping your background honest.</p></article>
+          <article class="stp-feature"><div class="stp-feature-mark">1</div><h3>Career Positioning Brief</h3><p>Spot the best story for the role, missing proof points, weak bullets, and impact gaps before you generate.</p></article>
+          <article class="stp-feature"><div class="stp-feature-mark">2</div><h3>Resume tailoring</h3><p>Turn your existing resume into a role-specific version without inventing experience.</p></article>
           <article class="stp-feature"><div class="stp-feature-mark">3</div><h3>Match score</h3><p>See what is aligned, what is missing, and where your application can improve.</p></article>
           <article class="stp-feature"><div class="stp-feature-mark">4</div><h3>Cover letters</h3><p>Generate a job-specific cover letter that matches your tailored resume.</p></article>
           <article class="stp-feature"><div class="stp-feature-mark">5</div><h3>Resume vault</h3><p>Save every tailored version so you know exactly what you sent to each company.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="stp-section stp-section-white">
+      <div class="stp-wrap">
+        <div class="stp-section-head">
+          <p class="stp-kicker">Comparison</p>
+          <h2>Built for applications, not just a prettier resume draft.</h2>
+          <p class="stp-section-copy">ChatGPT can rewrite text. Generic resume builders can format documents. 1stStep.ai connects the application packet to the job you are actually applying for.</p>
+        </div>
+        <div class="stp-comparison">
+          <article class="stp-compare-card featured"><h3>1stStep.ai</h3><ul><li>Scores your resume against the actual job description.</li><li>Tailors bullets around your real experience and role requirements.</li><li>Saves each job-specific resume, cover letter, and application record.</li><li>Includes tracker and Chrome extension tools for repeated applying.</li></ul></article>
+          <article class="stp-compare-card"><h3>ChatGPT</h3><ul><li>Flexible, but you have to write prompts and manage versions yourself.</li><li>No built-in match score, vault, application tracker, or job pipeline.</li><li>Easy to get generic wording unless you guide it carefully.</li><li>Useful for drafts, less useful for running a full job search.</li></ul></article>
+          <article class="stp-compare-card"><h3>Generic Resume Builders</h3><ul><li>Good for templates and formatting.</li><li>Often disconnected from the exact role you want.</li><li>Usually stop before cover letters, tracking, and follow-up context.</li><li>Can make one resume look clean without making it role-specific.</li></ul></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="stp-section">
+      <div class="stp-wrap stp-quote-grid">
+        <div class="stp-section-head">
+          <p class="stp-kicker">Social proof</p>
+          <h2>Built for the messy middle of a real job search.</h2>
+          <p class="stp-section-copy">Early users are using 1stStep.ai to get unstuck, tailor faster, and keep each application version organized without pretending one resume fits every role.</p>
+        </div>
+        <div class="stp-quote-slots">
+          <article class="stp-quote-card"><h3>Clearer positioning</h3><p>Turn a broad resume into a sharper version that speaks directly to the job description.</p></article>
+          <article class="stp-quote-card"><h3>Faster tailoring</h3><p>Move from blank-page edits to a role-specific resume, cover letter, and next-step checklist.</p></article>
+          <article class="stp-quote-card"><h3>Organized applications</h3><p>Save the resume version, cover letter, job details, and notes so every application has a paper trail.</p></article>
         </div>
       </div>
     </section>
@@ -639,7 +725,7 @@
         </div>
         <div class="stp-pricing">
           <article class="stp-price-card">
-            <div><h3>Free Account</h3><div class="stp-price">$0</div><p>Good for trying the workflow on your next few applications.</p></div>
+            <div><h3>Free Account</h3><div class="stp-price">$0</div><p>Good for testing 1stStep.ai on your next few applications.</p></div>
             <ul class="stp-checks"><li>3 tailored resumes per month</li><li>Career Positioning Brief</li><li>Role Match Score</li><li>1 cover letter per month</li><li>Resume vault preview</li><li>Save 3 jobs</li><li>No credit card required</li></ul>
             <a class="stp-btn stp-btn-secondary" href="https://app.1ststep.ai">Create Free Account</a>
           </article>
@@ -712,9 +798,12 @@
     if (isConfiguredGaId(GA_ID)) {
       window.dataLayer = window.dataLayer || [];
       window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
-      window.gtag("js", new Date());
-      window.gtag("config", GA_ID, { send_page_view: true });
-      loadScript("https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(GA_ID));
+      if (!window.__firstStepGaConfigured) {
+        window.__firstStepGaConfigured = true;
+        window.gtag("js", new Date());
+        window.gtag("config", GA_ID, { send_page_view: true });
+        loadScript("https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(GA_ID));
+      }
     }
 
     if (META_PIXEL_ID && !window.fbq) {
