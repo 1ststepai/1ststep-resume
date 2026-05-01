@@ -46,6 +46,11 @@ const EVENT_TAGS = {
   application_saved:          ['used_tracker', 'application_saved'],
   application_status_changed: ['used_tracker', 'application_status_changed'],
   tracker_viewed:             ['used_tracker'],
+  upgrade_intent:             ['upgrade_intent'],
+  paywall_unlock_click:       ['upgrade_intent'],
+  pricing_cta_click:          ['upgrade_intent'],
+  cover_letter_limit_view:    ['upgrade_intent'],
+  power_user:                 ['power_user', 'testimonial_candidate'],
 };
 
 function corsHeaders(req) {
