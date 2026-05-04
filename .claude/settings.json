@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Edit",
+      "Grep",
+      "Glob",
+      "Bash(git status)",
+      "Bash(git diff)",
+      "Bash(git diff --stat)",
+      "Bash(git log --oneline -5)",
+      "Bash(npm run lint)",
+      "Bash(npm run test)",
+      "Bash(npm run build)",
+      "Bash(node scripts/smoke-test.cjs)",
+      "Bash(node --check app.js)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push --force)",
+      "Bash(git reset --hard)",
+      "Bash(vercel env pull)",
+      "Bash(cat .env*)",
+      "Bash(printenv)",
+      "Bash(env)"
+    ]
+  }
+}
