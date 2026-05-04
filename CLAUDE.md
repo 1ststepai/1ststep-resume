@@ -15,6 +15,17 @@ Use the least context necessary. Do not scan the whole repo unless explicitly as
 7. For features, work in small verified chunks.
 8. Stop after one logical fix and report exactly what changed.
 
+## LeanCTX Context Layer
+
+When LeanCTX MCP tools are available, use them instead of raw native context tools:
+
+- Use `ctx_tree` instead of `ls`, `find`, or broad directory scans.
+- Use `ctx_search` instead of broad grep/search for code discovery.
+- Use `ctx_read` instead of raw file reads when inspecting source files.
+- Use `ctx_shell` instead of raw shell/bash for commands that may produce long output.
+
+Keep using native edit/write tools for file changes. If LeanCTX is unavailable in the current environment, continue normally but preserve the same minimal-context behavior.
+
 ## Required Workflow
 
 1. Restate the task in one sentence.
