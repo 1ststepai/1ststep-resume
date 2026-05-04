@@ -4,6 +4,17 @@
 
 Use the least context necessary. Do not scan the whole repo unless explicitly asked.
 
+## LeanCTX Requirement
+
+If lean-ctx tools are available, prefer them over native reads/search/shell for context-heavy work:
+
+- Use `ctx_search` before opening files.
+- Use `ctx_read` in `map`, `signatures`, or `auto` mode before full reads.
+- Use `ctx_shell` for verbose commands so output is compressed.
+- Use native tools only when lean-ctx is unavailable or a raw edit/read is required.
+
+For setup and verification, see `docs/LEAN_CTX.md`.
+
 ## Token Discipline
 
 1. Read this file and `docs/AI_MEMORY.md` first.

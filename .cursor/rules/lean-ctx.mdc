@@ -1,0 +1,17 @@
+---
+description: Use LeanCTX to reduce token usage during codebase discovery and verification.
+alwaysApply: true
+---
+
+# LeanCTX Rule
+
+When LeanCTX tools are available, prefer them before native reads/search/shell:
+
+- Use `ctx_search` for code discovery.
+- Use `ctx_tree` for repository maps.
+- Use `ctx_read` with compact modes before opening full files.
+- Use `ctx_shell` for verbose command output.
+
+Do not scan the whole repo. Locate the smallest relevant files first, then patch surgically.
+
+Read `CLAUDE.md`, `docs/AI_MEMORY.md`, and `docs/LEAN_CTX.md` before non-trivial work.
