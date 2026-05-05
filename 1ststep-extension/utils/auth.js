@@ -22,10 +22,10 @@ export async function getUserProfile() {
  * Get user tier token for API calls
  * Handles caching and expiry validation
  */
-export async function getTierToken(email) {
+export async function getTierToken(email, ownerAccessToken = '') {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage(
-      { action: 'GET_TIER_TOKEN', email },
+      { action: 'GET_TIER_TOKEN', email, ownerAccessToken },
       (response) => {
         if (response?.success) {
           resolve(response.data);
@@ -59,7 +59,7 @@ export async function checkAuth() {
     return { isAuthenticated: false };
   }
   
-  const tierData = await getTierToken(profile.email);
+  const tierData = await getTierToken(profile.email, profile.ownerAccessToken || '');
   
   return {
     isAuthenticated: true,
@@ -67,6 +67,7 @@ export async function checkAuth() {
     name: profile.name,
     tier: tierData?.tier || 'free',
     tierToken: tierData?.tierToken,
+    ownerAccessToken: tierData?.ownerAccessToken || profile.ownerAccessToken || '',
     status: tierData?.status
   };
 }

@@ -6430,6 +6430,9 @@ ${desc}`;
 
     function signOutAndClear() {
       if (!confirm('This will remove all your saved data (resume, account info, tailor history) from this device. Continue?')) return;
+      try {
+        window.postMessage({ source: 'app', action: 'CLEAR_AUTH' }, '*');
+      } catch (e) { /* extension not installed */ }
       // Clear all 1ststep localStorage keys
       const keysToRemove = Object.keys(localStorage).filter(k => k.startsWith('1ststep'));
       keysToRemove.forEach(k => localStorage.removeItem(k));
@@ -6657,8 +6660,9 @@ ${desc}`;
         const ownerRestoreCode = String(options.ownerRestoreCode || '').trim();
         const subscriptionRestoreCode = String(options.subscriptionRestoreCode || '').trim();
         const restoreChallenge = String(options.restoreChallenge || '').trim();
-        const shouldBypassCache = !!ownerRestoreCode;
         const cached = JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || 'null');
+        const ownerAccessToken = String(options.ownerAccessToken || cached?.ownerAccessToken || '').trim();
+        const shouldBypassCache = !!(ownerRestoreCode || subscriptionRestoreCode || ownerAccessToken);
         if (cached?.status === 'beta') {
           localStorage.removeItem(SUB_CACHE_KEY);
           localStorage.removeItem('1ststep_tier');
@@ -6669,20 +6673,33 @@ ${desc}`;
           renderPricingCard();
           return cached;
         }
-        if (!ownerRestoreCode && (!subscriptionRestoreCode || !restoreChallenge)) {
+        if (!ownerRestoreCode && !ownerAccessToken && (!subscriptionRestoreCode || !restoreChallenge)) {
           return null;
         }
         const fetchOptions = ownerRestoreCode
           ? { headers: { 'X-Owner-Access-Secret': ownerRestoreCode } }
           : subscriptionRestoreCode && restoreChallenge
             ? { headers: { 'X-Subscription-Restore-Code': subscriptionRestoreCode, 'X-Subscription-Restore-Challenge': restoreChallenge } }
+          : ownerAccessToken
+            ? { headers: { 'X-Owner-Access-Token': ownerAccessToken } }
           : undefined;
         const resp = await fetch(`/api/subscription?email=${encodeURIComponent(email)}`, fetchOptions);
         if (!resp.ok) return null;
         const data = await resp.json();
         const tier = data.tier || 'free';
+        const nextOwnerAccessToken = tier !== 'free' && data.status === 'owner_access'
+          ? (data.ownerAccessToken || ownerAccessToken || '')
+          : '';
         // Cache the result
-        localStorage.setItem(SUB_CACHE_KEY, JSON.stringify({ email, tier, ts: Date.now(), tierToken: data.tierToken || '', expiresInDays: data.expiresInDays ?? null, status: data.status || '' }));
+        localStorage.setItem(SUB_CACHE_KEY, JSON.stringify({
+          email,
+          tier,
+          ts: Date.now(),
+          tierToken: data.tierToken || '',
+          ownerAccessToken: nextOwnerAccessToken,
+          expiresInDays: data.expiresInDays ?? null,
+          status: data.status || ''
+        }));
         _applySubscriptionTier(tier, true);
         return { ...data, tier };
       } catch (err) {
@@ -6706,11 +6723,11 @@ ${desc}`;
       const validTiers = ['free', 'essential', 'complete', 'pro'];
       if (!validTiers.includes(tier)) return;
       const current = localStorage.getItem('1ststep_tier') || 'free';
-      if (tier === current) return; // no change
       localStorage.setItem('1ststep_tier', tier);
       currentTier = tier; // a update in-memory variable so gates take effect immediately
       // Update the in-memory TIER if it exists
       if (typeof TIER !== 'undefined') window.TIER = tier;
+      if (tier === current) return; // no visual change needed
       // Notify user on downgrade
       if (tier === 'free' && current !== 'free') {
         showToast('Your subscription has ended - upgrade to continue', 'warning');
@@ -8877,7 +8894,14 @@ ${_PRINT_BTN}
       };
 
       _BACKUP_KEYS.forEach(key => {
-        const val = localStorage.getItem(key);
+        let val = localStorage.getItem(key);
+        if (key === SUB_CACHE_KEY && val) {
+          try {
+            const subCache = JSON.parse(val);
+            delete subCache.ownerAccessToken;
+            val = JSON.stringify(subCache);
+          } catch { /* keep original value if older backup data is malformed */ }
+        }
         if (val !== null) backup.data[key] = val;
       });
 
@@ -8911,7 +8935,15 @@ ${_PRINT_BTN}
           let restored = 0;
           _BACKUP_KEYS.forEach(key => {
             if (backup.data[key] !== undefined) {
-              localStorage.setItem(key, backup.data[key]);
+              let val = backup.data[key];
+              if (key === SUB_CACHE_KEY && val) {
+                try {
+                  const subCache = JSON.parse(val);
+                  delete subCache.ownerAccessToken;
+                  val = JSON.stringify(subCache);
+                } catch { /* keep original value if older backup data is malformed */ }
+              }
+              localStorage.setItem(key, val);
               restored++;
             }
           });

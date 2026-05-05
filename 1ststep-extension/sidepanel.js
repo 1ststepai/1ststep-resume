@@ -33,6 +33,7 @@ async function getAuthStatus() {
         email: profile?.email || '',
         tier: profile?.tier || 'free',
         tierToken: profile?.tierToken || '',
+        ownerAccessToken: profile?.ownerAccessToken || '',
         resume: resume || ''
       });
     });
@@ -102,6 +103,20 @@ async function tailorResume(authStatus) {
     const resume = authStatus.resume;
     if (!resume) {
       throw new Error('No resume found. Please add your resume in 1stStep.ai.');
+    }
+
+    if (authStatus.ownerAccessToken) {
+      try {
+        const subRes = await fetch(
+          `${APP_URL}/api/subscription?email=${encodeURIComponent(authStatus.email)}`,
+          { headers: { 'X-Owner-Access-Token': authStatus.ownerAccessToken } }
+        );
+        if (subRes.ok) {
+          const subData = await subRes.json();
+          if (subData.tierToken) authStatus.tierToken = subData.tierToken;
+          if (subData.ownerAccessToken) authStatus.ownerAccessToken = subData.ownerAccessToken;
+        }
+      } catch (_) { /* keep the synced token if refresh is unavailable */ }
     }
     
     // Call backend to tailor

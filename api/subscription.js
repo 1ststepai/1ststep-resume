@@ -27,6 +27,7 @@ import { alertOnAbuse } from './_alert.js';
 // Valid for 20 minutes. claude.js verifies without contacting Stripe.
 const TOKEN_TTL_MS = 20 * 60 * 1000;
 const RESTORE_CODE_TTL_MS = 10 * 60 * 1000;
+const OWNER_ACCESS_TOKEN_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
 function signTierToken(email, tier) {
   const secret = process.env.TIER_SECRET;
@@ -108,6 +109,25 @@ function verifyRestoreChallenge(email, code, challenge) {
   if (!data || Date.now() > Number(data.exp)) return false;
   if (String(data.email || '').toLowerCase() !== String(email || '').toLowerCase()) return false;
   return safeSecretEquals(data.codeHash, hashRestoreCode(email, code));
+}
+
+function signOwnerAccessToken(email) {
+  const payload = Buffer.from(JSON.stringify({
+    email: String(email || '').toLowerCase(),
+    scope: 'owner_access',
+    exp: Date.now() + OWNER_ACCESS_TOKEN_TTL_MS,
+    nonce: randomBytes(12).toString('hex'),
+  })).toString('base64url');
+  return signPayload(payload);
+}
+
+function verifyOwnerAccessToken(email, token) {
+  const data = verifySignedPayload(token);
+  if (!data || Date.now() > Number(data.exp)) return false;
+  if (data.scope !== 'owner_access') return false;
+  const normalizedEmail = String(email || '').toLowerCase();
+  if (String(data.email || '').toLowerCase() !== normalizedEmail) return false;
+  return getOwnerAccessEmails().includes(normalizedEmail);
 }
 
 // ── Owner restore access ─────────────────────────────────────────────────────
@@ -203,7 +223,7 @@ function corsHeaders(req) {
   return {
     'Access-Control-Allow-Origin':  allowed ? origin : ALLOWED_ORIGINS[0],
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Owner-Access-Secret, X-Subscription-Restore-Code, X-Subscription-Restore-Challenge',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Owner-Access-Secret, X-Owner-Access-Token, X-Subscription-Restore-Code, X-Subscription-Restore-Challenge',
   };
 }
 
@@ -443,10 +463,34 @@ export default async function handler(req, res) {
 
   const ownerRestoreCode = req.headers['x-owner-access-secret'] || '';
   if (hasOwnerAccess(email, ownerRestoreCode)) {
+    const tierToken = signTierToken(email, 'complete');
+    const ownerAccessToken = signOwnerAccessToken(email);
+    if (!tierToken || !ownerAccessToken) {
+      console.error('TIER_SECRET not set. Owner access token signing unavailable.');
+      return res.status(500).json({ tier: 'free', error: 'Owner access unavailable.' });
+    }
     return res.status(200).json({
       tier: 'complete',
       status: 'owner_access',
-      tierToken: signTierToken(email, 'complete'),
+      tierToken,
+      ownerAccessToken,
+      expiresAt: null,
+      expiresInDays: null,
+    });
+  }
+
+  const ownerAccessToken = req.headers['x-owner-access-token'] || '';
+  if (verifyOwnerAccessToken(email, ownerAccessToken)) {
+    const tierToken = signTierToken(email, 'complete');
+    if (!tierToken) {
+      console.error('TIER_SECRET not set. Owner access token refresh unavailable.');
+      return res.status(500).json({ tier: 'free', error: 'Owner access unavailable.' });
+    }
+    return res.status(200).json({
+      tier: 'complete',
+      status: 'owner_access',
+      tierToken,
+      ownerAccessToken,
       expiresAt: null,
       expiresInDays: null,
     });
