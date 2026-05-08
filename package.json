@@ -6,6 +6,9 @@
   "engines": {
     "node": "20.x"
   },
+  "scripts": {
+    "smoke": "node scripts/smoke-test.cjs"
+  },
   "dependencies": {
     "stripe": "^16.0.0"
   }
