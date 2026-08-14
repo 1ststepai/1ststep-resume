@@ -10,6 +10,6 @@
     "smoke": "node scripts/smoke-test.cjs"
   },
   "dependencies": {
-    "stripe": "^16.0.0"
+    "stripe": "^22.3.2"
   }
 }
