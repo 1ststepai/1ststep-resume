@@ -75,17 +75,61 @@ async function syncToExtension() {
 
     // Fetch fresh tier token from /api/subscription
     try {
-      const response = await fetch(`/api/subscription?email=${encodeURIComponent(profile.email)}`);
+      let existingSubCache = {};
+      let ownerAccessToken = '';
+      try {
+        existingSubCache = JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}');
+        ownerAccessToken = existingSubCache.ownerAccessToken || '';
+      } catch(e) {}
+
+      const response = await fetch(
+        `/api/subscription?email=${encodeURIComponent(profile.email)}`,
+        ownerAccessToken ? { headers: { 'X-Owner-Access-Token': ownerAccessToken } } : undefined
+      );
       const sub = await response.json();
+      const fallbackTier = !ownerAccessToken && existingSubCache.tier && existingSubCache.tier !== 'free' && existingSubCache.tierToken
+        ? existingSubCache.tier
+        : 'free';
+      const effectiveTier = sub.tier && (sub.tier !== 'free' || sub.tierToken) ? sub.tier : fallbackTier;
+      const effectiveTierToken = sub.tierToken || (!ownerAccessToken ? existingSubCache.tierToken : '') || '';
+      const refreshedOwnerAccessToken = effectiveTier !== 'free' ? (sub.ownerAccessToken || ownerAccessToken) : '';
 
       const syncData = {
         '1ststep_profile': {
           email:     profile.email,
           name:      profile.name || (profile.firstName ? `${profile.firstName} ${profile.lastName || ''}`.trim() : ''),
-          tier:      sub.tier     || 'free',
-          tierToken: sub.tierToken || ''
+          tier:      effectiveTier,
+          tierToken: effectiveTierToken,
+          ownerAccessToken: refreshedOwnerAccessToken
         }
       };
+
+      if (refreshedOwnerAccessToken) {
+        try {
+          const existing = JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}');
+          localStorage.setItem('1ststep_sub_cache', JSON.stringify({
+            ...existing,
+            email: profile.email,
+            tier: effectiveTier,
+            status: sub.status || existing.status || '',
+            tierToken: effectiveTierToken,
+            ownerAccessToken: refreshedOwnerAccessToken,
+            ts: Date.now()
+          }));
+        } catch(e) {}
+      } else if (ownerAccessToken) {
+        try {
+          localStorage.setItem('1ststep_sub_cache', JSON.stringify({
+            ...existingSubCache,
+            email: profile.email,
+            tier: effectiveTier,
+            status: sub.status || '',
+            tierToken: effectiveTierToken,
+            ownerAccessToken: '',
+            ts: Date.now()
+          }));
+        } catch(e) {}
+      }
 
       if (resumeRaw) {
         syncData['1ststep_resume'] = resumeRaw;
@@ -113,7 +157,8 @@ async function syncToExtension() {
             email: profile.email,
             name:  profile.name || '',
             tier:  profile.tier || 'free',
-            tierToken: ''
+            tierToken: '',
+            ownerAccessToken: profile.ownerAccessToken || ''
           }
         });
       } catch (apiErr) {
@@ -149,6 +194,20 @@ window.addEventListener('message', async (event) => {
       await syncToExtension();
     } else {
       console.log('[1stStep] Sync throttled - too soon since last sync');
+    }
+  }
+
+  if (msg.action === 'CLEAR_AUTH') {
+    try {
+      chrome.storage.sync.remove(['1ststep_profile', '1ststep_resume', '1ststep_stats'], () => {
+        if (chrome.runtime.lastError) {
+          console.error('[1stStep] Auth clear failed:', chrome.runtime.lastError);
+        } else {
+          console.log('[1stStep] Cleared synced auth data');
+        }
+      });
+    } catch (err) {
+      console.error('[1stStep] Auth clear error:', err);
     }
   }
 });

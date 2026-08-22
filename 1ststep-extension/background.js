@@ -10,14 +10,18 @@ const MODES = { TAILOR: 'tailor', COVER_LETTER: 'coverLetter' };
 
 // Auth token cache { token, expiry }
 let authTokenCache = null;
+const TIER_TOKEN_CACHE_TTL_MS = 19 * 60 * 1000;
 
 /**
  * Fetch the user's tier token from 1stStep.ai backend
  * The token is HMAC-signed and valid for 20 minutes
  */
-async function fetchTierToken(email) {
+async function fetchTierToken(email, ownerAccessToken = '') {
   try {
-    const response = await fetch(`${APP_URL}/api/subscription?email=${encodeURIComponent(email)}`);
+    const response = await fetch(
+      `${APP_URL}/api/subscription?email=${encodeURIComponent(email)}`,
+      ownerAccessToken ? { headers: { 'X-Owner-Access-Token': ownerAccessToken } } : undefined
+    );
     if (!response.ok) throw new Error(`Subscription lookup failed: ${response.status}`);
 
     const data = await response.json();
@@ -25,6 +29,7 @@ async function fetchTierToken(email) {
 
     authTokenCache = {
       ...data,
+      email,
       fetchedAt: Date.now()
     };
 
@@ -38,18 +43,17 @@ async function fetchTierToken(email) {
 /**
  * Get cached tier token if valid, otherwise fetch fresh one
  */
-async function getTierToken(email) {
-  // If we have a cached token and it's not expired, use it
-  if (authTokenCache && authTokenCache.expiresAt) {
+async function getTierToken(email, ownerAccessToken = '') {
+  // Tier tokens are signed for 20 minutes. Refresh one minute early.
+  if (authTokenCache?.email === email && authTokenCache?.tierToken && !ownerAccessToken) {
     const now = Date.now();
-    const expiryBuffer = 60000; // 1 minute buffer before actual expiry
-    if (now < authTokenCache.expiresAt - expiryBuffer) {
+    if (now - authTokenCache.fetchedAt < TIER_TOKEN_CACHE_TTL_MS) {
       return authTokenCache;
     }
   }
 
   // Fetch fresh token
-  return fetchTierToken(email);
+  return fetchTierToken(email, ownerAccessToken);
 }
 
 /**
@@ -89,7 +93,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       switch (request.action) {
         // ─── AUTH ──────────────────────────────────
         case 'GET_TIER_TOKEN': {
-          const tierData = await getTierToken(request.email);
+          const tierData = await getTierToken(request.email, request.ownerAccessToken || '');
           sendResponse({ success: !!tierData, data: tierData });
           break;
         }

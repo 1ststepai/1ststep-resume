@@ -33,6 +33,7 @@ async function checkAuth() {
         email:    profile?.email   || '',
         tier:     profile?.tier    || 'free',
         tierToken: profile?.tierToken || '',
+        ownerAccessToken: profile?.ownerAccessToken || '',
         resume:   resume || ''
       });
     });
@@ -390,7 +391,8 @@ async function autofillPage(auth, btn) {
     let tierToken = auth.tierToken;
     try {
       const subRes = await fetch(
-        `${APP_URL}/api/subscription?email=${encodeURIComponent(auth.email)}`
+        `${APP_URL}/api/subscription?email=${encodeURIComponent(auth.email)}`,
+        auth.ownerAccessToken ? { headers: { 'X-Owner-Access-Token': auth.ownerAccessToken } } : undefined
       );
       if (subRes.ok) {
         const subData = await subRes.json();
