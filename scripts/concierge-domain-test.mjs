@@ -8,7 +8,7 @@ import {
   advanceManagedApplicationSession,
   advanceSalesDemo,
   approveBatch,
-  buildReadinessDraftFromSources,
+  buildCareerStoryDraft, buildReadinessDraftFromSources,
   buildVerifiedResumeDraft,
   canAutoSubmit,
   confirmReadinessDraft,
@@ -175,6 +175,16 @@ assert.ok(readinessDraft.proposals.some(item => item.fieldKey === 'contact' && i
 assert.ok(readinessDraft.proposals.some(item => item.fieldKey === 'employment' && /Fixture Company/.test(item.value)));
 assert.ok(readinessDraft.proposals.some(item => item.fieldKey === 'skills' && /Sourcing/.test(item.value)));
 assert.ok(!readinessDraft.proposals.some(item => /invented/i.test(item.value)));
+const storyDraft = buildCareerStoryDraft({
+  contact: 'Jordan Test · Denver, CO',
+  employment: ['Fixture Company · Buyer · 2021-present'],
+  education: ['B.S. Business · Example University'],
+  skills: ['Sourcing', 'Excel'],
+  uncertainties: ['Exact start month'],
+}, at);
+assert.deepEqual(storyDraft.proposals.map(item => item.fieldKey), ['contact', 'employment', 'education', 'skills']);
+assert.equal(storyDraft.status, 'pending');
+assert.deepEqual(storyDraft.uncertainties, ['Exact start month']);
 let stagedDraftState = stageReadinessDraft(createDeskState(), readinessDraft, at);
 assert.equal(stagedDraftState.reusableFacts.length, 0);
 stagedDraftState = confirmReadinessDraft(stagedDraftState, at);

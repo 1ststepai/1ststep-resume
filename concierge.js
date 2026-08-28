@@ -1,7 +1,7 @@
 import { buildSearchLinks, classifyConciergeMessage, conciergeStateGuidance, parseMission } from './lib/concierge-router.js';
 import {
   ACTION_TYPES, APPLICATION_WORKFLOW_STEPS, DEMO_STAGES, READINESS_FIELDS, REDACTED_WORKFLOW_REPLAY, addActionItem, addRole, advanceManagedApplicationSession, advanceSalesDemo, approveBatch,
-  buildReadinessDraftFromSources, buildVerifiedResumeDraft, confirmReadinessDraft, confirmReusableFact, createApprovalBatch, createDeskState, createSalesDemo, deleteReusableFact, discardReadinessDraft,
+  buildCareerStoryDraft, buildReadinessDraftFromSources, buildVerifiedResumeDraft, confirmReadinessDraft, confirmReusableFact, createApprovalBatch, createDeskState, createSalesDemo, deleteReusableFact, discardReadinessDraft,
   exportReadinessData, importLegacyEntries, packageGaps, pauseManagedApplicationSession, pipelineCounts, readinessStatus, resetSalesDemo,
   recordGeneratedPackage, resolveActionItem, resolveManagedApplicationException, resumeManagedApplicationSession, setAutonomyLevel, setStandingPolicy, stageReadinessDraft, startManagedApplicationSession, transitionRole, truthProfileGaps, updateTruthProfile,
   verificationGaps,
@@ -12,14 +12,17 @@ const DESK_KEY = '1ststep_concierge_desk_v2';
 const TAILOR_REQUEST_KEY = '1ststep_concierge_tailor_request_v1';
 const PACKAGE_RESULT_KEY = '1ststep_concierge_package_result_v1';
 const AI_CONSENT_KEY = '1ststep_concierge_ai_consent_v1';
+const CAREER_STORY_CONSENT_KEY = '1ststep_career_story_ai_consent_v1';
 const RESUME_KEYS = ['1ststep_resume', '1ststep_resume_text'];
 const $ = id => document.getElementById(id);
 const list = value => String(value || '').split(/[\n,]/).map(item => item.trim()).filter(Boolean);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
+const escapeXmlData = value => String(value ?? '').replace(/[&<>]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[character]);
 let missionState = loadJson(MISSION_KEY, { mission: {}, messages: [] });
 let deskState = createDeskState(loadJson(DESK_KEY, {}));
 let activeQuestionKey = '';
 let resumeInterviewActive = false;
+let careerStoryActive = false;
 const QUICK_ANSWERS = Object.freeze({
   authorization: ['Authorized to work in the United States', 'Not currently authorized', 'Unsure'],
   sponsorship: ['No sponsorship required', 'Sponsorship required', 'Unsure'],
@@ -214,12 +217,52 @@ async function askSmartConcierge(input) {
   };
   const pending = addMessage('assistant', '<strong>Reviewing your mission and deciding the best next step…</strong>', false);
   try {
-    const reply = await callClaude('concierge', 'claude-haiku-4-5-20251001', `<concierge_state>${JSON.stringify(stateSummary)}</concierge_state>\n<user_request>${redactChatForModel(input)}</user_request>`, 350);
+    const reply = await callClaude('concierge', 'claude-haiku-4-5-20251001', `<concierge_state>${escapeXmlData(JSON.stringify(stateSummary))}</concierge_state>\n<user_request>${escapeXmlData(redactChatForModel(input))}</user_request>`, 350);
     pending.remove();
     addMessage('assistant', `${escapeHtml(reply).replaceAll('\n', '<br>')}<div class="quick">${guidance.actions.map(action => `<button data-prompt="${escapeHtml(action.prompt)}">${escapeHtml(action.label)}</button>`).join('')}</div>`);
   } catch {
     pending.remove();
     addMessage('assistant', guidanceHtml(guidance, 'I saved what I could from that request.'));
+  }
+}
+
+function startCareerStory() {
+  if (localStorage.getItem(CAREER_STORY_CONSENT_KEY) !== 'approved') {
+    const approved = window.confirm('Use your career story to build a resume? The story you type—including any personal details you include—will be sent to 1stStep’s configured AI provider to propose resume facts. Nothing becomes reusable until you review and confirm it, and nothing is sent to an employer.');
+    if (!approved) {
+      addMessage('assistant', '<strong>Career-story processing was not enabled.</strong><br>You can still upload a resume or use the local guided questions.');
+      return;
+    }
+    localStorage.setItem(CAREER_STORY_CONSENT_KEY, 'approved');
+  }
+  careerStoryActive = true;
+  addMessage('assistant', '<strong>Tell me who you are in your own words.</strong><br>Include the roles and employers you remember, approximate or exact dates, education, skills, and a few truthful outcomes. One message is enough. I’ll separate confirmed details from anything unclear.');
+  $('messageInput').placeholder = 'I started as… then moved into… My strongest skills are…';
+  $('messageInput').focus();
+}
+
+function parseCareerStoryResponse(text) {
+  const clean = String(text || '').replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  return JSON.parse(clean);
+}
+
+async function processCareerStory(input) {
+  careerStoryActive = false;
+  $('messageInput').placeholder = 'I need 30 remote procurement jobs, $110k+, using my saved resume';
+  const pending = addMessage('assistant', '<strong>Organizing your story into reviewable resume facts…</strong>', false);
+  try {
+    const extracted = parseCareerStoryResponse(await callClaude(
+      'profileExtractor', 'claude-haiku-4-5-20251001', `<career_story>${escapeXmlData(input)}</career_story>`, 900,
+    ));
+    const draft = buildCareerStoryDraft(extracted);
+    deskState = stageReadinessDraft(deskState, draft);
+    saveAll(); renderAll(); pending.remove();
+    const rows = draft.proposals.map(item => `<strong>${escapeHtml(item.label)}:</strong> ${escapeHtml(item.value).replaceAll('\n', ' · ')}`).join('<br>');
+    const uncertainties = draft.uncertainties.length ? `<br><strong>Still unclear:</strong> ${escapeHtml(draft.uncertainties.join(' · '))}` : '';
+    addMessage('assistant', `<strong>Here’s the resume profile I heard. Please confirm it before I use it.</strong><br>${rows}${uncertainties}<div class="quick"><button data-prompt="Confirm these career facts and build my resume">Confirm & create resume</button><button data-prompt="Correct my career story">Correct something</button></div>`);
+  } catch (error) {
+    pending.remove();
+    addMessage('assistant', `<strong>I couldn’t safely turn that into confirmed resume facts yet.</strong><br>${escapeHtml(error.message)} Try describing your roles, employers, dates, education, and skills in one message.<div class="quick"><button data-prompt="Let me tell you who I am and build my resume">Try again</button><button data-prompt="Build my resume with guided questions">Use guided questions</button></div>`);
   }
 }
 
@@ -252,7 +295,7 @@ async function generateMasterResume() {
   }
   setResumeMessage('Generating a polished master resume from verified facts…');
   try {
-    const generated = await callClaude('resumeBuilder', 'claude-sonnet-4-6', `<verified_candidate_facts>\n${base.text}\n</verified_candidate_facts>`, 2600);
+    const generated = await callClaude('resumeBuilder', 'claude-sonnet-4-6', `<verified_candidate_facts>\n${escapeXmlData(base.text)}\n</verified_candidate_facts>`, 2600);
     $('resumeEditor').value = sanitizeResumeText(generated);
     setResumeMessage('AI-generated master resume is ready for your review. Nothing is saved until you choose Save resume.', 'good');
   } catch (error) {
@@ -281,6 +324,16 @@ function renderMission() {
 }
 
 function respond(input) {
+  if (careerStoryActive) {
+    const safety = classifyConciergeMessage(`resume ${input}`);
+    if (safety.kind === 'blocked') {
+      careerStoryActive = false;
+      addMessage('assistant', '<strong>I can’t process passwords, OTPs, CAPTCHA answers, malicious instructions, or protected-trait ranking.</strong> Start again with career facts only.');
+      return;
+    }
+    processCareerStory(input);
+    return;
+  }
   const classification = classifyConciergeMessage(input);
   if (classification.kind === 'blocked') {
     const copy = classification.reason === 'protected-trait'
@@ -290,6 +343,22 @@ function respond(input) {
   }
   if (classification.kind === 'off-topic') { addMessage('assistant', 'I only handle job-search work: readiness, discovery, truthful documents, applications, tracking, interviews, and follow-up.'); return; }
   if (classification.kind === 'empty') return;
+  if (/confirm these career facts and build my resume/i.test(input) && deskState.readinessDraft?.status === 'pending') {
+    safeAction(() => { deskState = confirmReadinessDraft(deskState); });
+    addMessage('assistant', '<strong>Confirmed.</strong><br>I saved only the facts you reviewed. Now I’ll create the master resume draft for your approval.');
+    generateMasterResume();
+    return;
+  }
+  if (/correct my career story/i.test(input)) {
+    careerStoryActive = true;
+    addMessage('assistant', '<strong>Tell me the correction in one message.</strong><br>I’ll rebuild the proposal and ask you to confirm it again.');
+    $('messageInput').focus();
+    return;
+  }
+  if (/tell (?:you )?(?:who i am|about myself)|career story|start career-story resume/i.test(input)) {
+    startCareerStory();
+    return;
+  }
   if (/build (?:my |a )?resume|create (?:my |a )?resume|write (?:my |a )?resume/i.test(input)) {
     addMessage('assistant', '<strong>I’ll build the master resume with you.</strong><br>I’ll reuse confirmed facts, ask only for missing essentials, then generate a polished draft for your review without inventing anything.');
     startResumeInterview();
@@ -516,6 +585,7 @@ $('resumeFile').addEventListener('change', async event => {
   } catch (error) { setResumeMessage(error.message, 'warn'); }
 });
 $('buildResumeDraft').addEventListener('click', () => startResumeInterview());
+$('careerStoryResume').addEventListener('click', () => { closeResumeSetup(); startCareerStory(); });
 $('saveResume').addEventListener('click', () => {
   try {
     const text = saveResumeText($('resumeEditor').value, 'concierge-reviewed', $('resumeFile').files[0]?.name || '');
