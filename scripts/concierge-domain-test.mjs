@@ -196,7 +196,7 @@ assert.equal(pipelineCounts(managedState).Submitted, 0);
 assert.ok(managedSession.timeline.every(event => !/@example\.com|555-01|123 Main/i.test(event.summary)));
 
 const replayStatuses = new Set(REDACTED_WORKFLOW_REPLAY.map(event => event.status));
-['Verified - Package Preparation', 'Closed by direct page', 'Location Unverified', 'Duplicate/In Process', 'Login Required / Retry', 'Transmission Confirmation Required', 'ATS Configuration Blocked', 'Human Action Required - password/reset', 'Human Action Required - OTP delivery and code']
+['Verified - Package Preparation', 'Closed by direct page', 'Location Unverified', 'Duplicate/In Process', 'Login Required / Retry', 'Transmission Confirmation Required', 'ATS Configuration Blocked', 'Human Action Required - password/reset', 'Human Action Required - OTP', 'Password Reset Requested - Outcome Pending']
   .forEach(status => assert.ok(replayStatuses.has(status)));
 REDACTED_WORKFLOW_REPLAY.forEach(event => assert.ok(APPLICATION_ACTIVITY_STATUSES.includes(event.status)));
 
@@ -224,8 +224,16 @@ batch32State = startManagedApplicationSession(batch32State, { id: 'session-holle
 batch32State = pauseManagedApplicationSession(batch32State, 'session-modine', 'invalid-credentials', at);
 assert.equal(batch32State.applicationSessions.find(session => session.id === 'session-modine').blockers.at(-1).type, 'PASSWORD_RESET');
 assert.equal(batch32State.applicationSessions.find(session => session.id === 'session-holley').status, 'active');
+batch32State = pauseManagedApplicationSession(batch32State, 'session-modine', 'password-reset-requested', at);
+const modineSession = batch32State.applicationSessions.find(session => session.id === 'session-modine');
+assert.equal(modineSession.checkpointStatus, 'Password Reset Requested - Outcome Pending');
+assert.equal(modineSession.blockers.at(-1).type, 'PASSWORD_RESET_PENDING');
+assert.match(modineSession.blockers.at(-1).summary, /does not prove an account exists or that an email was delivered/);
 batch32State = pauseManagedApplicationSession(batch32State, 'session-holley', 'otp-delivery', at);
-assert.equal(batch32State.applicationSessions.find(session => session.id === 'session-holley').blockers.at(-1).type, 'OTP');
+const holleySession = batch32State.applicationSessions.find(session => session.id === 'session-holley');
+assert.equal(holleySession.checkpointStatus, 'Human Action Required - OTP');
+assert.equal(holleySession.blockers.at(-1).type, 'OTP');
+assert.match(holleySession.blockers.at(-1).summary, /code is never stored or displayed/);
 assert.ok(batch32State.roles.every(role => role.status === 'Package Ready'));
 assert.equal(pipelineCounts(batch32State).Submitted, 0);
 assert.ok(batch32State.applicationSessions.flatMap(session => session.timeline).every(event => !/password\s*=|otp\s*=|verification code\s+\d/i.test(event.summary)));

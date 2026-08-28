@@ -200,7 +200,7 @@ function renderApplicationWorkspace() {
   $('applicationProgress').innerHTML = APPLICATION_WORKFLOW_STEPS.map((step, index) => `<span class="${index < session.stepIndex ? 'done' : index === session.stepIndex ? 'current' : ''}">${escapeHtml(WORKFLOW_LABELS[step])}</span>`).join('');
   $('fixtureFields').innerHTML = session.suggestions.map(item => `<div class="fixture-field"><strong>${escapeHtml(item.field)}</strong><span>${escapeHtml(item.value)} · ${Math.round(item.confidence * 100)}% match</span></div>`).join('');
   $('documentStatus').textContent = session.documents.map(item => `${item.kind} ${item.version} · ${item.status}`).join(' · ');
-  $('applicationAgentStatus').innerHTML = `<strong>${escapeHtml(session.status.replaceAll('_', ' '))}</strong><br>${escapeHtml(session.agentStatus)}`;
+  $('applicationAgentStatus').innerHTML = `<strong>${escapeHtml(session.checkpointStatus || session.status.replaceAll('_', ' '))}</strong><br>${escapeHtml(session.agentStatus)}`;
   const authorization = session.authorization || { batchName: 'No named authorization', covers: [], excludes: ['all external transmission'] };
   $('applicationAuthorization').innerHTML = `<div class="workspace-row"><strong>${escapeHtml(authorization.batchName)}</strong><small>Covers: ${escapeHtml(authorization.covers.join(', ') || 'none')}. Still pauses for: ${escapeHtml(authorization.excludes.join(', '))}. A blocker suspends only this application.</small></div>`;
   $('applicationSuggestions').innerHTML = session.suggestions.map(item => `<div class="workspace-row"><strong>${escapeHtml(item.field)} → ${escapeHtml(item.value)}</strong><small>${escapeHtml(item.source)} · ${Math.round(item.confidence * 100)}% semantic match</small></div>`).join('');
