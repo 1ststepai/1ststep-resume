@@ -1,4 +1,4 @@
-import { buildSearchLinks, classifyConciergeMessage, missionGaps, parseMission } from './lib/concierge-router.js';
+import { buildSearchLinks, classifyConciergeMessage, conciergeStateGuidance, parseMission } from './lib/concierge-router.js';
 import {
   ACTION_TYPES, APPLICATION_WORKFLOW_STEPS, DEMO_STAGES, READINESS_FIELDS, REDACTED_WORKFLOW_REPLAY, addActionItem, addRole, advanceManagedApplicationSession, advanceSalesDemo, approveBatch,
   buildReadinessDraftFromSources, buildVerifiedResumeDraft, confirmReadinessDraft, confirmReusableFact, createApprovalBatch, createDeskState, createSalesDemo, deleteReusableFact, discardReadinessDraft,
@@ -11,6 +11,7 @@ const MISSION_KEY = '1ststep_concierge_mission_v1';
 const DESK_KEY = '1ststep_concierge_desk_v2';
 const TAILOR_REQUEST_KEY = '1ststep_concierge_tailor_request_v1';
 const PACKAGE_RESULT_KEY = '1ststep_concierge_package_result_v1';
+const AI_CONSENT_KEY = '1ststep_concierge_ai_consent_v1';
 const RESUME_KEYS = ['1ststep_resume', '1ststep_resume_text'];
 const $ = id => document.getElementById(id);
 const list = value => String(value || '').split(/[\n,]/).map(item => item.trim()).filter(Boolean);
@@ -18,6 +19,7 @@ const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character =>
 let missionState = loadJson(MISSION_KEY, { mission: {}, messages: [] });
 let deskState = createDeskState(loadJson(DESK_KEY, {}));
 let activeQuestionKey = '';
+let resumeInterviewActive = false;
 const QUICK_ANSWERS = Object.freeze({
   authorization: ['Authorized to work in the United States', 'Not currently authorized', 'Unsure'],
   sponsorship: ['No sponsorship required', 'Sponsorship required', 'Unsure'],
@@ -152,6 +154,111 @@ function addMessage(role, html, persist = true) {
     missionState.messages = missionState.messages.slice(-30);
     saveAll();
   }
+  return node;
+}
+
+async function callClaude(callType, model, content, maxTokens) {
+  const subscription = loadJson('1ststep_sub_cache', {});
+  const response = await fetch('/api/claude', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      callType, model, max_tokens: maxTokens, userEmail: subscription.email || '', tierToken: subscription.tierToken || '',
+      messages: [{ role: 'user', content }],
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || 'The AI assistant is unavailable right now.');
+  const text = Array.isArray(data.content) ? data.content.map(block => block.text || '').join('').trim() : '';
+  if (!text) throw new Error('The AI assistant returned an empty response.');
+  return text;
+}
+
+function redactChatForModel(input) {
+  return String(input || '')
+    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[email redacted]')
+    .replace(/(?:\+?1[\s.-]?)?(?:\(?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{4}/g, '[phone redacted]')
+    .replace(/\b(?:otp|code|password|passcode)\s*[:=-]\s*\S+/gi, '[secret redacted]');
+}
+
+function currentGuidance() {
+  const readiness = readinessStatus(deskState);
+  return conciergeStateGuidance({
+    mission: missionState.mission, counts: pipelineCounts(deskState), unresolved: readiness.unresolved,
+    openActions: deskState.actionQueue.filter(item => item.status === 'open').length, hasResume: hasResume(),
+  });
+}
+
+function guidanceHtml(guidance, lead = '') {
+  const actions = guidance.actions.map(action => `<button data-prompt="${escapeHtml(action.prompt)}">${escapeHtml(action.label)}</button>`).join('');
+  return `${lead ? `${escapeHtml(lead)}<br>` : ''}<strong>${escapeHtml(guidance.headline)}</strong><br>${escapeHtml(guidance.detail)}<div class="quick">${actions}</div>`;
+}
+
+async function askSmartConcierge(input) {
+  const guidance = currentGuidance();
+  if (localStorage.getItem(AI_CONSENT_KEY) !== 'approved') {
+    const approved = window.confirm('Use Smart Concierge for this workspace? It sends your current job request and a redacted workflow summary to 1stStep’s configured AI provider. Saved resumes, stored answers, credentials, OTPs, and CAPTCHA responses are not included.');
+    if (!approved) {
+      addMessage('assistant', guidanceHtml(guidance, 'Smart AI processing was not enabled. I can still guide this workspace locally.'));
+      return;
+    }
+    localStorage.setItem(AI_CONSENT_KEY, 'approved');
+  }
+  const counts = pipelineCounts(deskState);
+  const readiness = readinessStatus(deskState);
+  const stateSummary = {
+    mission: missionState.mission, pipelineCounts: counts, readinessScore: readiness.score,
+    nextUnresolvedLabel: readiness.unresolved[0]?.label || null,
+    openHumanActions: deskState.actionQueue.filter(item => item.status === 'open').length,
+    resumeAvailable: hasResume(), recommendedPriority: guidance.priority,
+    productionCapabilities: { liveDiscoveryWorker: false, externalSubmission: false, simulatedWorkspaceOnly: true },
+  };
+  const pending = addMessage('assistant', '<strong>Reviewing your mission and deciding the best next step…</strong>', false);
+  try {
+    const reply = await callClaude('concierge', 'claude-haiku-4-5-20251001', `<concierge_state>${JSON.stringify(stateSummary)}</concierge_state>\n<user_request>${redactChatForModel(input)}</user_request>`, 350);
+    pending.remove();
+    addMessage('assistant', `${escapeHtml(reply).replaceAll('\n', '<br>')}<div class="quick">${guidance.actions.map(action => `<button data-prompt="${escapeHtml(action.prompt)}">${escapeHtml(action.label)}</button>`).join('')}</div>`);
+  } catch {
+    pending.remove();
+    addMessage('assistant', guidanceHtml(guidance, 'I saved what I could from that request.'));
+  }
+}
+
+function nextResumeInterviewField() {
+  const profile = loadJson('1ststep_profile', {});
+  const missing = buildVerifiedResumeDraft(deskState, profile).missingSections;
+  const map = { 'name and contact': 'contact', 'work history': 'employment', education: 'education', skills: 'skills' };
+  return missing.map(item => map[item]).find(Boolean) || '';
+}
+
+function startResumeInterview() {
+  const next = nextResumeInterviewField();
+  if (!next) return generateMasterResume();
+  resumeInterviewActive = true;
+  closeResumeSetup();
+  addMessage('assistant', `<strong>I need ${escapeHtml(READINESS_FIELDS.find(([key]) => key === next)?.[1] || next)}.</strong><br>Answer this once. I’ll keep moving through only the missing resume essentials, then generate the draft for review.`);
+  openQuestionPopup(next);
+}
+
+async function generateMasterResume() {
+  const profile = loadJson('1ststep_profile', {});
+  const base = buildVerifiedResumeDraft(deskState, profile);
+  if (base.missingSections.length) return startResumeInterview();
+  openResumeSetup();
+  $('resumeEditor').value = base.text;
+  const approved = window.confirm('Generate a polished master resume now? This sends only the verified resume facts shown in the editor to 1stStep’s configured AI provider. Nothing is sent to an employer.');
+  if (!approved) {
+    setResumeMessage('Truth-safe draft is ready. AI polishing was not started; you can edit or save this version locally.', 'warn');
+    return;
+  }
+  setResumeMessage('Generating a polished master resume from verified facts…');
+  try {
+    const generated = await callClaude('resumeBuilder', 'claude-sonnet-4-6', `<verified_candidate_facts>\n${base.text}\n</verified_candidate_facts>`, 2600);
+    $('resumeEditor').value = sanitizeResumeText(generated);
+    setResumeMessage('AI-generated master resume is ready for your review. Nothing is saved until you choose Save resume.', 'good');
+  } catch (error) {
+    $('resumeEditor').value = base.text;
+    setResumeMessage(`${error.message} The verified local draft is still available for review.`, 'warn');
+  }
 }
 
 function renderMission() {
@@ -183,10 +290,13 @@ function respond(input) {
   }
   if (classification.kind === 'off-topic') { addMessage('assistant', 'I only handle job-search work: readiness, discovery, truthful documents, applications, tracking, interviews, and follow-up.'); return; }
   if (classification.kind === 'empty') return;
-  missionState.mission = parseMission(input, missionState.mission);
-  saveAll(); renderMission();
-  if (/upload (?:my |a )?resume|build (?:my |a )?resume|create (?:my |a )?resume|resume setup/i.test(input)) {
-    addMessage('assistant', '<strong>Let’s set up your master resume.</strong> Upload an existing PDF, DOCX, or TXT file, or I can assemble a first draft from facts you already confirmed. I will leave missing details blank instead of inventing them.');
+  if (/build (?:my |a )?resume|create (?:my |a )?resume|write (?:my |a )?resume/i.test(input)) {
+    addMessage('assistant', '<strong>I’ll build the master resume with you.</strong><br>I’ll reuse confirmed facts, ask only for missing essentials, then generate a polished draft for your review without inventing anything.');
+    startResumeInterview();
+    return;
+  }
+  if (/upload (?:my |a )?resume|resume setup/i.test(input)) {
+    addMessage('assistant', '<strong>Choose your existing resume.</strong><br>I’ll extract PDF, DOCX, or TXT text locally, show it for review, and connect it to the existing Resume Tailor.');
     openResumeSetup();
     return;
   }
@@ -201,21 +311,23 @@ function respond(input) {
     openQuestionPopup();
     return;
   }
-  if (/approval|batch|desk|pipeline/i.test(input)) openDesk(/approval|batch/i.test(input) ? 'approvals' : 'pipeline');
-  const gaps = missionGaps(missionState.mission, hasResume());
-  const readiness = readinessStatus(deskState);
-  if (gaps.length) {
-    addMessage('assistant', `<strong>I saved the mission request.</strong> I still need ${escapeHtml(gaps.join(', '))}. Application setup is ${readiness.score}% complete; I’ll ask only short missing questions.<div class="quick"><button data-prompt="Answer next application question">Answer next question</button><button data-prompt="Remote only, $100k minimum">Remote · $100k+</button></div>`);
+  if (/human action|action queue|blocker/i.test(input)) {
+    openDesk('approvals');
+    addMessage('assistant', guidanceHtml(currentGuidance()));
     return;
   }
-  const extras = [
-    missionState.mission.excludedRoleFamilies?.length ? `Excluded: ${missionState.mission.excludedRoleFamilies.join(', ')}` : '',
-    missionState.mission.prepareCount ? `Prepare strongest ${missionState.mission.prepareCount}` : '',
-    missionState.mission.recurringDailyTarget ? `${missionState.mission.recurringDailyTarget}/day recurring target` : '',
-    missionState.mission.deadline ? `Deadline ${missionState.mission.deadline}` : '',
-  ].filter(Boolean).join(' · ');
-  addMessage('assistant', `<strong>Mission created: ${missionState.mission.target} ${escapeHtml(missionState.mission.workMode.toLowerCase())} ${escapeHtml(missionState.mission.role)} jobs at ${money(missionState.mission.salaryMin)}.</strong>${extras ? `<br>${escapeHtml(extras)}` : ''}<br>Application setup is ${readiness.score}%. I can prepare and stage locally now. Overnight discovery still needs a durable provider and worker; this browser cannot claim background work after it closes.<div class="quick"><button data-prompt="Open the application pipeline">Open pipeline</button><button data-prompt="Answer next application question">Answer next question</button></div>`);
-  if (!readiness.complete) setTimeout(openQuestionPopup, 0);
+  if (/approval|batch|desk|pipeline|package-ready|ready packages/i.test(input)) {
+    openDesk(/approval|batch|package-ready|ready packages/i.test(input) ? 'approvals' : 'pipeline');
+    addMessage('assistant', guidanceHtml(currentGuidance()));
+    return;
+  }
+  if (/review (?:my |the )?(?:current )?mission|what(?:’|')?s next|what should i do|status update|show progress/i.test(input)) {
+    addMessage('assistant', guidanceHtml(currentGuidance()));
+    return;
+  }
+  missionState.mission = parseMission(input, missionState.mission);
+  saveAll(); renderMission();
+  askSmartConcierge(input);
 }
 
 function switchTab(name) {
@@ -287,9 +399,14 @@ function openQuestionPopup(fieldKey = '') {
   }
   activeQuestionKey = next.key;
   const position = READINESS_FIELDS.findIndex(([key]) => key === next.key) + 1;
-  $('questionProgress').textContent = `Question ${position} of ${READINESS_FIELDS.length} · ${readiness.score}% ready`;
+  const resumeRemaining = ['contact', 'employment', 'education', 'skills'].filter(key => readiness.unresolved.some(item => item.key === key)).length;
+  $('questionProgress').textContent = resumeInterviewActive
+    ? `Resume setup · ${resumeRemaining} essential answer${resumeRemaining === 1 ? '' : 's'} remaining`
+    : `Question ${position} of ${READINESS_FIELDS.length} · ${readiness.score}% ready`;
   $('questionTitle').textContent = next.label;
-  $('questionHelp').textContent = 'Choose a common answer or enter a short correction. This becomes reusable only after you save it.';
+  $('questionHelp').textContent = resumeInterviewActive
+    ? 'Give only verified facts. For work history, include employer, title, dates, and truthful outcomes; use semicolons to separate entries.'
+    : 'Choose a common answer or enter a short correction. This becomes reusable only after you save it.';
   $('questionValue').value = '';
   const choices = QUICK_ANSWERS[next.key] || [];
   $('questionChoices').innerHTML = choices.map(value => `<button class="question-choice" type="button" data-question-answer="${escapeHtml(value)}">${escapeHtml(value)}</button>`).join('');
@@ -398,13 +515,7 @@ $('resumeFile').addEventListener('change', async event => {
     setResumeMessage(`${file.name} is ready to review · ${text.length.toLocaleString()} characters extracted locally.`, 'good');
   } catch (error) { setResumeMessage(error.message, 'warn'); }
 });
-$('buildResumeDraft').addEventListener('click', () => {
-  const profile = loadJson('1ststep_profile', {});
-  const draft = buildVerifiedResumeDraft(deskState, profile);
-  $('resumeEditor').value = draft.text;
-  const missing = draft.missingSections.length ? ` Missing: ${draft.missingSections.join(', ')}.` : '';
-  setResumeMessage(`${draft.text ? 'Truth-safe draft created' : 'No confirmed resume facts found yet'}.${missing} Review before saving.`, draft.missingSections.length ? 'warn' : 'good');
-});
+$('buildResumeDraft').addEventListener('click', () => startResumeInterview());
 $('saveResume').addEventListener('click', () => {
   try {
     const text = saveResumeText($('resumeEditor').value, 'concierge-reviewed', $('resumeFile').files[0]?.name || '');
@@ -434,9 +545,19 @@ $('questionForm').addEventListener('submit', event => {
       source: 'guided-popup', sensitivity: SENSITIVE_QUESTION_KEYS.has(activeQuestionKey) ? 'sensitive' : 'standard', autoReuse: true,
     });
   });
-  setTimeout(() => openQuestionPopup(), 80);
+  if (resumeInterviewActive) {
+    setTimeout(() => {
+      const next = nextResumeInterviewField();
+      if (next) openQuestionPopup(next);
+      else {
+        resumeInterviewActive = false;
+        closeQuestionPopup();
+        generateMasterResume();
+      }
+    }, 80);
+  } else setTimeout(() => openQuestionPopup(), 80);
 });
-$('questionLater').addEventListener('click', closeQuestionPopup);
+$('questionLater').addEventListener('click', () => { resumeInterviewActive = false; closeQuestionPopup(); });
 $('questionOverlay').addEventListener('click', event => { if (event.target === $('questionOverlay')) closeQuestionPopup(); });
 $('advanceApplication').addEventListener('click', () => safeAction(() => {
   const session = activeApplicationSession();
@@ -611,7 +732,7 @@ $('resetMission').addEventListener('click', () => { missionState = { mission: {}
 function start() {
   consumeGeneratedPackage();
   if (missionState.messages.length) missionState.messages.forEach(message => addMessage(message.role, message.html, false));
-  else addMessage('assistant', '<strong>What job outcome do you want?</strong><br>Tell me the count, titles, work mode/location, salary range, and exclusions. I’ll ask any missing application questions one at a time and remember confirmed answers.<div class="quick"><button data-prompt="I need 30 remote procurement jobs, $100k minimum, using my saved resume">Start a 30-job sprint</button><button data-prompt="Answer next application question">Answer next question</button></div>');
+  else addMessage('assistant', guidanceHtml(currentGuidance(), 'I’ll guide the search one useful step at a time and keep routine setup short.'));
   renderAll();
   if (new URLSearchParams(window.location.search).get('managedDemo') === '1' && !activeApplicationSession()) startSyntheticApplicationWorkspace();
 }

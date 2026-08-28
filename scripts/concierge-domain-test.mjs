@@ -173,6 +173,7 @@ const readinessDraft = buildReadinessDraftFromSources({
 }, at);
 assert.ok(readinessDraft.proposals.some(item => item.fieldKey === 'contact' && item.source === 'saved-profile'));
 assert.ok(readinessDraft.proposals.some(item => item.fieldKey === 'employment' && /Fixture Company/.test(item.value)));
+assert.ok(readinessDraft.proposals.some(item => item.fieldKey === 'skills' && /Sourcing/.test(item.value)));
 assert.ok(!readinessDraft.proposals.some(item => /invented/i.test(item.value)));
 let stagedDraftState = stageReadinessDraft(createDeskState(), readinessDraft, at);
 assert.equal(stagedDraftState.reusableFacts.length, 0);
@@ -213,7 +214,7 @@ assert.equal(pipelineCounts(managedState).Submitted, 0);
 assert.ok(managedSession.timeline.every(event => !/@example\.com|555-01|123 Main/i.test(event.summary)));
 
 const replayStatuses = new Set(REDACTED_WORKFLOW_REPLAY.map(event => event.status));
-['Verified - Package Preparation', 'Closed by direct page', 'Location Unverified', 'Duplicate/In Process', 'Login Required / Retry', 'Transmission Confirmation Required', 'ATS Configuration Blocked', 'Human Action Required - password/reset', 'Human Action Required - latest OTP', 'Human Action Required - latest email code', 'Password Reset Requested - Outcome Pending', 'Human Action Required - form review', 'Blocked - employer ATS configuration']
+['Verified - Package Preparation', 'Closed by direct page', 'Location Unverified', 'Duplicate/In Process', 'Login Required / Retry', 'Transmission Confirmation Required', 'ATS Configuration Blocked', 'Human Action Required - password/reset', 'Human Action Required - latest OTP', 'Human Action Required - latest email code', 'Password Reset Requested - Outcome Pending', 'Human Action Required - form review', 'Blocked - employer ATS configuration', 'Awaiting Approval - action-time packet']
   .forEach(status => assert.ok(replayStatuses.has(status)));
 REDACTED_WORKFLOW_REPLAY.forEach(event => assert.ok(APPLICATION_ACTIVITY_STATUSES.includes(event.status)));
 
