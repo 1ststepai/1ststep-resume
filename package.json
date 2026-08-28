@@ -8,7 +8,7 @@
   },
   "scripts": {
     "smoke": "node scripts/smoke-test.cjs",
-    "test:concierge": "node scripts/concierge-test.mjs && node scripts/concierge-domain-test.mjs"
+    "test:concierge": "node scripts/concierge-test.mjs && node scripts/concierge-domain-test.mjs && node scripts/persistent-campaign-test.mjs"
   },
   "dependencies": {
     "stripe": "^16.0.0"

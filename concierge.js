@@ -6,6 +6,9 @@ import {
   recordGeneratedPackage, resolveActionItem, resolveManagedApplicationException, resumeManagedApplicationSession, setAutonomyLevel, setStandingPolicy, stageReadinessDraft, startManagedApplicationSession, transitionRole, truthProfileGaps, updateTruthProfile,
   verificationGaps,
 } from './lib/concierge-domain.js';
+import {
+  CAMPAIGN_TEMPLATES, addCampaign, campaignMetrics, createCampaignStore, operatingContractText, updateCampaignStatus, updatePersistentCampaign,
+} from './lib/persistent-campaign.js';
 
 const MISSION_KEY = '1ststep_concierge_mission_v1';
 const DESK_KEY = '1ststep_concierge_desk_v2';
@@ -13,6 +16,7 @@ const TAILOR_REQUEST_KEY = '1ststep_concierge_tailor_request_v1';
 const PACKAGE_RESULT_KEY = '1ststep_concierge_package_result_v1';
 const AI_CONSENT_KEY = '1ststep_concierge_ai_consent_v1';
 const CAREER_STORY_CONSENT_KEY = '1ststep_career_story_ai_consent_v1';
+const CAMPAIGN_KEY = '1ststep_persistent_campaigns_v1';
 const RESUME_KEYS = ['1ststep_resume', '1ststep_resume_text'];
 const $ = id => document.getElementById(id);
 const list = value => String(value || '').split(/[\n,]/).map(item => item.trim()).filter(Boolean);
@@ -20,6 +24,9 @@ const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character =>
 const escapeXmlData = value => String(value ?? '').replace(/[&<>]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[character]);
 let missionState = loadJson(MISSION_KEY, { mission: {}, messages: [] });
 let deskState = createDeskState(loadJson(DESK_KEY, {}));
+let campaignStore = createCampaignStore(loadJson(CAMPAIGN_KEY, {}));
+let campaignWizardStep = 0;
+let editingCampaignId = null;
 let activeQuestionKey = '';
 let resumeInterviewActive = false;
 let careerStoryActive = false;
@@ -58,6 +65,7 @@ function loadJson(key, fallback) {
 function saveAll() {
   localStorage.setItem(MISSION_KEY, JSON.stringify(missionState));
   localStorage.setItem(DESK_KEY, JSON.stringify(deskState));
+  localStorage.setItem(CAMPAIGN_KEY, JSON.stringify(campaignStore));
 }
 function hasResume() {
   return RESUME_KEYS.some(key => [sessionStorage, localStorage].some(storage => String(storage.getItem(key) || '').trim().length > 100));
@@ -566,7 +574,115 @@ function renderAudit() {
   $('auditList').innerHTML = deskState.auditEvents.length ? [...deskState.auditEvents].reverse().map(event => `<div class="desk-row"><div><strong>${escapeHtml(event.type)}</strong><small>${escapeHtml(event.at)} · ${escapeHtml(event.entityId)} · ${escapeHtml(JSON.stringify(event.details))}</small></div></div>`).join('') : empty('No audit events yet.');
 }
 function renderDesk() { renderTruthForm(); renderReadiness(); renderRoles(); renderApprovals(); renderDemo(); renderAudit(); }
-function renderAll() { renderMission(); renderDesk(); renderApplicationWorkspace(); }
+function campaignListHtml(values) {
+  return values?.length ? values.map(value => `<li>${escapeHtml(value)}</li>`).join('') : '<li class="contract-empty">Not configured</li>';
+}
+
+function activeCampaign() {
+  return campaignStore.campaigns.find(campaign => campaign.id === campaignStore.activeCampaignId) || campaignStore.campaigns[0] || null;
+}
+
+function renderCampaignConsole() {
+  const campaign = activeCampaign();
+  const metrics = campaign ? campaignMetrics(campaignStore, campaign.id) : { queue: 0, discovered: 0, verified: 0, ready: 0, humanAction: 0, completed: 0 };
+  $('metricQueue').textContent = metrics.queue;
+  $('metricDiscovered').textContent = metrics.discovered;
+  $('metricVerified').textContent = metrics.verified;
+  $('metricReady').textContent = metrics.ready;
+  $('metricHuman').textContent = metrics.humanAction;
+  $('metricComplete').textContent = metrics.completed;
+  if (!campaign) return;
+  $('campaignName').textContent = campaign.name;
+  $('campaignObjective').textContent = campaign.objective;
+  $('campaignStatus').textContent = campaign.status === 'paused' ? 'PAUSED' : 'DESIGN MODE';
+  if (campaign.status === 'completed') $('campaignStatus').textContent = 'COMPLETED';
+  $('campaignSchedule').textContent = `${campaign.cadence.recurrence} · ${campaign.cadence.timezone} · scheduler not connected`;
+  const targets = Object.entries(campaign.targets).filter(([, value]) => value).map(([key, value]) => `${key}: ${value}`).join(' · ');
+  $('contractCadence').textContent = [campaign.cadence.recurrence, campaign.cadence.allowedRunWindow, targets].filter(Boolean).join(' · ') || 'Not configured';
+  $('contractCadence').classList.toggle('contract-empty', !$('contractCadence').textContent || $('contractCadence').textContent === 'Not configured');
+  $('contractRules').innerHTML = campaignListHtml(campaign.hardRules);
+  $('contractAuthorization').innerHTML = campaignListHtml(campaign.standingAuthorization);
+  $('contractHuman').innerHTML = campaignListHtml(campaign.humanActionTriggers);
+  $('contractEvidence').innerHTML = campaignListHtml(campaign.evidenceRules);
+  $('contractStop').innerHTML = campaignListHtml(campaign.stopConditions);
+  $('editCampaign').hidden = false;
+  $('exportCampaign').hidden = false;
+  $('pauseCampaign').hidden = campaign.status !== 'design';
+  $('resumeCampaign').hidden = campaign.status !== 'paused';
+  $('stopCampaign').hidden = campaign.status === 'completed';
+  const actions = campaignStore.humanActions.filter(action => action.campaignId === campaign.id && action.status === 'open');
+  $('humanActionCount').textContent = `${actions.length} open`;
+  $('campaignHumanActions').className = actions.length ? 'desk-list' : 'panel-empty';
+  $('campaignHumanActions').innerHTML = actions.length ? actions.map(action => `<div class="desk-row"><div><strong>${escapeHtml(action.blockerType)}</strong><small>${escapeHtml(action.reason)} · ${escapeHtml(action.requiredUserAction)}</small></div><span class="status design">${escapeHtml(action.priority)}</span></div>`).join('') : 'Nothing is waiting on you. Blocked items will appear here without stopping unrelated work.';
+  const runs = campaignStore.runs.filter(run => run.campaignId === campaign.id);
+  $('campaignRuns').className = runs.length ? '' : 'panel-empty';
+  $('campaignRuns').innerHTML = runs.length ? `<table class="ledger-table"><thead><tr><th>Started</th><th>Status</th><th>Complete</th><th>Errors</th></tr></thead><tbody>${runs.map(run => `<tr><td>${escapeHtml(run.startedAt)}</td><td>${escapeHtml(run.status)}</td><td>${run.counts.completed}</td><td>${run.counts.errors}</td></tr>`).join('')}</tbody></table>` : 'No runs. Scheduling and external execution are not connected in this preview.';
+  const transitions = campaignStore.transitions.filter(event => event.campaignId === campaign.id);
+  $('campaignEvidence').className = transitions.length ? 'desk-list' : 'panel-empty';
+  $('campaignEvidence').innerHTML = transitions.length ? transitions.map(event => `<div class="desk-row"><div><strong>${escapeHtml(event.previousStatus)} → ${escapeHtml(event.newStatus)}</strong><small>${escapeHtml(event.timestamp)}${event.evidenceId ? ` · evidence ${escapeHtml(event.evidenceId)}` : ''}</small></div></div>`).join('') : 'No evidence events. “Verified Complete” requires a timestamp, source, reference, and verification method.';
+}
+
+function renderCampaignWizard() {
+  document.querySelectorAll('.wizard-step').forEach((step, index) => step.classList.toggle('active', index === campaignWizardStep));
+  $('wizardProgress').innerHTML = Array.from({ length: 8 }, (_, index) => `<i class="${index < campaignWizardStep ? 'done' : index === campaignWizardStep ? 'current' : ''}"></i>`).join('');
+  $('wizardStepLabel').textContent = `Step ${campaignWizardStep + 1} of 8`;
+  $('campaignBack').disabled = campaignWizardStep === 0;
+  $('campaignNext').hidden = campaignWizardStep === 7;
+  $('campaignSave').hidden = campaignWizardStep !== 7;
+}
+
+function seedCampaignTemplate(templateId) {
+  const template = CAMPAIGN_TEMPLATES.find(item => item.id === templateId);
+  if (!template) {
+    ['campaignDraftName', 'campaignDraftObjective', 'campaignRules', 'campaignAuthorization', 'campaignTriggers', 'campaignEvidenceRules', 'campaignStop'].forEach(id => { $(id).value = ''; });
+    return;
+  }
+  $('campaignDraftName').value = template.name;
+  $('campaignDraftObjective').value = template.objective;
+  $('campaignRules').value = template.hardRules.join('\n');
+  $('campaignAuthorization').value = template.standingAuthorization.join('\n');
+  $('campaignTriggers').value = template.humanActionTriggers.join('\n');
+  $('campaignEvidenceRules').value = template.evidenceRules.join('\n');
+  $('campaignStop').value = template.stopConditions.join('\n');
+}
+
+function openCampaignWizard(campaign = null) {
+  campaignWizardStep = 0;
+  editingCampaignId = campaign?.id || null;
+  $('campaignForm').reset();
+  $('campaignTimezone').value = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  if (campaign) {
+    $('campaignType').value = CAMPAIGN_TEMPLATES.find(template => template.campaignType === campaign.campaignType)?.id || 'custom';
+    $('campaignDraftName').value = campaign.name;
+    $('campaignDraftObjective').value = campaign.objective;
+    $('campaignTimezone').value = campaign.cadence.timezone;
+    $('campaignRecurrence').value = campaign.cadence.recurrence;
+    $('campaignWindow').value = campaign.cadence.allowedRunWindow;
+    $('campaignReportTime').value = campaign.cadence.reportingTime;
+    $('campaignDailyTarget').value = campaign.targets.dailyTarget || '';
+    $('campaignRunTarget').value = campaign.targets.runTarget || '';
+    $('campaignPriorities').value = campaign.priorities.join('\n');
+    $('campaignRules').value = campaign.hardRules.join('\n');
+    $('campaignExclusions').value = campaign.exclusions.join('\n');
+    $('campaignAuthorization').value = campaign.standingAuthorization.join('\n');
+    $('campaignTriggers').value = campaign.humanActionTriggers.join('\n');
+    $('campaignEvidenceRules').value = campaign.evidenceRules.join('\n');
+    $('campaignReporting').value = campaign.reportingRequirements.join('\n');
+    $('campaignStop').value = campaign.stopConditions.join('\n');
+    $('campaignAdvanced').value = campaign.description;
+  } else seedCampaignTemplate($('campaignType').value);
+  renderCampaignWizard();
+  $('campaignOverlay').classList.add('open');
+}
+
+function currentWizardStepValid() {
+  const required = [...document.querySelector(`.wizard-step[data-step="${campaignWizardStep}"]`).querySelectorAll('[required]')];
+  const invalid = required.find(field => !field.checkValidity());
+  if (invalid) invalid.reportValidity();
+  return !invalid;
+}
+
+function renderAll() { renderMission(); renderDesk(); renderApplicationWorkspace(); renderCampaignConsole(); }
 
 $('composer').addEventListener('submit', event => { event.preventDefault(); const input = $('messageInput'); const value = input.value.trim(); if (!value) return; addMessage('user', escapeHtml(value)); input.value = ''; respond(value); });
 $('messages').addEventListener('click', event => { const value = event.target?.dataset?.prompt; if (!value) return; addMessage('user', escapeHtml(value)); respond(value); });
@@ -797,6 +913,68 @@ $('startDemo').addEventListener('click', () => safeAction(() => { deskState = cr
 $('openManagedDemo').addEventListener('click', () => startSyntheticApplicationWorkspace());
 $('advanceDemo').addEventListener('click', () => safeAction(() => { deskState = advanceSalesDemo(deskState); }));
 $('resetDemo').addEventListener('click', () => safeAction(() => { deskState = resetSalesDemo(deskState); showDeskMessage('Synthetic demo reset.'); }));
+
+$('createCampaign').addEventListener('click', () => openCampaignWizard());
+$('closeCampaign').addEventListener('click', () => $('campaignOverlay').classList.remove('open'));
+$('campaignType').addEventListener('change', event => seedCampaignTemplate(event.target.value));
+$('campaignBack').addEventListener('click', () => { campaignWizardStep = Math.max(0, campaignWizardStep - 1); renderCampaignWizard(); });
+$('campaignNext').addEventListener('click', () => {
+  if (!currentWizardStepValid()) return;
+  campaignWizardStep = Math.min(7, campaignWizardStep + 1);
+  renderCampaignWizard();
+});
+$('campaignForm').addEventListener('submit', event => {
+  event.preventDefault();
+  try {
+    const selectedTemplate = CAMPAIGN_TEMPLATES.find(template => template.id === $('campaignType').value);
+    const campaignInput = {
+      campaignType: selectedTemplate?.campaignType || 'custom_operations',
+      name: $('campaignDraftName').value,
+      objective: $('campaignDraftObjective').value,
+      description: $('campaignAdvanced').value,
+      cadence: { timezone: $('campaignTimezone').value, recurrence: $('campaignRecurrence').value, allowedRunWindow: $('campaignWindow').value, reportingTime: $('campaignReportTime').value },
+      targets: { dailyTarget: $('campaignDailyTarget').value, runTarget: $('campaignRunTarget').value },
+      priorities: list($('campaignPriorities').value), hardRules: list($('campaignRules').value), exclusions: list($('campaignExclusions').value),
+      standingAuthorization: list($('campaignAuthorization').value), humanActionTriggers: list($('campaignTriggers').value),
+      evidenceRules: list($('campaignEvidenceRules').value), reportingRequirements: list($('campaignReporting').value), stopConditions: list($('campaignStop').value),
+    };
+    campaignStore = editingCampaignId ? updatePersistentCampaign(campaignStore, editingCampaignId, campaignInput) : addCampaign(campaignStore, campaignInput);
+    saveAll();
+    renderCampaignConsole();
+    $('campaignOverlay').classList.remove('open');
+  } catch (error) {
+    window.alert(error.message || 'Campaign configuration could not be saved.');
+  }
+});
+$('editCampaign').addEventListener('click', () => openCampaignWizard(activeCampaign()));
+$('exportCampaign').addEventListener('click', () => {
+  const campaign = activeCampaign();
+  if (!campaign) return;
+  const blob = new Blob([operatingContractText(campaign)], { type: 'text/plain' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `${campaign.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'campaign'}-operating-contract.txt`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+});
+$('pauseCampaign').addEventListener('click', () => {
+  const campaign = activeCampaign();
+  if (!campaign) return;
+  campaignStore = updateCampaignStatus(campaignStore, campaign.id, 'paused');
+  saveAll(); renderCampaignConsole();
+});
+$('resumeCampaign').addEventListener('click', () => {
+  const campaign = activeCampaign();
+  if (!campaign) return;
+  campaignStore = updateCampaignStatus(campaignStore, campaign.id, 'design');
+  saveAll(); renderCampaignConsole();
+});
+$('stopCampaign').addEventListener('click', () => {
+  const campaign = activeCampaign();
+  if (!campaign || !window.confirm('Stop this campaign? Its operating contract and audit metadata will remain available.')) return;
+  campaignStore = updateCampaignStatus(campaignStore, campaign.id, 'completed');
+  saveAll(); renderCampaignConsole();
+});
 
 $('resetMission').addEventListener('click', () => { missionState = { mission: {}, messages: [] }; saveAll(); $('messages').innerHTML = ''; start(); });
 function start() {
