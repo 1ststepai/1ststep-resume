@@ -42,3 +42,5 @@ zip4nIFM
 videos/exports/
 demo_music_previews/
 demo_review_frames/
+.vercel
+.env*.local
