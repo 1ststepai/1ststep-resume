@@ -737,6 +737,40 @@
         }
       } catch (_) {}
 
+      // -- Concierge resume-package handoff ----------------------------------
+      // A verified concierge role can reuse this existing tailoring pipeline.
+      // The request carries the employer posting, never new candidate claims;
+      // runTailoring still derives every statement from the saved master resume.
+      try {
+        const rawConciergeRequest = sessionStorage.getItem('1ststep_concierge_tailor_request_v1');
+        if (rawConciergeRequest) {
+          const request = JSON.parse(rawConciergeRequest);
+          const isFresh = request?.requestedAt && Date.now() - new Date(request.requestedAt).getTime() < 30 * 60 * 1000;
+          if (request?.roleId && request?.jobDescription && isFresh) {
+            window._conciergeTailorRequest = request;
+            const jobText = document.getElementById('jobText');
+            jobText.value = request.jobDescription;
+            jobText.dispatchEvent(new Event('input'));
+            window._capturedJob = {
+              title: request.title || '', company: request.employer || '',
+              url: request.directEmployerUrl || '', site: 'concierge',
+            };
+            setTimeout(() => {
+              switchMode('resume');
+              if (request.title) showJobContext(request.title, request.employer || '');
+              showToast('Verified concierge role loaded. Generating from your saved master resume.', 'info');
+              const resumeReady = !!(fileContent || document.getElementById('resumeText')?.value.trim());
+              if (request.autoStart && resumeReady) runTailoring();
+              else if (!resumeReady) showToast('Save your master resume to generate this package.', 'warning');
+            }, 500);
+          } else {
+            sessionStorage.removeItem('1ststep_concierge_tailor_request_v1');
+          }
+        }
+      } catch (_) {
+        sessionStorage.removeItem('1ststep_concierge_tailor_request_v1');
+      }
+
       // Also hook run button update to resume textarea
       document.getElementById('resumeText').addEventListener('input', updateRunButton);
 
@@ -3683,6 +3717,21 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
           positioningBriefUsedAt: usingPositioningBrief ? (_currentPositioningUsedAt || new Date().toISOString()) : null,
         };
         saveTailorEntry(tailorEntry);
+        if (window._conciergeTailorRequest?.roleId) {
+          const packageResult = {
+            roleId: window._conciergeTailorRequest.roleId,
+            historyId: tailorEntry.id,
+            documentVersion: `${tailorEntry.id}-v1`,
+            resumeText: atsClean,
+            coverLetterText: coverLetter || '',
+            atsIssues,
+            generatedAt: tailorEntry.tailoredAt,
+          };
+          localStorage.setItem('1ststep_concierge_package_result_v1', JSON.stringify(packageResult));
+          sessionStorage.removeItem('1ststep_concierge_tailor_request_v1');
+          window._conciergeTailorRequest = null;
+          showToast('Concierge package draft generated. Return to Application records for document QA.', 'success');
+        }
         if (usingPositioningBrief) clearActivePositioningContext('consumed');
         trackProductEvent('tailor_completed', {
           mode: outputMode,
