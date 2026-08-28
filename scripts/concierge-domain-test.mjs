@@ -25,6 +25,7 @@ import {
   readinessStatus,
   recordGeneratedPackage,
   recordFieldAnswer,
+  recordOtpChallenge,
   resolveApplicationQuestion,
   resolveActionItem,
   resolveManagedApplicationException,
@@ -196,7 +197,7 @@ assert.equal(pipelineCounts(managedState).Submitted, 0);
 assert.ok(managedSession.timeline.every(event => !/@example\.com|555-01|123 Main/i.test(event.summary)));
 
 const replayStatuses = new Set(REDACTED_WORKFLOW_REPLAY.map(event => event.status));
-['Verified - Package Preparation', 'Closed by direct page', 'Location Unverified', 'Duplicate/In Process', 'Login Required / Retry', 'Transmission Confirmation Required', 'ATS Configuration Blocked', 'Human Action Required - password/reset', 'Human Action Required - OTP', 'Password Reset Requested - Outcome Pending']
+['Verified - Package Preparation', 'Closed by direct page', 'Location Unverified', 'Duplicate/In Process', 'Login Required / Retry', 'Transmission Confirmation Required', 'ATS Configuration Blocked', 'Human Action Required - password/reset', 'Human Action Required - latest OTP', 'Password Reset Requested - Outcome Pending']
   .forEach(status => assert.ok(replayStatuses.has(status)));
 REDACTED_WORKFLOW_REPLAY.forEach(event => assert.ok(APPLICATION_ACTIVITY_STATUSES.includes(event.status)));
 
@@ -231,9 +232,20 @@ assert.equal(modineSession.blockers.at(-1).type, 'PASSWORD_RESET_PENDING');
 assert.match(modineSession.blockers.at(-1).summary, /does not prove an account exists or that an email was delivered/);
 batch32State = pauseManagedApplicationSession(batch32State, 'session-holley', 'otp-delivery', at);
 const holleySession = batch32State.applicationSessions.find(session => session.id === 'session-holley');
-assert.equal(holleySession.checkpointStatus, 'Human Action Required - OTP');
+assert.equal(holleySession.checkpointStatus, 'Human Action Required - latest OTP');
 assert.equal(holleySession.blockers.at(-1).type, 'OTP');
-assert.match(holleySession.blockers.at(-1).summary, /code is never stored or displayed/);
+assert.equal(holleySession.verificationSession.generation, 1);
+assert.match(holleySession.blockers.at(-1).summary, /never store or display it/);
+assert.throws(() => recordOtpChallenge(batch32State, 'session-holley', { code: '123456', recreated: true }, at), /must never enter/);
+batch32State = recordOtpChallenge(batch32State, 'session-holley', { recreated: true, delivery: 'masked-email', provider: 'ADP' }, '2026-08-28T06:30:00.000Z');
+const recreatedHolleySession = batch32State.applicationSessions.find(session => session.id === 'session-holley');
+assert.equal(recreatedHolleySession.checkpointStatus, 'Human Action Required - latest OTP');
+assert.equal(recreatedHolleySession.verificationSession.generation, 2);
+assert.deepEqual(recreatedHolleySession.verificationSession.supersededGenerations.map(item => [item.generation, item.status]), [[1, 'unusable']]);
+assert.equal(recreatedHolleySession.blockers.filter(item => item.type === 'OTP' && item.status === 'open').length, 1);
+assert.equal(recreatedHolleySession.blockers.filter(item => item.type === 'OTP' && item.status === 'unusable').length, 1);
+assert.match(recreatedHolleySession.blockers.find(item => item.type === 'OTP' && item.status === 'open').summary, /request only the latest code/);
+assert.ok(!JSON.stringify(recreatedHolleySession).includes('123456'));
 assert.ok(batch32State.roles.every(role => role.status === 'Package Ready'));
 assert.equal(pipelineCounts(batch32State).Submitted, 0);
 assert.ok(batch32State.applicationSessions.flatMap(session => session.timeline).every(event => !/password\s*=|otp\s*=|verification code\s+\d/i.test(event.summary)));
