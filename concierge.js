@@ -1,7 +1,7 @@
 import { buildSearchLinks, classifyConciergeMessage, missionGaps, parseMission } from './lib/concierge-router.js';
 import {
   ACTION_TYPES, APPLICATION_WORKFLOW_STEPS, DEMO_STAGES, READINESS_FIELDS, REDACTED_WORKFLOW_REPLAY, addActionItem, addRole, advanceManagedApplicationSession, advanceSalesDemo, approveBatch,
-  buildReadinessDraftFromSources, confirmReadinessDraft, confirmReusableFact, createApprovalBatch, createDeskState, createSalesDemo, deleteReusableFact, discardReadinessDraft,
+  buildReadinessDraftFromSources, buildVerifiedResumeDraft, confirmReadinessDraft, confirmReusableFact, createApprovalBatch, createDeskState, createSalesDemo, deleteReusableFact, discardReadinessDraft,
   exportReadinessData, importLegacyEntries, packageGaps, pauseManagedApplicationSession, pipelineCounts, readinessStatus, resetSalesDemo,
   recordGeneratedPackage, resolveActionItem, resolveManagedApplicationException, resumeManagedApplicationSession, setAutonomyLevel, setStandingPolicy, stageReadinessDraft, startManagedApplicationSession, transitionRole, truthProfileGaps, updateTruthProfile,
   verificationGaps,
@@ -71,6 +71,62 @@ function savedResumeText() {
   }
   return '';
 }
+function sanitizeResumeText(text) {
+  let clean = String(text || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ' ');
+  const patterns = [
+    /ignore\s+(all\s+)?(previous|prior|above|earlier)\s+(instructions?|prompts?|context)/gi,
+    /disregard\s+(all\s+)?(previous|prior|above|earlier)\s+(instructions?|prompts?)/gi,
+    /you\s+are\s+now\s+(a\s+)?(different|new|another|an?\s+)?(?:AI|assistant|model|bot|GPT)/gi,
+    /system\s*prompt\s*[:i14]/gi,
+    /\[\s*system\s*\]/gi,
+    /<\s*system\s*>/gi,
+  ];
+  patterns.forEach(pattern => { clean = clean.replace(pattern, '[REDACTED]'); });
+  return clean.trim();
+}
+function saveResumeText(text, source, fileName = '') {
+  const clean = sanitizeResumeText(text);
+  if (clean.length < 100) throw new Error('Add at least 100 characters so there is enough resume content to use.');
+  const value = JSON.stringify({ source, text: clean, fileName, savedAt: new Date().toISOString() });
+  sessionStorage.setItem('1ststep_resume', value);
+  localStorage.setItem('1ststep_resume', value);
+  try { window.postMessage({ source: 'app', action: 'SYNC_PROFILE' }, '*'); } catch { /* extension not installed */ }
+  return clean;
+}
+async function extractResumeFile(file) {
+  if (!file) throw new Error('Choose a resume file first.');
+  if (file.size > 5 * 1024 * 1024) throw new Error('Choose a resume file under 5 MB.');
+  const name = file.name.toLowerCase();
+  if (!['.pdf', '.docx', '.txt'].some(extension => name.endsWith(extension))) throw new Error('Use a PDF, DOCX, or TXT resume.');
+  if (name.endsWith('.pdf')) {
+    const header = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+    if (String.fromCharCode(...header) !== '%PDF') throw new Error('This file does not appear to be a valid PDF.');
+    if (!window.pdfjsLib) throw new Error('The PDF reader is still loading. Try again in a moment.');
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const pdf = await window.pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+    const pages = [];
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+      const content = await (await pdf.getPage(pageNumber)).getTextContent();
+      pages.push(content.items.map(item => item.str).join(' '));
+    }
+    return sanitizeResumeText(pages.join('\n\n'));
+  }
+  if (name.endsWith('.docx')) {
+    if (!window.mammoth) throw new Error('The Word reader is still loading. Try again in a moment.');
+    return sanitizeResumeText((await window.mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() })).value);
+  }
+  return sanitizeResumeText(await file.text());
+}
+function setResumeMessage(message, kind = '') {
+  $('resumeMeta').textContent = message;
+  $('resumeMeta').className = `resume-meta ${kind}`.trim();
+}
+function openResumeSetup() {
+  $('resumeEditor').value = savedResumeText();
+  setResumeMessage(hasResume() ? 'Saved resume loaded. Review it or replace it.' : 'Nothing is saved until you review and choose Save resume.', hasResume() ? 'good' : '');
+  $('resumeOverlay').classList.add('open');
+}
+function closeResumeSetup() { $('resumeOverlay').classList.remove('open'); }
 function money(value) { return value ? `$${Math.round(value / 1000)}k+` : 'Not set'; }
 function empty(text) { return `<div class="desk-empty">${escapeHtml(text)}</div>`; }
 function showDeskMessage(message = '', error = false) {
@@ -129,6 +185,11 @@ function respond(input) {
   if (classification.kind === 'empty') return;
   missionState.mission = parseMission(input, missionState.mission);
   saveAll(); renderMission();
+  if (/upload (?:my |a )?resume|build (?:my |a )?resume|create (?:my |a )?resume|resume setup/i.test(input)) {
+    addMessage('assistant', '<strong>Let’s set up your master resume.</strong> Upload an existing PDF, DOCX, or TXT file, or I can assemble a first draft from facts you already confirmed. I will leave missing details blank instead of inventing them.');
+    openResumeSetup();
+    return;
+  }
   if (/managed browser|application workspace|complete an application|apply demo/i.test(input)) {
     addMessage('assistant', '<strong>Opening a simulated employer application workspace.</strong> It demonstrates redacted autofill, targeted exception pauses, recovery, and receipt verification. No employer site is contacted and nothing is submitted.');
     if (activeApplicationSession()) openApplicationWorkspace(); else startSyntheticApplicationWorkspace();
@@ -324,6 +385,34 @@ function renderAll() { renderMission(); renderDesk(); renderApplicationWorkspace
 $('composer').addEventListener('submit', event => { event.preventDefault(); const input = $('messageInput'); const value = input.value.trim(); if (!value) return; addMessage('user', escapeHtml(value)); input.value = ''; respond(value); });
 $('messages').addEventListener('click', event => { const value = event.target?.dataset?.prompt; if (!value) return; addMessage('user', escapeHtml(value)); respond(value); });
 $('openDesk').addEventListener('click', () => openDesk('pipeline'));
+$('openResumeSetup').addEventListener('click', openResumeSetup);
+$('closeResumeSetup').addEventListener('click', closeResumeSetup);
+$('resumeOverlay').addEventListener('click', event => { if (event.target === $('resumeOverlay')) closeResumeSetup(); });
+$('resumeFile').addEventListener('change', async event => {
+  try {
+    setResumeMessage('Reading the resume locally...');
+    const file = event.target.files[0];
+    const text = await extractResumeFile(file);
+    if (text.length < 100) throw new Error('The file did not contain enough readable resume text.');
+    $('resumeEditor').value = text;
+    setResumeMessage(`${file.name} is ready to review · ${text.length.toLocaleString()} characters extracted locally.`, 'good');
+  } catch (error) { setResumeMessage(error.message, 'warn'); }
+});
+$('buildResumeDraft').addEventListener('click', () => {
+  const profile = loadJson('1ststep_profile', {});
+  const draft = buildVerifiedResumeDraft(deskState, profile);
+  $('resumeEditor').value = draft.text;
+  const missing = draft.missingSections.length ? ` Missing: ${draft.missingSections.join(', ')}.` : '';
+  setResumeMessage(`${draft.text ? 'Truth-safe draft created' : 'No confirmed resume facts found yet'}.${missing} Review before saving.`, draft.missingSections.length ? 'warn' : 'good');
+});
+$('saveResume').addEventListener('click', () => {
+  try {
+    const text = saveResumeText($('resumeEditor').value, 'concierge-reviewed', $('resumeFile').files[0]?.name || '');
+    setResumeMessage(`Resume saved locally · ${text.length.toLocaleString()} characters.`, 'good');
+    renderMission();
+    addMessage('assistant', '<strong>Your resume is saved.</strong> I can use it as the master version, build readiness answers from it after your confirmation, and send role-specific tailoring through the existing Resume Tailor.');
+  } catch (error) { setResumeMessage(error.message, 'warn'); }
+});
 $('resumeApplication').addEventListener('click', () => safeAction(openApplicationWorkspace));
 $('closeDesk').addEventListener('click', closeDesk);
 $('closeApplication').addEventListener('click', closeApplicationWorkspace);

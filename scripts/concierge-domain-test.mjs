@@ -9,6 +9,7 @@ import {
   advanceSalesDemo,
   approveBatch,
   buildReadinessDraftFromSources,
+  buildVerifiedResumeDraft,
   canAutoSubmit,
   confirmReadinessDraft,
   confirmReusableFact,
@@ -26,6 +27,7 @@ import {
   readinessStatus,
   recordGeneratedPackage,
   recordFieldAnswer,
+  recordOtpAttemptOutcome,
   recordOtpChallenge,
   resolveApplicationQuestion,
   resolveActionItem,
@@ -53,6 +55,19 @@ const profile = createTruthProfile({
   travelTolerance: 'Up to 20%', schedulePreferences: ['Eastern Time'], disclosureChoices: ['Optional demographics unanswered'], confirmedAt: at,
 });
 assert.deepEqual(truthProfileGaps(profile), []);
+
+const verifiedResumeDraft = buildVerifiedResumeDraft(createDeskState({ truthProfile: profile }), {
+  firstName: 'Jordan', lastName: 'Example', email: 'jordan@example.test', phone: '555-0100', location: 'New Jersey',
+});
+assert.match(verifiedResumeDraft.text, /Jordan Example/);
+assert.match(verifiedResumeDraft.text, /EXPERIENCE\nVerified employer and role/);
+assert.match(verifiedResumeDraft.text, /SKILLS\nProcurement/);
+assert.deepEqual(verifiedResumeDraft.missingSections, []);
+assert.ok(!/authorized|salary|travel/i.test(verifiedResumeDraft.text));
+
+const emptyResumeDraft = buildVerifiedResumeDraft(createDeskState(), {});
+assert.equal(emptyResumeDraft.text, '');
+assert.deepEqual(emptyResumeDraft.missingSections, ['name and contact', 'work history', 'education', 'skills']);
 
 let state = createDeskState({ truthProfile: profile });
 state = updateTruthProfile(state, profile, at);
@@ -198,7 +213,7 @@ assert.equal(pipelineCounts(managedState).Submitted, 0);
 assert.ok(managedSession.timeline.every(event => !/@example\.com|555-01|123 Main/i.test(event.summary)));
 
 const replayStatuses = new Set(REDACTED_WORKFLOW_REPLAY.map(event => event.status));
-['Verified - Package Preparation', 'Closed by direct page', 'Location Unverified', 'Duplicate/In Process', 'Login Required / Retry', 'Transmission Confirmation Required', 'ATS Configuration Blocked', 'Human Action Required - password/reset', 'Human Action Required - latest OTP', 'Password Reset Requested - Outcome Pending', 'Human Action Required - form review']
+['Verified - Package Preparation', 'Closed by direct page', 'Location Unverified', 'Duplicate/In Process', 'Login Required / Retry', 'Transmission Confirmation Required', 'ATS Configuration Blocked', 'Human Action Required - password/reset', 'Human Action Required - latest OTP', 'Human Action Required - latest email code', 'Password Reset Requested - Outcome Pending', 'Human Action Required - form review', 'Blocked - employer ATS configuration']
   .forEach(status => assert.ok(replayStatuses.has(status)));
 REDACTED_WORKFLOW_REPLAY.forEach(event => assert.ok(APPLICATION_ACTIVITY_STATUSES.includes(event.status)));
 
@@ -248,6 +263,13 @@ assert.equal(recreatedHolleySession.blockers.filter(item => item.type === 'OTP' 
 assert.equal(recreatedHolleySession.blockers.filter(item => item.type === 'OTP' && item.status === 'unusable').length, 1);
 assert.match(recreatedHolleySession.blockers.find(item => item.type === 'OTP' && item.status === 'open').summary, /request only the latest code/);
 assert.ok(!JSON.stringify(recreatedHolleySession).includes('123456'));
+assert.throws(() => recordOtpAttemptOutcome(batch32State, 'session-holley', { outcome: 'incorrect', code: '654321' }, at), /must never enter/);
+batch32State = recordOtpAttemptOutcome(batch32State, 'session-holley', { outcome: 'incorrect' }, '2026-08-28T06:35:00.000Z');
+const incorrectHolleySession = batch32State.applicationSessions.find(session => session.id === 'session-holley');
+assert.equal(incorrectHolleySession.checkpointStatus, 'Human Action Required - latest email code');
+assert.equal(incorrectHolleySession.verificationSession.lastAttemptedGeneration, 2);
+assert.throws(() => recordOtpAttemptOutcome(batch32State, 'session-holley', { outcome: 'incorrect' }, at), /already attempted once/);
+assert.ok(!JSON.stringify(incorrectHolleySession).includes('654321'));
 assert.throws(() => inspectAuthenticatedApplicationForm(batch32State, 'session-modine', { authenticationRecovered: true, password: 'never-store-this' }, at), /must never enter/);
 batch32State = inspectAuthenticatedApplicationForm(batch32State, 'session-modine', { authenticationRecovered: true }, '2026-08-28T06:45:00.000Z');
 const reviewedModineSession = batch32State.applicationSessions.find(session => session.id === 'session-modine');
@@ -265,6 +287,14 @@ assert.deepEqual(reviewedModineSession.blockers.filter(item => item.source === '
 assert.ok(reviewedModineSession.blockers.filter(item => ['PASSWORD_RESET', 'PASSWORD_RESET_PENDING'].includes(item.type)).every(item => item.status === 'resolved'));
 assert.ok(batch32State.roles.every(role => role.status === 'Package Ready'));
 assert.equal(pipelineCounts(batch32State).Submitted, 0);
+batch32State = pauseManagedApplicationSession(batch32State, 'session-modine', 'ats-invalid-field-ids', '2026-08-28T06:50:00.000Z');
+const terminalModineSession = batch32State.applicationSessions.find(session => session.id === 'session-modine');
+assert.equal(terminalModineSession.status, 'blocked');
+assert.equal(terminalModineSession.checkpointStatus, 'Blocked - employer ATS configuration');
+assert.equal(terminalModineSession.draft.status, 'preserved');
+assert.equal(batch32State.roles.find(role => role.id === modineRole.id).status, 'Blocked');
+assert.equal(pipelineCounts(batch32State).Submitted, 0);
+assert.throws(() => resumeManagedApplicationSession(batch32State, 'session-modine', at), /terminally blocked/);
 assert.ok(batch32State.applicationSessions.flatMap(session => session.timeline).every(event => !/password\s*=|otp\s*=|verification code\s+\d/i.test(event.summary)));
 assert.deepEqual(holleyRole.requiredGaps, []);
 assert.deepEqual(holleyRole.preferredGaps, ['Rubber/plastics experience']);
