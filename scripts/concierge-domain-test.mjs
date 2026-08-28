@@ -19,6 +19,7 @@ import {
   deleteReusableFact,
   exportReadinessData,
   importLegacyEntries,
+  inspectAuthenticatedApplicationForm,
   normalizeJobUrl,
   pipelineCounts,
   pauseManagedApplicationSession,
@@ -197,7 +198,7 @@ assert.equal(pipelineCounts(managedState).Submitted, 0);
 assert.ok(managedSession.timeline.every(event => !/@example\.com|555-01|123 Main/i.test(event.summary)));
 
 const replayStatuses = new Set(REDACTED_WORKFLOW_REPLAY.map(event => event.status));
-['Verified - Package Preparation', 'Closed by direct page', 'Location Unverified', 'Duplicate/In Process', 'Login Required / Retry', 'Transmission Confirmation Required', 'ATS Configuration Blocked', 'Human Action Required - password/reset', 'Human Action Required - latest OTP', 'Password Reset Requested - Outcome Pending']
+['Verified - Package Preparation', 'Closed by direct page', 'Location Unverified', 'Duplicate/In Process', 'Login Required / Retry', 'Transmission Confirmation Required', 'ATS Configuration Blocked', 'Human Action Required - password/reset', 'Human Action Required - latest OTP', 'Password Reset Requested - Outcome Pending', 'Human Action Required - form review']
   .forEach(status => assert.ok(replayStatuses.has(status)));
 REDACTED_WORKFLOW_REPLAY.forEach(event => assert.ok(APPLICATION_ACTIVITY_STATUSES.includes(event.status)));
 
@@ -220,6 +221,7 @@ for (const roleFixture of batch32Roles) {
 }
 const modineRole = batch32State.roles.find(role => role.requisitionId === '9112');
 const holleyRole = batch32State.roles.find(role => role.requisitionId === '1552');
+batch32State = setStandingPolicy(batch32State, { policyKey: 'ordinary-privacy', decision: 'Accept semantically matching ordinary application privacy terms', confirmed: true }, at);
 batch32State = startManagedApplicationSession(batch32State, { id: 'session-modine', roleId: modineRole.id, simulated: true, batchAuthorizationName: 'Batch 32 named profile/resume transmission' }, at);
 batch32State = startManagedApplicationSession(batch32State, { id: 'session-holley', roleId: holleyRole.id, simulated: true, batchAuthorizationName: 'Batch 32 named profile/resume transmission' }, at);
 batch32State = pauseManagedApplicationSession(batch32State, 'session-modine', 'invalid-credentials', at);
@@ -246,6 +248,21 @@ assert.equal(recreatedHolleySession.blockers.filter(item => item.type === 'OTP' 
 assert.equal(recreatedHolleySession.blockers.filter(item => item.type === 'OTP' && item.status === 'unusable').length, 1);
 assert.match(recreatedHolleySession.blockers.find(item => item.type === 'OTP' && item.status === 'open').summary, /request only the latest code/);
 assert.ok(!JSON.stringify(recreatedHolleySession).includes('123456'));
+assert.throws(() => inspectAuthenticatedApplicationForm(batch32State, 'session-modine', { authenticationRecovered: true, password: 'never-store-this' }, at), /must never enter/);
+batch32State = inspectAuthenticatedApplicationForm(batch32State, 'session-modine', { authenticationRecovered: true }, '2026-08-28T06:45:00.000Z');
+const reviewedModineSession = batch32State.applicationSessions.find(session => session.id === 'session-modine');
+assert.equal(reviewedModineSession.checkpointStatus, 'Human Action Required - form review');
+assert.equal(reviewedModineSession.draft.status, 'preserved');
+assert.equal(reviewedModineSession.draft.resumeAttached, true);
+assert.equal(reviewedModineSession.draft.unresolvedCount, 8);
+assert.ok(reviewedModineSession.documents.some(document => document.kind === 'Resume'));
+assert.equal(reviewedModineSession.postAuthFormReview.items.find(item => item.key === 'ordinary-privacy').classification, 'ordinary-privacy');
+assert.equal(reviewedModineSession.postAuthFormReview.items.find(item => item.key === 'ordinary-privacy').resolved, true);
+assert.ok(reviewedModineSession.postAuthFormReview.items.filter(item => item.classification === 'employer-specific-material').every(item => item.priorBatchCoverage === 'not-covered'));
+assert.deepEqual(reviewedModineSession.blockers.filter(item => item.source === 'post-auth-form-review' && item.status === 'open').map(item => item.formItemKey).sort(), [
+  'consumer-reporting', 'drug-testing', 'employment-dates', 'exact-address', 'family-at-employer', 'final-certification', 'international-sharing', 'verification-authorizations',
+]);
+assert.ok(reviewedModineSession.blockers.filter(item => ['PASSWORD_RESET', 'PASSWORD_RESET_PENDING'].includes(item.type)).every(item => item.status === 'resolved'));
 assert.ok(batch32State.roles.every(role => role.status === 'Package Ready'));
 assert.equal(pipelineCounts(batch32State).Submitted, 0);
 assert.ok(batch32State.applicationSessions.flatMap(session => session.timeline).every(event => !/password\s*=|otp\s*=|verification code\s+\d/i.test(event.summary)));
