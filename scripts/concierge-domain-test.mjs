@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import {
+  APPLICATION_ACTIVITY_STATUSES,
+  APPLICATION_WORKFLOW_STEPS,
+  REDACTED_WORKFLOW_REPLAY,
   addActionItem,
   addRole,
+  advanceManagedApplicationSession,
   advanceSalesDemo,
   approveBatch,
   buildReadinessDraftFromSources,
@@ -17,21 +21,30 @@ import {
   importLegacyEntries,
   normalizeJobUrl,
   pipelineCounts,
+  pauseManagedApplicationSession,
   readinessStatus,
   recordGeneratedPackage,
   recordFieldAnswer,
   resolveApplicationQuestion,
   resolveActionItem,
+  resolveManagedApplicationException,
+  resumeManagedApplicationSession,
   roleDedupeKey,
   setAutonomyLevel,
   setStandingPolicy,
   stageReadinessDraft,
+  startManagedApplicationSession,
   transitionRole,
   truthProfileGaps,
   updateTruthProfile,
 } from '../lib/concierge-domain.js';
 
 const at = '2026-08-28T04:00:00.000Z';
+const qaEvidence = documentVersion => ({
+  documentVersion, formats: ['DOCX', 'PDF'], humanWritten: true, docxTextOrderChecked: true,
+  pdfTextExtracted: true, visualPageInspection: true, pageCount: 2, aiTemplateAvoided: true,
+  aiLanguagePolicy: 'omitted-for-ordinary-role',
+});
 const profile = createTruthProfile({
   workHistory: ['Verified employer and role'], education: ['Verified degree'], skills: ['Procurement'],
   authorization: 'Authorized', sponsorship: 'Not required', geography: ['Remote United States'], salaryMin: 100000,
@@ -59,7 +72,9 @@ assert.equal(state.roles.length, 1);
 state = transitionRole(state, captured.role.id, 'Verified', {}, at);
 assert.equal(pipelineCounts(state).Verified, 1);
 assert.throws(() => transitionRole(state, captured.role.id, 'Submitted', {}, at), /Cannot move/);
-state = transitionRole(state, captured.role.id, 'Package Ready', { documentVersion: 'resume-v1', formats: ['DOCX', 'PDF'], atsTextExtracted: true, pagesInspected: true, pageCount: 2 }, at);
+state = recordGeneratedPackage(state, captured.role.id, { historyId: 'history-1', documentVersion: 'resume-v1', resumeText: 'Synthetic role-specific resume' }, at);
+assert.equal(state.roles[0].status, 'Verified - Package Preparation');
+state = transitionRole(state, captured.role.id, 'Package Ready', qaEvidence('resume-v1'), at);
 
 let batchResult = createApprovalBatch(state, { name: 'August 28 Buyer Batch', roleIds: [captured.role.id], disclosures: ['Salary unknown', 'Travel unknown', 'No new consents authorized'] }, at);
 state = approveBatch(batchResult.state, batchResult.batch.id, at);
@@ -127,10 +142,10 @@ generationState = recordGeneratedPackage(generationState, generationState.roles[
 }, at);
 assert.equal(generationState.roles[0].packageDraft.source, 'existing-tailor-pipeline');
 assert.throws(() => transitionRole(generationState, generationState.roles[0].id, 'Package Ready', {
-  documentVersion: 'wrong-v1', formats: ['DOCX', 'PDF'], atsTextExtracted: true, pagesInspected: true, pageCount: 2,
+  ...qaEvidence('wrong-v1'),
 }, at), /must match/);
 generationState = transitionRole(generationState, generationState.roles[0].id, 'Package Ready', {
-  documentVersion: 'tailor_fixture-v1', formats: ['DOCX', 'PDF'], atsTextExtracted: true, pagesInspected: true, pageCount: 2,
+  ...qaEvidence('tailor_fixture-v1'),
 }, at);
 assert.equal(generationState.roles[0].status, 'Package Ready');
 
@@ -147,5 +162,74 @@ assert.equal(stagedDraftState.reusableFacts.length, 0);
 stagedDraftState = confirmReadinessDraft(stagedDraftState, at);
 assert.ok(stagedDraftState.reusableFacts.length >= 5);
 assert.ok(stagedDraftState.reusableFacts.every(item => item.autoReuse));
+
+assert.throws(() => startManagedApplicationSession(createDeskState(), {
+  role: { employer: 'Fixture Employer', title: 'Buyer', directEmployerUrl: 'https://careers.example.test/jobs/1' },
+}), /simulation-only/);
+let managedState = startManagedApplicationSession(createDeskState(), {
+  simulated: true, autonomyLevel: 'autofill_review', documentVersion: 'synthetic-resume-v3',
+  role: { employer: 'Fixture Employer', title: 'Buyer', requisitionId: 'FIX-1', directEmployerUrl: 'https://careers.example.test/jobs/FIX-1' },
+}, at);
+let managedSession = managedState.applicationSessions[0];
+assert.equal(managedSession.step, APPLICATION_WORKFLOW_STEPS[0]);
+assert.ok(managedSession.suggestions.every(item => !/fixture-person@|555-01/i.test(item.value)));
+for (let index = 1; index <= APPLICATION_WORKFLOW_STEPS.indexOf('review_exception'); index++) {
+  managedState = advanceManagedApplicationSession(managedState, managedSession.id, `2026-08-28T05:0${index}:00.000Z`);
+  managedSession = managedState.applicationSessions[0];
+}
+assert.equal(managedSession.status, 'paused');
+assert.throws(() => advanceManagedApplicationSession(managedState, managedSession.id, at), /Resolve or resume/);
+managedState = resolveManagedApplicationException(managedState, managedSession.id, at);
+managedState = pauseManagedApplicationSession(managedState, managedSession.id, 'browser-timeout', at);
+assert.equal(managedState.applicationSessions[0].status, 'paused');
+managedState = resumeManagedApplicationSession(managedState, managedSession.id, at);
+assert.equal(managedState.applicationSessions[0].step, 'review_exception');
+while (managedState.applicationSessions[0].status !== 'complete') {
+  managedState = managedState.applicationSessions[0].status === 'paused'
+    ? resolveManagedApplicationException(managedState, managedSession.id, at)
+    : advanceManagedApplicationSession(managedState, managedSession.id, at);
+}
+managedSession = managedState.applicationSessions[0];
+assert.equal(managedSession.receipt.simulated, true);
+assert.equal(managedSession.receipt.transmission, 'none');
+assert.equal(pipelineCounts(managedState).Submitted, 0);
+assert.ok(managedSession.timeline.every(event => !/@example\.com|555-01|123 Main/i.test(event.summary)));
+
+const replayStatuses = new Set(REDACTED_WORKFLOW_REPLAY.map(event => event.status));
+['Verified - Package Preparation', 'Closed by direct page', 'Location Unverified', 'Duplicate/In Process', 'Login Required / Retry', 'Transmission Confirmation Required', 'ATS Configuration Blocked', 'Human Action Required - password/reset', 'Human Action Required - OTP delivery and code']
+  .forEach(status => assert.ok(replayStatuses.has(status)));
+REDACTED_WORKFLOW_REPLAY.forEach(event => assert.ok(APPLICATION_ACTIVITY_STATUSES.includes(event.status)));
+
+let batch32State = createDeskState();
+const batch32Roles = [
+  { employer: 'Modine', title: 'Buyer', requisitionId: '9112', directEmployerUrl: 'https://careers.example.test/modine/9112' },
+  { employer: 'Holley Performance Brands', title: 'Buyer', requisitionId: '1552', directEmployerUrl: 'https://careers.example.test/holley/1552', preferredGaps: ['Rubber/plastics experience'], requiredGaps: [] },
+];
+for (const roleFixture of batch32Roles) {
+  const added = addRole(batch32State, {
+    ...roleFixture, sourceType: 'direct-employer', applyPathActive: true, remoteEligibility: 'Remote US',
+    geographyEligibility: 'New Jersey eligible', salaryDisclosure: 'Unknown', postedDate: 'Unknown', travel: 'Unknown',
+    schedule: 'Unknown', jobDescription: 'Verified redacted direct-employer fixture.',
+  }, at);
+  batch32State = transitionRole(added.state, added.role.id, 'Verified', {}, at);
+  batch32State = recordGeneratedPackage(batch32State, added.role.id, {
+    historyId: `history-${added.role.requisitionId}`, documentVersion: `resume-${added.role.requisitionId}-v1`, resumeText: 'Redacted human-written fixture resume.',
+  }, at);
+  batch32State = transitionRole(batch32State, added.role.id, 'Package Ready', qaEvidence(`resume-${added.role.requisitionId}-v1`), at);
+}
+const modineRole = batch32State.roles.find(role => role.requisitionId === '9112');
+const holleyRole = batch32State.roles.find(role => role.requisitionId === '1552');
+batch32State = startManagedApplicationSession(batch32State, { id: 'session-modine', roleId: modineRole.id, simulated: true, batchAuthorizationName: 'Batch 32 named profile/resume transmission' }, at);
+batch32State = startManagedApplicationSession(batch32State, { id: 'session-holley', roleId: holleyRole.id, simulated: true, batchAuthorizationName: 'Batch 32 named profile/resume transmission' }, at);
+batch32State = pauseManagedApplicationSession(batch32State, 'session-modine', 'invalid-credentials', at);
+assert.equal(batch32State.applicationSessions.find(session => session.id === 'session-modine').blockers.at(-1).type, 'PASSWORD_RESET');
+assert.equal(batch32State.applicationSessions.find(session => session.id === 'session-holley').status, 'active');
+batch32State = pauseManagedApplicationSession(batch32State, 'session-holley', 'otp-delivery', at);
+assert.equal(batch32State.applicationSessions.find(session => session.id === 'session-holley').blockers.at(-1).type, 'OTP');
+assert.ok(batch32State.roles.every(role => role.status === 'Package Ready'));
+assert.equal(pipelineCounts(batch32State).Submitted, 0);
+assert.ok(batch32State.applicationSessions.flatMap(session => session.timeline).every(event => !/password\s*=|otp\s*=|verification code\s+\d/i.test(event.summary)));
+assert.deepEqual(holleyRole.requiredGaps, []);
+assert.deepEqual(holleyRole.preferredGaps, ['Rubber/plastics experience']);
 
 console.log('Concierge domain tests passed.');

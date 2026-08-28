@@ -28,9 +28,14 @@ assert.equal(recurring.recurringDailyTarget, 20);
 const conciergeHtml = await readFile(new URL('../concierge.html', import.meta.url), 'utf8');
 const conciergeJs = await readFile(new URL('../concierge.js', import.meta.url), 'utf8');
 assert.match(conciergeHtml, /id="questionOverlay"/);
+assert.match(conciergeHtml, /id="applicationOverlay"/);
+assert.match(conciergeHtml, /Simulated workspace/);
+assert.match(conciergeHtml, /id="workflowReplay"/);
 assert.match(conciergeHtml, /Save & reuse/);
 assert.match(conciergeHtml, />Records</);
 assert.match(conciergeJs, /source: 'guided-popup'/);
+assert.match(conciergeJs, /startManagedApplicationSession/);
+assert.match(conciergeJs, /pauseManagedApplicationSession/);
 assert.match(conciergeJs, /setTimeout\(openQuestionPopup/);
 
 console.log('Concierge routing tests passed.');

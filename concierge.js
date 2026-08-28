@@ -1,9 +1,9 @@
 import { buildSearchLinks, classifyConciergeMessage, missionGaps, parseMission } from './lib/concierge-router.js';
 import {
-  ACTION_TYPES, DEMO_STAGES, READINESS_FIELDS, addActionItem, addRole, advanceSalesDemo, approveBatch,
+  ACTION_TYPES, APPLICATION_WORKFLOW_STEPS, DEMO_STAGES, READINESS_FIELDS, REDACTED_WORKFLOW_REPLAY, addActionItem, addRole, advanceManagedApplicationSession, advanceSalesDemo, approveBatch,
   buildReadinessDraftFromSources, confirmReadinessDraft, confirmReusableFact, createApprovalBatch, createDeskState, createSalesDemo, deleteReusableFact, discardReadinessDraft,
-  exportReadinessData, importLegacyEntries, packageGaps, pipelineCounts, readinessStatus, resetSalesDemo,
-  recordGeneratedPackage, resolveActionItem, setAutonomyLevel, setStandingPolicy, stageReadinessDraft, transitionRole, truthProfileGaps, updateTruthProfile,
+  exportReadinessData, importLegacyEntries, packageGaps, pauseManagedApplicationSession, pipelineCounts, readinessStatus, resetSalesDemo,
+  recordGeneratedPackage, resolveActionItem, resolveManagedApplicationException, resumeManagedApplicationSession, setAutonomyLevel, setStandingPolicy, stageReadinessDraft, startManagedApplicationSession, transitionRole, truthProfileGaps, updateTruthProfile,
   verificationGaps,
 } from './lib/concierge-domain.js';
 
@@ -31,6 +31,11 @@ const QUICK_ANSWERS = Object.freeze({
   demographics: ['Leave optional demographics unanswered', 'Prefer not to answer'],
 });
 const SENSITIVE_QUESTION_KEYS = new Set(['contact', 'address', 'authorization', 'sponsorship', 'salary', 'outsideEmployment', 'background', 'drugHealth', 'formerEmployerConflict', 'demographics']);
+const WORKFLOW_LABELS = Object.freeze({
+  discover_verify: 'Discover & Verify', deduplicate: 'Deduplicate', tailor_package: 'Tailor Package',
+  account_profile: 'Account/Profile', autofill: 'Autofill', review_exception: 'Review Exception',
+  transmit: 'Transmit', submit: 'Submit', verify_receipt: 'Verify Receipt',
+});
 
 function consumeGeneratedPackage() {
   const result = loadJson(PACKAGE_RESULT_KEY, null);
@@ -124,6 +129,11 @@ function respond(input) {
   if (classification.kind === 'empty') return;
   missionState.mission = parseMission(input, missionState.mission);
   saveAll(); renderMission();
+  if (/managed browser|application workspace|complete an application|apply demo/i.test(input)) {
+    addMessage('assistant', '<strong>Opening a simulated employer application workspace.</strong> It demonstrates redacted autofill, targeted exception pauses, recovery, and receipt verification. No employer site is contacted and nothing is submitted.');
+    if (activeApplicationSession()) openApplicationWorkspace(); else startSyntheticApplicationWorkspace();
+    return;
+  }
   if (/readiness|onboarding|autonomy|answer next|application question/i.test(input)) {
     const readiness = readinessStatus(deskState);
     addMessage('assistant', `<strong>Your application setup is ${readiness.score}% complete.</strong> I’ll ask one short question at a time and save confirmed answers for matching applications.`);
@@ -153,6 +163,58 @@ function switchTab(name) {
 }
 function openDesk(tab = 'truth') { $('deskOverlay').classList.add('open'); switchTab(tab); renderDesk(); }
 function closeDesk() { $('deskOverlay').classList.remove('open'); }
+
+function activeApplicationSession() {
+  return deskState.applicationSessions.find(session => session.id === deskState.activeApplicationSessionId) || null;
+}
+function openApplicationWorkspace() {
+  if (!activeApplicationSession()) throw new Error('Start a simulated application session first.');
+  closeDesk();
+  $('applicationOverlay').classList.add('open');
+  renderApplicationWorkspace();
+}
+function closeApplicationWorkspace() { $('applicationOverlay').classList.remove('open'); }
+function startSyntheticApplicationWorkspace(role = null) {
+  const fixtureRole = role || {
+    employer: 'Northstar Components', title: 'Procurement Analyst', requisitionId: 'DEMO-PA-104',
+    directEmployerUrl: 'https://careers.example.test/jobs/DEMO-PA-104',
+  };
+  deskState = startManagedApplicationSession(deskState, {
+    roleId: role?.id, role: fixtureRole, simulated: true, autonomyLevel: deskState.autonomy.level,
+    batchAuthorizationName: 'Synthetic Batch 32',
+    documentVersion: role?.packageEvidence?.documentVersion || role?.packageDraft?.documentVersion || 'synthetic-resume-v1',
+  });
+  saveAll(); renderAll(); openApplicationWorkspace();
+}
+
+function renderApplicationWorkspace() {
+  const session = activeApplicationSession();
+  $('resumeApplication').hidden = !session;
+  if (!session) return;
+  $('applicationTitle').textContent = `${session.role.employer} · ${session.role.title}`;
+  $('applicationSubtitle').textContent = `Req ${session.role.requisitionId || 'unknown'} · ${session.autonomyLevel.replaceAll('_', ' ')} · simulated fixture`;
+  $('applicationUrl').textContent = session.role.directEmployerUrl.replace(/^https?:\/\//, 'https://');
+  $('fixtureEmployer').textContent = `${session.role.employer} careers · simulated`;
+  $('fixtureRole').textContent = session.role.title;
+  $('fixtureStep').textContent = `${WORKFLOW_LABELS[session.step]} · This is a redacted employer-page fixture, not a live ATS.`;
+  $('applicationProgress').innerHTML = APPLICATION_WORKFLOW_STEPS.map((step, index) => `<span class="${index < session.stepIndex ? 'done' : index === session.stepIndex ? 'current' : ''}">${escapeHtml(WORKFLOW_LABELS[step])}</span>`).join('');
+  $('fixtureFields').innerHTML = session.suggestions.map(item => `<div class="fixture-field"><strong>${escapeHtml(item.field)}</strong><span>${escapeHtml(item.value)} · ${Math.round(item.confidence * 100)}% match</span></div>`).join('');
+  $('documentStatus').textContent = session.documents.map(item => `${item.kind} ${item.version} · ${item.status}`).join(' · ');
+  $('applicationAgentStatus').innerHTML = `<strong>${escapeHtml(session.status.replaceAll('_', ' '))}</strong><br>${escapeHtml(session.agentStatus)}`;
+  const authorization = session.authorization || { batchName: 'No named authorization', covers: [], excludes: ['all external transmission'] };
+  $('applicationAuthorization').innerHTML = `<div class="workspace-row"><strong>${escapeHtml(authorization.batchName)}</strong><small>Covers: ${escapeHtml(authorization.covers.join(', ') || 'none')}. Still pauses for: ${escapeHtml(authorization.excludes.join(', '))}. A blocker suspends only this application.</small></div>`;
+  $('applicationSuggestions').innerHTML = session.suggestions.map(item => `<div class="workspace-row"><strong>${escapeHtml(item.field)} → ${escapeHtml(item.value)}</strong><small>${escapeHtml(item.source)} · ${Math.round(item.confidence * 100)}% semantic match</small></div>`).join('');
+  $('applicationBlockers').innerHTML = session.blockers.length ? [...session.blockers].reverse().map(item => `<div class="workspace-row"><strong>${escapeHtml(item.type)} · ${escapeHtml(item.status)}</strong><small>${escapeHtml(item.summary)}</small></div>`).join('') : empty('No current blocker.');
+  $('applicationTimeline').innerHTML = [...session.timeline].reverse().map(item => `<div class="workspace-row"><strong>${escapeHtml(WORKFLOW_LABELS[item.step])} · ${escapeHtml(item.kind)}</strong><small>${escapeHtml(item.summary)} · ${escapeHtml(item.at)}</small></div>`).join('');
+  $('applicationReceipt').innerHTML = session.receipt ? `<div class="workspace-row receipt-box"><strong>SIMULATED RECEIPT · ${escapeHtml(session.receipt.confirmationId)}</strong><small>No employer transmission · ${escapeHtml(session.receipt.documentVersion)} · ${escapeHtml(session.receipt.receivedAt)}</small></div>` : empty('No authoritative receipt. The role cannot count as Submitted.');
+  $('advanceApplication').disabled = session.status !== 'active' || session.status === 'complete';
+  $('advanceApplication').textContent = session.status === 'complete' ? 'Demo complete' : 'Advance safe step';
+  const targetedException = session.status === 'paused' && session.blockers.some(item => item.status === 'open' && item.type === 'NEW_QUESTION' && session.step === 'review_exception');
+  const transmissionConfirmation = session.status === 'paused' && session.blockers.some(item => item.status === 'open' && item.type === 'TRANSMISSION_CONFIRMATION');
+  $('resolveApplication').hidden = !targetedException && !transmissionConfirmation;
+  $('resolveApplication').textContent = transmissionConfirmation ? 'Confirm transmission' : 'Resolve targeted exception';
+  $('resumeManagedApplication').hidden = session.status !== 'paused' || targetedException || transmissionConfirmation;
+}
 
 function openQuestionPopup(fieldKey = '') {
   const readiness = readinessStatus(deskState);
@@ -221,10 +283,11 @@ function renderRoles() {
     const controls = [];
     if (role.status === 'Found') controls.push(`<button data-role-action="verify" data-role-id="${role.id}" ${verification.length ? 'disabled' : ''}>Verify</button>`);
     if (role.status === 'Verified' && !role.packageDraft) controls.push(`<button data-role-action="generate" data-role-id="${role.id}" ${!role.jobDescription || !hasResume() ? 'disabled' : ''}>${!role.jobDescription ? 'Job description needed' : !hasResume() ? 'Resume needed' : 'Generate tailored resume'}</button>`);
-    if (role.status === 'Verified' && role.packageDraft) controls.push(`<button data-role-action="package" data-role-id="${role.id}">Complete document QA</button>`);
+    if (role.status === 'Verified - Package Preparation' && role.packageDraft) controls.push(`<button data-role-action="package" data-role-id="${role.id}">Complete document QA</button>`);
+    if (role.status === 'Package Ready') controls.push(`<button data-role-action="workspace" data-role-id="${role.id}">Preview application workspace</button>`);
     if (role.status !== 'Submitted' && role.status !== 'Blocked') controls.push(`<button data-role-action="block" data-role-id="${role.id}">Add blocker</button>`);
     if (role.status === 'Awaiting Approval') controls.push('<button disabled>Submission disabled</button>');
-    return `<div class="desk-row"><div><strong>${escapeHtml(role.employer)} · ${escapeHtml(role.title)}</strong><small>${escapeHtml(role.status)} · Req ${escapeHtml(role.requisitionId || 'unknown')} · ${escapeHtml(role.directEmployerUrl)}${role.packageDraft ? ` · Draft ${escapeHtml(role.packageDraft.documentVersion)} generated by Resume Tailor` : ''}${verification.length ? ` · Needs ${escapeHtml(verification.join(', '))}` : ''}${role.materialGaps?.length ? ` · Gaps: ${escapeHtml(role.materialGaps.join(', '))}` : ''}</small></div><div class="desk-actions">${controls.join('')}</div></div>`;
+    return `<div class="desk-row"><div><strong>${escapeHtml(role.employer)} · ${escapeHtml(role.title)}</strong><small>${escapeHtml(role.status)} · Req ${escapeHtml(role.requisitionId || 'unknown')} · ${escapeHtml(role.directEmployerUrl)}${role.packageDraft ? ` · Draft ${escapeHtml(role.packageDraft.documentVersion)} generated by Resume Tailor` : ''}${verification.length ? ` · Needs ${escapeHtml(verification.join(', '))}` : ''}${role.requiredGaps?.length ? ` · Required gaps: ${escapeHtml(role.requiredGaps.join(', '))}` : ' · Required gaps: none recorded'}${role.preferredGaps?.length ? ` · Preferred gaps: ${escapeHtml(role.preferredGaps.join(', '))}` : ''}${role.materialGaps?.length ? ` · Legacy gaps: ${escapeHtml(role.materialGaps.join(', '))}` : ''}</small></div><div class="desk-actions">${controls.join('')}</div></div>`;
   }).join('') : empty('No roles captured. Import the tracker or add verified direct-employer evidence.');
 }
 
@@ -238,6 +301,7 @@ function renderApprovals() {
 
 function renderDemo() {
   const demo = deskState.demo;
+  $('workflowReplay').innerHTML = REDACTED_WORKFLOW_REPLAY.map(event => `<div class="desk-row"><div><strong>${escapeHtml(event.employer)} · ${escapeHtml(event.requisitionId)}<span class="trace-kind">${escapeHtml(event.status)}</span></strong><small>${escapeHtml(event.evidence)} Candidate data is redacted; this is an acceptance fixture, not a live orchestration claim.</small></div></div>`).join('');
   $('advanceDemo').disabled = !demo || demo.stageIndex >= DEMO_STAGES.length - 1;
   if (!demo) {
     $('demoStage').textContent = 'Demo not started';
@@ -255,12 +319,14 @@ function renderAudit() {
   $('auditList').innerHTML = deskState.auditEvents.length ? [...deskState.auditEvents].reverse().map(event => `<div class="desk-row"><div><strong>${escapeHtml(event.type)}</strong><small>${escapeHtml(event.at)} · ${escapeHtml(event.entityId)} · ${escapeHtml(JSON.stringify(event.details))}</small></div></div>`).join('') : empty('No audit events yet.');
 }
 function renderDesk() { renderTruthForm(); renderReadiness(); renderRoles(); renderApprovals(); renderDemo(); renderAudit(); }
-function renderAll() { renderMission(); renderDesk(); }
+function renderAll() { renderMission(); renderDesk(); renderApplicationWorkspace(); }
 
 $('composer').addEventListener('submit', event => { event.preventDefault(); const input = $('messageInput'); const value = input.value.trim(); if (!value) return; addMessage('user', escapeHtml(value)); input.value = ''; respond(value); });
 $('messages').addEventListener('click', event => { const value = event.target?.dataset?.prompt; if (!value) return; addMessage('user', escapeHtml(value)); respond(value); });
 $('openDesk').addEventListener('click', () => openDesk('pipeline'));
+$('resumeApplication').addEventListener('click', () => safeAction(openApplicationWorkspace));
 $('closeDesk').addEventListener('click', closeDesk);
+$('closeApplication').addEventListener('click', closeApplicationWorkspace);
 $('deskOverlay').addEventListener('click', event => { if (event.target === $('deskOverlay')) closeDesk(); });
 document.querySelectorAll('[data-desk-tab]').forEach(node => node.addEventListener('click', () => switchTab(node.dataset.deskTab)));
 $('questionChoices').addEventListener('click', event => {
@@ -283,6 +349,26 @@ $('questionForm').addEventListener('submit', event => {
 });
 $('questionLater').addEventListener('click', closeQuestionPopup);
 $('questionOverlay').addEventListener('click', event => { if (event.target === $('questionOverlay')) closeQuestionPopup(); });
+$('advanceApplication').addEventListener('click', () => safeAction(() => {
+  const session = activeApplicationSession();
+  if (!session) throw new Error('No application session is active.');
+  deskState = advanceManagedApplicationSession(deskState, session.id);
+}));
+$('resolveApplication').addEventListener('click', () => safeAction(() => {
+  const session = activeApplicationSession();
+  if (!session) throw new Error('No application session is active.');
+  deskState = resolveManagedApplicationException(deskState, session.id);
+}));
+$('simulateTimeout').addEventListener('click', () => safeAction(() => {
+  const session = activeApplicationSession();
+  if (!session) throw new Error('No application session is active.');
+  deskState = pauseManagedApplicationSession(deskState, session.id, 'browser-timeout');
+}));
+$('resumeManagedApplication').addEventListener('click', () => safeAction(() => {
+  const session = activeApplicationSession();
+  if (!session) throw new Error('No application session is active.');
+  deskState = resumeManagedApplicationSession(deskState, session.id);
+}));
 
 $('truthForm').addEventListener('submit', event => {
   event.preventDefault();
@@ -357,7 +443,8 @@ $('roleForm').addEventListener('submit', event => { event.preventDefault(); safe
     remoteEligibility: $('roleRemote').value, geographyEligibility: $('roleGeo').value,
     salaryMin: $('roleSalaryMin').value, salaryMax: $('roleSalaryMax').value, salaryDisclosure: $('roleSalaryDisclosure').value,
     postedDate: $('rolePosted').value, travel: $('roleTravel').value, schedule: $('roleSchedule').value,
-    materialGaps: list($('roleGaps').value), recruiterContact: $('roleRecruiter').value, attestations: list($('roleAttestations').value),
+    requiredGaps: list($('roleRequiredGaps').value), preferredGaps: list($('rolePreferredGaps').value),
+    recruiterContact: $('roleRecruiter').value, attestations: list($('roleAttestations').value),
   });
   deskState = result.state; event.target.reset();
   showDeskMessage(result.duplicate ? 'Duplicate suppressed; durable reason added to the existing role.' : 'Role captured as Found.');
@@ -386,13 +473,22 @@ $('roleList').addEventListener('click', event => {
       window.location.assign('/?mode=resume&conciergeTailor=1');
       return;
     }
+    if (action === 'workspace') {
+      const role = deskState.roles.find(item => item.id === roleId);
+      startSyntheticApplicationWorkspace(role);
+      return;
+    }
     if (action === 'package') {
       const role = deskState.roles.find(item => item.id === roleId);
       const documentVersion = role?.packageDraft?.documentVersion;
       if (!documentVersion) throw new Error('Generate a role-specific package draft first.');
-      const passed = window.confirm('Confirm DOCX and PDF exist, ATS text order was extracted, every rendered page was inspected, and the package is exactly two pages.');
+      const passed = window.confirm('Confirm the role-specific resume is human-written, DOCX and PDF exist, DOCX text order and PDF extraction passed, every rendered page was visually inspected, the package is exactly two pages, the design avoids AI-styled templates, and AI language is omitted for ordinary procurement roles.');
       if (!passed) throw new Error(`Package remains Verified. Missing: ${packageGaps({ documentVersion }).join(', ')}.`);
-      deskState = transitionRole(deskState, roleId, 'Package Ready', { documentVersion, formats: ['DOCX', 'PDF'], atsTextExtracted: true, pagesInspected: true, pageCount: 2 });
+      deskState = transitionRole(deskState, roleId, 'Package Ready', {
+        documentVersion, formats: ['DOCX', 'PDF'], humanWritten: true, docxTextOrderChecked: true,
+        pdfTextExtracted: true, visualPageInspection: true, pagesInspected: true, pageCount: 2,
+        aiTemplateAvoided: true, aiLanguagePolicy: 'omitted-for-ordinary-role',
+      });
     }
     if (action === 'block') {
       const type = window.prompt(`Action type: ${ACTION_TYPES.join(', ')}`, 'NEW_QUESTION')?.toUpperCase();
@@ -418,6 +514,7 @@ $('batchList').addEventListener('click', event => { const batchId = event.target
 $('actionList').addEventListener('click', event => { const actionId = event.target?.dataset?.resolveAction; if (actionId) safeAction(() => { deskState = resolveActionItem(deskState, actionId); }); });
 
 $('startDemo').addEventListener('click', () => safeAction(() => { deskState = createSalesDemo(deskState, $('demoAutonomy').value); showDeskMessage('Synthetic demo started. No external service was contacted.'); }));
+$('openManagedDemo').addEventListener('click', () => startSyntheticApplicationWorkspace());
 $('advanceDemo').addEventListener('click', () => safeAction(() => { deskState = advanceSalesDemo(deskState); }));
 $('resetDemo').addEventListener('click', () => safeAction(() => { deskState = resetSalesDemo(deskState); showDeskMessage('Synthetic demo reset.'); }));
 
@@ -427,5 +524,6 @@ function start() {
   if (missionState.messages.length) missionState.messages.forEach(message => addMessage(message.role, message.html, false));
   else addMessage('assistant', '<strong>What job outcome do you want?</strong><br>Tell me the count, titles, work mode/location, salary range, and exclusions. I’ll ask any missing application questions one at a time and remember confirmed answers.<div class="quick"><button data-prompt="I need 30 remote procurement jobs, $100k minimum, using my saved resume">Start a 30-job sprint</button><button data-prompt="Answer next application question">Answer next question</button></div>');
   renderAll();
+  if (new URLSearchParams(window.location.search).get('managedDemo') === '1' && !activeApplicationSession()) startSyntheticApplicationWorkspace();
 }
 start();
