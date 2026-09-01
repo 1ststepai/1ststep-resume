@@ -47,3 +47,23 @@ Do not use `vercel build` followed by `vercel deploy --prebuilt` from this Windo
 7. Confirm `externalApplicationExecution: false` and `submissionsEnabled: false` unless those later modes were separately approved, configured, and independently evidenced.
 
 If any acceptance check fails, the release is not accepted. Do not weaken CSP, authentication, receipt rules, evidence expiry, cost caps, or approval gates to make the check pass.
+
+## Rollback
+
+A saved deployment ID in a document is not proof that the target is still usable. Before deployment, and again before any rollback, run this read-only preflight with the exact approved target:
+
+```powershell
+npm run security:rollback-preflight -- --deployment-id <deployment-id> --expected-project 1ststep-resume --production-host app.1ststep.ai
+```
+
+Require `ok: true`, `target: "production"`, `readyState: "READY"`, and the exact deployment ID/project. The preflight prints only deployment identity and state; it never deploys, promotes, aliases, or rolls back.
+
+Rollback is a Production mutation and still requires an explicit owner decision. If acceptance fails and rollback is approved, use the exact inspected target—not a branch name, newest deployment, or guessed URL:
+
+```powershell
+npx vercel rollback <deployment-id> --yes
+npx vercel rollback status
+npm run security:rollback-preflight -- --deployment-id <deployment-id> --expected-project 1ststep-resume --production-host app.1ststep.ai --verify-alias
+```
+
+Then repeat asset parity, live-boundary, source-hash, authenticated readiness, and desktop/mobile checks. Require the post-rollback preflight to report `mode: "post-rollback-alias-verification"` and `ownsProductionAlias: true`. Preserve both the failed deployment ID and restored deployment ID in the incident evidence. A CLI success message alone is not recovery evidence.
