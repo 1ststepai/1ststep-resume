@@ -10,6 +10,7 @@ This file is an operator checklist, not an authorization record. Checking a box 
 - Full local release gate: passed.
 - Production traffic, migrations, candidate transmission, employer contact, and application submission: unchanged/not performed.
 - Production approval: blocked by scorecard layers 3, 8, and 13.
+- Complete ordered operator path: [`RELEASE_EXECUTION_PLAN.md`](RELEASE_EXECUTION_PLAN.md). It maps the 34 current launch actions to phases and exit proof; it grants no authorization.
 
 ## Decision 1: isolated database target
 
