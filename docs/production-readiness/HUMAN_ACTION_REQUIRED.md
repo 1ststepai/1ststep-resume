@@ -4,8 +4,8 @@ This file is an operator checklist, not an authorization record. Checking a box 
 
 ## Current verified boundary
 
-- Latest runtime candidate: commit `307e48d2fb1c134da3252959ba8b5ed3efc6285e`; runtime SHA-256 `3a57ad033abbfe8c4bbe2cdef0420371f238da27431da76ad707548112152fa7`.
-- Protected Preview: `dpl_4Ufb9xtj1AeLrfbsYL76Hn64sscH` (Ready; exact candidate and content-free request logs verified).
+- Latest runtime candidate: commit `3aa4054c6ea1a2009aefdcdfdc7348610ed90134`; runtime SHA-256 `1766b8f479c9c2a45fb29c67990d8d537c3d476eea8afd48d9a95b8eb67f1d34`.
+- Protected Preview: `dpl_7w4v4k72D3EGndiKYv9psmjBGMJx` (Ready; exact candidate and content-free request logs verified).
 - Current Production/rollback reference: `dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM` (Ready, but not candidate-parity).
 - Full local release gate: passed.
 - Production traffic, migrations, candidate transmission, employer contact, and application submission: unchanged/not performed.
