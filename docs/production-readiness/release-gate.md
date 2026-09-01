@@ -31,6 +31,8 @@ CI blocks deterministic Critical failures such as missing required documents, an
 
 CI cannot prove live configuration, staging behavior, production behavior, third-party delivery, database grants, backup retention, recovery, or on-call response. Those remain scorecard findings and block `audit:production-approval` when Critical.
 
+The exact remaining operator decisions and approval scopes are maintained in [`HUMAN_ACTION_REQUIRED.md`](HUMAN_ACTION_REQUIRED.md). That checklist is informational; source changes never substitute for action-time authorization.
+
 ## Failure behavior
 
 - Exit `0`: deterministic controls pass. This is not production approval.
