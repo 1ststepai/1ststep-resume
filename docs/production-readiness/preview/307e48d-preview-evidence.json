@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-01T22:14:00Z",
+  "environment": "Vercel Preview",
+  "sourceCommit": "307e48d2fb1c134da3252959ba8b5ed3efc6285e",
+  "runtimeSha256": "3a57ad033abbfe8c4bbe2cdef0420371f238da27431da76ad707548112152fa7",
+  "deployment": {
+    "id": "dpl_4Ufb9xtj1AeLrfbsYL76Hn64sscH",
+    "url": "https://1ststep-resume-6nhg6qcvf-1ststep.vercel.app",
+    "target": "preview",
+    "readyState": "READY",
+    "protected": true
+  },
+  "checks": {
+    "releaseGate": "passed",
+    "ciWorkflowPolicy": "passed",
+    "rollbackPreflightTests": "passed",
+    "previewLogEvidenceTests": "passed",
+    "truthfulFirstUseHtml": true,
+    "healthLive": "healthy",
+    "healthReady": "unavailable-fail-closed",
+    "durableRateLimit": "passed",
+    "liveEmployerFeedsChecked": 37,
+    "exactSyntheticMatches": 2,
+    "submissionsEnabled": false
+  },
+  "observability": {
+    "providerRequestLogsSampled": true,
+    "qualifyingRecords": 4,
+    "expectedRouteStatuses": {
+      "/api/health/live": 200,
+      "/api/health/ready": 503,
+      "/api/app-config": 200,
+      "/api/concierge-preview-smoke": 200
+    },
+    "contentBearingAllowlistedRecords": 0,
+    "unexpectedStatusRecords": 0,
+    "missingRoutes": [],
+    "rawMessagesEmitted": false,
+    "rawLogsRetained": false,
+    "providerRetentionVerified": false,
+    "logDrainVerified": false,
+    "alertDeliveryVerified": false,
+    "onCallResponseVerified": false
+  },
+  "capacity": {
+    "probeDeployed": true,
+    "protectedPreviewProbeExecuted": false,
+    "reason": "SCOPED_PREVIEW_BYPASS_SECRET_NOT_AVAILABLE",
+    "signedUserFairnessTested": false,
+    "providerQuotasVerified": false,
+    "capacityClaimed": false
+  },
+  "remoteReview": {
+    "ciPolicyVerifiedLocally": true,
+    "remoteBranchPresent": false,
+    "remoteCiExecuted": false,
+    "pushAuthorized": false,
+    "reviewRequestAuthorized": false
+  },
+  "externalActions": {
+    "productionTrafficChanged": false,
+    "migrationApplied": false,
+    "candidateDataTransmitted": false,
+    "employerContacted": false,
+    "applicationSubmitted": false
+  }
+}
