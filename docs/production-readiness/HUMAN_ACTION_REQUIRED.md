@@ -7,6 +7,7 @@ This file is an operator checklist, not an authorization record. Checking a box 
 - Latest runtime candidate: commit `1f6ed51802c479a429c19d92fcd813448ea047a3`.
 - Latest evidence-only head: commit `fb02743`.
 - Protected Preview: `dpl_GWf2jDsnsQuFTJMaahQ2aFtsrgBz`.
+- Current Production/rollback reference: `dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM` (Ready, but not candidate-parity).
 - Full local release gate: passed.
 - Production traffic, migrations, candidate transmission, employer contact, and application submission: unchanged/not performed.
 - Production approval: blocked by scorecard layers 3, 8, and 13.
