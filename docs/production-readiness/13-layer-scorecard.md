@@ -74,3 +74,5 @@ No P0 defect was proven by this bounded source/local audit. This is not proof th
 ## Release decision
 
 **Blocked.** Layers 3, 8, and 13 remain unaccepted Critical findings. No deployment or external action is authorized by this scorecard.
+
+A fresh content-free Production configuration-shape audit on 2026-09-01 found 0/14 launch controls ready, 119 missing requirements, and zero malformed configured requirements. Preview remains eligible; signed beta correctly fails closed with 23 blockers led by `DURABLE_RUNTIME_NOT_CONFIGURED`. This is configuration evidence, not production runtime proof.

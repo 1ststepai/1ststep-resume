@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-01T21:13:49.2336913Z",
+  "report": "job-agent-production-environment-shape",
+  "contentFree": true,
+  "containsSecretValues": false,
+  "authoritativeProductionRuntimeEvidence": false,
+  "source": "vercel-env-run-production-with-local-production-rules",
+  "summary": {
+    "readyControls": 0,
+    "totalControls": 14,
+    "missingRequirements": 119,
+    "invalidRequirements": 0,
+    "previewEligible": true,
+    "signedBetaEligible": false,
+    "signedBetaBlockerCount": 23,
+    "packageReadyEligible": false,
+    "assistedApplicationEligible": false,
+    "finalSubmissionEligible": false
+  },
+  "controls": [
+    { "id": "durable-runtime", "stage": "signed-beta", "ready": false },
+    { "id": "private-document-storage", "stage": "signed-beta", "ready": false },
+    { "id": "consent-policy", "stage": "signed-beta", "ready": false },
+    { "id": "background-scheduling", "stage": "signed-beta", "ready": false },
+    { "id": "needs-you-delivery", "stage": "signed-beta", "ready": false },
+    { "id": "cost-controls", "stage": "signed-beta", "ready": false },
+    { "id": "controlled-beta", "stage": "signed-beta", "ready": false },
+    { "id": "audit-archive", "stage": "signed-beta", "ready": false },
+    { "id": "operator-alerting", "stage": "signed-beta", "ready": false },
+    { "id": "signed-launch-evidence", "stage": "signed-beta", "ready": false },
+    { "id": "support-ownership", "stage": "signed-beta", "ready": false },
+    { "id": "document-render", "stage": "package-ready", "ready": false },
+    { "id": "assisted-greenhouse", "stage": "assisted-application", "ready": false },
+    { "id": "final-submission", "stage": "final-submission", "ready": false }
+  ],
+  "nextAction": {
+    "blocker": "DURABLE_RUNTIME_NOT_CONFIGURED",
+    "stage": "signed-beta",
+    "owner": "platform",
+    "proof": "runtime-drill"
+  },
+  "temporaryEnvironmentFileRemoved": true,
+  "productionStateChanged": false
+}
