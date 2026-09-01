@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict';
-import { executeJobAgentWorkerCycle } from '../api/job-agent-worker.js';
+import { readFileSync } from 'node:fs';
+import { executeJobAgentWorkerCycle, maxDuration } from '../api/job-agent-worker.js';
+
+const deploymentConfig = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
+assert.equal(maxDuration, deploymentConfig.functions['api/job-agent-worker.js'].maxDuration, 'worker duration must match the deployed Vercel bound');
+assert.equal(maxDuration, 60, 'worker must preserve the bounded 60-second drain contract from the recovery runbook');
 
 const events = [];
 const heartbeats = [];

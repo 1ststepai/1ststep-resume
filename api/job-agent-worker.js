@@ -20,7 +20,9 @@ import { processExpiredAccountDataExports, processNextAccountDataExportTask, rea
 import { buildCompleteAccountDataExport } from '../lib/account-data-export-builder.js';
 import { jobAgentLearningConfiguration, processNextJobAgentLearningMaintenance } from '../lib/job-agent-continuous-improvement-worker.js';
 
-export const maxDuration = 180;
+// Keep this synchronized with vercel.json and the recovery runbook. The worker
+// drains bounded batches and relies on durable leases for work that exceeds one cycle.
+export const maxDuration = 60;
 
 function safeEquals(value, expected) {
   const left = Buffer.from(String(value || ''));
