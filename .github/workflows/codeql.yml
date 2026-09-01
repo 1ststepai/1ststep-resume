@@ -17,6 +17,7 @@ jobs:
   analyze:
     name: Analyze JavaScript
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     strategy:
       fail-fast: false
@@ -26,6 +27,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@ce64ddcb0d8d890d2df4a9d1c04ff297367dea2a # v3
