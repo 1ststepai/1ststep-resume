@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-01T21:18:00Z",
+  "environment": "Vercel Preview",
+  "sourceCommit": "1f6ed51802c479a429c19d92fcd813448ea047a3",
+  "runtimeSha256": "84a21d207164ddc842525ac9bea44e66043036e57612227a6c210f2082ad26fb",
+  "deployment": {
+    "id": "dpl_GWf2jDsnsQuFTJMaahQ2aFtsrgBz",
+    "url": "https://1ststep-resume-jz7dohumn-1ststep.vercel.app",
+    "target": "preview",
+    "readyState": "READY",
+    "protected": true
+  },
+  "checks": {
+    "releaseGate": "passed",
+    "capacityProbeSafetyTests": "passed",
+    "truthfulFirstUseHtml": true,
+    "healthLive": "healthy",
+    "healthReady": "unavailable-fail-closed",
+    "durableRateLimit": "passed",
+    "liveEmployerFeedsChecked": 37,
+    "exactSyntheticMatches": 2,
+    "submissionsEnabled": false
+  },
+  "capacity": {
+    "probeDeployed": true,
+    "protectedPreviewProbeExecuted": false,
+    "reason": "SCOPED_PREVIEW_BYPASS_SECRET_NOT_AVAILABLE",
+    "signedUserFairnessTested": false,
+    "providerQuotasVerified": false,
+    "capacityClaimed": false
+  },
+  "externalActions": {
+    "productionTrafficChanged": false,
+    "migrationApplied": false,
+    "candidateDataTransmitted": false,
+    "employerContacted": false,
+    "applicationSubmitted": false
+  }
+}
