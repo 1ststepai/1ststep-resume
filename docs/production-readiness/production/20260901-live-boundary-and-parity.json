@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-01T21:15:17.720Z",
+  "origin": "https://app.1ststep.ai",
+  "contentFree": true,
+  "containsCandidateValues": false,
+  "performsWrites": false,
+  "boundary": {
+    "ok": true,
+    "concierge": 200,
+    "conciergeHtml": 200,
+    "jobAgentReadinessUnauthenticated": 401,
+    "jobAgentOperationsUnauthenticated": 401,
+    "conciergeStateUnauthenticated": 401,
+    "strictConciergeCspPresent": true
+  },
+  "publicRoutes": {
+    "healthLive": 404,
+    "healthReady": 404,
+    "appConfig": 200
+  },
+  "assetParity": {
+    "ok": false,
+    "candidateRuntimeCommit": "1f6ed51802c479a429c19d92fcd813448ea047a3",
+    "mismatches": [
+      "/concierge",
+      "/concierge.html",
+      "/concierge.js",
+      "/persistent-concierge.css"
+    ]
+  },
+  "conclusion": "Sampled unauthenticated authorization boundaries pass, but Production is not the candidate artifact and lacks the candidate public health routes.",
+  "productionStateChanged": false
+}
