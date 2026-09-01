@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import {
   APPLICATION_ACTIVITY_STATUSES,
   APPLICATION_WORKFLOW_STEPS,
+  ONBOARDING_REQUIRED_FIELDS,
+  READINESS_FIELDS,
   REDACTED_WORKFLOW_REPLAY,
+  TARGETED_READINESS_FIELDS,
   addActionItem,
   addRole,
   advanceManagedApplicationSession,
@@ -84,9 +87,17 @@ assert.ok(roleDedupeKey(captured.role).includes('req:req-42'));
 const duplicate = addRole(state, { ...captured.role, directEmployerUrl: 'https://jobs.example.com/req-42?ref=linkedin' }, at);
 state = duplicate.state;
 assert.equal(duplicate.duplicate, true);
+const refreshedDuplicate = addRole(state, { ...captured.role, discoveryRunId: 'run_verified_discovery_1', sourceType: 'direct-employer', applyPathActive: true, jobDescription: 'Refreshed verified employer job text', sourceProvider: 'greenhouse', sourceEvidence: 'Published employer feed' }, at);
+state = refreshedDuplicate.state;
+assert.equal(state.roles[0].discoveryRunId, 'run_verified_discovery_1');
+assert.equal(state.roles[0].jobDescription, 'Refreshed verified employer job text');
 assert.equal(state.roles.length, 1);
 
 state = transitionRole(state, captured.role.id, 'Verified', {}, at);
+const closedByEmployer = transitionRole(state, captured.role.id, 'Rejected/Closed', { reason: 'The exact direct-employer requisition returned 404.' }, at);
+assert.equal(closedByEmployer.roles[0].status, 'Rejected/Closed');
+assert.match(closedByEmployer.roles[0].closedReason, /direct-employer requisition returned 404/);
+assert.throws(() => transitionRole(closedByEmployer, captured.role.id, 'Found', {}, at), /Cannot move/);
 assert.equal(pipelineCounts(state).Verified, 1);
 assert.throws(() => transitionRole(state, captured.role.id, 'Submitted', {}, at), /Cannot move/);
 state = recordGeneratedPackage(state, captured.role.id, { historyId: 'history-1', documentVersion: 'resume-v1', resumeText: 'Synthetic role-specific resume' }, at);
@@ -96,16 +107,17 @@ state = transitionRole(state, captured.role.id, 'Package Ready', qaEvidence('res
 let batchResult = createApprovalBatch(state, { name: 'August 28 Buyer Batch', roleIds: [captured.role.id], disclosures: ['Salary unknown', 'Travel unknown', 'No new consents authorized'] }, at);
 state = approveBatch(batchResult.state, batchResult.batch.id, at);
 state = transitionRole(state, captured.role.id, 'Awaiting Approval', { approvalBatchId: batchResult.batch.id }, at);
-assert.throws(() => transitionRole(state, captured.role.id, 'Submitted', { receipt: { submittedAt: at, confirmationId: 'C-1', documentVersion: 'resume-v2' } }, at), /must match/);
-state = transitionRole(state, captured.role.id, 'Submitted', { receipt: { submittedAt: at, confirmationId: 'C-1', confirmationUrl: 'https://jobs.example.com/confirmation/C-1', documentVersion: 'resume-v1' } }, at);
-assert.equal(state.roles[0].receipt.confirmationId, 'C-1');
+assert.throws(() => transitionRole(state, captured.role.id, 'Submitted', { receipt: { submittedAt: at, confirmationId: 'C-1', documentVersion: 'resume-v2' } }, at), /server-controlled/);
+assert.throws(() => transitionRole(state, captured.role.id, 'Submitted', { receipt: { submittedAt: at, confirmationId: 'C-1', confirmationUrl: 'https://jobs.example.com/confirmation/C-1', documentVersion: 'resume-v1' } }, at), /server-controlled/);
+assert.equal(pipelineCounts({ roles: [{ status: 'Submitted', receipt: { confirmationId: 'typed-only' } }] }).Submitted, 0);
+assert.equal(pipelineCounts({ roles: [{ status: 'Submitted', receipt: { authority: 'employer-side' } }] }).Submitted, 1);
 
 const second = addRole(state, { employer: 'Another Employer', title: 'Buyer', requisitionId: 'B-1', directEmployerUrl: 'https://careers.example.org/B-1' }, at);
 state = second.state;
 const action = addActionItem(state, { roleId: second.role.id, type: 'OTP', summary: 'Employer email verification required' }, at);
 state = resolveActionItem(action.state, action.item.id, at);
 assert.equal(state.actionQueue[0].status, 'resolved');
-assert.ok(state.auditEvents.length >= 9);
+assert.ok(state.auditEvents.length >= 8);
 
 const imported = importLegacyEntries(createDeskState(), [{ company: 'Legacy Co', title: 'Buyer', jobUrl: 'https://legacy.example/jobs/1', status: 'applied' }], [], at);
 assert.equal(imported.imported, 1);
@@ -114,30 +126,44 @@ assert.match(imported.state.roles[0].materialGaps[0], /requires fresh evidence/)
 
 let readinessState = createDeskState();
 assert.equal(readinessState.autonomy.level, 'autofill_review');
-assert.equal(readinessStatus(readinessState).score, 0);
+const initialReadiness = readinessStatus(readinessState);
+assert.equal(initialReadiness.score, 0);
+assert.equal(initialReadiness.unresolved.length, ONBOARDING_REQUIRED_FIELDS.length);
+assert.equal(initialReadiness.targeted.length, TARGETED_READINESS_FIELDS.length);
+assert.equal(initialReadiness.allUnresolved.length, READINESS_FIELDS.length);
 assert.throws(() => confirmReusableFact(readinessState, { fieldKey: 'authorization', value: 'Authorized', confirmed: false }, at), /explicitly confirmed/);
+assert.throws(() => confirmReusableFact(readinessState, { fieldKey: 'contact', value: 'password is hunter2', confirmed: true }, at), /Credentials and challenge answers/);
+assert.throws(() => confirmReusableFact(readinessState, { fieldKey: 'demographics', value: 'Specific protected trait', confirmed: true }, at), /must stay unanswered/i);
+assert.throws(() => confirmReusableFact(readinessState, { fieldKey: 'skills', value: 'Sourcing', confirmed: true, verificationState: 'unverified' }, at), /user-confirmed or document-verified/);
 readinessState = confirmReusableFact(readinessState, {
   fieldKey: 'authorization', value: 'Authorized to work in the United States', confirmed: true,
   verificationState: 'user-confirmed', source: 'readiness-interview', sensitivity: 'sensitive', autoReuse: true,
 }, at);
+assert.equal(readinessState.reusableFacts[0].autoReuse, false);
+assert.equal(readinessState.reusableFacts[0].sensitivity, 'sensitive');
 assert.ok(readinessStatus(readinessState).score > 0);
 const resolved = resolveApplicationQuestion(readinessState, { question: 'Are you legally authorized to work in the United States?' }, at);
-assert.equal(resolved.kind, 'safe-fact');
-assert.equal(resolved.value, 'Authorized to work in the United States');
+assert.equal(resolved.kind, 'ask-once');
+readinessState = confirmReusableFact(readinessState, { fieldKey: 'startDate', value: 'Two weeks notice', confirmed: true, verificationState: 'user-confirmed', autoReuse: true }, at);
+const ordinaryResolved = resolveApplicationQuestion(readinessState, { question: 'What is your start date?' }, at);
+assert.equal(ordinaryResolved.kind, 'safe-fact');
+assert.equal(ordinaryResolved.value, 'Two weeks notice');
 assert.equal(resolveApplicationQuestion(readinessState, { question: 'Please complete this CAPTCHA' }, at).actionType, 'CAPTCHA');
 assert.equal(resolveApplicationQuestion(readinessState, { question: 'Electronically certify every statement for this employer' }, at).kind, 'targeted-exception');
 assert.equal(resolveApplicationQuestion(readinessState, { question: 'Have you used Coupa modules X and Y?' }, at).kind, 'ask-once');
 readinessState = setStandingPolicy(readinessState, { policyKey: 'ordinary-privacy', decision: 'Accept ordinary privacy terms for in-band roles', confirmed: true }, at);
 assert.equal(resolveApplicationQuestion(readinessState, { question: 'Please accept the ordinary application privacy policy' }, at).kind, 'standing-policy');
 assert.equal(resolveApplicationQuestion(readinessState, { question: 'Confirm desired salary', context: { salaryMin: 70000, authorizedSalaryMin: 85000 } }, at).exceptionType, 'compensation-outside-band');
-readinessState = setAutonomyLevel(readinessState, 'auto_submit', at);
+assert.throws(() => setAutonomyLevel(readinessState, 'auto_submit', at), /Unknown autonomy level/);
+readinessState = setAutonomyLevel(readinessState, 'autofill_review', at);
 assert.equal(canAutoSubmit(readinessState, captured.role, [{ kind: 'safe-fact' }]).allowed, false);
-assert.match(canAutoSubmit(readinessState, captured.role, [{ kind: 'ask-once' }]).blockers.join(' '), /review/);
-readinessState = recordFieldAnswer(readinessState, { roleId: captured.role.id, question: 'Are you authorized?', decisionKind: 'safe-fact', factId: resolved.factId, confidence: .94, documentVersion: 'resume-v1' }, at);
-assert.equal(readinessState.auditEvents.at(-1).details.question, 'Are you authorized?');
+assert.match(canAutoSubmit(readinessState, captured.role, [{ kind: 'safe-fact' }]).blockers.join(' '), /action-time/);
+assert.match(canAutoSubmit(readinessState, captured.role, [{ kind: 'ask-once' }]).blockers.join(' '), /review|human action/);
+readinessState = recordFieldAnswer(readinessState, { roleId: captured.role.id, question: 'What is your start date?', decisionKind: 'safe-fact', factId: ordinaryResolved.factId, confidence: .94, documentVersion: 'resume-v1' }, at);
+assert.equal(readinessState.auditEvents.at(-1).details.question, 'What is your start date?');
 assert.match(exportReadinessData(readinessState), /ordinary-privacy/);
-readinessState = deleteReusableFact(readinessState, resolved.factId, at);
-assert.equal(readinessState.reusableFacts.length, 0);
+readinessState = deleteReusableFact(readinessState, ordinaryResolved.factId, at);
+assert.equal(readinessState.reusableFacts.length, 1);
 
 let demoState = createSalesDemo(createDeskState(), 'auto_submit', at);
 assert.equal(demoState.demo.simulated, true);
@@ -189,7 +215,17 @@ let stagedDraftState = stageReadinessDraft(createDeskState(), readinessDraft, at
 assert.equal(stagedDraftState.reusableFacts.length, 0);
 stagedDraftState = confirmReadinessDraft(stagedDraftState, at);
 assert.ok(stagedDraftState.reusableFacts.length >= 5);
-assert.ok(stagedDraftState.reusableFacts.every(item => item.autoReuse));
+assert.ok(stagedDraftState.reusableFacts.filter(item => ['authorization', 'sponsorship'].includes(item.fieldKey)).every(item => item.autoReuse === false));
+assert.ok(stagedDraftState.reusableFacts.filter(item => !['authorization', 'sponsorship'].includes(item.fieldKey)).every(item => item.autoReuse));
+
+let completedCoreState = createDeskState();
+for (const [fieldKey] of ONBOARDING_REQUIRED_FIELDS) {
+  const value = fieldKey === 'demographics' ? 'Leave optional demographics unanswered' : `${fieldKey} confirmed value`;
+  completedCoreState = confirmReusableFact(completedCoreState, { fieldKey, value, confirmed: true, verificationState: 'user-confirmed', autoReuse: true }, at);
+}
+assert.equal(readinessStatus(completedCoreState).complete, true);
+assert.equal(readinessStatus(completedCoreState).unresolved.length, 0);
+assert.equal(readinessStatus(completedCoreState).targeted.length, TARGETED_READINESS_FIELDS.length);
 
 assert.throws(() => startManagedApplicationSession(createDeskState(), {
   role: { employer: 'Fixture Employer', title: 'Buyer', directEmployerUrl: 'https://careers.example.test/jobs/1' },

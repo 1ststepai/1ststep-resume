@@ -21,6 +21,7 @@ assert.equal(validateOperatingContract(campaign).complete, true);
 assert.match(operatingContractText(campaign), /STOP CONDITIONS/);
 
 assert.throws(() => createPersistentCampaign({ name: 'Unsafe', objective: 'Contact person@example.com' }), /Private or secret/);
+assert.throws(() => createPersistentCampaign({ name: 'Unsafe', objective: 'my password is hunter2' }), /Private or secret/);
 assert.throws(() => createPersistentCampaign({ name: 'Unsafe', privateContext: 'secret' }), /Private execution field/);
 assert.doesNotMatch(JSON.stringify(CAMPAIGN_TEMPLATES), /[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/);
 

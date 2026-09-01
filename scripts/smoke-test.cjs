@@ -20,14 +20,16 @@ function section(title) { console.log('\n──', title); }
 // ── 1. Required files ─────────────────────────────────────────────────────────
 section('Required files');
 
-const REQUIRED_FILES = ['index.html', 'app.js', 'style.css'];
+const REQUIRED_FILES = ['app.html', 'index.html', 'app.js', 'style.css'];
 REQUIRED_FILES.forEach(f => {
   if (fs.existsSync(path.join(ROOT, f))) pass(f + ' exists');
   else fail(f + ' is MISSING');
 });
 
-const html = fs.existsSync(path.join(ROOT, 'index.html'))
-  ? fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8') : '';
+// app.html is the authenticated workspace shell (served at /app).
+// index.html is the marketing homepage (served at /).
+const html = fs.existsSync(path.join(ROOT, 'app.html'))
+  ? fs.readFileSync(path.join(ROOT, 'app.html'), 'utf8') : '';
 const js   = fs.existsSync(path.join(ROOT, 'app.js'))
   ? fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8') : '';
 const css  = fs.existsSync(path.join(ROOT, 'style.css'))
@@ -136,7 +138,7 @@ if (html) {
   const htmlIds = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]));
   REQUIRED_IDS.forEach(id => {
     if (htmlIds.has(id)) pass('#' + id);
-    else fail('Required element #' + id + ' is MISSING from index.html');
+    else fail('Required element #' + id + ' is MISSING from app.html');
   });
 }
 
@@ -399,7 +401,7 @@ if (js) {
 }
 
 if (apiSubscription) {
-  if (/isBetaEmail\(email\)[\s\S]{0,180}tier: 'free'/.test(apiSubscription)) pass('Beta email override resolves to free');
+  if (/isBetaEmail\(email\)[\s\S]{0,240}(?:tier: 'free'|sendSignedSession\(req, res, email, 'free')/.test(apiSubscription)) pass('Beta email override resolves to free');
   else fail('Beta email override may still grant paid access');
 
   if (/OWNER_ACCESS_EMAILS/.test(apiSubscription) && /OWNER_ACCESS_SECRET/.test(apiSubscription)) pass('Owner access is controlled by server environment variables');
@@ -470,7 +472,7 @@ if (js) {
 section('Live copy, link, and icon polish smoke');
 
 const productionMarkup = [
-  ['index.html', html],
+  ['app.html', html],
   ['GHL CRO landing', ghlCro],
   ['GHL default landing', ghlDefault],
   ['pricing.html', pricing],
@@ -697,6 +699,7 @@ function readIfExists(rel) {
 }
 
 const A11Y_FILES = [
+  'app.html',
   'index.html',
   'funnel.html',
   'admin.html',
