@@ -4,8 +4,8 @@ This file is an operator checklist, not an authorization record. Checking a box 
 
 ## Current verified boundary
 
-- Latest runtime candidate: commit `a5bb766cd8773f8f46d203392b48ad4203d8c82f`; runtime SHA-256 `6877c76e38368372e3b91f5d8ce0271686f4018e4cb514a3c8f90f804066a29d`.
-- Protected Preview: `dpl_58mwjkJZqoeQux3YD7ULD47PXmzq` (Ready; exact candidate verified).
+- Latest runtime candidate: commit `d409d53084572d4a0df88f96c5dca191a003eeda`; runtime SHA-256 `f6938fd7a59fbf11cfafe1d0af6c551879918ac52bd863272a9c8af4e6da47b1`.
+- Protected Preview: `dpl_FoyaX4mpJkUwMuuP3rHDckAwzvwC` (Ready; exact candidate and content-free request logs verified).
 - Current Production/rollback reference: `dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM` (Ready, but not candidate-parity).
 - Full local release gate: passed.
 - Production traffic, migrations, candidate transmission, employer contact, and application submission: unchanged/not performed.
@@ -22,7 +22,7 @@ Then separately authorize only this scope:
 
 > Apply `supabase/migrations/20260901195545_job_agent_canonical_baseline.sql` to the proven isolated target; run the role-aware pgTAP pack, Supabase advisors, grant/RLS matrix inspection, and content-free schema evidence. Do not link to, inspect candidate rows in, or mutate Production.
 
-Current evidence: neither Docker nor Podman nor a linked Supabase project is available. `npx supabase status` fails before database inspection because the container runtime is absent.
+Current evidence: neither Docker nor Podman, a local PostgreSQL command/service, nor a linked Supabase project is available. `npx supabase status` fails before database inspection because the container runtime is absent.
 
 ## Decision 2: private storage and recovery exercise
 
