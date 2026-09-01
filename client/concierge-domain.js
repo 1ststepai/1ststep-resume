@@ -1,0 +1,1131 @@
+import { publicJobsAreDuplicate } from './job-intelligence.js';
+import { PROHIBITED_CREDENTIAL_KEY, PROHIBITED_SECRET_VALUE } from './prohibited-secret.js';
+
+export const PIPELINE_STATUSES = Object.freeze([
+  'Found',
+  'Verified',
+  'Verified - Package Preparation',
+  'Package Ready',
+  'Awaiting Approval',
+  'Submitted',
+  'Blocked',
+  'Rejected/Closed',
+]);
+
+export const ACTION_TYPES = Object.freeze(['CAPTCHA', 'OTP', 'LOGIN', 'UPLOAD', 'SIGNATURE', 'NEW_QUESTION']);
+export const AUTONOMY_LEVELS = Object.freeze(['prepare_only', 'autofill_review']);
+const DEMO_AUTONOMY_LEVELS = Object.freeze([...AUTONOMY_LEVELS, 'auto_submit']);
+export const FACT_SENSITIVITIES = Object.freeze(['standard', 'sensitive', 'highly-sensitive']);
+export const FACT_VERIFICATION_STATES = Object.freeze(['unverified', 'user-confirmed', 'document-verified', 'expired']);
+export const APPLICATION_WORKFLOW_STEPS = Object.freeze([
+  'discover_verify', 'deduplicate', 'tailor_package', 'account_profile', 'autofill',
+  'review_exception', 'transmit', 'submit', 'verify_receipt',
+]);
+export const APPLICATION_ACTIVITY_STATUSES = Object.freeze([
+  'Verified', 'Verified - Package Preparation', 'Closed by direct page', 'Location Unverified', 'Duplicate/In Process',
+  'Login Required', 'Login Required / Retry', 'Transmission Confirmation Required', 'ATS Configuration Blocked',
+  'Human Action Required - password/reset', 'Human Action Required - latest OTP',
+  'Human Action Required - latest email code', 'Blocked - employer ATS configuration',
+  'Awaiting Approval - action-time packet',
+  'Password Reset Requested - Outcome Pending',
+  'Human Action Required - form review',
+  'Submitted with authoritative receipt',
+]);
+
+export const REDACTED_WORKFLOW_REPLAY = Object.freeze([
+  { employer: 'Symbotic', requisitionId: 'R7753', status: 'Duplicate/In Process', evidence: 'Candidate Home showed an active in-process application; local submission was skipped.' },
+  { employer: 'Symbotic', requisitionId: 'R7850', status: 'Duplicate/In Process', evidence: 'Candidate Home showed an active in-process application; local submission was skipped.' },
+  { employer: 'Dandy', requisitionId: 'ASHBY-REDACTED', status: 'Closed by direct page', evidence: 'Search remained discoverable, but the exact employer Apply URL resolved to an empty Jobs page.' },
+  { employer: 'Hargrove', requisitionId: 'PROJECT-BUYER-REDACTED', status: 'Closed by direct page', evidence: 'Direct Workday results only showed on-site openings outside the saved remote geography.' },
+  { employer: 'Higharc', requisitionId: 'REMOTE-REDACTED', status: 'Location Unverified', evidence: 'Direct page listed specific remote cities, not nationwide or saved-state eligibility.' },
+  { employer: 'Modine', requisitionId: '9112', status: 'Login Required', evidence: 'Active, compensation-compliant requisition redirected to SuccessFactors sign-in.' },
+  { employer: 'Modine', requisitionId: '9112', status: 'Transmission Confirmation Required', evidence: 'Credential transmission requires confirmation at action time.' },
+  { employer: 'Modine', requisitionId: '9112', status: 'ATS Configuration Blocked', evidence: 'Employer, title, or school field identifiers were rejected by the ATS and require recovery.' },
+  { employer: 'Jabil', requisitionId: 'J2457212', status: 'Closed by direct page', evidence: 'Employer Workday no longer exposed the requisition even though search engines still listed it.' },
+  { employer: 'Pratt & Whitney', requisitionId: 'NPI-BUYER-REDACTED', status: 'Closed by direct page', evidence: 'Employer Workday no longer exposed the U.S.-remote requisition even though search engines still listed it.' },
+  { employer: 'Holley Performance Brands', requisitionId: '1552', status: 'Verified - Package Preparation', evidence: 'Direct ADP page showed an active full-time U.S.-remote role, salary undisclosed, and a working Apply path.' },
+  { employer: 'Modine', requisitionId: '9112', status: 'Login Required / Retry', evidence: 'Direct page remained active, remote, $85K-$115K, 10-20% travel; Apply opened SuccessFactors sign-in.' },
+  { employer: 'Modine', requisitionId: '9112', status: 'Human Action Required - password/reset', evidence: 'After named action-time authorization, one credential attempt failed. Stop attempts, preserve the form, and do not silently trigger reset.' },
+  { employer: 'Holley Performance Brands', requisitionId: '1552', status: 'Human Action Required - latest OTP', evidence: 'Candidate selected masked email delivery; preserve the pending verification session. If recreated, the replacement challenge supersedes the prior unusable code without recording either code.' },
+  { employer: 'Modine', requisitionId: '9112', status: 'Password Reset Requested - Outcome Pending', evidence: 'After explicit reset authorization, the saved email was transmitted once to Password Help. The neutral response does not prove an account match or email delivery.' },
+  { employer: 'Modine', requisitionId: '9112', status: 'Human Action Required - form review', evidence: 'Authentication recovered without retaining credentials. Preserve the full draft and attached resume; queue only newly surfaced missing facts and material employer-specific terms.' },
+  { employer: 'Redacted employer', requisitionId: 'ATS-FIELD-REDACTED', status: 'Blocked - employer ATS configuration', evidence: 'All visible sections validated, but the employer ATS rejected required work-history or education field identifiers. Draft preserved; no substitute values or submission claim.' },
+  { employer: 'Redacted employer', requisitionId: 'OTP-REDACTED', status: 'Human Action Required - latest email code', evidence: 'A restored session issued a replacement email code and rejected the superseded generation. Stop after one attempt, preserve the dialog, and request only the latest code privately.' },
+  { employer: 'Redacted direct employer', requisitionId: 'VERIFIED-PACKET-REDACTED', status: 'Awaiting Approval - action-time packet', evidence: 'Direct requisition and Apply path verified with timestamp; remote-U.S. eligibility, salary overlap/risk, material gap, screening requirements, optional retention/demographic choices, deduplication, two-page DOCX/PDF versioning, ATS extraction, rendered-page QA, and truthful narrative were recorded. Sensitive transmission and submission remain gated; no receipt exists.' },
+]);
+
+export const REDACTED_POST_AUTH_FORM_REVIEW = Object.freeze([
+  { key: 'ordinary-privacy', label: 'Ordinary application privacy notice', category: 'ordinary-privacy', resolvedByStandingPolicy: true },
+  { key: 'exact-address', label: 'Exact address missing', category: 'missing-truth' },
+  { key: 'employment-dates', label: 'Exact employment dates missing', category: 'missing-truth' },
+  { key: 'family-at-employer', label: 'Family-at-employer factual question', category: 'employer-specific-fact' },
+  { key: 'verification-authorizations', label: 'Background, personal, employment, and education verification', category: 'material-verification-consent' },
+  { key: 'consumer-reporting', label: 'Consumer-reporting checks', category: 'consumer-reporting-consent' },
+  { key: 'international-sharing', label: 'International internal sharing', category: 'material-data-sharing-consent' },
+  { key: 'drug-testing', label: 'Pre- and during-employment drug testing', category: 'unusual-screening' },
+  { key: 'final-certification', label: 'At-will and e-signature final certification', category: 'legal-certification' },
+]);
+
+export const READINESS_FIELDS = Object.freeze([
+  ['contact', 'Contact information'], ['address', 'Current address'], ['authorization', 'Work authorization'],
+  ['sponsorship', 'Sponsorship requirement'], ['employment', 'Employment history'], ['education', 'Education history'], ['skills', 'Verified skills'],
+  ['salary', 'Salary target and acceptable range'], ['startDate', 'Start-date or notice rule'], ['travel', 'Travel tolerance'],
+  ['relocation', 'Relocation tolerance'], ['remoteGeography', 'Remote-work geography'], ['schedule', 'Schedule and time-zone availability'],
+  ['outsideEmployment', 'Outside-employment and conflict policy'], ['licenses', 'Licenses and certifications'],
+  ['driving', 'Driving requirement response'], ['background', 'Background-screening willingness'],
+  ['drugHealth', 'Drug or health-screening willingness'], ['formerEmployerConflict', 'Former-employer, relative, government-client, and conflict answers'],
+  ['references', 'References and contact permission'], ['recruiterContact', 'Recruiter communications preference'],
+  ['accountCreation', 'Employer account-creation policy'], ['privacyTerms', 'Ordinary privacy-terms policy'],
+  ['demographics', 'Optional demographic disclosure default'], ['exclusions', 'Excluded employers and role families'],
+]);
+const ONBOARDING_REQUIRED_KEYS = new Set([
+  'contact', 'authorization', 'sponsorship', 'employment', 'education', 'skills', 'salary', 'startDate',
+  'travel', 'relocation', 'remoteGeography', 'schedule', 'recruiterContact', 'demographics', 'exclusions',
+]);
+export const ONBOARDING_REQUIRED_FIELDS = Object.freeze(READINESS_FIELDS.filter(([key]) => ONBOARDING_REQUIRED_KEYS.has(key)));
+export const TARGETED_READINESS_FIELDS = Object.freeze(READINESS_FIELDS.filter(([key]) => !ONBOARDING_REQUIRED_KEYS.has(key)));
+const SAFE_DEMOGRAPHIC_DEFAULTS = new Set(['leave optional demographics unanswered', 'prefer not to answer']);
+const CONSEQUENCE_CONTROLLED_FIELDS = new Set([
+  'authorization', 'sponsorship', 'outsideEmployment', 'background', 'drugHealth', 'formerEmployerConflict',
+  'references', 'licenses', 'driving', 'demographics',
+]);
+const PROHIBITED_FACT_KEY = PROHIBITED_CREDENTIAL_KEY;
+const PROHIBITED_FACT_VALUE = PROHIBITED_SECRET_VALUE;
+export const DEMO_STAGES = Object.freeze([
+  'Onboarding readiness', 'Mission created', 'Jobs discovered', 'Roles verified and deduplicated',
+  'Documents QA passed', 'Routine questions auto-filled', 'Targeted exception queued',
+  'Simulated receipt recorded', 'Interview follow-up prepared',
+]);
+
+const nextStatuses = Object.freeze({
+  Found: ['Verified', 'Blocked', 'Rejected/Closed'],
+  Verified: ['Verified - Package Preparation', 'Blocked', 'Rejected/Closed'],
+  'Verified - Package Preparation': ['Package Ready', 'Blocked', 'Rejected/Closed'],
+  'Package Ready': ['Awaiting Approval', 'Blocked', 'Rejected/Closed'],
+  'Awaiting Approval': ['Submitted', 'Blocked', 'Rejected/Closed'],
+  Blocked: ['Found', 'Verified', 'Package Ready', 'Awaiting Approval', 'Rejected/Closed'],
+  Submitted: [],
+  'Rejected/Closed': [],
+});
+
+const asText = value => String(value ?? '').trim();
+const asList = value => Array.isArray(value)
+  ? value.map(asText).filter(Boolean)
+  : asText(value).split(/[,\n;]/).map(item => item.trim()).filter(Boolean);
+const nowIso = value => value || new Date().toISOString();
+const makeId = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+export function createTruthProfile(input = {}) {
+  return {
+    workHistory: asList(input.workHistory),
+    education: asList(input.education),
+    skills: asList(input.skills),
+    authorization: asText(input.authorization),
+    sponsorship: asText(input.sponsorship),
+    geography: asList(input.geography),
+    salaryMin: Number(input.salaryMin) || null,
+    salaryMax: Number(input.salaryMax) || null,
+    travelTolerance: asText(input.travelTolerance),
+    schedulePreferences: asList(input.schedulePreferences),
+    timeZones: asList(input.timeZones),
+    excludedEmployers: asList(input.excludedEmployers),
+    prioritizedRoleFamilies: asList(input.prioritizedRoleFamilies),
+    excludedRoleFamilies: asList(input.excludedRoleFamilies),
+    outsideEmploymentConstraints: asList(input.outsideEmploymentConstraints),
+    disclosureChoices: asList(input.disclosureChoices),
+    explicitUnknowns: asList(input.explicitUnknowns),
+    confirmedAt: asText(input.confirmedAt),
+  };
+}
+
+export function buildVerifiedResumeDraft(inputState = {}, profile = {}) {
+  const state = createDeskState(inputState);
+  const truth = state.truthProfile;
+  const confirmedFacts = state.reusableFacts.filter(fact =>
+    ['user-confirmed', 'document-verified'].includes(fact.verificationState) && fact.value
+  );
+  const factValue = key => asText(confirmedFacts.find(fact => fact.fieldKey === key)?.value);
+  const contact = factValue('contact');
+  const name = [profile.firstName, profile.lastName].map(asText).filter(Boolean).join(' ');
+  const header = [name, asText(profile.email), asText(profile.phone), asText(profile.location || profile.address)]
+    .filter(Boolean).join(' | ') || contact;
+  const workHistory = truth.workHistory.length ? truth.workHistory : asList(factValue('employment'));
+  const education = truth.education.length ? truth.education : asList(factValue('education'));
+  const skills = truth.skills.length ? truth.skills : asList(factValue('skills'));
+  const certifications = asList(factValue('licenses'));
+  const sections = [];
+  if (header) sections.push(header);
+  if (workHistory.length) sections.push(`EXPERIENCE\n${workHistory.join('\n')}`);
+  if (education.length) sections.push(`EDUCATION\n${education.join('\n')}`);
+  if (skills.length) sections.push(`SKILLS\n${skills.join(' | ')}`);
+  if (certifications.length) sections.push(`CERTIFICATIONS\n${certifications.join('\n')}`);
+  const missingSections = [];
+  if (!header) missingSections.push('name and contact');
+  if (!workHistory.length) missingSections.push('work history');
+  if (!education.length) missingSections.push('education');
+  if (!skills.length) missingSections.push('skills');
+  return {
+    text: sections.join('\n\n').trim(),
+    missingSections,
+    sources: [...new Set([
+      truth.confirmedAt ? 'confirmed-truth-profile' : '',
+      confirmedFacts.length ? 'confirmed-reusable-answers' : '',
+      header && name ? 'saved-profile' : '',
+    ].filter(Boolean))],
+  };
+}
+
+export function truthProfileGaps(profile) {
+  const p = createTruthProfile(profile);
+  const gaps = [];
+  if (!p.workHistory.length) gaps.push('work history');
+  if (!p.education.length) gaps.push('education');
+  if (!p.skills.length) gaps.push('skills');
+  if (!p.authorization) gaps.push('work authorization');
+  if (!p.geography.length) gaps.push('eligible geography');
+  if (!p.salaryMin) gaps.push('minimum salary');
+  if (!p.travelTolerance) gaps.push('travel tolerance');
+  if (!p.schedulePreferences.length && !p.explicitUnknowns.some(item => /schedule/i.test(item))) gaps.push('schedule preference or explicit unknown');
+  if (!p.disclosureChoices.length) gaps.push('disclosure choices');
+  if (!p.confirmedAt) gaps.push('profile confirmation');
+  return gaps;
+}
+
+export function normalizeEmployer(value) {
+  return asText(value).toLowerCase().replace(/\b(incorporated|inc|llc|ltd|corporation|corp|company|co)\b\.?/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+export function normalizeTitle(value) {
+  return asText(value).toLowerCase().replace(/\b(sr|senior)\.?\b/g, 'senior').replace(/\b(jr|junior)\.?\b/g, 'junior').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+export function normalizeJobUrl(value) {
+  try {
+    const url = new URL(asText(value));
+    url.hash = '';
+    ['utm_source', 'utm_medium', 'utm_campaign', 'source', 'ref', 'referrer'].forEach(key => url.searchParams.delete(key));
+    return `${url.origin}${url.pathname.replace(/\/$/, '')}${url.searchParams.size ? `?${url.searchParams}` : ''}`.toLowerCase();
+  } catch { return asText(value).toLowerCase().replace(/\/$/, ''); }
+}
+
+export function roleDedupeKey(role) {
+  const employer = normalizeEmployer(role.employer);
+  const title = normalizeTitle(role.title);
+  const requisition = asText(role.requisitionId).toLowerCase();
+  const url = normalizeJobUrl(role.directEmployerUrl || role.url);
+  return requisition ? `${employer}|${title}|req:${requisition}` : `${employer}|${title}|url:${url}`;
+}
+
+export function createDeskState(input = {}) {
+  return {
+    version: 3,
+    truthProfile: createTruthProfile(input.truthProfile),
+    reusableFacts: Array.isArray(input.reusableFacts) ? input.reusableFacts : [],
+    standingPolicies: Array.isArray(input.standingPolicies) ? input.standingPolicies : [],
+    autonomy: {
+      level: AUTONOMY_LEVELS.includes(input.autonomy?.level) ? input.autonomy.level : 'autofill_review',
+      successfulAuditedApplications: Number(input.autonomy?.successfulAuditedApplications) || 0,
+      updatedAt: asText(input.autonomy?.updatedAt),
+    },
+    demo: input.demo || null,
+    readinessDraft: input.readinessDraft || null,
+    roles: Array.isArray(input.roles) ? input.roles : [],
+    approvalBatches: Array.isArray(input.approvalBatches) ? input.approvalBatches : [],
+    actionQueue: Array.isArray(input.actionQueue) ? input.actionQueue : [],
+    applicationSessions: Array.isArray(input.applicationSessions) ? input.applicationSessions : [],
+    activeApplicationSessionId: asText(input.activeApplicationSessionId),
+    hiringEcosystem: Array.isArray(input.hiringEcosystem) ? input.hiringEcosystem : [],
+    acquisitionOutcomes: Array.isArray(input.acquisitionOutcomes) ? input.acquisitionOutcomes : [],
+    auditEvents: Array.isArray(input.auditEvents) ? input.auditEvents : [],
+  };
+}
+
+function extractResumeSection(resumeText, headingPatterns) {
+  const lines = asText(resumeText).split(/\r?\n/).map(line => line.trim());
+  const start = lines.findIndex(line => headingPatterns.some(pattern => pattern.test(line)));
+  if (start < 0) return '';
+  const collected = [];
+  for (let index = start + 1; index < lines.length; index++) {
+    const line = lines[index];
+    if (collected.length && /^[A-Z][A-Z &/+-]{2,35}$/.test(line) && line.length < 40) break;
+    if (line) collected.push(line);
+    if (collected.join('\n').length > 2400) break;
+  }
+  return collected.join('\n').trim();
+}
+
+export function buildReadinessDraftFromSources(input = {}, at) {
+  const profile = input.profile && typeof input.profile === 'object' ? input.profile : {};
+  const truth = createTruthProfile(input.truthProfile);
+  const resumeText = asText(input.resumeText);
+  const proposals = [];
+  const add = (fieldKey, value, source, sensitivity = 'standard', confidence = 1) => {
+    if (!asText(value) || proposals.some(item => item.fieldKey === fieldKey)) return;
+    const label = READINESS_FIELDS.find(([key]) => key === fieldKey)?.[1];
+    if (label) proposals.push({ fieldKey, label, value: asText(value), source, sensitivity, confidence });
+  };
+  const fullName = [profile.firstName, profile.lastName].map(asText).filter(Boolean).join(' ');
+  add('contact', [fullName, asText(profile.email), asText(profile.phone)].filter(Boolean).join(' · '), 'saved-profile', 'sensitive', 1);
+  add('address', asText(profile.address), 'saved-profile', 'highly-sensitive', 1);
+  add('employment', truth.workHistory.join('\n') || extractResumeSection(resumeText, [/^(?:professional )?experience$/i, /^employment(?: history)?$/i, /^work history$/i]), truth.workHistory.length ? 'confirmed-truth-profile' : 'saved-resume-section', 'standard', truth.workHistory.length ? 1 : .86);
+  add('education', truth.education.join('\n') || extractResumeSection(resumeText, [/^education$/i, /^academic background$/i]), truth.education.length ? 'confirmed-truth-profile' : 'saved-resume-section', 'standard', truth.education.length ? 1 : .86);
+  add('skills', truth.skills.join(', ') || extractResumeSection(resumeText, [/^(?:core |technical )?skills$/i, /^competencies$/i]), truth.skills.length ? 'confirmed-truth-profile' : 'saved-resume-section', 'standard', truth.skills.length ? 1 : .86);
+  add('licenses', extractResumeSection(resumeText, [/^certifications?(?: & licenses)?$/i, /^licenses?(?: & certifications)?$/i]), 'saved-resume-section', 'standard', .86);
+  add('authorization', truth.authorization, 'confirmed-truth-profile', 'sensitive', 1);
+  add('sponsorship', truth.sponsorship, 'confirmed-truth-profile', 'sensitive', 1);
+  add('salary', truth.salaryMin ? `${truth.salaryMin}${truth.salaryMax ? `-${truth.salaryMax}` : '+'}` : '', 'confirmed-truth-profile', 'sensitive', 1);
+  add('travel', truth.travelTolerance, 'confirmed-truth-profile', 'standard', 1);
+  add('remoteGeography', truth.geography.join(', '), 'confirmed-truth-profile', 'standard', 1);
+  add('schedule', [...truth.schedulePreferences, ...truth.timeZones].join(', '), 'confirmed-truth-profile', 'standard', 1);
+  add('outsideEmployment', truth.outsideEmploymentConstraints.join(', '), 'confirmed-truth-profile', 'sensitive', 1);
+  add('demographics', truth.disclosureChoices.find(item => /demographic/i.test(item)), 'confirmed-truth-profile', 'sensitive', 1);
+  add('exclusions', [...truth.excludedEmployers, ...truth.excludedRoleFamilies].join(', '), 'confirmed-truth-profile', 'standard', 1);
+  return { id: makeId('readiness-draft'), proposals, createdAt: nowIso(at), status: 'pending', sources: [...new Set(proposals.map(item => item.source))] };
+}
+
+export function buildCareerStoryDraft(input = {}, at) {
+  const proposals = [];
+  const add = (fieldKey, value, sensitivity = 'standard') => {
+    const normalized = Array.isArray(value) ? value.map(asText).filter(Boolean).join('\n') : asText(value);
+    const label = READINESS_FIELDS.find(([key]) => key === fieldKey)?.[1];
+    if (label && normalized) proposals.push({
+      fieldKey, label, value: normalized, source: 'career-story-proposal', sensitivity, confidence: .82,
+    });
+  };
+  add('contact', input.contact, 'sensitive');
+  add('employment', input.employment);
+  add('education', input.education);
+  add('skills', input.skills);
+  add('licenses', input.licenses);
+  if (!proposals.length) throw new Error('No resume facts could be proposed from that career story.');
+  return {
+    id: makeId('career-story-draft'), proposals, createdAt: nowIso(at), status: 'pending',
+    sources: ['career-story-proposal'], uncertainties: asList(input.uncertainties),
+  };
+}
+
+export function stageReadinessDraft(inputState, draft, at) {
+  let state = createDeskState(inputState);
+  if (!draft?.proposals?.length) throw new Error('No reusable facts were found in the saved resume or profile.');
+  state = { ...state, readinessDraft: { ...draft, status: 'pending' } };
+  return audit(state, 'READINESS_DRAFT_STAGED', draft.id, { proposalCount: draft.proposals.length, sources: draft.sources }, at);
+}
+
+export function confirmReadinessDraft(inputState, at) {
+  let state = createDeskState(inputState);
+  const draft = state.readinessDraft;
+  if (!draft?.proposals?.length || draft.status !== 'pending') throw new Error('No pending readiness draft to confirm.');
+  for (const proposal of draft.proposals) {
+    state = confirmReusableFact(state, {
+      ...proposal, confirmed: true, verificationState: 'user-confirmed', autoReuse: true,
+    }, at);
+  }
+  state = { ...state, readinessDraft: { ...draft, status: 'confirmed', confirmedAt: nowIso(at) } };
+  return audit(state, 'READINESS_DRAFT_CONFIRMED', draft.id, { proposalCount: draft.proposals.length }, at);
+}
+
+export function discardReadinessDraft(inputState, at) {
+  let state = createDeskState(inputState);
+  const draftId = state.readinessDraft?.id || 'readiness-draft';
+  state = { ...state, readinessDraft: null };
+  return audit(state, 'READINESS_DRAFT_DISCARDED', draftId, {}, at);
+}
+
+function normalizeScope(scope = {}) {
+  return {
+    missionIds: asList(scope.missionIds),
+    employers: asList(scope.employers),
+    roleFamilies: asList(scope.roleFamilies),
+    geography: asList(scope.geography),
+    salaryMin: Number(scope.salaryMin) || null,
+    salaryMax: Number(scope.salaryMax) || null,
+  };
+}
+
+export function confirmReusableFact(inputState, input, at) {
+  let state = createDeskState(inputState);
+  const fieldKey = asText(input.fieldKey);
+  if (!READINESS_FIELDS.some(([key]) => key === fieldKey)) throw new Error('Unknown readiness field.');
+  if (input.confirmed !== true) throw new Error('Reusable facts must be explicitly confirmed.');
+  const value = asText(input.value);
+  if (!value) throw new Error('A confirmed reusable fact needs a value.');
+  if (PROHIBITED_FACT_KEY.test(fieldKey) || PROHIBITED_FACT_VALUE.test(value)) throw new Error('Credentials and challenge answers are not allowed in saved answers.');
+  const verificationState = FACT_VERIFICATION_STATES.includes(input.verificationState) ? input.verificationState : 'user-confirmed';
+  if (!['user-confirmed', 'document-verified'].includes(verificationState)) throw new Error('Reusable facts must be user-confirmed or document-verified.');
+  if (fieldKey === 'demographics' && !SAFE_DEMOGRAPHIC_DEFAULTS.has(value.toLowerCase())) throw new Error('Optional demographics must stay unanswered or prefer not to answer.');
+  const stamp = nowIso(at);
+  const existing = state.reusableFacts.find(item => item.fieldKey === fieldKey);
+  const consequential = CONSEQUENCE_CONTROLLED_FIELDS.has(fieldKey);
+  const fact = {
+    id: existing?.id || makeId('fact'), fieldKey, label: READINESS_FIELDS.find(([key]) => key === fieldKey)[1],
+    value, verificationState,
+    source: asText(input.source) || 'readiness-interview',
+    sensitivity: consequential && !['sensitive', 'highly-sensitive'].includes(input.sensitivity) ? 'sensitive' : FACT_SENSITIVITIES.includes(input.sensitivity) ? input.sensitivity : 'standard',
+    scope: normalizeScope(input.scope), createdAt: existing?.createdAt || stamp, updatedAt: stamp,
+    expiresAt: asText(input.expiresAt) || null, autoReuse: consequential ? false : input.autoReuse === true,
+  };
+  state = { ...state, reusableFacts: existing
+    ? state.reusableFacts.map(item => item.id === existing.id ? fact : item)
+    : [fact, ...state.reusableFacts] };
+  return audit(state, existing ? 'REUSABLE_FACT_UPDATED' : 'REUSABLE_FACT_CONFIRMED', fact.id, {
+    fieldKey, verificationState: fact.verificationState, sensitivity: fact.sensitivity, autoReuse: fact.autoReuse,
+  }, at);
+}
+
+export function deleteReusableFact(inputState, factId, at) {
+  let state = createDeskState(inputState);
+  const fact = state.reusableFacts.find(item => item.id === factId);
+  if (!fact) throw new Error('Reusable fact not found.');
+  state = { ...state, reusableFacts: state.reusableFacts.filter(item => item.id !== factId) };
+  return audit(state, 'REUSABLE_FACT_DELETED', factId, { fieldKey: fact.fieldKey }, at);
+}
+
+export function setStandingPolicy(inputState, input, at) {
+  let state = createDeskState(inputState);
+  const policyKey = asText(input.policyKey);
+  if (!policyKey || input.confirmed !== true) throw new Error('Standing policies require a key and explicit confirmation.');
+  const stamp = nowIso(at);
+  const existing = state.standingPolicies.find(item => item.policyKey === policyKey);
+  const policy = {
+    id: existing?.id || makeId('policy'), policyKey, decision: asText(input.decision),
+    scope: normalizeScope(input.scope), source: asText(input.source) || 'readiness-interview',
+    sensitivity: FACT_SENSITIVITIES.includes(input.sensitivity) ? input.sensitivity : 'standard',
+    createdAt: existing?.createdAt || stamp, updatedAt: stamp, expiresAt: asText(input.expiresAt) || null,
+  };
+  if (!policy.decision) throw new Error('Standing policy decision is required.');
+  state = { ...state, standingPolicies: existing
+    ? state.standingPolicies.map(item => item.id === existing.id ? policy : item)
+    : [policy, ...state.standingPolicies] };
+  return audit(state, existing ? 'STANDING_POLICY_UPDATED' : 'STANDING_POLICY_CONFIRMED', policy.id, { policyKey, decision: policy.decision }, at);
+}
+
+export function setAutonomyLevel(inputState, level, at) {
+  let state = createDeskState(inputState);
+  if (!AUTONOMY_LEVELS.includes(level)) throw new Error('Unknown autonomy level.');
+  state = { ...state, autonomy: { ...state.autonomy, level, updatedAt: nowIso(at) } };
+  return audit(state, 'AUTONOMY_LEVEL_CHANGED', 'autonomy', { level }, at);
+}
+
+export function readinessStatus(inputState, at) {
+  const state = createDeskState(inputState);
+  const now = new Date(at || Date.now()).getTime();
+  const completed = new Set(state.reusableFacts.filter(fact =>
+    fact.verificationState !== 'unverified' && fact.verificationState !== 'expired' &&
+    (!fact.expiresAt || new Date(fact.expiresAt).getTime() > now)
+  ).map(fact => fact.fieldKey));
+  const unresolved = ONBOARDING_REQUIRED_FIELDS.filter(([key]) => !completed.has(key)).map(([key, label]) => ({ key, label }));
+  const targeted = TARGETED_READINESS_FIELDS.filter(([key]) => !completed.has(key)).map(([key, label]) => ({ key, label }));
+  const allUnresolved = READINESS_FIELDS.filter(([key]) => !completed.has(key)).map(([key, label]) => ({ key, label }));
+  const score = Math.round(((ONBOARDING_REQUIRED_FIELDS.length - unresolved.length) / ONBOARDING_REQUIRED_FIELDS.length) * 100);
+  return { score, complete: unresolved.length === 0, unresolved, targeted, allUnresolved };
+}
+
+const FIELD_ALIASES = Object.freeze({
+  authorization: ['work authorization', 'authorized to work', 'legally authorized'], sponsorship: ['sponsorship', 'visa sponsorship'],
+  salary: ['salary expectation', 'desired compensation', 'compensation range'], startDate: ['start date', 'notice period'],
+  travel: ['willing to travel', 'travel requirement'], relocation: ['willing to relocate', 'relocation'],
+  remoteGeography: ['remote location', 'work location', 'state of residence'], schedule: ['work schedule', 'time zone', 'core hours'],
+  outsideEmployment: ['outside employment', 'conflict of interest', 'moonlighting'], licenses: ['license', 'certification'],
+  driving: ['driver license', 'driving record'], background: ['background check', 'criminal background'],
+  drugHealth: ['drug screen', 'health screening', 'medical screening'], references: ['professional references', 'contact references'],
+  demographics: ['gender', 'race', 'ethnicity', 'veteran status', 'disability status'],
+});
+const EXCEPTION_PATTERNS = [
+  ['signature', /certif|electronic signature|sign (?:this|below)/i], ['material-consent', /arbitration|biometric|credit check|non[- ]compete|outside employment restriction/i],
+  ['unusual-screening', /polygraph|medical exam|health information|drug test/i], ['conflict', /government client|relative.*(?:work|employ)|former employer.*conflict/i],
+];
+const HUMAN_ACTION_PATTERNS = [['CAPTCHA', /captcha|not a robot/i], ['OTP', /one[- ]time|verification code|otp/i], ['LOGIN', /sign in|log in/i], ['UPLOAD', /upload/i], ['SIGNATURE', /signature|sign here/i]];
+const POLICY_QUESTION_PATTERNS = [
+  ['ordinary-privacy', /privacy policy|privacy notice|data processing/i],
+  ['create-account', /create (?:an )?(?:employer )?account|register an account/i],
+  ['optional-demographics', /optional demographic|prefer not to answer/i],
+  ['transmit-profile', /submit|transmit|send.*(?:resume|profile)/i],
+  ['routine-screening', /screening answer|application question/i],
+];
+const normalizeQuestion = value => asText(value).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+function scopeAllows(scope, context = {}) {
+  const normalized = normalizeScope(scope);
+  if (normalized.employers.length && !normalized.employers.some(item => normalizeEmployer(item) === normalizeEmployer(context.employer))) return false;
+  if (normalized.roleFamilies.length && !normalized.roleFamilies.some(item => normalizeTitle(context.title).includes(normalizeTitle(item)))) return false;
+  if (normalized.salaryMin && Number(context.salaryMin) < normalized.salaryMin) return false;
+  if (normalized.salaryMax && Number(context.salaryMax) > normalized.salaryMax) return false;
+  return true;
+}
+
+export function resolveApplicationQuestion(inputState, input, at) {
+  const state = createDeskState(inputState);
+  const wording = asText(input.question);
+  const normalized = normalizeQuestion(wording);
+  const human = HUMAN_ACTION_PATTERNS.find(([, pattern]) => pattern.test(wording));
+  if (human) return { kind: 'human-action', actionType: human[0], confidence: 1, reason: 'Human-controlled browser step' };
+  if (input.context?.changedTerms || input.context?.materialQualificationGap) return { kind: 'targeted-exception', exceptionType: 'changed-terms-or-gap', confidence: 1, reason: 'Changed terms or material qualification gap' };
+  if (input.context?.authorizedSalaryMin && Number(input.context.salaryMin) < Number(input.context.authorizedSalaryMin)) return { kind: 'targeted-exception', exceptionType: 'compensation-outside-band', confidence: 1, reason: 'Compensation is below the authorized band' };
+  if (input.context?.authorizedSalaryMax && Number(input.context.salaryMax) > Number(input.context.authorizedSalaryMax)) return { kind: 'targeted-exception', exceptionType: 'compensation-outside-band', confidence: 1, reason: 'Compensation is above the authorized band' };
+  const exception = EXCEPTION_PATTERNS.find(([, pattern]) => pattern.test(wording));
+  if (exception) return { kind: 'targeted-exception', exceptionType: exception[0], confidence: 1, reason: 'Employer-specific or material certification/consent' };
+  const policyMatch = POLICY_QUESTION_PATTERNS.find(([, pattern]) => pattern.test(wording));
+  if (policyMatch) {
+    const policy = state.standingPolicies.find(item => item.policyKey === policyMatch[0] && scopeAllows(item.scope, input.context));
+    if (policy) return { kind: 'standing-policy', policyId: policy.id, value: policy.decision, confidence: .94, wording };
+  }
+  const inferredKeys = Object.entries(FIELD_ALIASES).filter(([, aliases]) => aliases.some(alias => normalized.includes(normalizeQuestion(alias)))).map(([key]) => key);
+  const requestedKey = asText(input.fieldKey);
+  const fieldKey = requestedKey || (inferredKeys.length === 1 ? inferredKeys[0] : '');
+  const semanticConfidence = requestedKey ? 1 : inferredKeys.length === 1 ? .94 : 0;
+  if (!fieldKey || semanticConfidence < (Number(input.confidenceThreshold) || .92)) return { kind: 'ask-once', confidence: semanticConfidence, reason: 'New or ambiguous factual question' };
+  const fact = state.reusableFacts.find(item => item.fieldKey === fieldKey && item.autoReuse && ['user-confirmed', 'document-verified'].includes(item.verificationState));
+  const expired = fact?.expiresAt && new Date(fact.expiresAt).getTime() <= new Date(at || Date.now()).getTime();
+  if (!fact || expired || !scopeAllows(fact.scope, input.context)) return { kind: 'ask-once', fieldKey, confidence: semanticConfidence, reason: expired ? 'Stored answer expired' : 'No verified reusable fact in scope' };
+  return { kind: 'safe-fact', fieldKey, factId: fact.id, value: fact.value, confidence: semanticConfidence, wording };
+}
+
+export function canAutoSubmit(inputState, role, fieldDecisions = []) {
+  const state = createDeskState(inputState);
+  const readiness = readinessStatus(state);
+  const blockers = ['explicit action-time final-submission confirmation is always required'];
+  if (!readiness.complete) blockers.push('readiness interview is incomplete');
+  if (state.autonomy.successfulAuditedApplications < 1) blockers.push('no successful audited application baseline');
+  if (!role || verificationGaps(role).length) blockers.push('role is not fully verified');
+  if (fieldDecisions.some(item => !['safe-fact', 'standing-policy'].includes(item.kind))) blockers.push('one or more fields require review or human action');
+  return { allowed: blockers.length === 0, blockers };
+}
+
+export function recordFieldAnswer(inputState, input, at) {
+  let state = createDeskState(inputState);
+  if (!asText(input.roleId) || !asText(input.question) || !asText(input.decisionKind)) throw new Error('Role, exact question wording, and decision kind are required.');
+  return audit(state, 'APPLICATION_FIELD_ANSWERED', asText(input.roleId), {
+    question: asText(input.question), decisionKind: asText(input.decisionKind), factId: asText(input.factId) || null,
+    policyId: asText(input.policyId) || null, confidence: Number(input.confidence) || 0,
+    documentVersion: asText(input.documentVersion) || null,
+  }, at);
+}
+
+export function exportReadinessData(inputState) {
+  const state = createDeskState(inputState);
+  return JSON.stringify({ version: state.version, exportedAt: nowIso(), reusableFacts: state.reusableFacts, standingPolicies: state.standingPolicies, autonomy: state.autonomy }, null, 2);
+}
+
+export function createSalesDemo(inputState, autonomyLevel = 'autofill_review', at) {
+  let state = createDeskState(inputState);
+  if (!DEMO_AUTONOMY_LEVELS.includes(autonomyLevel)) throw new Error('Unknown demo autonomy level.');
+  const stamp = nowIso(at);
+  const demo = {
+    id: makeId('demo'), simulated: true, autonomyLevel, stageIndex: 0, startedAt: stamp,
+    candidate: { name: 'Jordan Example', location: 'Columbus, Ohio', note: 'Synthetic candidate; no real personal data.' },
+    mission: { target: 3, roleFamilies: ['Procurement Analyst', 'Buyer'], workMode: 'Remote US', salaryMin: 85000, salaryMax: 115000 },
+    fixtures: [
+      { id: 'demo-role-1', employer: 'Northstar Components', title: 'Procurement Analyst', requisitionId: 'DEMO-PA-104', directEmployerUrl: 'https://careers.example.test/jobs/DEMO-PA-104', salaryMin: 90000, salaryMax: 108000 },
+      { id: 'demo-role-2', employer: 'Northstar Components, Inc.', title: 'Procurement Analyst', requisitionId: 'DEMO-PA-104', directEmployerUrl: 'https://careers.example.test/jobs/DEMO-PA-104?ref=demo', duplicate: true },
+      { id: 'demo-role-3', employer: 'Atlas Supply Labs', title: 'Buyer', requisitionId: 'DEMO-BUY-22', directEmployerUrl: 'https://jobs.example.test/DEMO-BUY-22', salaryMin: 87000, salaryMax: 102000 },
+    ],
+    trace: [{ stage: DEMO_STAGES[0], kind: 'automatic', at: stamp, explanation: 'Synthetic readiness fixture is complete; all reusable answers are explicitly labeled as demo data.' }],
+    simulatedReceipt: null,
+  };
+  state = { ...state, demo };
+  return audit(state, 'SALES_DEMO_STARTED', demo.id, { simulated: true, autonomyLevel }, at);
+}
+
+export function advanceSalesDemo(inputState, at) {
+  let state = createDeskState(inputState);
+  if (!state.demo) throw new Error('Sales demo has not started.');
+  if (state.demo.stageIndex >= DEMO_STAGES.length - 1) return state;
+  const stageIndex = state.demo.stageIndex + 1;
+  const explanations = [
+    '',
+    'Mission filters are inside the synthetic candidate’s standing salary, geography, and role-family policies.',
+    'Three fixture records were found from synthetic direct-employer sources; no live provider or employer was contacted.',
+    'The requisition key suppressed one duplicate and retained two unique roles with fixture Apply-path evidence.',
+    'Fixture DOCX/PDF versions passed the simulated two-page render and ATS text-order checks.',
+    'Verified synthetic facts answered authorization, location, notice period, and travel; ordinary privacy terms matched a standing policy.',
+    'An employer-specific electronic certification is outside standing authorization and requires a targeted person decision.',
+    'A simulated employer confirmation ID and document version were recorded; nothing was transmitted.',
+    'The simulated tracker linked the submitted fixture document version to a phone-screen brief and follow-up reminder.',
+  ];
+  const kinds = ['automatic', 'automatic', 'automatic', 'automatic', 'automatic', 'automatic', 'human-required', 'simulated', 'automatic'];
+  const stamp = nowIso(at);
+  const demo = {
+    ...state.demo, stageIndex,
+    trace: [...state.demo.trace, { stage: DEMO_STAGES[stageIndex], kind: kinds[stageIndex], at: stamp, explanation: explanations[stageIndex] }],
+    simulatedReceipt: stageIndex >= 7 ? {
+      simulated: true, confirmationId: 'SIM-DEMO-84721', submittedAt: stamp,
+      documentVersion: 'jordan-example-procurement-analyst-v1', transmission: 'none',
+    } : state.demo.simulatedReceipt,
+  };
+  state = { ...state, demo };
+  return audit(state, 'SALES_DEMO_ADVANCED', demo.id, { simulated: true, stage: DEMO_STAGES[stageIndex], kind: kinds[stageIndex] }, at);
+}
+
+export function resetSalesDemo(inputState, at) {
+  let state = createDeskState(inputState);
+  const demoId = state.demo?.id || 'demo';
+  state = { ...state, demo: null };
+  return audit(state, 'SALES_DEMO_RESET', demoId, { simulated: true }, at);
+}
+
+export function updateTruthProfile(inputState, profile, at) {
+  let state = createDeskState(inputState);
+  const truthProfile = createTruthProfile({ ...profile, confirmedAt: nowIso(at) });
+  state = { ...state, truthProfile };
+  return audit(state, 'TRUTH_PROFILE_CONFIRMED', 'truth-profile', { gaps: truthProfileGaps(truthProfile) }, at);
+}
+
+function audit(state, type, entityId, details = {}, at) {
+  return {
+    ...state,
+    auditEvents: [...state.auditEvents, { id: makeId('audit'), type, entityId, details, at: nowIso(at) }],
+  };
+}
+
+export function addRole(inputState, input, at) {
+  let state = createDeskState(inputState);
+  const role = {
+    id: asText(input.id) || makeId('role'),
+    employer: asText(input.employer),
+    title: asText(input.title),
+    requisitionId: asText(input.requisitionId),
+    directEmployerUrl: normalizeJobUrl(input.directEmployerUrl || input.url),
+    sourceUrl: normalizeJobUrl(input.sourceUrl),
+    sourceType: asText(input.sourceType) || 'unknown',
+    applyPathActive: input.applyPathActive === true,
+    remoteEligibility: asText(input.remoteEligibility),
+    geographyEligibility: asText(input.geographyEligibility),
+    salaryMin: Number(input.salaryMin) || null,
+    salaryMax: Number(input.salaryMax) || null,
+    salaryDisclosure: asText(input.salaryDisclosure),
+    postedDate: asText(input.postedDate),
+    travel: asText(input.travel),
+    schedule: asText(input.schedule),
+    employmentType: asText(input.employmentType) || 'Unknown',
+    requiredGaps: asList(input.requiredGaps),
+    preferredGaps: asList(input.preferredGaps),
+    materialGaps: asList(input.materialGaps),
+    recruiterContact: asText(input.recruiterContact),
+    attestations: asList(input.attestations),
+    jobDescription: asText(input.jobDescription),
+    requirements: input.requirements || null,
+    fitScore: input.fitScore !== null && input.fitScore !== undefined && input.fitScore !== '' && Number.isFinite(Number(input.fitScore)) ? Number(input.fitScore) : null,
+    fitClassification: asText(input.fitClassification),
+    credibleInterviewPath: input.credibleInterviewPath === true,
+    fitRationale: asText(input.fitRationale),
+    fitComponents: input.fitComponents || null,
+    hardDisqualifiers: asList(input.hardDisqualifiers),
+    sourceProvider: asText(input.sourceProvider),
+    sourceEvidence: asText(input.sourceEvidence),
+    discoveryRunId: asText(input.discoveryRunId),
+    relevancePolicyVersion: asText(input.relevancePolicyVersion),
+    missionRole: asText(input.missionRole),
+    status: 'Found',
+    statusHistory: [{ status: 'Found', reason: 'Role captured', at: nowIso(at) }],
+    packageEvidence: null,
+    packageDraft: input.packageDraft || null,
+    approvalBatchId: null,
+    receipt: null,
+    createdAt: nowIso(at),
+    updatedAt: nowIso(at),
+  };
+  if (!role.employer || !role.title || !role.directEmployerUrl) throw new Error('Employer, title, and direct employer URL are required.');
+  const key = roleDedupeKey(role);
+  const duplicateIndex = state.roles.findIndex(existing => roleDedupeKey(existing) === key || publicJobsAreDuplicate(
+    { ...existing, description: existing.jobDescription, location: existing.geographyEligibility },
+    { ...role, description: role.jobDescription, location: role.geographyEligibility },
+  ));
+  if (duplicateIndex >= 0) {
+    const existing = state.roles[duplicateIndex];
+    const refreshedEvidence = role.discoveryRunId ? {
+      discoveryRunId: role.discoveryRunId, directEmployerUrl: role.directEmployerUrl, sourceUrl: role.sourceUrl,
+      sourceType: 'direct-employer', applyPathActive: true, jobDescription: role.jobDescription,
+      sourceProvider: role.sourceProvider, sourceEvidence: role.sourceEvidence, postedDate: role.postedDate,
+      relevancePolicyVersion: role.relevancePolicyVersion, missionRole: role.missionRole,
+    } : {};
+    const updated = { ...existing, ...refreshedEvidence, statusHistory: [...existing.statusHistory, { status: existing.status, reason: 'Duplicate rediscovered and suppressed; verified source evidence refreshed when available', at: nowIso(at) }], updatedAt: nowIso(at) };
+    state = { ...state, roles: state.roles.map((item, index) => index === duplicateIndex ? updated : item) };
+    state = audit(state, 'ROLE_DUPLICATE_SUPPRESSED', existing.id, { key }, at);
+    return { state, role: updated, duplicate: true };
+  }
+  state = { ...state, roles: [role, ...state.roles] };
+  state = audit(state, 'ROLE_CAPTURED', role.id, { key, employer: role.employer, title: role.title }, at);
+  return { state, role, duplicate: false };
+}
+
+export function recordGeneratedPackage(inputState, roleId, input, at) {
+  let state = createDeskState(inputState);
+  const role = state.roles.find(item => item.id === roleId);
+  if (!role) throw new Error('Role not found.');
+  if (!['Verified', 'Verified - Package Preparation', 'Package Ready', 'Awaiting Approval'].includes(role.status)) throw new Error('A role must be Verified before generating its package.');
+  if (!asText(input.historyId) || !asText(input.documentVersion) || !asText(input.resumeText)) throw new Error('Generated package history ID, document version, and resume text are required.');
+  const packageDraft = {
+    historyId: asText(input.historyId), documentVersion: asText(input.documentVersion),
+    resumeText: asText(input.resumeText), coverLetterText: asText(input.coverLetterText),
+    atsIssues: asList(input.atsIssues), generatedAt: nowIso(input.generatedAt || at),
+    source: asText(input.source) || 'existing-tailor-pipeline', qaStatus: asText(input.qaStatus) || 'draft',
+    packageRunId: asText(input.packageRunId), atsQa: input.atsQa && typeof input.atsQa === 'object' ? input.atsQa : null,
+    renderEvidence: input.renderEvidence && typeof input.renderEvidence === 'object' ? input.renderEvidence : null,
+    artifacts: Array.isArray(input.artifacts) ? input.artifacts.slice(0, 8).map(artifact => ({
+      key: asText(artifact.key), filename: asText(artifact.filename), contentType: asText(artifact.contentType),
+      bytes: Number(artifact.bytes) || 0, sha256: asText(artifact.sha256), pageCount: Number(artifact.pageCount) || null,
+    })).filter(artifact => artifact.key && artifact.filename && artifact.sha256) : [],
+  };
+  const nextStatus = ['Verified', 'Package Ready', 'Awaiting Approval'].includes(role.status) ? 'Verified - Package Preparation' : role.status;
+  const updated = {
+    ...role, packageDraft, status: nextStatus,
+    packageEvidence: nextStatus !== role.status ? null : role.packageEvidence,
+    approvalBatchId: nextStatus !== role.status ? null : role.approvalBatchId,
+    statusHistory: nextStatus === role.status ? role.statusHistory : [...role.statusHistory, { status: nextStatus, reason: role.status === 'Verified' ? 'Role-specific package preparation started' : 'Candidate edit invalidated prior package QA and approval', at: nowIso(at) }],
+    updatedAt: nowIso(at),
+  };
+  state = { ...state, roles: state.roles.map(item => item.id === roleId ? updated : item) };
+  return audit(state, 'PACKAGE_DRAFT_GENERATED', roleId, {
+    historyId: packageDraft.historyId, documentVersion: packageDraft.documentVersion,
+    hasCoverLetter: Boolean(packageDraft.coverLetterText), atsIssueCount: packageDraft.atsIssues.length,
+  }, at);
+}
+
+export function recordPackageRunCheckpoint(inputState, roleId, input = {}, at) {
+  let state = createDeskState(inputState);
+  const role = state.roles.find(item => item.id === roleId);
+  if (!role) throw new Error('Role not found.');
+  const runId = asText(input.runId);
+  const runStatus = asText(input.status);
+  if (!runId || !['Searching', 'Preparing', 'Waiting for You', 'Paused', 'Finished', 'Failed'].includes(runStatus)) throw new Error('A durable package run ID and valid status are required.');
+  const updated = { ...role, packageRunId: runId, packageRunStatus: runStatus, packageRunErrorCode: asText(input.errorCode), updatedAt: nowIso(at) };
+  state = { ...state, roles: state.roles.map(item => item.id === roleId ? updated : item) };
+  return audit(state, 'PACKAGE_RUN_CHECKPOINTED', roleId, { runId, status: runStatus, errorCode: updated.packageRunErrorCode || null }, at);
+}
+
+export function verificationGaps(role) {
+  const gaps = [];
+  if (role.sourceType !== 'direct-employer') gaps.push('direct employer source');
+  if (!/^https:\/\//.test(role.directEmployerUrl || '')) gaps.push('HTTPS direct employer URL');
+  if (role.applyPathActive !== true) gaps.push('active Apply path');
+  if (!role.requisitionId) gaps.push('requisition ID');
+  if (!role.remoteEligibility) gaps.push('remote eligibility');
+  if (!role.geographyEligibility) gaps.push('geography eligibility');
+  if (!role.salaryMin && !role.salaryMax && !role.salaryDisclosure) gaps.push('salary or explicit unknown');
+  if (!role.postedDate) gaps.push('posting date or explicit unknown');
+  if (!role.travel) gaps.push('travel or explicit unknown');
+  if (!role.schedule) gaps.push('schedule/core hours or explicit unknown');
+  return gaps;
+}
+
+export function packageGaps(evidence = {}) {
+  const gaps = [];
+  if (!asText(evidence.documentVersion)) gaps.push('document version');
+  const formats = asList(evidence.formats).map(item => item.toUpperCase());
+  if (!formats.includes('DOCX') || !formats.includes('PDF')) gaps.push('DOCX and PDF');
+  if (evidence.humanWritten !== true) gaps.push('human-written role-specific package');
+  if (evidence.docxTextOrderChecked !== true) gaps.push('DOCX text-order check');
+  if (evidence.pdfTextExtracted !== true) gaps.push('PDF text extraction check');
+  if (evidence.visualPageInspection !== true && evidence.pagesInspected !== true) gaps.push('visual inspection of every page');
+  if (![1, 2].includes(Number(evidence.pageCount))) gaps.push('verified one- or two-page length');
+  if (evidence.aiTemplateAvoided !== true) gaps.push('non-AI-styled restrained template');
+  if (!['omitted-for-ordinary-role', 'explicitly-relevant-and-supported'].includes(asText(evidence.aiLanguagePolicy))) gaps.push('role-appropriate AI language policy');
+  return gaps;
+}
+
+export function transitionRole(inputState, roleId, nextStatus, evidence = {}, at) {
+  let state = createDeskState(inputState);
+  const role = state.roles.find(item => item.id === roleId);
+  if (!role) throw new Error('Role not found.');
+  if (!PIPELINE_STATUSES.includes(nextStatus)) throw new Error('Unknown pipeline status.');
+  if (!nextStatuses[role.status]?.includes(nextStatus)) throw new Error(`Cannot move ${role.status} to ${nextStatus}.`);
+  if (nextStatus === 'Submitted') throw new Error('Submitted is server-controlled and requires a signed authoritative employer receipt.');
+
+  let patch = {};
+  if (nextStatus === 'Verified') {
+    const gaps = verificationGaps(role);
+    if (gaps.length) throw new Error(`Verification incomplete: ${gaps.join(', ')}.`);
+    patch.verifiedAt = nowIso(at);
+  }
+  if (nextStatus === 'Package Ready') {
+    const gaps = packageGaps(evidence);
+    if (gaps.length) throw new Error(`Package QA incomplete: ${gaps.join(', ')}.`);
+    if (role.packageDraft && role.packageDraft.documentVersion !== asText(evidence.documentVersion)) throw new Error('QA document version must match the generated package draft.');
+    patch.packageEvidence = { ...evidence, formats: asList(evidence.formats), verifiedAt: nowIso(at) };
+  }
+  if (nextStatus === 'Awaiting Approval') {
+    const batch = state.approvalBatches.find(item => item.id === evidence.approvalBatchId && item.roleIds.includes(roleId));
+    if (!batch || batch.status !== 'approved') throw new Error('An approved named batch containing this role is required.');
+    patch.approvalBatchId = batch.id;
+  }
+  if (nextStatus === 'Blocked') patch.blockedReason = asText(evidence.reason) || 'User action required';
+  if (nextStatus === 'Rejected/Closed') patch.closedReason = asText(evidence.reason) || 'The employer requisition is no longer active';
+
+  const updated = {
+    ...role,
+    ...patch,
+    status: nextStatus,
+    statusHistory: [...role.statusHistory, { status: nextStatus, reason: asText(evidence.reason) || `Moved to ${nextStatus}`, at: nowIso(at) }],
+    updatedAt: nowIso(at),
+  };
+  state = { ...state, roles: state.roles.map(item => item.id === roleId ? updated : item) };
+  return audit(state, 'ROLE_STATUS_CHANGED', roleId, { from: role.status, to: nextStatus }, at);
+}
+
+export function createApprovalBatch(inputState, input, at) {
+  let state = createDeskState(inputState);
+  const roleIds = [...new Set(asList(input.roleIds))];
+  const roles = state.roles.filter(role => roleIds.includes(role.id));
+  if (!asText(input.name)) throw new Error('Approval batch name is required.');
+  if (!roles.length || roles.some(role => role.status !== 'Package Ready')) throw new Error('Approval batches may contain Package Ready roles only.');
+  const batch = {
+    id: makeId('batch'),
+    name: asText(input.name),
+    roleIds,
+    status: 'draft',
+    roleSnapshots: roles.map(role => ({
+      roleId: role.id,
+      employer: role.employer,
+      title: role.title,
+      requisitionId: role.requisitionId,
+      salaryMin: role.salaryMin,
+      salaryMax: role.salaryMax,
+      travel: role.travel,
+      materialGaps: role.materialGaps,
+      recruiterContact: role.recruiterContact,
+      attestations: role.attestations,
+      documentVersion: role.packageEvidence?.documentVersion,
+    })),
+    disclosures: asList(input.disclosures),
+    createdAt: nowIso(at),
+    approvedAt: null,
+  };
+  state = { ...state, approvalBatches: [batch, ...state.approvalBatches] };
+  state = audit(state, 'APPROVAL_BATCH_CREATED', batch.id, { name: batch.name, roleIds }, at);
+  return { state, batch };
+}
+
+export function approveBatch(inputState, batchId, at) {
+  let state = createDeskState(inputState);
+  const batch = state.approvalBatches.find(item => item.id === batchId);
+  if (!batch) throw new Error('Approval batch not found.');
+  if (!batch.disclosures.length) throw new Error('Batch disclosures are required before approval.');
+  const approved = { ...batch, status: 'approved', approvedAt: nowIso(at) };
+  state = { ...state, approvalBatches: state.approvalBatches.map(item => item.id === batchId ? approved : item) };
+  return audit(state, 'APPROVAL_BATCH_APPROVED', batchId, { roleIds: batch.roleIds }, at);
+}
+
+export function addActionItem(inputState, input, at) {
+  let state = createDeskState(inputState);
+  if (!ACTION_TYPES.includes(input.type)) throw new Error('Unsupported action type.');
+  if (!state.roles.some(role => role.id === input.roleId)) throw new Error('Action queue role not found.');
+  const item = { id: makeId('action'), roleId: input.roleId, type: input.type, summary: asText(input.summary), status: 'open', createdAt: nowIso(at), resolvedAt: null };
+  state = { ...state, actionQueue: [item, ...state.actionQueue] };
+  state = audit(state, 'ACTION_REQUIRED', item.id, { roleId: item.roleId, type: item.type }, at);
+  return { state, item };
+}
+
+export function resolveActionItem(inputState, actionId, at) {
+  let state = createDeskState(inputState);
+  const item = state.actionQueue.find(entry => entry.id === actionId);
+  if (!item) throw new Error('Action item not found.');
+  state = { ...state, actionQueue: state.actionQueue.map(entry => entry.id === actionId ? { ...entry, status: 'resolved', resolvedAt: nowIso(at) } : entry) };
+  return audit(state, 'ACTION_RESOLVED', actionId, { roleId: item.roleId }, at);
+}
+
+const WORKFLOW_STEP_COPY = Object.freeze({
+  discover_verify: ['Discover & Verify', 'Direct employer requisition and active Apply path checked'],
+  deduplicate: ['Deduplicate', 'Local records and employer candidate portal checked when available'],
+  tailor_package: ['Tailor Package', 'Verified-fact resume package selected and QA evidence attached'],
+  account_profile: ['Create or Reuse Account/Profile', 'Employer account or candidate profile context restored'],
+  autofill: ['Autofill', 'Semantically matching reusable answers staged with provenance'],
+  review_exception: ['Review Exception', 'Employer-specific conflict attestation requires a person'],
+  transmit: ['Transmit', 'Action-time transmission confirmation staged'],
+  submit: ['Submit', 'Simulated submit gesture only; no employer request was sent'],
+  verify_receipt: ['Verify Receipt', 'Simulated employer confirmation captured and visibly labeled'],
+});
+
+function redactVisibleValue(value) {
+  return asText(value)
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '•••@redacted.invalid')
+    .replace(/(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, '(***) ***-****')
+    .replace(/\b\d{1,5}\s+[A-Za-z0-9.' -]+(?:Street|St|Avenue|Ave|Road|Rd|Lane|Ln|Drive|Dr|Boulevard|Blvd)\b/gi, '•••• REDACTED ADDRESS')
+    .replace(/\b(?:confirmation|receipt|token|otp|password)\s*(?:id|code)?\s*[:#-]?\s*[A-Z0-9_-]{4,}\b/gi, match => `${match.split(/[\s:#-]/)[0]} ••••`);
+}
+
+function workflowTimelineEvent(step, kind, summary, at) {
+  return { step, kind, summary: redactVisibleValue(summary), at: nowIso(at) };
+}
+
+export function startManagedApplicationSession(inputState, input = {}, at) {
+  let state = createDeskState(inputState);
+  if (input.simulated !== true) throw new Error('Managed employer-browser orchestration is simulation-only in this environment.');
+  const savedRole = state.roles.find(role => role.id === input.roleId);
+  const role = savedRole || input.role;
+  if (!role?.employer || !role?.title || !role?.directEmployerUrl) throw new Error('A verified employer, role, and direct Apply URL are required.');
+  const step = APPLICATION_WORKFLOW_STEPS[0];
+  const session = {
+    id: asText(input.id) || makeId('application'), roleId: savedRole?.id || null, simulated: true,
+    autonomyLevel: DEMO_AUTONOMY_LEVELS.includes(input.autonomyLevel) ? input.autonomyLevel : state.autonomy.level,
+    role: { employer: asText(role.employer), title: asText(role.title), requisitionId: asText(role.requisitionId), directEmployerUrl: normalizeJobUrl(role.directEmployerUrl) },
+    stepIndex: 0, step, status: 'active', checkpointStatus: 'Verified', agentStatus: 'Checking the direct employer requisition',
+    employerPage: { title: `${asText(role.employer)} Careers`, url: normalizeJobUrl(role.directEmployerUrl), stepLabel: WORKFLOW_STEP_COPY[step][0] },
+    suggestions: [
+      { field: 'Email', value: '•••@redacted.invalid', source: 'verified contact fact', confidence: .99 },
+      { field: 'Phone', value: '(***) ***-****', source: 'verified contact fact', confidence: .99 },
+      { field: 'Optional demographics', value: 'Leave unanswered', source: 'standing disclosure policy', confidence: 1 },
+    ],
+    documents: [{ kind: 'Resume', version: asText(input.documentVersion) || 'synthetic-resume-v1', status: 'QA verified · staged only' }],
+    authorization: {
+      batchName: asText(input.batchAuthorizationName) || 'Synthetic named batch',
+      covers: ['verified profile fields', 'approved resume version'],
+      excludes: ['identity verification', 'invalid credentials', 'OTP', 'CAPTCHA', 'new employer-specific consent'],
+    },
+    blockers: [], receipt: null, createdAt: nowIso(at), updatedAt: nowIso(at),
+    timeline: [workflowTimelineEvent(step, 'automatic', `${WORKFLOW_STEP_COPY[step][1]}. Candidate PII remains redacted.`, at)],
+  };
+  state = { ...state, applicationSessions: [session, ...state.applicationSessions.filter(item => item.id !== session.id)], activeApplicationSessionId: session.id };
+  return audit(state, 'MANAGED_APPLICATION_SESSION_STARTED', session.id, { simulated: true, roleId: session.roleId, step }, at);
+}
+
+export function advanceManagedApplicationSession(inputState, sessionId, at) {
+  let state = createDeskState(inputState);
+  const session = state.applicationSessions.find(item => item.id === sessionId);
+  if (!session) throw new Error('Application session not found.');
+  if (session.status === 'paused') throw new Error('Resolve or resume the current human action before continuing.');
+  if (session.status === 'complete') return state;
+  const stepIndex = Math.min(session.stepIndex + 1, APPLICATION_WORKFLOW_STEPS.length - 1);
+  const step = APPLICATION_WORKFLOW_STEPS[stepIndex];
+  const humanPause = step === 'review_exception' || step === 'transmit';
+  const complete = step === 'verify_receipt';
+  const blocker = step === 'review_exception'
+    ? { id: makeId('blocker'), type: 'NEW_QUESTION', status: 'open', summary: 'Review an employer-specific conflict attestation before proceeding.' }
+    : step === 'transmit'
+      ? { id: makeId('blocker'), type: 'TRANSMISSION_CONFIRMATION', status: 'open', summary: 'Confirm at action time before Continue transmits redacted contact fields to the employer ATS.' }
+      : null;
+  const receipt = complete ? { simulated: true, transmission: 'none', confirmationId: 'SIM-••••', receivedAt: nowIso(at), documentVersion: session.documents[0]?.version } : session.receipt;
+  const updated = {
+    ...session, stepIndex, step, status: complete ? 'complete' : humanPause ? 'paused' : 'active',
+    agentStatus: complete ? 'Simulated receipt verified' : step === 'transmit' ? 'Waiting for action-time transmission confirmation' : humanPause ? 'Waiting for one targeted exception' : WORKFLOW_STEP_COPY[step][1],
+    employerPage: { ...session.employerPage, stepLabel: WORKFLOW_STEP_COPY[step][0] },
+    blockers: blocker ? [...session.blockers, blocker] : session.blockers, receipt, updatedAt: nowIso(at),
+    timeline: [...session.timeline, workflowTimelineEvent(step, humanPause ? 'human-required' : complete ? 'simulated-receipt' : 'automatic', WORKFLOW_STEP_COPY[step][1], at)],
+  };
+  state = { ...state, applicationSessions: state.applicationSessions.map(item => item.id === sessionId ? updated : item) };
+  return audit(state, 'MANAGED_APPLICATION_STEP_CHANGED', sessionId, { simulated: true, step, status: updated.status }, at);
+}
+
+export function resolveManagedApplicationException(inputState, sessionId, at) {
+  let state = createDeskState(inputState);
+  const session = state.applicationSessions.find(item => item.id === sessionId);
+  if (!session) throw new Error('Application session not found.');
+  if (session.status !== 'paused' || !session.blockers.some(item => item.status === 'open')) throw new Error('No open targeted exception exists.');
+  const updated = {
+    ...session, status: 'active', agentStatus: 'Targeted exception resolved; safe execution may resume', updatedAt: nowIso(at),
+    blockers: session.blockers.map(item => item.status === 'open' ? { ...item, status: 'resolved', resolvedAt: nowIso(at) } : item),
+    timeline: [...session.timeline, workflowTimelineEvent(session.step, 'human-confirmed', 'Targeted exception resolved without storing credentials, OTPs, or CAPTCHA answers.', at)],
+  };
+  state = { ...state, applicationSessions: state.applicationSessions.map(item => item.id === sessionId ? updated : item) };
+  return audit(state, 'MANAGED_APPLICATION_EXCEPTION_RESOLVED', sessionId, { simulated: true }, at);
+}
+
+export function recordOtpChallenge(inputState, sessionId, input = {}, at) {
+  let state = createDeskState(inputState);
+  const session = state.applicationSessions.find(item => item.id === sessionId);
+  if (!session) throw new Error('Application session not found.');
+  if (['code', 'otp', 'verificationCode', 'value'].some(key => asText(input[key]))) {
+    throw new Error('OTP values must never enter concierge state. Request only the latest code through the preserved employer dialog.');
+  }
+  const prior = session.verificationSession || null;
+  const recreated = input.recreated === true;
+  const generation = prior && recreated ? prior.generation + 1 : prior?.generation || 1;
+  const delivery = ['masked-email', 'masked-sms'].includes(input.delivery) ? input.delivery : prior?.delivery || 'masked-email';
+  const verificationSession = {
+    localSessionKey: prior && !recreated ? prior.localSessionKey : makeId('otp_session'),
+    provider: asText(input.provider) || prior?.provider || 'employer-ats',
+    status: 'pending', delivery, generation,
+    createdAt: prior && !recreated ? prior.createdAt : nowIso(at), updatedAt: nowIso(at),
+    supersededGenerations: recreated && prior
+      ? [...(prior.supersededGenerations || []), { generation: prior.generation, status: 'unusable', supersededAt: nowIso(at) }]
+      : prior?.supersededGenerations || [],
+  };
+  const summary = recreated
+    ? 'Replacement OTP challenge is pending. The prior generation is superseded and unusable; request only the latest code privately.'
+    : 'Pending OTP verification session preserved. Request only the latest code privately; never store or display it.';
+  const blockers = session.blockers.map(item => item.type === 'OTP' && item.status === 'open'
+    ? { ...item, status: recreated ? 'unusable' : item.status, supersededAt: recreated ? nowIso(at) : item.supersededAt }
+    : item);
+  const hasCurrentOpenBlocker = blockers.some(item => item.type === 'OTP' && item.status === 'open');
+  const otpBlocker = { id: makeId('blocker'), type: 'OTP', status: 'open', generation, summary };
+  const updated = {
+    ...session, status: 'paused', checkpointStatus: 'Human Action Required - latest OTP', verificationSession,
+    agentStatus: summary, updatedAt: nowIso(at), blockers: hasCurrentOpenBlocker ? blockers : [...blockers, otpBlocker],
+    timeline: [...session.timeline, workflowTimelineEvent(session.step, recreated ? 'otp-superseded' : 'otp-pending', summary, at)],
+  };
+  state = { ...state, applicationSessions: state.applicationSessions.map(item => item.id === sessionId ? updated : item) };
+  return audit(state, recreated ? 'OTP_CHALLENGE_REPLACED' : 'OTP_CHALLENGE_PRESERVED', sessionId, { simulated: true, generation, delivery }, at);
+}
+
+export function recordOtpAttemptOutcome(inputState, sessionId, input = {}, at) {
+  let state = createDeskState(inputState);
+  const session = state.applicationSessions.find(item => item.id === sessionId);
+  if (!session) throw new Error('Application session not found.');
+  if (['code', 'otp', 'verificationCode', 'value'].some(key => asText(input[key]))) {
+    throw new Error('OTP values must never enter concierge state. Record only the redacted employer outcome.');
+  }
+  if (input.outcome !== 'incorrect') throw new Error('Only a redacted incorrect-code outcome is supported here.');
+  const verificationSession = session.verificationSession;
+  if (!verificationSession) throw new Error('No preserved OTP challenge exists.');
+  if (verificationSession.lastAttemptedGeneration === verificationSession.generation) {
+    throw new Error('This OTP generation was already attempted once. Do not retry or guess.');
+  }
+  const summary = 'Employer rejected the one supplied code attempt. Preserve the code-entry dialog, stop guessing, and request only the latest email code privately.';
+  const blockers = session.blockers.map(item => item.type === 'OTP' && item.status === 'open'
+    ? { ...item, status: 'incorrect', resolvedAt: nowIso(at) }
+    : item);
+  const updated = {
+    ...session, status: 'paused', checkpointStatus: 'Human Action Required - latest email code',
+    agentStatus: summary, updatedAt: nowIso(at),
+    verificationSession: { ...verificationSession, status: 'incorrect', lastAttemptedGeneration: verificationSession.generation, updatedAt: nowIso(at) },
+    blockers: [...blockers, { id: makeId('blocker'), type: 'OTP', status: 'open', generation: verificationSession.generation, delivery: 'masked-email', summary }],
+    timeline: [...session.timeline, workflowTimelineEvent(session.step, 'otp-incorrect-stop', summary, at)],
+  };
+  state = { ...state, applicationSessions: state.applicationSessions.map(item => item.id === sessionId ? updated : item) };
+  return audit(state, 'OTP_ATTEMPT_REJECTED_STOPPED', sessionId, { simulated: true, generation: verificationSession.generation, delivery: 'masked-email', attempts: 1 }, at);
+}
+
+export function inspectAuthenticatedApplicationForm(inputState, sessionId, input = {}, at) {
+  let state = createDeskState(inputState);
+  const session = state.applicationSessions.find(item => item.id === sessionId);
+  if (!session) throw new Error('Application session not found.');
+  const hasForbiddenPayload = value => {
+    if (!value || typeof value !== 'object') return false;
+    return Object.entries(value).some(([key, nested]) => /password|otp|captcha|verification.?code|token|resume.?text|document.?contents/i.test(key)
+      ? Boolean(asText(nested))
+      : typeof nested === 'object' && hasForbiddenPayload(nested));
+  };
+  if (hasForbiddenPayload(input)) throw new Error('Credentials, OTPs, CAPTCHAs, tokens, and document contents must never enter form-review state.');
+  const items = Array.isArray(input.items) && input.items.length ? input.items : REDACTED_POST_AUTH_FORM_REVIEW;
+  const ordinaryPrivacyPolicy = state.standingPolicies.find(policy => policy.policyKey === 'ordinary-privacy');
+  const classifiedItems = items.map(item => {
+    const key = asText(item.key);
+    const label = asText(item.label);
+    const category = asText(item.category) || 'employer-specific-attestation';
+    if (!key || !label) throw new Error('Every inspected form item requires a redacted key and label.');
+    const ordinaryPrivacy = category === 'ordinary-privacy';
+    const resolved = item.resolved === true || (ordinaryPrivacy && item.resolvedByStandingPolicy === true && Boolean(ordinaryPrivacyPolicy));
+    return {
+      key, label, category, resolved,
+      classification: ordinaryPrivacy ? 'ordinary-privacy' : 'employer-specific-material',
+      priorBatchCoverage: ordinaryPrivacy ? 'not-applicable' : 'not-covered',
+      resolutionSource: resolved ? ordinaryPrivacy ? 'standing-policy-semantic-match' : 'explicit-current-form-resolution' : null,
+    };
+  });
+  const unresolved = classifiedItems.filter(item => !item.resolved);
+  const authenticationRecovered = input.authenticationRecovered === true;
+  const preservedBlockers = session.blockers
+    .filter(item => item.source !== 'post-auth-form-review')
+    .map(item => authenticationRecovered && ['LOGIN', 'PASSWORD_RESET', 'PASSWORD_RESET_PENDING'].includes(item.type) && item.status === 'open'
+      ? { ...item, status: 'resolved', resolvedAt: nowIso(at) }
+      : item);
+  const formBlockers = unresolved.map(item => ({
+    id: makeId('blocker'), type: item.category.toUpperCase().replaceAll('-', '_'), status: 'open',
+    source: 'post-auth-form-review', formItemKey: item.key, summary: item.label,
+    priorBatchCoverage: item.priorBatchCoverage, createdAt: nowIso(at),
+  }));
+  const draft = {
+    status: 'preserved', authenticated: authenticationRecovered, fullFormInspected: true,
+    resumeAttached: session.documents.some(document => document.kind === 'Resume'),
+    attachedDocumentVersions: session.documents.map(document => document.version),
+    inspectedAt: nowIso(at), unresolvedCount: unresolved.length,
+  };
+  const updated = {
+    ...session, status: unresolved.length ? 'paused' : 'active',
+    checkpointStatus: unresolved.length ? 'Human Action Required - form review' : 'Authenticated - form reviewed',
+    agentStatus: unresolved.length
+      ? `${unresolved.length} newly surfaced items require truthful answers or targeted approval; prior batch authorization does not cover material terms.`
+      : 'Authenticated form reviewed; no unresolved items remain.',
+    draft, postAuthFormReview: { items: classifiedItems, inspectedAt: nowIso(at) },
+    blockers: [...preservedBlockers, ...formBlockers], updatedAt: nowIso(at),
+    timeline: [...session.timeline, workflowTimelineEvent(session.step, 'post-auth-form-review', `Full authenticated form inspected; draft and attached resume preserved; ${unresolved.length} unresolved item(s) queued.`, at)],
+  };
+  state = { ...state, applicationSessions: state.applicationSessions.map(item => item.id === sessionId ? updated : item) };
+  const categories = classifiedItems.reduce((counts, item) => ({ ...counts, [item.category]: (counts[item.category] || 0) + 1 }), {});
+  return audit(state, 'POST_AUTH_FORM_INSPECTED', sessionId, { simulated: true, unresolvedKeys: unresolved.map(item => item.key), categories, resumeAttached: draft.resumeAttached }, at);
+}
+
+export function pauseManagedApplicationSession(inputState, sessionId, reason = 'browser-timeout', at) {
+  let state = createDeskState(inputState);
+  const session = state.applicationSessions.find(item => item.id === sessionId);
+  if (!session) throw new Error('Application session not found.');
+  if (reason === 'otp-delivery') return recordOtpChallenge(state, sessionId, { delivery: 'masked-email' }, at);
+  if (reason === 'ats-invalid-field-ids') {
+    const summary = 'Every visible section passed validation, but the employer ATS rejected required work-history or education field identifiers. Preserve the draft; never fabricate substitute values.';
+    const updated = {
+      ...session, status: 'blocked', checkpointStatus: 'Blocked - employer ATS configuration', terminal: true,
+      agentStatus: summary, updatedAt: nowIso(at), draft: { ...(session.draft || {}), status: 'preserved' },
+      blockers: [...session.blockers, { id: makeId('blocker'), type: 'ATS_CONFIGURATION', status: 'terminal', summary }],
+      timeline: [...session.timeline, workflowTimelineEvent(session.step, 'terminal-employer-ats', summary, at)],
+    };
+    state = { ...state, applicationSessions: state.applicationSessions.map(item => item.id === sessionId ? updated : item) };
+    if (session.roleId) state = transitionRole(state, session.roleId, 'Blocked', { reason: 'Employer ATS configuration rejected required field identifiers; draft preserved and no fabricated values substituted.' }, at);
+    return audit(state, 'MANAGED_APPLICATION_TERMINALLY_BLOCKED', sessionId, { simulated: true, reason, draftPreserved: true, submitted: false }, at);
+  }
+  const labels = {
+    'browser-timeout': 'Employer browser timed out; saved progress can be resumed.',
+    'login-required': 'Employer sign-in is required in the managed workspace.',
+    'ats-configuration': 'Employer ATS field configuration rejected a mapped value.',
+    'invalid-credentials': 'One authorized credential attempt failed. Stop attempts, preserve the form, and require password/reset action.',
+    'password-reset-requested': 'Password Help accepted one explicitly authorized email transmission. Outcome is pending; this does not prove an account exists or that an email was delivered.',
+  };
+  const summary = labels[reason] || 'Employer-site failure paused this application.';
+  const blockerType = reason === 'login-required' ? 'LOGIN'
+    : reason === 'ats-configuration' ? 'ATS_CONFIGURATION'
+      : reason === 'invalid-credentials' ? 'PASSWORD_RESET'
+        : reason === 'password-reset-requested' ? 'PASSWORD_RESET_PENDING'
+          : 'BROWSER_TIMEOUT';
+  const checkpointStatus = reason === 'invalid-credentials' ? 'Human Action Required - password/reset'
+    : reason === 'password-reset-requested' ? 'Password Reset Requested - Outcome Pending'
+        : session.checkpointStatus;
+  const updated = { ...session, status: 'paused', checkpointStatus, agentStatus: summary, updatedAt: nowIso(at), blockers: [...session.blockers, { id: makeId('blocker'), type: blockerType, status: 'open', summary }], timeline: [...session.timeline, workflowTimelineEvent(session.step, 'recovery-required', summary, at)] };
+  state = { ...state, applicationSessions: state.applicationSessions.map(item => item.id === sessionId ? updated : item) };
+  return audit(state, 'MANAGED_APPLICATION_PAUSED', sessionId, { simulated: true, reason }, at);
+}
+
+export function resumeManagedApplicationSession(inputState, sessionId, at) {
+  let state = createDeskState(inputState);
+  const session = state.applicationSessions.find(item => item.id === sessionId);
+  if (!session) throw new Error('Application session not found.');
+  if (session.terminal) throw new Error('This application is terminally blocked by employer ATS configuration and cannot be resumed without an employer-side change.');
+  const updated = { ...session, status: 'active', agentStatus: 'Saved employer step restored', updatedAt: nowIso(at), blockers: session.blockers.map(item => item.status === 'open' ? { ...item, status: 'resolved', resolvedAt: nowIso(at) } : item), timeline: [...session.timeline, workflowTimelineEvent(session.step, 'recovered', 'Saved application step and redacted context restored after interruption.', at)] };
+  state = { ...state, applicationSessions: state.applicationSessions.map(item => item.id === sessionId ? updated : item), activeApplicationSessionId: sessionId };
+  return audit(state, 'MANAGED_APPLICATION_RESUMED', sessionId, { simulated: true, step: updated.step }, at);
+}
+
+export function pipelineCounts(state) {
+  return PIPELINE_STATUSES.reduce((counts, status) => ({
+    ...counts,
+    [status]: state.roles.filter(role => role.status === status && (status !== 'Submitted' || role.receipt?.authority === 'employer-side')).length,
+  }), {});
+}
+
+export function importLegacyEntries(inputState, applications = [], tailored = [], at) {
+  let state = createDeskState(inputState);
+  let imported = 0;
+  let duplicates = 0;
+  let skipped = 0;
+  for (const entry of [...applications, ...tailored]) {
+    const employer = entry.employer || entry.company;
+    const title = entry.title || entry.jobTitle;
+    const directEmployerUrl = entry.directEmployerUrl || entry.jobUrl || entry.url;
+    if (!employer || !title || !directEmployerUrl) { skipped++; continue; }
+    const result = addRole(state, {
+      employer,
+      title,
+      requisitionId: entry.requisitionId || entry.jobId || '',
+      directEmployerUrl,
+      sourceUrl: directEmployerUrl,
+      sourceType: 'unknown',
+      remoteEligibility: entry.location || 'Unknown',
+      geographyEligibility: 'Unknown',
+      salaryDisclosure: entry.salary || 'Unknown',
+      postedDate: 'Unknown',
+      travel: 'Unknown',
+      schedule: 'Unknown',
+      materialGaps: [`Imported status "${entry.status || 'unknown'}" requires fresh evidence`],
+    }, at);
+    state = result.state;
+    if (result.duplicate) duplicates++; else imported++;
+  }
+  return { state, imported, duplicates, skipped };
+}

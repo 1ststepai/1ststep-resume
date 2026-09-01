@@ -1,5 +1,45 @@
+/* PDF text extraction — items must be joined by geometry, not by a blank space.
+   A resume with letter-spaced headings emits one item per glyph, so join(' ')
+   produced "P R O C U R E M E N T" and lost every line break. */
+function pdfItemsToText(items) {
+  var out = '';
+  var prev = null;
+  for (var i = 0; i < (items || []).length; i += 1) {
+    var item = items[i];
+    if (!item || typeof item.str !== 'string') continue;
+    if (item.str === '') { if (item.hasEOL) { out += '\n'; prev = null; } continue; }
+    if (prev) {
+      var t = item.transform || [0,0,0,0,0,0];
+      var p = prev.transform || [0,0,0,0,0,0];
+      var line = Math.abs(item.height || prev.height || 10) || 10;
+      var dy = Math.abs((t[5] || 0) - (p[5] || 0));
+      if (dy > line * 0.5) {
+        out += '\n';
+      } else {
+        var gap = (t[4] || 0) - ((p[4] || 0) + (prev.width || 0));
+        if (gap > line * 0.25) out += ' ';
+      }
+    }
+    out += item.str;
+    if (item.hasEOL) { out += '\n'; prev = null; } else { prev = item; }
+  }
+  return out;
+}
+function collapseLetterSpacing(text) {
+  return String(text == null ? '' : text)
+    .replace(/(?:\b[A-Za-z0-9]\b[ \t](?![ \t])){3,}\b[A-Za-z0-9]\b/g, function (run) {
+      return run.replace(/[ \t]+/g, '');
+    })
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n');
+}
+
     // -- State -----------------------------------------------------------------
     let apiKey = localStorage.getItem('1ststep_api_key') || '';
+    if (apiKey) {
+      localStorage.removeItem('1ststep_api_key');
+      apiKey = '';
+    }
     let currentTier = localStorage.getItem('1ststep_tier') || 'free'; // subscription tier - only modified by verifySubscription()
     let outputMode = 'essential'; // UI toggle: 'essential' = resume only, 'complete' = resume + cover letter
     let results = { resume: '', keywords: null, changes: [], coverLetter: '', score: null, positioningBrief: null };
@@ -25,6 +65,12 @@
     const FREE_TO_PRO_PRICE = '$24.99/month';
     const APP_GA_ID = 'G-RYPRPJDLVE';
     const PRO_TIER_ALIASES = new Set(['essential', 'complete', 'pro']);
+    function authenticatedJsonHeaders() {
+      try {
+        const token = JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}').tierToken || '';
+        return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+      } catch { return { 'Content-Type': 'application/json' }; }
+    }
     const PRO_FEATURE_COPY = {
       coverLetter: {
         headline: 'Create unlimited cover letters',
@@ -220,7 +266,7 @@
         try {
           const email = loadProfile?.()?.email;
           if (email) fetch('/api/track-event', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: authenticatedJsonHeaders(),
             body: JSON.stringify({ email, event: `streak_${s.count}` }),
           }).catch(() => {});
         } catch {}
@@ -804,6 +850,8 @@
         document.getElementById('welcomeOverlay').classList.add('visible');
         document.body.style.overflow = 'hidden'; // lock scroll behind modal
         _setChatWidgetVisible(false); // hide chat bubble so it can't be mis-tapped
+        setTimeout(() => _setChatWidgetVisible(false), 1200); // widget may inject after app initialization
+        setTimeout(() => _setChatWidgetVisible(false), 3500);
       } else {
         // Returning user - collapse hero immediately (they know the product)
         document.getElementById('heroSection')?.style.setProperty('display', 'none');
@@ -1110,6 +1158,10 @@
       document.getElementById('paywallBackBtn')?.addEventListener('click', closePaywallVerify);
 
       // Welcome / onboarding
+      document.getElementById('welcomeResumeProductBtn')?.addEventListener('click', _showResumeWelcomePanel);
+      document.getElementById('welcomeExtensionProductBtn')?.addEventListener('click', startExtensionSetup);
+      document.getElementById('welcomeAgentProductBtn')?.addEventListener('click', startJobAgent);
+      document.getElementById('welcomeProductBackBtn')?.addEventListener('click', _showWelcomeProductChooser);
       document.getElementById('welcomeUploadBtn')?.addEventListener('click', () => dismissWelcome('upload'));
       document.getElementById('welcomeBuildBtn')?.addEventListener('click', () => dismissWelcome('build'));
       document.getElementById('welcomeRestoreBtn')?.addEventListener('click', triggerRestoreBackup);
@@ -1250,6 +1302,41 @@
       scheduleMainScrollToTop([0, 160, 520]);
     }
 
+    function _showResumeWelcomePanel() {
+      const chooser = document.getElementById('welcomeProductChooser');
+      const panel = document.getElementById('welcomeResumePanel');
+      if (chooser) chooser.hidden = true;
+      if (panel) panel.hidden = false;
+      document.getElementById('welcomeUploadBtn')?.focus();
+      _pingTracker('onboarding_product_resume');
+    }
+
+    function _showWelcomeProductChooser() {
+      const chooser = document.getElementById('welcomeProductChooser');
+      const panel = document.getElementById('welcomeResumePanel');
+      const pathGrid = document.getElementById('welcomePathGrid');
+      const step2 = document.getElementById('welcomeStep2');
+      if (chooser) chooser.hidden = false;
+      if (panel) panel.hidden = true;
+      if (pathGrid) pathGrid.style.display = '';
+      if (step2) step2.style.display = 'none';
+      document.getElementById('welcomeResumeProductBtn')?.focus();
+    }
+
+    function startExtensionSetup() {
+      _pingTracker('onboarding_product_extension');
+      _closeWelcomeOverlay();
+      const opened = window.open(EXT_INSTALL_URL, '_blank', 'noopener,noreferrer');
+      if (!opened) window.location.assign(EXT_INSTALL_URL);
+      else showToast('Chrome Web Store opened. Return here after installing the assistant.', 'info');
+    }
+
+    function startJobAgent() {
+      _pingTracker('onboarding_product_job_agent');
+      localStorage.setItem('1ststep_welcomed', '1');
+      window.location.assign('/concierge');
+    }
+
     function dismissWelcome(path = false) {
       if (path === 'upload' || path === true) {
         // Keep overlay open - trigger file picker then advance to step 2 when resume lands
@@ -1282,8 +1369,12 @@
         const overlay = document.getElementById('welcomeOverlay');
         if (!overlay?.classList.contains('visible')) return; // already dismissed another way
         // Swap: hide path buttons, show JD step
+        const chooser = document.getElementById('welcomeProductChooser');
+        const panel = document.getElementById('welcomeResumePanel');
         const grid = document.getElementById('welcomePathGrid');
         const step2 = document.getElementById('welcomeStep2');
+        if (chooser) chooser.hidden = true;
+        if (panel) panel.hidden = false;
         if (grid) grid.style.display = 'none';
         if (step2) {
           step2.style.display = 'block';
@@ -1296,9 +1387,11 @@
     function reopenWelcome() {
       closeProfileModal();
       localStorage.removeItem('1ststep_welcomed');
+      _showWelcomeProductChooser();
       document.getElementById('welcomeOverlay').classList.add('visible');
       document.body.style.overflow = 'hidden';
       _setChatWidgetVisible(false);
+      setTimeout(() => _setChatWidgetVisible(false), 1200);
     }
 
 
@@ -1564,7 +1657,7 @@ ${resume.slice(0, 3000)}
           for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             const content = await page.getTextContent();
-            pages.push(content.items.map(item => item.str).join(' '));
+            pages.push(collapseLetterSpacing(pdfItemsToText(content.items)));
           }
           text = pages.join('\n\n');
 
@@ -2843,34 +2936,14 @@ ${resume.slice(0, 3000)}
         tierToken: _subCache?.tierToken || '',
       };
 
-      if (isLocal) {
-        // Running locally - use the direct Anthropic API with a local dev key.
-        // Set your key via: triple-click the logo -> Dev Controls.
-        if (!apiKey || !apiKey.startsWith('sk-ant-')) {
-          throw new Error('Running locally: open Dev Controls (triple-click the logo) and paste your API key to test the app before deploying.');
-        }
-        const resp = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true',
-          },
-          body: JSON.stringify(body)
-        });
-        if (!resp.ok) {
-          const err = await resp.json().catch(() => ({}));
-          throw new Error(err.error?.message || `API error ${resp.status}`);
-        }
-        const data = await resp.json();
-        return data.content[0].text;
+      if (isLocal && window.location.protocol === 'file:') {
+        throw new Error('AI requests require the local server so provider keys remain server-side.');
       }
 
       // Deployed on Vercel - use the server-side proxy (API key stays secret).
       const resp = await fetch('/api/claude', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(_subCache?.tierToken ? { Authorization: `Bearer ${_subCache.tierToken}` } : {}) },
         body: JSON.stringify(body)
       });
       if (!resp.ok) {
@@ -3754,20 +3827,20 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
             const stage = tailorCount === 1 ? 'active_user' : 'power_user';
             fetch('/api/ghl-stage', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: authenticatedJsonHeaders(),
               body: JSON.stringify({ email: _profile.email, stage }),
             }).catch(() => { });
             // Legacy event track (keep for any existing automations)
             if (tailorCount === 1) {
               fetch('/api/track-event', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authenticatedJsonHeaders(),
                 body: JSON.stringify({ email: _profile.email, event: 'first_tailor' }),
               }).catch(() => { });
             } else if (tailorCount === 5) {
               fetch('/api/track-event', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authenticatedJsonHeaders(),
                 body: JSON.stringify({ email: _profile.email, event: 'power_user' }),
               }).catch(() => { });
             }
@@ -4641,7 +4714,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
           for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             const content = await page.getTextContent();
-            pages.push(content.items.map(item => item.str).join(' '));
+            pages.push(collapseLetterSpacing(pdfItemsToText(content.items)));
           }
           text = pages.join('\n\n');
 
@@ -5111,11 +5184,7 @@ ${_resumeSlice}
       try {
         const res = await fetch(nominatimUrl, { headers: { 'Accept-Language': 'en-US,en' } });
         data = await res.json();
-      } catch {
-        // Fallback: try via CORS proxy
-        const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(nominatimUrl)}`);
-        data = await res.json();
-      }
+      } catch { throw new Error('Location lookup is temporarily unavailable.'); }
       if (!data || !data.length) throw new Error(`Could not find "${query}" - try a nearby city name or ZIP code`);
       return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), displayName: data[0].display_name };
     }
@@ -5234,20 +5303,14 @@ ${_resumeSlice}
       }
 
       let res;
-      if (IS_LOCAL_DEV && adzunaAppKey) {
-        // Local dev: call RapidAPI directly using the dev key
-        res = await fetch(`https://jsearch.p.rapidapi.com/search?${params}`, {
-          headers: {
-            'X-RapidAPI-Key': adzunaAppKey,
-            'X-RapidAPI-Host': 'jsearch.p.rapidapi.com',
-          }
-        });
-      } else if (IS_LOCAL_DEV && !adzunaAppKey) {
-        throw new Error('Set a RapidAPI dev key in Dev Controls to test job search locally.');
-      } else {
-        // Deployed: go through Vercel proxy (key is server-side)
-        res = await fetch(`/api/jobs?${params}`);
+      if (IS_LOCAL_DEV && window.location.protocol === 'file:') {
+        throw new Error('Job search requires the local server so provider keys remain server-side.');
       }
+      const subCache = JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}');
+      res = await fetch(`/api/jobs?${params}`, {
+        headers: subCache.tierToken ? { Authorization: `Bearer ${subCache.tierToken}` } : {},
+        signal: AbortSignal.timeout(12_000),
+      });
 
       if (res.status === 403 || res.status === 401) {
         throw new Error('Job search configuration error - contact support at evan@1ststep.ai');
@@ -5606,7 +5669,7 @@ ${desc}`;
         if (!email) return;
         fetch('/api/track-event', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authenticatedJsonHeaders(),
           body: JSON.stringify({ email, event, ...extra }),
         }).catch(() => { });
       } catch (e) { }
@@ -6623,7 +6686,7 @@ ${desc}`;
       // Fire-and-forget - never block the user flow
       fetch('/api/notify-signup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authenticatedJsonHeaders(),
         body: JSON.stringify({
           firstName: p.firstName,
           lastName: p.lastName,
@@ -8129,7 +8192,7 @@ ${resume.slice(0, 4000)}`,
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const content = await page.getTextContent();
-          pages.push(content.items.map(item => item.str).join(' '));
+          pages.push(collapseLetterSpacing(pdfItemsToText(content.items)));
         }
         const rawText = pages.join('\n\n').trim();
         if (!rawText) throw new Error('No text found in PDF - make sure you saved the LinkedIn PDF correctly');
@@ -9196,5 +9259,3 @@ ${_PRINT_BTN}
       const saved = localStorage.getItem('1ststep_theme') || 'dark';
       applyTheme(saved);
     })();
-
-

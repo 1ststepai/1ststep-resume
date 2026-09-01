@@ -483,6 +483,42 @@
 </div><!-- /.funnel -->
 
 <script>
+/* PDF text extraction — items must be joined by geometry, not by a blank space.
+   A resume with letter-spaced headings emits one item per glyph, so join(' ')
+   produced "P R O C U R E M E N T" and lost every line break. */
+function pdfItemsToText(items) {
+  var out = '';
+  var prev = null;
+  for (var i = 0; i < (items || []).length; i += 1) {
+    var item = items[i];
+    if (!item || typeof item.str !== 'string') continue;
+    if (item.str === '') { if (item.hasEOL) { out += '\n'; prev = null; } continue; }
+    if (prev) {
+      var t = item.transform || [0,0,0,0,0,0];
+      var p = prev.transform || [0,0,0,0,0,0];
+      var line = Math.abs(item.height || prev.height || 10) || 10;
+      var dy = Math.abs((t[5] || 0) - (p[5] || 0));
+      if (dy > line * 0.5) {
+        out += '\n';
+      } else {
+        var gap = (t[4] || 0) - ((p[4] || 0) + (prev.width || 0));
+        if (gap > line * 0.25) out += ' ';
+      }
+    }
+    out += item.str;
+    if (item.hasEOL) { out += '\n'; prev = null; } else { prev = item; }
+  }
+  return out;
+}
+function collapseLetterSpacing(text) {
+  return String(text == null ? '' : text)
+    .replace(/(?:\b[A-Za-z0-9]\b[ \t](?![ \t])){3,}\b[A-Za-z0-9]\b/g, function (run) {
+      return run.replace(/[ \t]+/g, '');
+    })
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n');
+}
+
 // ── Config ──────────────────────────────────────────────────────
 const STRIPE_URL = 'https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00';
 
@@ -667,7 +703,7 @@ async function readFile(file) {
           for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             const content = await page.getTextContent();
-            text += content.items.map(item => item.str).join(' ') + '\n';
+            text += collapseLetterSpacing(pdfItemsToText(content.items)) + '\n';
           }
           resolve(text.trim());
         } catch (err) { reject(err); }
