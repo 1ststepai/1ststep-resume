@@ -20,21 +20,36 @@ assert.equal(validatePreviewDeployment(deployment, { deploymentId, expectedProje
 const records = [
   { deploymentId, environment: 'preview', requestMethod: 'GET', requestPath: '/api/health/live', responseStatusCode: 200, message: '', logs: [] },
   { deploymentId, environment: 'preview', requestMethod: 'GET', requestPath: '/api/health/ready', responseStatusCode: 503, message: '', logs: [] },
+  { deploymentId, environment: 'preview', requestMethod: 'GET', requestPath: '/api/app-config', responseStatusCode: 200, message: '', logs: [] },
+  { deploymentId, environment: 'preview', requestMethod: 'GET', requestPath: '/api/concierge-preview-smoke', responseStatusCode: 200, message: '', logs: [] },
   { deploymentId, environment: 'preview', requestMethod: 'POST', requestPath: '/api/private', responseStatusCode: 401, message: 'discard me', logs: [] },
   { deploymentId: 'dpl_00000000000000000000', environment: 'preview', requestMethod: 'GET', requestPath: '/api/health/live', responseStatusCode: 200, message: 'other deployment', logs: [] },
 ];
 const summary = summarizePreviewLogs(records, { deploymentId });
 assert.equal(summary.ok, true);
-assert.equal(summary.qualifyingRecords, 2);
+assert.equal(summary.qualifyingRecords, 4);
 assert.equal(summary.discardedNonAllowlistedRecords, 1);
 assert.deepEqual(summary.routes['/api/health/live'].statusHistogram, { 200: 1 });
 assert.deepEqual(summary.routes['/api/health/ready'].statusHistogram, { 503: 1 });
 assert.equal(summary.rawMessagesEmitted, false);
 assert.equal(summary.rawLogsRetained, false);
+assert.equal(summary.unexpectedStatusRecords, 0);
+assert.deepEqual(summary.missingRoutes, []);
 
 assert.equal(summarizePreviewLogs([
   { deploymentId, environment: 'preview', requestMethod: 'GET', requestPath: '/api/health/live', responseStatusCode: 200, message: 'unexpected', logs: [] },
 ], { deploymentId }).ok, false);
+
+const unsettled = summarizePreviewLogs(records.map((record) => (
+  record.requestPath === '/api/health/live' ? { ...record, responseStatusCode: 0 } : record
+)), { deploymentId });
+assert.equal(unsettled.ok, false);
+assert.equal(unsettled.unexpectedStatusRecords, 1);
+assert.deepEqual(unsettled.routes['/api/health/live'].statusHistogram, { unknown: 1 });
+
+const missing = summarizePreviewLogs(records.filter((record) => record.requestPath !== '/api/app-config'), { deploymentId });
+assert.equal(missing.ok, false);
+assert.deepEqual(missing.missingRoutes, ['/api/app-config']);
 
 assert.deepEqual(parseLogJsonLines('progress\n{"requestPath":"/api/health/live"}\n'), [{ requestPath: '/api/health/live' }]);
 assert.throws(() => parseLogJsonLines('{bad json}'), /malformed JSON/i);

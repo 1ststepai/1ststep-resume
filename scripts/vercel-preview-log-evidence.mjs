@@ -10,6 +10,12 @@ const ALLOWED_PATHS = new Set([
   '/api/app-config',
   '/api/concierge-preview-smoke',
 ]);
+const EXPECTED_STATUSES = new Map([
+  ['/api/health/live', 200],
+  ['/api/health/ready', 503],
+  ['/api/app-config', 200],
+  ['/api/concierge-preview-smoke', 200],
+]);
 
 function fail(message) {
   throw new Error(message);
@@ -68,6 +74,7 @@ export function summarizePreviewLogs(records, { deploymentId }) {
   let discardedNonAllowlistedRecords = 0;
   let contentBearingAllowlistedRecords = 0;
   let qualifyingRecords = 0;
+  let unexpectedStatusRecords = 0;
 
   for (const record of records) {
     if (!record || typeof record !== 'object' || Array.isArray(record)) continue;
@@ -83,13 +90,24 @@ export function summarizePreviewLogs(records, { deploymentId }) {
     }
     const route = routes[record.requestPath] ||= { requests: 0, statusHistogram: {} };
     route.requests += 1;
-    const status = Number.isInteger(record.responseStatusCode) ? String(record.responseStatusCode) : 'unknown';
+    const validStatus = Number.isInteger(record.responseStatusCode)
+      && record.responseStatusCode >= 100
+      && record.responseStatusCode <= 599;
+    const status = validStatus ? String(record.responseStatusCode) : 'unknown';
+    if (!validStatus || record.responseStatusCode !== EXPECTED_STATUSES.get(record.requestPath)) {
+      unexpectedStatusRecords += 1;
+    }
     route.statusHistogram[status] = (route.statusHistogram[status] || 0) + 1;
   }
 
+  const missingRoutes = [...ALLOWED_PATHS].filter((path) => !routes[path]);
+
   return {
     schemaVersion: 1,
-    ok: qualifyingRecords > 0 && contentBearingAllowlistedRecords === 0,
+    ok: qualifyingRecords > 0
+      && contentBearingAllowlistedRecords === 0
+      && unexpectedStatusRecords === 0
+      && missingRoutes.length === 0,
     contentFree: true,
     containsCandidateValues: false,
     performsWrites: false,
@@ -98,6 +116,8 @@ export function summarizePreviewLogs(records, { deploymentId }) {
     qualifyingRecords,
     routes,
     contentBearingAllowlistedRecords,
+    unexpectedStatusRecords,
+    missingRoutes,
     discardedNonAllowlistedRecords,
     rawMessagesEmitted: false,
     rawLogsRetained: false,
