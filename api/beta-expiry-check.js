@@ -21,10 +21,19 @@
  *   CRON_SECRET         — simple shared secret to prevent public access
  */
 
+import { timingSafeEqual } from 'node:crypto';
+import { jobAgentRuntimeConfiguration, processNextJobAgentRun } from '../lib/job-agent-worker.js';
+
 const BETA_TTL_DAYS       = 15;
 const NOTIFY_DAYS_BEFORE  = 3;  // fire when ≤ 3 days left
 const GHL_BASE            = 'https://services.leadconnectorhq.com';
 const GHL_VERSION         = '2021-07-28';
+
+function safeEquals(left, right) {
+  const actual = Buffer.from(String(left || ''));
+  const expected = Buffer.from(String(right || ''));
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
 
 function ghlHeaders(apiKey) {
   return {
@@ -52,8 +61,7 @@ async function fetchContactsByTag(apiKey, locationId, tag) {
     });
 
     if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`GHL contacts fetch failed ${res.status}: ${body}`);
+      throw new Error(`GHL_CONTACTS_FETCH_FAILED_${res.status}`);
     }
 
     const data = await res.json();
@@ -106,13 +114,22 @@ export default async function handler(req, res) {
   // Auth check — Vercel cron sends Authorization header; manual callers send ?secret=
   const cronSecret = process.env.CRON_SECRET || '';
   const authHeader  = req.headers['authorization'] || '';
-  const querySecret = req.query?.secret || '';
+  if (cronSecret.length < 32) return res.status(503).json({ error: 'Cron authentication is not configured.' });
+  if (!safeEquals(authHeader, `Bearer ${cronSecret}`)) return res.status(401).json({ error: 'Unauthorized' });
 
-  if (cronSecret) {
-    const validBearer = authHeader === `Bearer ${cronSecret}`;
-    const validQuery  = querySecret === cronSecret;
-    if (!validBearer && !validQuery) {
-      return res.status(401).json({ error: 'Unauthorized' });
+  const jobAgent = { configured: false, processed: [], errorCode: null };
+  const jobAgentConfig = jobAgentRuntimeConfiguration();
+  if (jobAgentConfig) {
+    jobAgent.configured = true;
+    try {
+      for (let index = 0; index < 3; index += 1) {
+        const run = await processNextJobAgentRun(jobAgentConfig);
+        if (!run) break;
+        jobAgent.processed.push({ id: run.id, status: run.status, attempt: run.attempt, errorCode: run.lastErrorCode || null });
+      }
+    } catch (error) {
+      jobAgent.errorCode = 'JOB_AGENT_RECOVERY_FAILED';
+      console.error(JSON.stringify({ type: 'job-agent-recovery-error', name: error?.name || 'unknown' }));
     }
   }
 
@@ -122,25 +139,25 @@ export default async function handler(req, res) {
   const trialStageId = process.env.GHL_STAGE_TRIAL_ENDING;
 
   if (!apiKey || !locationId) {
-    return res.status(200).json({ skipped: true, reason: 'GHL not configured' });
+    return res.status(200).json({ skipped: true, reason: 'GHL not configured', jobAgent });
   }
 
   if (!pipelineId || !trialStageId) {
-    return res.status(200).json({ skipped: true, reason: 'Pipeline/stage IDs not configured — run fetch-ghl-ids.js first' });
+    return res.status(200).json({ skipped: true, reason: 'Pipeline/stage IDs not configured — run fetch-ghl-ids.js first', jobAgent });
   }
 
   const now          = Date.now();
   const betaTtlMs    = BETA_TTL_DAYS * 24 * 60 * 60 * 1000;
   const notifyMs     = NOTIFY_DAYS_BEFORE * 24 * 60 * 60 * 1000;
 
-  const results = { processed: 0, moved: 0, skipped: 0, errors: [] };
+  const results = { processed: 0, moved: 0, skipped: 0, errors: 0 };
 
   try {
     // Get all beta contacts that haven't been notified yet
     const betaContacts = await fetchContactsByTag(apiKey, locationId, 'beta');
     const eligible = betaContacts.filter(c => !(c.tags || []).includes('trial_ending'));
 
-    console.log(`Beta expiry check: ${betaContacts.length} beta contacts, ${eligible.length} not yet notified`);
+    console.log(JSON.stringify({ type: 'beta-expiry-scan', betaContacts: betaContacts.length, eligible: eligible.length }));
 
     for (const contact of eligible) {
       results.processed++;
@@ -158,7 +175,7 @@ export default async function handler(req, res) {
             if (moved) {
               await addTag(apiKey, contact.id, 'trial_ending');
               results.moved++;
-              console.log(`✅ Moved to Trial Ending: ${contact.email} (${Math.ceil(msLeft / (1000*60*60*24))}d left)`);
+              console.log(JSON.stringify({ type: 'beta-expiry-transition', outcome: 'moved', daysLeft: Math.ceil(msLeft / (1000*60*60*24)) }));
             } else {
               results.skipped++;
             }
@@ -182,23 +199,24 @@ export default async function handler(req, res) {
               // Only tag after opportunity is confirmed created
               await addTag(apiKey, contact.id, 'trial_ending');
               results.moved++;
-              console.log(`✅ Created Trial Ending opportunity: ${contact.email}`);
+              console.log(JSON.stringify({ type: 'beta-expiry-transition', outcome: 'created' }));
             } catch (err) {
-              console.error(`Failed to create Trial Ending opportunity for ${contact.email}:`, err.message);
+              console.error(JSON.stringify({ type: 'beta-expiry-transition-error', name: err?.name || 'unknown' }));
+              results.errors++;
               results.skipped++;
             }
           }
         }
       } catch (err) {
-        results.errors.push({ contact: contact.email, error: err.message });
-        console.error(`Error processing ${contact.email}:`, err.message);
+        results.errors++;
+        console.error(JSON.stringify({ type: 'beta-expiry-contact-error', name: err?.name || 'unknown' }));
       }
     }
   } catch (err) {
-    console.error('Beta expiry check failed:', err.message);
-    return res.status(500).json({ error: err.message, results });
+    console.error(JSON.stringify({ type: 'beta-expiry-check-error', name: err?.name || 'unknown' }));
+    return res.status(500).json({ error: 'Beta expiry processing failed.', code: 'BETA_EXPIRY_PROCESSING_FAILED', results, jobAgent });
   }
 
-  console.log(`Beta expiry check complete:`, results);
-  return res.status(200).json({ ok: true, ...results });
+  console.log(JSON.stringify({ type: 'beta-expiry-complete', ...results }));
+  return res.status(200).json({ ok: true, ...results, jobAgent });
 }

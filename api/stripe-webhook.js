@@ -21,21 +21,15 @@
 
 import Stripe from 'stripe';
 import { alertOnAbuse } from './_alert.js';
+import {
+  claimStripeWebhookEvent, completeStripeWebhookEvent, releaseStripeWebhookEvent,
+  stripeWebhookIdempotencyConfiguration,
+} from '../lib/stripe-webhook-idempotency.js';
+import { recordConfiguredJobAgentOperationalEvent } from '../lib/job-agent-operational-metrics.js';
+import { sendConfiguredJobAgentOperatorAlert } from '../lib/job-agent-operator-alert.js';
 
 // Webhooks must receive the raw body — disable body parsing
 export const config = { api: { bodyParser: false } };
-
-// ── Idempotency guard — prevents duplicate processing on Stripe retries ───────
-// Stores the last 1,000 processed event IDs in memory.
-const processedEvents = new Set();
-function markProcessed(eventId) {
-  processedEvents.add(eventId);
-  if (processedEvents.size > 1000) {
-    // Remove oldest entries (Sets maintain insertion order)
-    const toDelete = [...processedEvents].slice(0, 200);
-    toDelete.forEach(id => processedEvents.delete(id));
-  }
-}
 
 async function getRawBody(req) {
   return new Promise((resolve, reject) => {
@@ -50,7 +44,7 @@ async function getRawBody(req) {
 // Sends a transactional email via Resend so Evan gets an alert for critical events.
 // Requires RESEND_API_KEY env var in Vercel.
 // 'from' uses resend.dev until 1ststep.ai domain is verified in Resend.
-async function sendAdminAlert(subject, message, replyTo = '') {
+async function sendAdminAlert(subject, message, replyTo = '', idempotencyKey = '') {
   const resendKey = process.env.RESEND_API_KEY;
   if (!resendKey) {
     console.log('RESEND_API_KEY not set — skipping admin alert');
@@ -82,17 +76,18 @@ async function sendAdminAlert(subject, message, replyTo = '') {
       headers: {
         'Authorization': `Bearer ${resendKey}`,
         'Content-Type':  'application/json',
+        ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
       },
       body: JSON.stringify(payload),
     });
     const data = await r.json();
     if (r.ok) {
-      console.log(`✅ Admin alert sent via Resend: ${data.id}`);
+      console.log(JSON.stringify({ type: 'admin-alert-delivery', outcome: 'sent' }));
     } else {
-      console.error('Resend admin alert error:', JSON.stringify(data));
+      console.error(JSON.stringify({ type: 'admin-alert-delivery-failed', status: r.status }));
     }
   } catch (err) {
-    console.error('Admin alert send failed:', err.message);
+    console.error(JSON.stringify({ type: 'admin-alert-delivery-error', name: err?.name || 'unknown' }));
   }
 }
 
@@ -135,12 +130,12 @@ async function pushToGHL({ email, name, tier }) {
     const data = await r.json();
     contactId = data.contact?.id;
     if (contactId) {
-      console.log(`✅ GHL contact upserted: ${contactId} (${email})`);
+      console.log('GHL billing contact captured.');
     } else {
-      console.error('GHL contact upsert returned no ID:', JSON.stringify(data));
+      console.error(JSON.stringify({ type: 'ghl-billing-contact-missing-id' }));
     }
   } catch (err) {
-    console.error('GHL contact upsert error:', err.message);
+    console.error(JSON.stringify({ type: 'ghl-billing-contact-upsert-error', name: err?.name || 'unknown' }));
     return;
   }
 
@@ -169,7 +164,7 @@ async function pushToGHL({ email, name, tier }) {
         headers,
         body: JSON.stringify(updateBody),
       });
-      console.log(`✅ GHL opportunity moved to Converted (${tierLabel}): ${existingOpp.id}`);
+      console.log(JSON.stringify({ type: 'ghl-opportunity-transition', outcome: 'moved' }));
     } else {
       // Create new opportunity directly in Converted stage
       const oppBody = {
@@ -188,13 +183,13 @@ async function pushToGHL({ email, name, tier }) {
       const data = await r.json();
       const oppId = data.opportunity?.id;
       if (oppId) {
-        console.log(`✅ GHL opportunity created in Converted (${tierLabel}): ${oppId}`);
+        console.log(JSON.stringify({ type: 'ghl-opportunity-transition', outcome: 'created' }));
       } else {
-        console.error('GHL opportunity creation failed:', JSON.stringify(data));
+        console.error(JSON.stringify({ type: 'ghl-opportunity-create-failed', status: r.status }));
       }
     }
   } catch (err) {
-    console.error('GHL opportunity error:', err.message);
+    console.error(JSON.stringify({ type: 'ghl-opportunity-error', name: err?.name || 'unknown' }));
   }
 }
 
@@ -211,7 +206,7 @@ async function updateGHLOnChurn({ customerId, stripe, event }) {
     const customer = await stripe.customers.retrieve(customerId);
     email = customer.email || '';
   } catch (err) {
-    console.error('Could not retrieve customer for GHL update:', err.message);
+    console.error(JSON.stringify({ type: 'stripe-customer-retrieval-error', name: err?.name || 'unknown' }));
     return;
   }
   if (!email) return;
@@ -233,12 +228,12 @@ async function updateGHLOnChurn({ customerId, stripe, event }) {
     });
     const data = await r.json();
     if (data.contact?.id) {
-      console.log(`✅ GHL contact updated (${event}): ${data.contact.id} (${email})`);
+      console.log(JSON.stringify({ type: 'ghl-billing-contact-update', outcome: 'completed' }));
     } else {
-      console.error('GHL churn update returned no ID:', JSON.stringify(data));
+      console.error(JSON.stringify({ type: 'ghl-churn-update-missing-id' }));
     }
   } catch (err) {
-    console.error('GHL churn update error:', err.message);
+    console.error(JSON.stringify({ type: 'ghl-churn-update-error', name: err?.name || 'unknown' }));
   }
 }
 
@@ -255,7 +250,7 @@ async function getTierFromSession(stripe, sessionId) {
       ? 'complete'
       : 'complete';
   } catch (err) {
-    console.error('Could not determine tier from session:', err.message);
+    console.error(JSON.stringify({ type: 'subscription-tier-restore-error', name: err?.name || 'unknown' }));
     return 'complete'; // single paid plan: Job Hunt Pass
   }
 }
@@ -272,6 +267,14 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Webhook not configured' });
   }
 
+  const idempotency = stripeWebhookIdempotencyConfiguration(process.env);
+  if (!idempotency) {
+    console.error('Durable Stripe webhook idempotency is not configured');
+    await recordConfiguredJobAgentOperationalEvent('stripe_webhook_failure');
+    await sendConfiguredJobAgentOperatorAlert('stripe_webhook_processing_failure');
+    return res.status(503).json({ error: 'Webhook processing is temporarily unavailable.' });
+  }
+
   const stripe  = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' });
   const rawBody = await getRawBody(req);
   const sig     = req.headers['stripe-signature'];
@@ -280,20 +283,33 @@ export default async function handler(req, res) {
   try {
     event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
+    console.error(JSON.stringify({ type: 'stripe-webhook-signature-failed', name: err?.name || 'unknown' }));
     alertOnAbuse('webhook_sig_failure', req.headers['x-real-ip'] || 'unknown', err.message);
-    return res.status(400).json({ error: `Webhook error: ${err.message}` });
+    return res.status(400).json({ error: 'Invalid webhook signature.' });
   }
 
-  // ── Idempotency check — ignore duplicate deliveries ────────────────────────
-  if (processedEvents.has(event.id)) {
-    console.log(`Duplicate webhook event ignored: ${event.id}`);
+  let claim;
+  try {
+    claim = await claimStripeWebhookEvent({ ...idempotency, eventId: event.id });
+  } catch (error) {
+    console.error('Stripe webhook durable claim failed:', error?.name || 'unknown');
+    await recordConfiguredJobAgentOperationalEvent('stripe_webhook_failure');
+    await sendConfiguredJobAgentOperatorAlert('stripe_webhook_processing_failure');
+    return res.status(503).json({ error: 'Webhook processing is temporarily unavailable.' });
+  }
+  if (claim.status === 'completed') {
+    await recordConfiguredJobAgentOperationalEvent('stripe_webhook_duplicate');
     return res.status(200).json({ received: true, duplicate: true });
   }
-  markProcessed(event.id);
+  if (claim.status === 'busy') {
+    await recordConfiguredJobAgentOperationalEvent('stripe_webhook_retry_deferred');
+    return res.status(503).json({ error: 'Webhook event is already processing; retry later.' });
+  }
+  const alertKey = `stripe-webhook-${claim.eventReference}`;
 
   // ── Handle events ──────────────────────────────────────────────────────────
-  switch (event.type) {
+  try {
+    switch (event.type) {
 
     case 'checkout.session.completed': {
       const session      = event.data.object;
@@ -304,7 +320,7 @@ export default async function handler(req, res) {
 
       const tier      = await getTierFromSession(stripe, session.id);
       const tierLabel = 'Job Hunt Pass';
-      console.log(`   Tier: ${tier}`);
+      console.log(JSON.stringify({ type: 'stripe-checkout-completed', outcome: 'observed' }));
 
       // Sync to GHL CRM
       await pushToGHL({ email, name, tier });
@@ -314,18 +330,20 @@ export default async function handler(req, res) {
         `💰 New subscriber — ${tierLabel} plan`,
         `Name:   ${name || '(not provided)'}\nEmail:  ${email}\nPlan:   ${tierLabel}\nAmount: ${amountPaid}\nTime:   ${new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })}\n\nContact has been added to GHL automatically.`,
         email,
+        alertKey,
       );
       break;
     }
 
     case 'customer.subscription.updated': {
       const sub = event.data.object;
-      console.log(`🔄 Subscription updated — id: ${sub.id}, status: ${sub.status}`);
+      console.log(JSON.stringify({ type: 'stripe-subscription-updated', status: sub.status }));
       // Alert if subscription moves to a non-active state (past_due, unpaid, etc.)
       if (!['active', 'trialing'].includes(sub.status)) {
         await sendAdminAlert(
           `⚠️ Subscription status changed: ${sub.status}`,
-          `Subscription ID: ${sub.id}\nCustomer: ${sub.customer}\nStatus: ${sub.status}\nCheck Stripe for details.`
+          `Subscription ID: ${sub.id}\nCustomer: ${sub.customer}\nStatus: ${sub.status}\nCheck Stripe for details.`,
+          '', alertKey,
         );
       }
       break;
@@ -333,13 +351,14 @@ export default async function handler(req, res) {
 
     case 'customer.subscription.deleted': {
       const sub = event.data.object;
-      console.log(`❌ Subscription cancelled — id: ${sub.id}`);
+      console.log(JSON.stringify({ type: 'stripe-subscription-cancelled', status: 'observed' }));
       // Update GHL — mark contact as churned
       await updateGHLOnChurn({ customerId: sub.customer, stripe, event: 'cancelled' });
       // Alert Evan
       await sendAdminAlert(
         `❌ Subscription cancelled`,
-        `Subscription ID: ${sub.id}\nCustomer ID: ${sub.customer}\nCancelled at: ${new Date().toLocaleString()}\n\nCheck Stripe and reach out to win them back.`
+        `Subscription ID: ${sub.id}\nCustomer ID: ${sub.customer}\nCancelled at: ${new Date().toLocaleString()}\n\nCheck Stripe and reach out to win them back.`,
+        '', alertKey,
       );
       break;
     }
@@ -347,19 +366,29 @@ export default async function handler(req, res) {
     case 'invoice.payment_failed': {
       const invoice = event.data.object;
       const amountDollars = (invoice.amount_due / 100).toFixed(2);
-      console.log(`⚠️  Payment failed — customer: ${invoice.customer}, amount: $${amountDollars}`);
+      console.log(JSON.stringify({ type: 'stripe-payment-failed', status: 'observed' }));
       // Update GHL — tag contact as payment_failed
       await updateGHLOnChurn({ customerId: invoice.customer, stripe, event: 'payment_failed' });
       // Alert Evan
       await sendAdminAlert(
         `⚠️ Payment failed — $${amountDollars}`,
-        `Customer ID: ${invoice.customer}\nInvoice ID: ${invoice.id}\nAmount due: $${amountDollars}\nAttempt: ${invoice.attempt_count}\n\nStripe will retry automatically. Consider reaching out.`
+        `Customer ID: ${invoice.customer}\nInvoice ID: ${invoice.id}\nAmount due: $${amountDollars}\nAttempt: ${invoice.attempt_count}\n\nStripe will retry automatically. Consider reaching out.`,
+        '', alertKey,
       );
       break;
     }
 
     default:
       console.log(`Unhandled event type: ${event.type}`);
+    }
+    await completeStripeWebhookEvent({ ...idempotency, eventId: event.id, leaseToken: claim.leaseToken });
+    await recordConfiguredJobAgentOperationalEvent('stripe_webhook_completed');
+  } catch (error) {
+    await releaseStripeWebhookEvent({ ...idempotency, eventId: event.id, leaseToken: claim.leaseToken }).catch(() => {});
+    console.error('Stripe webhook processing failed:', error?.name || 'unknown');
+    await recordConfiguredJobAgentOperationalEvent('stripe_webhook_failure');
+    await sendConfiguredJobAgentOperatorAlert('stripe_webhook_processing_failure');
+    return res.status(500).json({ error: 'Webhook processing failed and will be retried.' });
   }
 
   return res.status(200).json({ received: true });

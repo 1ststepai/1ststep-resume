@@ -43,17 +43,7 @@ export default function handler(req, res) {
 
   // Live launch default is public. Set BETA_MODE=true only for invite-only beta builds.
   const betaMode = process.env.BETA_MODE === 'true';
-  const analyticsUrl = (process.env.AGENT_ANALYTICS_URL || '').trim().replace(/\/+$/, '');
-  const analyticsProject = (process.env.AGENT_ANALYTICS_PROJECT || '').trim();
-  const analyticsToken = (process.env.AGENT_ANALYTICS_TOKEN || '').trim();
-  const analytics = analyticsUrl && analyticsProject && analyticsToken
-    ? {
-        enabled: true,
-        url: analyticsUrl,
-        project: analyticsProject,
-        token: analyticsToken,
-      }
-    : { enabled: false };
-
-  return res.status(200).json({ betaMode, analytics });
+  // Provider tokens are never returned to browsers. Client events use the
+  // server-side /api/track-event proxy when analytics is enabled.
+  return res.status(200).json({ betaMode, analytics: { enabled: false } });
 }

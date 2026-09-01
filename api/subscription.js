@@ -21,6 +21,11 @@
 import Stripe from 'stripe';
 import { createHmac, randomBytes, randomInt, timingSafeEqual } from 'crypto';
 import { alertOnAbuse } from './_alert.js';
+import { enforceDurableRateLimit, sendRateLimitResult } from '../lib/durable-rate-limit.js';
+import { accessSessionToken, clearAccessSessionCookie, isOriginAllowed, setAccessSessionCookie } from '../lib/api-security.js';
+import { createUserSession, readUserSession, revokeAllUserSessions, revokeUserSession, userSessionRuntimeConfiguration } from '../lib/user-session-store.js';
+import { jobAgentEntitlementsForSubscription } from '../lib/job-agent-entitlement.js';
+import { isAdministratorSubject } from '../lib/admin-subject.js';
 
 // ── Tier token helpers ────────────────────────────────────────────────────────
 // A tierToken is: base64(email + "|" + tier + "|" + expiry) + "." + HMAC
@@ -35,6 +40,29 @@ function signTierToken(email, tier) {
   const payload = Buffer.from(`${email}|${tier}|${exp}`).toString('base64');
   const sig     = createHmac('sha256', secret).update(payload).digest('hex');
   return `${payload}.${sig}`;
+}
+
+async function sendSignedSession(req, res, email, tier, fields = {}) {
+  const tierToken = signTierToken(email, tier);
+  if (!tierToken) return res.status(503).json({ tier: 'free', error: 'Secure access is not configured.' });
+  if (String(req.query?.client || '') === 'job-agent') {
+    if (!isOriginAllowed(req)) return res.status(403).json({ tier: 'free', error: 'Request origin is not authorized.' });
+    const runtime = userSessionRuntimeConfiguration();
+    if (runtime) {
+      const entitlements = jobAgentEntitlementsForSubscription({ client: 'job-agent', tier, env: process.env });
+      const session = await createUserSession({ ...runtime, subject: email, tier, entitlements });
+      setAccessSessionCookie(res, session.token, { maxAgeSeconds: session.maxAgeSeconds });
+      return res.status(200).json({ tier, ...fields, session: 'http-only-revocable', sessionExpiresAt: session.expiresAt });
+    }
+    if (process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production') {
+      return res.status(503).json({ tier: 'free', error: 'Secure signed-user sessions are temporarily unavailable.' });
+    }
+    setAccessSessionCookie(res, tierToken, { maxAgeSeconds: TOKEN_TTL_MS / 1000 });
+    return res.status(200).json({ tier, ...fields, session: 'http-only-development' });
+  }
+  // Keep the bearer token only for legacy clients while they are migrated.
+  setAccessSessionCookie(res, tierToken, { maxAgeSeconds: TOKEN_TTL_MS / 1000 });
+  return res.status(200).json({ tier, ...fields, tierToken });
 }
 
 export function verifyTierToken(token) {
@@ -166,8 +194,7 @@ async function sendSubscriptionRestoreCode(email, code) {
   });
 
   if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    console.error('Subscription restore email failed:', response.status, body.slice(0, 300));
+    console.error(JSON.stringify({ type: 'subscription-restore-email-failed', status: response.status }));
     return false;
   }
   return true;
@@ -315,8 +342,7 @@ async function exchangeLinkedInCode(code) {
     }),
   });
   if (!r.ok) {
-    const errorBody = await r.text(); // Get more details from the response
-    console.error(`LinkedIn token exchange failed: ${r.status} - ${errorBody}`);
+    console.error(JSON.stringify({ type: 'linkedin-token-exchange-failed', status: r.status }));
     throw new Error(`LinkedIn token exchange failed: ${r.status}`);
   }
   return r.json();
@@ -328,8 +354,7 @@ async function fetchLinkedInProfile(accessToken) {
     headers: { 'Authorization': `Bearer ${accessToken}` },
   });
   if (!r.ok) {
-    const errorBody = await r.text();
-    console.error(`LinkedIn userinfo failed: ${r.status} - ${errorBody}`);
+    console.error(JSON.stringify({ type: 'linkedin-userinfo-failed', status: r.status }));
     throw new Error(`LinkedIn userinfo failed: ${r.status}`);
   }
   return r.json();
@@ -370,7 +395,26 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  if (String(req.query?.client || '') === 'job-agent' && !isOriginAllowed(req)) {
+    return res.status(403).json({ tier: 'free', error: 'Request origin is not authorized.' });
+  }
+
   const action = req.query.action || '';
+
+  if (action === 'logout' || action === 'logout-all') {
+    if (!isOriginAllowed(req)) return res.status(403).json({ error: 'Request origin is not authorized.' });
+    const runtime = userSessionRuntimeConfiguration();
+    const token = accessSessionToken(req);
+    if (runtime && token.startsWith('s1.')) {
+      const session = await readUserSession({ ...runtime, token });
+      if (session) {
+        if (action === 'logout-all') await revokeAllUserSessions({ ...runtime, subject: session.subject });
+        else await revokeUserSession({ ...runtime, token, subject: session.subject });
+      }
+    }
+    clearAccessSessionCookie(res);
+    return res.status(200).json({ signedOut: true, allDevices: action === 'logout-all' });
+  }
 
   // ── LinkedIn: init — return auth URL ─────────────────────────────────────
   if (action === 'linkedin-init') {
@@ -389,7 +433,7 @@ export default async function handler(req, res) {
     // Strict origin check for LinkedIn callback to prevent CSRF
     const origin = req.headers['origin'] || '';
     if (!ALLOWED_ORIGINS.includes(origin) && !origin.endsWith('.vercel.app')) {
-      console.error(`Invalid origin for LinkedIn callback: ${origin}`);
+      console.error(JSON.stringify({ type: 'linkedin-callback-origin-rejected' }));
       return res.status(403).send(renderPopupHtml({ error: 'invalid_origin' }));
     }
 
@@ -420,7 +464,7 @@ export default async function handler(req, res) {
       console.log('LinkedIn auth success');
       return res.status(200).send(renderPopupHtml({ profile: data }));
     } catch (err) {
-      console.error('LinkedIn callback error:', err.message);
+      console.error(JSON.stringify({ type: 'linkedin-callback-error', name: err?.name || 'unknown' }));
       return res.status(200).send(renderPopupHtml({ error: 'auth_failed' }));
     }
   }
@@ -430,6 +474,16 @@ export default async function handler(req, res) {
            || (req.headers['x-forwarded-for'] || '').split(',').pop()?.trim() // Use optional chaining and trim
            || req.socket?.remoteAddress
            || 'unknown';
+
+  const durableLimit = await enforceDurableRateLimit(req, {
+    scope: `subscription:${/^[a-z-]{0,40}$/.test(String(action)) ? action || 'check' : 'other'}`,
+    subject: String(req.query.email || '').trim().toLowerCase(),
+    ip,
+    ipRule: { limit: 10, window: '1 m' },
+    accountRule: { limit: 30, window: '1 d' },
+    globalRule: { limit: 10_000, window: '1 d' },
+  });
+  if (!durableLimit.ok) return sendRateLimitResult(res, durableLimit, 'Too many subscription checks. Please try again later.');
 
   if (isSubCheckRateLimited(ip)) {
     alertOnAbuse('rate_limited', ip, `action:${action || 'check'}`); // More context in alert
@@ -443,10 +497,8 @@ export default async function handler(req, res) {
 
   const ownerRestoreCode = req.headers['x-owner-access-secret'] || '';
   if (hasOwnerAccess(email, ownerRestoreCode)) {
-    return res.status(200).json({
-      tier: 'complete',
+    return sendSignedSession(req, res, email, 'complete', {
       status: 'owner_access',
-      tierToken: signTierToken(email, 'complete'),
       expiresAt: null,
       expiresInDays: null,
     });
@@ -481,14 +533,24 @@ export default async function handler(req, res) {
     });
   }
 
+  // A successfully completed email challenge proves control of the configured
+  // owner inbox. Only then may an administrator receive the owner session.
+  if (isAdministratorSubject(email)) {
+    return sendSignedSession(req, res, email, 'complete', {
+      status: 'owner_verified_access',
+      expiresAt: null,
+      expiresInDays: null,
+    });
+  }
+
   // Legacy private-access users no longer receive paid entitlement by email alone.
   if (isBetaEmail(email)) {
-    return res.status(200).json({ tier: 'free', status: 'legacy_access_free', expiresAt: null, expiresInDays: null });
+    return sendSignedSession(req, res, email, 'free', { status: 'legacy_access_free', expiresAt: null, expiresInDays: null });
   }
 
   if (!process.env.STRIPE_SECRET_KEY) {
     console.error('STRIPE_SECRET_KEY not set. Subscription check unavailable.');
-    return res.status(200).json({ tier: 'free', error: 'Subscription check unavailable.' });
+    return sendSignedSession(req, res, email, 'free', { error: 'Subscription check unavailable.' });
   }
 
   try {
@@ -499,7 +561,7 @@ export default async function handler(req, res) {
 
     if (!customers.data.length) {
       // Return same shape as 'free' — don't reveal whether the email has ever been seen
-      return res.status(200).json({ tier: 'free', status: 'no_active_subscription' });
+      return sendSignedSession(req, res, email, 'free', { status: 'no_active_subscription' });
     }
 
     // Check each customer for an active subscription
@@ -523,7 +585,7 @@ export default async function handler(req, res) {
               const expiresMs = passExpMs || periodEndMs;
               const expiresAt = expiresMs ? new Date(expiresMs).toISOString() : null;
               const expiresInDays = expiresMs ? Math.max(0, Math.ceil((expiresMs - Date.now()) / 86400000)) : null;
-              return res.status(200).json({ tier, status: sub.status, tierToken: signTierToken(email, tier), expiresAt, expiresInDays });
+              return sendSignedSession(req, res, email, tier, { status: sub.status, expiresAt, expiresInDays });
             }
           }
         }
@@ -546,7 +608,7 @@ export default async function handler(req, res) {
               const expiresMs = sub.current_period_end ? sub.current_period_end * 1000 : null;
               const expiresAt = expiresMs ? new Date(expiresMs).toISOString() : null;
               const expiresInDays = expiresMs ? Math.max(0, Math.ceil((expiresMs - Date.now()) / 86400000)) : null;
-              return res.status(200).json({ tier, status: 'trialing', tierToken: signTierToken(email, tier), expiresAt, expiresInDays });
+              return sendSignedSession(req, res, email, tier, { status: 'trialing', expiresAt, expiresInDays });
             }
           }
         }
@@ -554,11 +616,11 @@ export default async function handler(req, res) {
     }
 
     // Customer exists but no active paid or trialing subscription found
-    return res.status(200).json({ tier: 'free', status: 'no_active_subscription' });
+    return sendSignedSession(req, res, email, 'free', { status: 'no_active_subscription' });
 
   } catch (err) {
-    console.error('Stripe subscription check error:', err.message);
-    // Fail open — don't block the user if Stripe is temporarily down or an unexpected error occurs
-    return res.status(200).json({ tier: 'free', error: 'Subscription check failed.' });
+    console.error(JSON.stringify({ type: 'stripe-subscription-check-error', name: err?.name || 'unknown' }));
+    // Fail closed to free access when Stripe is unavailable or returns an unexpected error.
+    return sendSignedSession(req, res, email, 'free', { error: 'Subscription check failed.' });
   }
 }

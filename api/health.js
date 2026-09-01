@@ -18,6 +18,10 @@
  */
 
 import { timingSafeEqual } from 'crypto';
+import { randomBytes } from 'node:crypto';
+import { jobAgentRuntimeConfiguration } from '../lib/job-agent-runtime-configuration.js';
+import { jobAgentNeedsYouNotificationConfiguration } from '../lib/job-agent-notification-store.js';
+import { jobAgentLaunchManifest } from '../lib/job-agent-launch-manifest.js';
 
 export const maxDuration = 60;
 
@@ -242,7 +246,7 @@ export default async function handler(req, res) {
 
     let contacts;
     try { contacts = await fetchContactsByTag(tag); }
-    catch (err) { return res.status(500).json({ error: `GHL fetch failed: ${err.message}` }); }
+    catch (err) { console.error(JSON.stringify({ type: 'health-ghl-fetch-error', name: err?.name || 'unknown' })); return res.status(500).json({ error: 'CRM health data is unavailable.', code: 'HEALTH_CRM_FETCH_FAILED' }); }
 
     const eligible = contacts.filter(c => c.email && c.email.includes('@'));
     const results  = { total: eligible.length, sent: 0, skipped: 0, errors: [], dryRun };
@@ -289,7 +293,7 @@ export default async function handler(req, res) {
           }),
         });
         const data = await r.json();
-        if (r.ok) { results.sent++; console.log(`✅ Sent to ${contact.email}`); }
+        if (r.ok) { results.sent++; console.log(JSON.stringify({ type: 'health-reminder-sent' })); }
         else { results.errors.push({ email: contact.email, error: data.message }); results.skipped++; }
       } catch (err) {
         results.errors.push({ email: contact.email, error: err.message });
@@ -320,10 +324,10 @@ export default async function handler(req, res) {
       const result = await upsertGhlContact(email, tags);
       if (result.ok && result.contactId) {
         results.ok.push({ email, contactId: result.contactId });
-        console.log(`✅ Backfilled GHL contact: ${email} (${result.contactId})`);
+        console.log(JSON.stringify({ type: 'health-ghl-backfill', outcome: 'completed' }));
       } else {
         results.errors.push({ email, status: result.status, detail: JSON.stringify(result.data) });
-        console.error(`❌ Backfill failed for ${email}:`, result.status, JSON.stringify(result.data));
+        console.error(JSON.stringify({ type: 'health-ghl-backfill', outcome: 'failed', status: result.status }));
       }
       await new Promise(r => setTimeout(r, 200));
     }
@@ -339,7 +343,7 @@ export default async function handler(req, res) {
   const cronSecret   = process.env.CRON_SECRET || '';
   const healthSecret = process.env.HEALTH_CHECK_SECRET || '';
 
-  const validQuerySecret = safeEquals(querySecret, healthSecret);
+  const validQuerySecret = process.env.VERCEL_ENV !== 'production' && safeEquals(querySecret, healthSecret);
   const validCronHeader  = cronSecret && authHeader.startsWith('Bearer ') && safeEquals(authHeader.slice(7), cronSecret);
 
   if (!validQuerySecret && !validCronHeader) {
@@ -365,6 +369,13 @@ export default async function handler(req, res) {
     ['GHL_LOCATION_ID',       'GoHighLevel location'],
     ['RAPIDAPI_KEY',          'JSearch job search'],
     ['RESEND_API_KEY',        'Email alerts'],
+    ['RESEND_FROM',           'Email sender identity'],
+    ['UPSTASH_REDIS_REST_URL','Durable Job Agent store'],
+    ['UPSTASH_REDIS_REST_TOKEN','Durable Job Agent credentials'],
+    ['BETA_DATA_ENCRYPTION_KEY','Job Agent state encryption'],
+    ['BETA_DATA_ENCRYPTION_KEY_ID','Job Agent encryption key version'],
+    ['RATE_LIMIT_HASH_SECRET','Tenant partitioning'],
+    ['JOB_AGENT_AUDIT_EXPORT_SECRET','Audit-head export signing'],
   ];
 
   for (const [varName, label] of requiredEnvVars) {
@@ -372,6 +383,30 @@ export default async function handler(req, res) {
       check(`Env: ${label}`, 'OK', `${varName} is set`);
     } else {
       check(`Env: ${label}`, 'FAIL', `${varName} is MISSING — feature will not work`);
+    }
+  }
+
+  const needsYouNotifications = jobAgentNeedsYouNotificationConfiguration();
+  check('Needs You email notifications', needsYouNotifications.enabled ? 'OK' : 'FAIL', needsYouNotifications.enabled
+    ? 'Explicit opt-in, generic content, and provider configuration are available'
+    : `Not configured (${needsYouNotifications.reason})`);
+
+  // ── Durable Job Agent control plane ───────────────────────────────────────
+  const jobAgentConfig = jobAgentRuntimeConfiguration();
+  const jobAgentLaunch = jobAgentLaunchManifest();
+  if (!jobAgentConfig) {
+    check('Durable Job Agent', 'FAIL', 'Redis, tenant partitioning, audit signing, or the versioned 32-byte encryption keyring is unavailable');
+  } else {
+    const probeKey = `1ststep:health:job-agent:${randomBytes(12).toString('hex')}`;
+    try {
+      await jobAgentConfig.redis.set(probeKey, 'ok', { ex: 60, nx: true });
+      const restored = await jobAgentConfig.redis.get(probeKey);
+      await jobAgentConfig.redis.del(probeKey);
+      check('Durable Job Agent', restored === 'ok' ? 'OK' : 'FAIL', restored === 'ok'
+        ? `Encrypted-run backing store is reachable; launch mode ${jobAgentLaunch.currentMode}; final submission gate ${jobAgentLaunch.submissionsEnabled ? 'eligible' : 'disabled'}`
+        : 'Redis read-after-write verification failed');
+    } catch (error) {
+      check('Durable Job Agent', 'FAIL', `Backing-store probe failed: ${error?.name || 'unknown error'}`);
     }
   }
 
@@ -549,7 +584,7 @@ export default async function handler(req, res) {
             <p style="font-size:11px;color:#9CA3AF;margin:0">1stStep.ai automated health check · runs daily at 8am ET · <a href="https://vercel.com" style="color:#9CA3AF">View Vercel logs</a></p>
           </div>`,
       }),
-    }).catch(err => console.error('Health check email failed:', err.message));
+    }).catch(err => console.error(JSON.stringify({ type: 'health-check-email-failed', name: err?.name || 'unknown' })));
   }
 
   return res.status(200).json({

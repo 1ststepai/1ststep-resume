@@ -27,7 +27,7 @@ export const maxDuration = 15;
 // is set for a temporary local/test environment.
 function verifyTallySignature(rawBody, signature) {
   const secret = process.env.TALLY_SIGNING_SECRET;
-  if (!secret) return process.env.ALLOW_UNSIGNED_TALLY_WEBHOOKS === 'true';
+  if (!secret || secret.length < 32) return process.env.VERCEL_ENV !== 'production' && process.env.ALLOW_UNSIGNED_TALLY_WEBHOOKS === 'true';
   if (!signature) return false;
   const expected = createHmac('sha256', secret)
     .update(rawBody)
@@ -102,14 +102,14 @@ async function upsertGHLContact(email) {
       const data = await r.json();
       const contactId = data.contact?.id;
       if (contactId) {
-        console.log(`✅ GHL contact upserted [feedback] (attempt ${attempt}): ${contactId} (${email})`);
+        console.log(`GHL feedback contact captured on attempt ${attempt}.`);
         return contactId;
       } else {
-        console.error(`GHL contact upsert failed (attempt ${attempt}):`, JSON.stringify(data));
+        console.error(JSON.stringify({ type: 'ghl-feedback-upsert-failed', attempt, status: r.status }));
         if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
       }
     } catch (err) {
-      console.error(`GHL upsert error (attempt ${attempt}):`, err.message);
+      console.error(JSON.stringify({ type: 'ghl-feedback-upsert-error', attempt, name: err?.name || 'unknown' }));
       if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
     }
   }
@@ -134,12 +134,12 @@ async function addGHLNote(contactId, noteBody) {
     if (!r.ok) throw new Error(`GHL returned ${r.status}`);
     const data = await r.json();
     if (data.note?.id) {
-      console.log(`✅ GHL note added: ${data.note.id}`);
+      console.log(JSON.stringify({ type: 'ghl-feedback-note', outcome: 'created' }));
     } else {
-      console.error('GHL note creation failed:', JSON.stringify(data));
+      console.error(JSON.stringify({ type: 'ghl-feedback-note-failed', status: r.status }));
     }
   } catch (err) {
-    console.error('GHL note error:', err.message);
+    console.error(JSON.stringify({ type: 'ghl-feedback-note-error', name: err?.name || 'unknown' }));
   }
 }
 

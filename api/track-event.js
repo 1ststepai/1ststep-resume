@@ -14,6 +14,8 @@
  */
 
 export const maxDuration = 10;
+import { applyApiHeaders, authenticateApiRequest, hasJsonContentType, isOriginAllowed, requestIp } from '../lib/api-security.js';
+import { enforceDurableRateLimit, sendRateLimitResult } from '../lib/durable-rate-limit.js';
 
 // ── Per-IP rate limiter — 20 event tracks per IP per hour ────────────────────
 const eventWindows = new Map();
@@ -66,27 +68,36 @@ function corsHeaders(req) {
 }
 
 export default async function handler(req, res) {
-  const headers = corsHeaders(req);
-
+  applyApiHeaders(req, res);
   if (req.method === 'OPTIONS') {
-    return res.status(204).set(headers).end();
+    if (!isOriginAllowed(req)) return res.status(403).end();
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    return res.status(204).end();
   }
-
-  Object.entries(headers).forEach(([k, v]) => res.setHeader(k, v));
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+  if (!hasJsonContentType(req)) return res.status(415).json({ error: 'Content-Type must be application/json.' });
+  const auth = await authenticateApiRequest(req);
+  if (!auth.ok) return res.status(auth.status).json({ error: 'Request not authorized.', code: auth.code });
 
-  const ip = (req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || '').split(',').pop().trim()
-           || req.socket?.remoteAddress || 'unknown';
+  const ip = requestIp(req);
+  const durableLimit = await enforceDurableRateLimit(req, {
+    scope: 'track-event', subject: auth.subject, ip,
+    ipRule: { limit: 20, window: '1 h' },
+    accountRule: { limit: 50, window: '1 d' },
+    globalRule: { limit: 10_000, window: '1 d' },
+  });
+  if (!durableLimit.ok) return sendRateLimitResult(res, durableLimit, 'Too many activity updates. Please try again later.');
   if (isEventRateLimited(ip)) {
     return res.status(429).json({ error: 'Too many requests' });
   }
 
   const { email, event } = req.body || {};
 
-  if (!email || !email.includes('@')) {
+  if (!email || String(email).trim().toLowerCase() !== auth.subject) {
     return res.status(400).json({ error: 'Valid email required' });
   }
 
@@ -119,14 +130,14 @@ export default async function handler(req, res) {
       if (!r.ok) throw new Error(`GHL returned ${r.status}`);
       const data = await r.json();
       if (data.contact?.id) {
-        console.log(`✅ GHL event tracked [${event}] (attempt ${attempt}): ${data.contact.id} (${normalizedEmail})`);
-        return res.status(200).json({ ok: true, result: 'ok', contactId: data.contact.id });
+        console.log(`GHL event tracked [${event}] on attempt ${attempt}.`);
+        return res.status(200).json({ ok: true, result: 'ok' });
       } else {
-        console.error(`GHL event tag failed (attempt ${attempt}):`, JSON.stringify(data));
+        console.error(JSON.stringify({ type: 'ghl-event-tag-failed', status: r.status, attempt }));
         if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
       }
     } catch (err) {
-      console.error(`GHL event track error (attempt ${attempt}):`, err.message);
+      console.error(JSON.stringify({ type: 'ghl-event-track-error', attempt, name: err?.name || 'unknown' }));
       if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
     }
   }
