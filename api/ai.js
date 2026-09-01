@@ -1,4 +1,4 @@
-import { buildAiRequest, extractAiText, extractAiUsage } from '../lib/ai-provider.js';
+import { buildAiRequestPlan, extractAiText, extractAiUsage } from '../lib/ai-provider.js';
 import {
   applyApiHeaders, authenticateApiRequestOrGuest, containsProhibitedSecret, hasJsonContentType,
   isOriginAllowed, jobAgentAccessAllowed, sanitizeModelText,
@@ -27,6 +27,27 @@ const SYSTEM_PROMPTS = Object.freeze({
 });
 const DAILY_LIMITS = Object.freeze({ concierge: 60, profileExtractor: 8, resumeBuilder: 5, interviewQuestions: 12, interviewCoach: 80 });
 const GUEST_DAILY_LIMITS = Object.freeze({ concierge: 10, profileExtractor: 2, resumeBuilder: 1, interviewQuestions: 0, interviewCoach: 0 });
+
+function providerPayloadIsUsable({ provider, payload, callType, content }) {
+  const text = sanitizeModelText(extractAiText(provider, payload), callType === 'resumeBuilder' ? 20_000 : 6_000);
+  if (!text || containsProhibitedSecret(text)) return false;
+  try {
+    if (callType === 'profileExtractor') {
+      const parsed = JSON.parse(text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, ''));
+      const allowedKeys = ['contact', 'employment', 'education', 'skills', 'licenses', 'uncertainties'];
+      if (!parsed || typeof parsed !== 'object' || Object.keys(parsed).some(key => !allowedKeys.includes(key))) return false;
+      if (allowedKeys.slice(1).some(key => !Array.isArray(parsed[key]))) return false;
+    }
+    if (callType === 'interviewQuestions' || callType === 'interviewCoach') {
+      const parsed = JSON.parse(text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, ''));
+      if (callType === 'interviewQuestions') normalizeInterviewQuestionSet(parsed);
+      else normalizeAnswerCoaching(parsed, extractCoachingGrounding(content));
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export default async function handler(req, res) {
   applyApiHeaders(req, res);
@@ -64,10 +85,11 @@ export default async function handler(req, res) {
   });
   if (!durableLimit.ok) return sendRateLimitResult(res, durableLimit, 'Today\'s included AI limit has been reached. Your saved workspace and deterministic tools still work.');
 
-  let request;
+  let requestPlan;
   try {
-    request = buildAiRequest({
+    requestPlan = buildAiRequestPlan({
       env: process.env, quality: req.body?.quality === 'quality' ? 'quality' : 'fast',
+      task: callType,
       system: SYSTEM_PROMPTS[callType], messages: [{ role: 'user', content }],
       maxTokens: requestedTokens,
     });
@@ -75,7 +97,7 @@ export default async function handler(req, res) {
     console.error(JSON.stringify({ type: 'ai-provider-configuration-error', name: error?.name || 'unknown' }));
     return res.status(503).json({ error: 'Hosted AI configuration is unavailable.', code: 'AI_PROVIDER_CONFIGURATION' });
   }
-  if (!request.configured) return res.status(503).json({ error: 'No hosted AI provider is configured. Local deterministic features remain available.', code: 'LOCAL_FALLBACK' });
+  if (!requestPlan.configured) return res.status(503).json({ error: 'No hosted AI provider is configured. Local deterministic features remain available.', code: 'LOCAL_FALLBACK' });
 
   const vercelEnvironment = String(process.env.VERCEL_ENV || '').toLowerCase();
   // ANALYSIS and DOCUMENT_GENERATION both reserve the 'ai' category. Readiness is judged
@@ -83,7 +105,6 @@ export default async function handler(req, res) {
   const aiCapability = JOB_AGENT_CAPABILITIES.ANALYSIS;
   const spendConfiguration = jobAgentSpendLedgerConfiguration(process.env, { category: 'ai' });
   const spendRequired = ['production', 'preview'].includes(vercelEnvironment) || spendConfiguration.enabled;
-  let spendControl = null;
   if (spendRequired) {
     const aiReadiness = jobAgentCapabilityReadiness(aiCapability, { env: process.env, category: 'ai' });
     if (!aiReadiness.ok) {
@@ -92,33 +113,58 @@ export default async function handler(req, res) {
         code: aiReadiness.code, capability: aiCapability, category: aiReadiness.category || 'ai', reason: aiReadiness.reason,
       });
     }
-    const operationId = `ai:${randomUUID()}`;
-    const spendNow = new Date();
-    const budget = spendConfiguration.categories.ai;
-    let reservation;
-    try {
-      reservation = await reserveJobAgentSpend({
-        redis: spendConfiguration.redis, partitionSecret: spendConfiguration.partitionSecret, category: 'ai', operationId,
-        globalDailyCapCents: spendConfiguration.globalDailyCapCents, categoryDailyCapCents: budget.dailyCapCents,
-        maximumCents: budget.maximumRequestCents, now: spendNow,
-      });
-    } catch {
-      return res.status(503).json({ error: 'Hosted AI is paused until the monetary safety control is available.', code: 'MONETARY_SPEND_CONTROL_UNAVAILABLE' });
-    }
-    if (!reservation.ok) return res.status(reservation.status || 429).json({ error: 'The approved hosted-AI spending limit has been reached. Saved and deterministic tools still work.', code: reservation.code });
-    spendControl = { redis: spendConfiguration.redis, partitionSecret: spendConfiguration.partitionSecret, category: 'ai', operationId, now: spendNow };
   }
 
-  let providerCallStarted = false;
-  try {
-    providerCallStarted = true;
-    const upstream = await fetch(request.url, { method: 'POST', headers: request.headers, body: JSON.stringify(request.body), signal: AbortSignal.timeout(25_000) });
-    const payload = await upstream.json().catch(() => ({}));
-    if (!upstream.ok) {
-      await recordConfiguredJobAgentOperationalEvent('provider_failure');
-      console.error(JSON.stringify({ type: 'ai-provider-error', provider: request.provider, status: upstream.status, callType }));
-      return res.status(502).json({ error: 'The configured AI provider is unavailable.' });
+  let request = null;
+  let payload = null;
+  for (const candidate of requestPlan.requests) {
+    let spendControl = null;
+    let providerCallStarted = false;
+    if (spendRequired) {
+      const operationId = `ai:${randomUUID()}`;
+      const spendNow = new Date();
+      const budget = spendConfiguration.categories.ai;
+      let reservation;
+      try {
+        reservation = await reserveJobAgentSpend({
+          redis: spendConfiguration.redis, partitionSecret: spendConfiguration.partitionSecret, category: 'ai', operationId,
+          globalDailyCapCents: spendConfiguration.globalDailyCapCents, categoryDailyCapCents: budget.dailyCapCents,
+          maximumCents: budget.maximumRequestCents, now: spendNow,
+        });
+      } catch {
+        return res.status(503).json({ error: 'Hosted AI is paused until the monetary safety control is available.', code: 'MONETARY_SPEND_CONTROL_UNAVAILABLE' });
+      }
+      if (!reservation.ok) return res.status(reservation.status || 429).json({ error: 'The approved hosted-AI spending limit has been reached. Saved and deterministic tools still work.', code: reservation.code });
+      spendControl = { redis: spendConfiguration.redis, partitionSecret: spendConfiguration.partitionSecret, category: 'ai', operationId, now: spendNow };
     }
+    try {
+      providerCallStarted = true;
+      const upstream = await fetch(candidate.url, { method: 'POST', headers: candidate.headers, body: JSON.stringify(candidate.body), signal: AbortSignal.timeout(25_000) });
+      const candidatePayload = await upstream.json().catch(() => ({}));
+      if (upstream.ok && providerPayloadIsUsable({ provider: candidate.provider, payload: candidatePayload, callType, content })) {
+        request = candidate;
+        payload = candidatePayload;
+        break;
+      }
+      await recordConfiguredJobAgentOperationalEvent('provider_failure');
+      console.error(JSON.stringify({
+        type: upstream.ok ? 'ai-provider-invalid-response' : 'ai-provider-error',
+        provider: candidate.provider, route: candidate.route, status: upstream.status, callType,
+      }));
+    } catch (error) {
+      await recordConfiguredJobAgentOperationalEvent('provider_failure');
+      console.error(JSON.stringify({ type: 'ai-provider-exception', provider: candidate.provider, route: candidate.route, callType, name: error?.name || 'unknown' }));
+    } finally {
+      if (spendControl) {
+        await settleJobAgentSpend({ ...spendControl, definitiveNoProviderCall: !providerCallStarted }).catch(error => {
+          console.error(JSON.stringify({ type: 'monetary-spend-settlement-error', provider: candidate.provider, category: 'ai', name: error?.name || 'unknown' }));
+        });
+      }
+    }
+  }
+  if (!request) return res.status(502).json({ error: 'The configured AI providers could not be reached.' });
+
+  try {
     const usage = extractAiUsage(request.provider, payload);
     await Promise.all([
       recordConfiguredJobAgentOperationalEvent('provider_request_completed'),
@@ -164,17 +210,10 @@ export default async function handler(req, res) {
     }
     if (containsProhibitedSecret(text)) return res.status(502).json({ error: 'The AI response failed secret-safety validation.' });
     if (!text) return res.status(502).json({ error: 'The configured AI provider returned an empty response.' });
-    console.log(JSON.stringify({ type: 'ai-provider-call', provider: request.provider, callType, status: 'ok' }));
+    console.log(JSON.stringify({ type: 'ai-provider-call', provider: request.provider, route: request.route, callType, status: 'ok' }));
     return res.status(200).json({ text, provider: request.provider, model: request.model, access: auth.guest ? 'guest' : 'signed' });
   } catch (error) {
-    await recordConfiguredJobAgentOperationalEvent('provider_failure');
-    console.error(JSON.stringify({ type: 'ai-provider-exception', provider: request.provider, callType, name: error?.name || 'unknown' }));
-    return res.status(502).json({ error: 'The configured AI provider could not be reached.' });
-  } finally {
-    if (spendControl) {
-      await settleJobAgentSpend({ ...spendControl, definitiveNoProviderCall: !providerCallStarted }).catch(error => {
-        console.error(JSON.stringify({ type: 'monetary-spend-settlement-error', provider: request.provider, category: 'ai', name: error?.name || 'unknown' }));
-      });
-    }
+    console.error(JSON.stringify({ type: 'ai-provider-response-validation-error', provider: request.provider, callType, name: error?.name || 'unknown' }));
+    return res.status(502).json({ error: 'The AI provider response could not be validated.' });
   }
 }

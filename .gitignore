@@ -46,3 +46,12 @@ demo_music_previews/
 demo_review_frames/
 .vercel
 .env*.local
+.production-readiness/
+
+# Generated QA and local release artifacts. Keep the reviewed sandbox runner
+# and source-backed production-readiness evidence tracked separately.
+artifacts/
+test-results/
+supabase/.temp/
+COMMIT_MSG.txt
+logo-preview-*.png

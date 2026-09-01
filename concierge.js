@@ -46,7 +46,7 @@ import { acquisitionFunnel, evaluateCandidateFit, extractStructuredRequirements,
 import { JOB_RELEVANCE_POLICY_VERSION, jobTitleMatchesMission, restoredJobCardIsRelevant } from './client/job-mission-relevance.js';
 import { buildAnswerCoachingRequest, summarizePracticeSession } from './client/interview-practice.js';
 import { OPPORTUNITY_PATHS, OPPORTUNITY_SECTORS, mergeAuthoritativeOutcomeEvidence, opportunityPathOutcomeEvidence, rankOpportunityPaths, suggestedOpportunityPaths } from './client/opportunity-paths.js';
-import { canonicalConversation, missionStats, needsYouKind, statusBadgeClass, statusTab, subscriberStatus as subscriberUiStatus } from './client/subscriber-ui-model.js';
+import { authoritativeReceiptCount, canonicalConversation, directSourceCoverage, maskedActivityFeed, missionStats, needsYouKind, statusBadgeClass, statusTab, subscriberStatus as subscriberUiStatus } from './client/subscriber-ui-model.js';
 import {
   CAMPAIGN_TEMPLATES, addCampaign, campaignMetrics, createCampaignStore, operatingContractText, updateCampaignStatus, updatePersistentCampaign,
 } from './client/persistent-campaign.js';
@@ -78,6 +78,7 @@ let durableRun = loadWorkflowJson(JOB_AGENT_RUN_KEY, null);
 let jobAgentSchedule = { version: 0, schedule: null, enabled: null, status: 'local' };
 let jobAgentNotifications = { version: 0, preference: null, available: null, status: 'local' };
 let applicantVault = { version: 0, vault: null, status: 'local', inFlight: false };
+let jobAgentLearning = { version: 0, learning: null, facts: [], status: 'local' };
 let syncedSubscriberView = { jobCards: [], needsYou: [], runState: null };
 let durableApplicationSessions = [];
 let finalSubmissionExecutionEnabled = false;
@@ -734,6 +735,7 @@ function initializeAccountWorkflowAuthority() {
   campaignStore = createCampaignStore({});
   dailyGoal = { target: 10, updatedAt: null };
   durableRun = null;
+  jobAgentLearning = { version: 0, learning: null, facts: [], status: 'local' };
   syncedSubscriberView = { jobCards: [], needsYou: [], runState: null };
   campaignSync = { version: 0, hydrated: false, status: 'local', timer: null, inFlight: false, queued: false };
   renderAll();
@@ -775,6 +777,63 @@ async function hydrateDurableApplicationSessions() {
     durableApplicationSessionStatus = 'unavailable';
   }
   renderAll();
+}
+
+async function hydrateJobAgentLearning() {
+  if (!hasApiSession() || !hasJobAgentAccess()) {
+    jobAgentLearning = { version: 0, learning: null, facts: [], status: 'local' };
+    renderLearningCenter();
+    return;
+  }
+  jobAgentLearning.status = 'loading';
+  try {
+    const response = await fetchWithTimeout('/api/job-agent-learning', { headers: apiAuthorizationHeaders() }, REQUEST_TIMEOUTS.persistence);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.learning) throw new Error(data.error || 'Learning profile is unavailable.');
+    jobAgentLearning = { version: Number(data.version) || 0, learning: data.learning, facts: Array.isArray(data.facts) ? data.facts : [], status: 'synced' };
+  } catch { jobAgentLearning = { ...jobAgentLearning, status: 'unavailable' }; }
+  renderLearningCenter();
+}
+
+async function learningAction(action, input = {}) {
+  const response = await fetchWithTimeout('/api/job-agent-learning', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Idempotency-Key': `learning_${action}_${Date.now()}`, ...apiAuthorizationHeaders() },
+    body: JSON.stringify({ action, input, version: jobAgentLearning.version }),
+  }, REQUEST_TIMEOUTS.persistence);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.learning) throw new Error(data.error || 'The learned profile could not be updated.');
+  jobAgentLearning = { version: Number(data.version) || jobAgentLearning.version + 1, learning: data.learning, facts: Array.isArray(data.facts) ? data.facts : jobAgentLearning.facts, status: 'synced' };
+  renderLearningCenter();
+  return data;
+}
+
+async function saveConfirmedLaunchPreferences() {
+  if (jobAgentLearning.status !== 'synced') return;
+  const preferences = [
+    { key: 'workMode', label: 'Work setting', value: guidedSelection.workMode },
+    { key: 'remoteOnly', label: 'Remote-only rule', value: guidedSelection.workMode === 'Remote' },
+    { key: 'location', label: 'Eligible location', value: guidedSelection.workMode === 'Remote' ? 'United States' : guidedSelection.location },
+    { key: 'employmentType', label: 'Employment type', value: guidedSelection.employmentType },
+    { key: 'salaryMin', label: 'Minimum salary', value: Number(guidedSelection.salary) || 0 },
+  ];
+  for (const preference of preferences) {
+    await learningAction('record-preference', { ...preference, originalSource: 'Guided Job Agent onboarding', confidence: 1, verificationStatus: 'user-confirmed', userConfirmed: true });
+  }
+}
+
+function applyCorrectedPreferenceLocally(preference, value) {
+  if (!preference) return;
+  if (preference.key === 'workMode') guidedSelection.workMode = value;
+  if (preference.key === 'remoteOnly' && /^(?:true|yes|remote)$/i.test(String(value))) guidedSelection.workMode = 'Remote';
+  if (preference.key === 'location') guidedSelection.location = value;
+  if (preference.key === 'employmentType') guidedSelection.employmentType = value;
+  if (preference.key === 'salaryMin' && Number.isFinite(Number(value))) guidedSelection.salary = Number(value);
+  if (missionState.mission?.role) {
+    missionState.mission = { ...missionState.mission, workMode: guidedSelection.workMode, workModes: [guidedSelection.workMode], location: guidedSelection.workMode === 'Remote' ? 'United States' : guidedSelection.location, employmentTypes: [guidedSelection.employmentType], salaryMin: Number(guidedSelection.salary) || null };
+    saveAll(); renderMission();
+    syncJobAgentSchedule(missionState.mission, jobAgentSchedule.schedule?.status === 'active').catch(() => null);
+  }
 }
 
 function maskedVerifiedFields() {
@@ -901,7 +960,7 @@ async function closeDurableBrowserHandoff() {
 function renderAgentAccessState() {
   const active = hasJobAgentAccess();
   const pilotInviteRequired = sessionCapabilities.pilotAccess?.code === 'JOB_AGENT_PILOT_INVITE_REQUIRED';
-  if ($('openAgentAccess')) $('openAgentAccess').textContent = active ? 'Job Agent active' : pilotInviteRequired ? 'Pilot invite required' : 'Check access';
+  if ($('openAgentAccess')) $('openAgentAccess').textContent = active ? 'Job Agent active' : pilotInviteRequired ? 'Pilot invite required' : 'Sign in';
   if ($('deleteAccountData')) $('deleteAccountData').textContent = 'Delete Job Agent cloud data';
   if (!$('startJobSearch')) return;
   const missionActive = Boolean(missionState.mission?.role);
@@ -1483,7 +1542,7 @@ async function scanOpportunityPaths() {
     const ranked = rankOpportunityPaths({ jobs: data.jobs || [], supplyByPath: data.supplyByPath || {}, outcomes: mergeAuthoritativeOutcomeEvidence(deskState.acquisitionOutcomes, durableApplicationSessions), profile: deskState.truthProfile, resumeText: savedResumeText() });
     missionState.pathScan = {
       status: 'complete', checkedAt: new Date().toISOString(), jobsScanned: Number(data.filterSummary?.scanned) || (data.jobs || []).length,
-      sourcesChecked: (data.sourceSummary || []).filter(source => source.status === 'ok').length,
+      sourcesChecked: (data.sourceSummary || []).filter(source => ['ok', 'partial'].includes(source.status)).length,
       recommendations: ranked.map(path => ({
         id: path.id, label: path.label, searchRole: path.searchRole, rankScore: path.rankScore,
         openings: path.openings, verifiedOpeningsAnalyzed: path.verifiedOpeningsAnalyzed, qualifiedOpenings: path.qualifiedOpenings, averageFit: path.averageFit, topFit: path.topFit,
@@ -1721,7 +1780,7 @@ async function discoverMatchingJobs() {
     if (data.status === 'sources-not-configured') {
       missionState.discovery = { status: 'catalog-needed', checkedAt: new Date().toISOString(), sourcesChecked: 0, matches: 0 };
       saveAll(); renderMission();
-      addMessage('assistant', '<strong>Your search is saved, but this preview has no employer-feed catalog connected yet.</strong><br>I did not use the disabled paid job API or invent results. Greenhouse, Lever, and Ashby feeds can be enabled without a paid search subscription; browser-extension discovery remains the next coverage layer.');
+      addMessage('assistant', '<strong>Your search is saved, but this preview has no employer-feed catalog connected yet.</strong><br>I did not use the disabled paid job API or invent results. Greenhouse, Lever, Ashby, and SmartRecruiters feeds can be enabled without a paid search subscription; browser-extension discovery remains the next coverage layer.');
       return;
     }
     let added = 0;
@@ -1762,7 +1821,7 @@ async function discoverMatchingJobs() {
     }
     if (missionState.runState !== 'Paused') missionState.runState = 'Preparing';
     saveAll(); renderAll();
-    const checked = (data.sourceSummary || []).filter(source => source.status === 'ok').length;
+    const checked = (data.sourceSummary || []).filter(source => ['ok', 'partial'].includes(source.status)).length;
     missionState.discovery = { status: 'complete', checkedAt: new Date().toISOString(), sourcesChecked: checked, matches: added, duplicates, rejectedByMission, rejectedByQualityFloor, requestId, durableRunId: durableRun?.id || null };
     saveAll(); renderMission();
     const topMatches = missionJobs.slice(0, 5).map(job => {
@@ -1879,7 +1938,7 @@ function currentRunState() {
   if (durableApplicationSessions.some(session => (session.actions || []).some(item => item.status === 'open')
     || (session.postSubmission?.followUp?.status === 'SCHEDULED' && new Date(session.postSubmission.followUp.dueAt).getTime() <= Date.now()))) return 'Waiting for You';
   if (!missionState.mission?.role) return durableApplicationSessions.some(session => session.state === 'Paused') ? 'Paused' : durableApplicationSessions.length ? 'Preparing' : null;
-  if (missionState.runState === 'Paused') return 'Paused';
+  if (missionState.runState === 'Paused' || durableRun?.lifecycleState === 'Paused') return 'Paused';
   if (missionState.runState === 'Finished') return 'Finished';
   if (missionState.discovery?.status === 'error') return 'Paused';
   const today = new Date().toDateString();
@@ -1887,11 +1946,26 @@ function currentRunState() {
     && new Date(role.receipt.submittedAt || role.receipt.receivedAt || 0).toDateString() === today).length;
   if (receiptsToday >= Math.min(50, Math.max(1, Number(dailyGoal.target) || 10))) return 'Finished';
   if (deskState.actionQueue.some(item => item.status === 'open') || durableApplicationSessions.some(session => (session.actions || []).some(item => item.status === 'open'))) return 'Waiting for You';
-  if (missionState.discovery?.status === 'searching') return 'Searching';
+  if (missionState.discovery?.status === 'searching' || ['Queued', 'Searching', 'Verifying', 'Retrying'].includes(durableRun?.lifecycleState)) return 'Searching';
+  if (durableRun?.lifecycleState === 'Waiting for You') return 'Waiting for You';
+  if (['Completed', 'Partially Completed', 'Failed Safely'].includes(durableRun?.lifecycleState)) return 'Finished';
   return missionState.runState === 'Searching' ? 'Searching' : 'Preparing';
 }
 
-function runStateSummary(state) {
+function detailedRunState(state) {
+  return durableRun?.lifecycleState || (state === 'Finished' ? 'Completed' : state);
+}
+
+function runStateSummary(state, detailed = detailedRunState(state)) {
+  const detailedSummary = {
+    Queued: 'Queued · progress saved and ready for a worker',
+    Verifying: 'Verifying live requisitions · progress saved',
+    Retrying: 'Retrying one source · healthy work remains saved',
+    'Partially Completed': 'Partially completed · verified results were retained',
+    'Failed Safely': 'Failed safely · progress saved · Play again when ready',
+    Completed: 'Completed · only persisted verified results are shown',
+  }[detailed];
+  if (detailedSummary) return detailedSummary;
   return {
     Searching: 'Checking verified direct-employer sources',
     Preparing: 'Ranking matches and preparing truthful application materials',
@@ -1903,14 +1977,79 @@ function runStateSummary(state) {
 
 function renderRunState() {
   const state = currentRunState();
+  const detailed = detailedRunState(state);
   const activeIndex = RUN_STATES.indexOf(state);
   document.querySelectorAll('[data-run-state]').forEach((node, index) => {
     node.classList.toggle('active', node.dataset.runState === state);
     node.classList.toggle('complete', activeIndex > 0 && index < activeIndex && state !== 'Paused');
   });
-  $('runStateSummary').textContent = runStateSummary(state);
+  $('runStateSummary').textContent = runStateSummary(state, detailed);
+  const verifiedAt = durableRun?.result?.completedAt || [...(durableRun?.events || [])].reverse().find(item => ['RUN_COMPLETED', 'RUN_PARTIALLY_COMPLETED'].includes(item.type))?.at || null;
+  const nextRunAt = jobAgentSchedule.schedule?.status === 'active' ? jobAgentSchedule.schedule.nextRunAt : durableRun?.nextRetryAt;
+  $('runStateTiming').textContent = `${verifiedAt ? `Last verified activity ${relativeActivityTime(verifiedAt)}` : 'No completed activity inferred'} · ${nextRunAt ? `next run ${new Date(nextRunAt).toLocaleString()}` : 'no scheduled run'}`;
   $('pauseRun').hidden = !state || ['Paused', 'Finished'].includes(state);
-  $('resumeRun').hidden = state !== 'Paused';
+  $('resumeRun').hidden = !['Paused', 'Failed Safely', 'Partially Completed'].includes(detailed);
+}
+
+function relativeActivityTime(value) {
+  const timestamp = new Date(value || 0).getTime();
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return 'Persisted status';
+  const seconds = Math.max(0, Math.round((Date.now() - timestamp) / 1000));
+  if (seconds < 60) return 'Just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  return new Date(timestamp).toLocaleDateString();
+}
+
+function renderCommandCenterEvidence(openActions) {
+  const roles = subscriberRoles();
+  const coverage = directSourceCoverage(durableRun);
+  const activity = maskedActivityFeed({ run: durableRun, roles, applicationSessions: durableApplicationSessions, openActionCount: openActions });
+  $('agentActivityList').innerHTML = activity.length ? activity.map(item => `<li class="activity-${escapeHtml(item.kind)}"><i aria-hidden="true"></i><div><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.detail)}</span></div><time>${escapeHtml(relativeActivityTime(item.at))}</time></li>`).join('')
+    : '<li class="command-center-empty">Activity appears after your first saved search. No activity is inferred.</li>';
+  $('sourceCoverageState').textContent = coverage.state === 'searching' ? 'Checking now' : coverage.state === 'healthy' ? 'Healthy' : coverage.state === 'partial' ? 'Partial coverage' : 'Not checked yet';
+  $('sourceCoverageSummary').textContent = coverage.checked
+    ? `${coverage.healthy} healthy · ${coverage.partial} partial · ${coverage.unavailable} unavailable · ${coverage.verifiedMatches} verified matches`
+    : 'Run a search to measure live employer-feed availability.';
+  $('sourceProviderList').innerHTML = coverage.providers.length ? coverage.providers.map(provider => {
+    const state = provider.unavailable ? 'Needs retry' : provider.partial ? 'Partial' : 'Healthy';
+    return `<li><div><strong>${escapeHtml(provider.label)}</strong><span>${provider.checked} employer feed${provider.checked === 1 ? '' : 's'} checked</span></div><em class="source-${provider.unavailable ? 'error' : provider.partial ? 'partial' : 'healthy'}">${escapeHtml(state)}</em></li>`;
+  }).join('') : '<li class="command-center-empty">Greenhouse, Lever, Ashby, and SmartRecruiters coverage is measured from the latest durable run.</li>';
+  $('sourceCostSummary').textContent = coverage.checked
+    ? `${coverage.requests} public feed request${coverage.requests === 1 ? '' : 's'} · ${coverage.llmTokens} retrieval tokens · no paid job API`
+    : 'No feed or retrieval usage recorded for this view.';
+}
+
+function learnedValuePreview(value) {
+  if (Array.isArray(value)) return value.join(', ').slice(0, 120);
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  return String(value ?? '').slice(0, 120);
+}
+
+function renderLearningCenter() {
+  const learning = jobAgentLearning.learning;
+  const synced = jobAgentLearning.status === 'synced' && learning;
+  $('learningStatus').textContent = jobAgentLearning.status === 'loading' ? 'Syncing' : jobAgentLearning.status === 'unavailable' ? 'Temporarily unavailable' : !synced ? 'Sign in to sync' : learning.status === 'active' ? 'Learning active' : 'Learning paused';
+  $('toggleLearning').disabled = !synced;
+  $('toggleLearning').textContent = learning?.status === 'active' ? 'Pause learning' : 'Resume learning';
+  $('exportLearning').disabled = !synced;
+  $('deleteLearning').disabled = !synced;
+  const preferences = (learning?.preferences || []).filter(item => item.status === 'active');
+  $('learningPreferenceCount').textContent = `${preferences.length} confirmed`;
+  $('learningPreferences').innerHTML = preferences.length ? preferences.slice(0, 8).map(item => `<li><div><strong>${escapeHtml(item.label || item.key)}</strong><span>${escapeHtml(learnedValuePreview(item.normalizedValue))} · ${item.userConfirmed ? 'confirmed by you' : escapeHtml(item.verificationStatus)}</span></div><div class="learning-row-actions"><button type="button" data-learning-correct="${escapeHtml(item.id)}">Correct</button><button type="button" data-learning-revoke="${escapeHtml(item.id)}">Revoke</button></div></li>`).join('') : '<li class="command-center-empty">No synced preferences yet.</li>';
+  const improvements = learning?.recentImprovements || [];
+  $('learningPolicyVersion').textContent = learning?.activePolicyVersion ? learning.activePolicyVersion.replace(/^learning-/, 'Version ') : 'Baseline';
+  $('learningImprovements').innerHTML = improvements.length ? improvements.slice(0, 6).map(item => `<li><div><strong>${item.type === 'PREFERENCE_CORRECTED' ? 'Preference corrected' : item.type === 'LEARNING_POLICY_ROLLED_BACK' ? 'Improvement rolled back' : 'Verified improvement promoted'}</strong><span>${escapeHtml(relativeActivityTime(item.at))} · persisted audit event</span></div></li>`).join('') : '<li class="command-center-empty">No promoted improvement has been recorded.</li>';
+  const policies = learning?.policyVersions || [];
+  const activePolicy = policies.find(item => item.version === learning?.activePolicyVersion);
+  $('rollbackLearning').hidden = !synced || !activePolicy?.parentVersion;
+  $('rollbackLearning').dataset.version = activePolicy?.parentVersion || '';
+  const sources = learning?.sourcePerformance || [];
+  $('learningSourceCount').textContent = `${sources.length} measured`;
+  $('learningSources').innerHTML = sources.length ? [...sources].sort((a, b) => b.priorityScore - a.priorityScore).slice(0, 8).map(item => `<li><div><strong>${escapeHtml(item.provider)} · ${escapeHtml(item.employer)}</strong><span>Priority ${Number(item.priorityScore) || 0} · ${Number(item.verifiedRequisitions) || 0} verified · ${Number(item.consecutiveFailures) || 0} recent failures</span></div></li>`).join('') : '<li class="command-center-empty">Source performance appears after verified scans.</li>';
+  const reviews = [...(learning?.humanActions || []), ...(learning?.proposals || []).filter(item => item.risk === 'high' && item.status === 'evaluated')];
+  $('learningReviewCount').textContent = `${reviews.length} open`;
+  $('learningReviews').innerHTML = reviews.length ? reviews.slice(0, 8).map(item => `<li><div><strong>${escapeHtml(item.summary || item.affectedBehavior || 'High-risk change')}</strong><span>${item.risk === 'high' ? 'Your approval is required' : 'Resolve in Saved Info'}</span></div>${item.risk === 'high' ? `<button type="button" data-learning-approve="${escapeHtml(item.id)}">Review & approve</button>` : ''}</li>`).join('') : '<li class="command-center-empty">No high-risk learning change needs approval.</li>';
 }
 
 function allNeedsYouActions() {
@@ -2086,13 +2225,11 @@ function renderMission() {
   const readiness = readinessStatus(deskState);
   const missionActive = Boolean(mission.role);
   const resumeReady = hasResume();
-  const openActions = deskState.actionQueue.filter(item => item.status === 'open').length
-    + durableApplicationSessions.reduce((count, session) => count + (session.actions || []).filter(item => item.status === 'open').length, 0);
+  const openActions = allNeedsYouActions().length;
   const packageReady = (counts['Package Ready'] || 0) + (counts['Awaiting Approval'] || 0);
-  const today = new Date().toDateString();
-  const submittedToday = deskState.roles.filter(role => role.status === 'Submitted'
-    && role.receipt && !role.receipt.simulated
-    && new Date(role.receipt.submittedAt || role.receipt.receivedAt || 0).toDateString() === today).length;
+  const workspaceReady = missionActive || Boolean(durableRun) || deskState.roles.length > 0
+    || durableApplicationSessions.length > 0 || openActions > 0;
+  const submittedToday = authoritativeReceiptCount([...deskState.roles, ...durableApplicationSessions], new Date());
   const dailyTarget = Math.min(50, Math.max(1, Number(dailyGoal.target) || 10));
   const remainingToday = Math.max(0, dailyTarget - submittedToday);
   $('missionName').textContent = mission.role ? `${mission.target}-job ${mission.role} sprint` : 'No active mission';
@@ -2107,19 +2244,24 @@ function renderMission() {
   $('salaryStatus').textContent = money(mission.salaryMin);
   $('searchLinks').innerHTML = mission.role ? buildSearchLinks(mission).map(link => `<a class="search-link" target="_blank" rel="noopener" href="${link.url}">${escapeHtml(link.label)}</a>`).join('') : '';
   const subscriberStats = missionStats(deskState.roles, durableApplicationSessions, openActions);
+  $('progressNew').textContent = subscriberStats.new;
   $('progressVerified').textContent = subscriberStats.verifiedMatches;
   $('progressReady').textContent = subscriberStats.packagesReady;
+  $('progressApplying').textContent = subscriberStats.applying;
   $('progressApplied').textContent = subscriberStats.submitted;
   $('progressNeedsYou').textContent = subscriberStats.needsYou;
+  $('progressBlocked').textContent = subscriberStats.blocked;
   $('progressInterviews').textContent = subscriberStats.interviews;
+  $('progressFollowUp').textContent = subscriberStats.followUpDue;
+  $('progressClosed').textContent = subscriberStats.rejectedClosed;
   $('dailyGoalCompleted').textContent = submittedToday;
   $('dailyGoalTarget').textContent = dailyTarget;
   $('dailyGoalRemaining').textContent = remainingToday;
   $('dailyGoalBar').value = Math.min(100, (submittedToday / dailyTarget) * 100);
   $('dailyGoalInput').value = dailyTarget;
   $('dailyGoalMessage').textContent = missionActive
-    ? `${mission.role} · ${[...(mission.workModes || [mission.workMode]), ...(mission.employmentTypes || [])].filter(Boolean).join(' · ')} · interview probability outranks volume`
-    : 'Verified fit and your observed outcomes outrank volume. Roles below the 70-point floor never fill the quota.';
+    ? `${mission.role} · ${[...(mission.workModes || [mission.workMode]), ...(mission.employmentTypes || [])].filter(Boolean).join(' · ')} · target only; verified fit outranks volume`
+    : 'This is a target, not a guarantee. Verified fit and observed outcomes outrank volume.';
   document.querySelectorAll('[data-daily-goal]').forEach(button => button.classList.toggle('selected', Number(button.dataset.dailyGoal) === dailyTarget));
   const discoveryLabels = {
     searching: 'Searching free direct-employer feeds',
@@ -2135,12 +2277,14 @@ function renderMission() {
   $('startJobSearch').textContent = missionActive ? 'Update my job agent' : 'Start my job agent';
   $('openGuidedLaunch').querySelector('span').textContent = missionActive ? 'Update my Job Agent' : 'Start my Job Agent';
   document.body.classList.toggle('mission-active', missionActive);
+  document.body.classList.toggle('workspace-ready', workspaceReady);
   document.querySelectorAll('[data-launch-choice]').forEach(button => button.classList.toggle('selected', String(guidedSelection[button.dataset.launchChoice]) === button.dataset.value));
   renderAgentConfiguration();
   renderNeedsYouQueue();
   renderOpportunityPaths();
   renderGuidedLaunch();
   renderRunState();
+  renderCommandCenterEvidence(openActions);
   renderSubscriberJobs();
   renderAgentAccessState();
 }
@@ -2804,7 +2948,7 @@ function currentWizardStepValid() {
   return !invalid;
 }
 
-function renderAll() { renderMission(); renderDesk(); renderApplicationWorkspace(); renderCampaignConsole(); renderVaultStatus(); }
+function renderAll() { renderMission(); renderDesk(); renderApplicationWorkspace(); renderCampaignConsole(); renderVaultStatus(); renderLearningCenter(); }
 
 function setDailyGoal(value, announce = true) {
   const parsed = Math.round(Number(value));
@@ -2889,6 +3033,8 @@ $('jobLaunchForm').addEventListener('submit', async event => {
     };
     const detail = $('jobRequest').value.trim();
     missionState.mission = detail ? parseMission(`job search preferences: ${detail}`, baseMission) : baseMission;
+    try { await saveConfirmedLaunchPreferences(); }
+    catch (error) { addMessage('assistant', `<strong>Your search criteria are saved, but the Learning Center did not sync.</strong><br>${escapeHtml(error.message)} The agent will keep the current mission and ask before replacing a confirmed rule.`); }
     missionState.discovery = { status: 'ready' };
     missionState.onboardingDraft = null;
     guidedLaunchOpen = false;
@@ -2911,6 +3057,56 @@ $('dailyGoalForm').addEventListener('submit', event => { event.preventDefault();
 document.querySelectorAll('[data-daily-goal]').forEach(button => button.addEventListener('click', () => setDailyGoal(button.dataset.dailyGoal)));
 $('activity').querySelector('summary').addEventListener('click', () => {
   if (!$('activity').open) setTimeout(() => $('activity').scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+});
+$('openLearningVault').addEventListener('click', () => { $('vaultOverlay').classList.add('open'); renderVaultStatus(); });
+$('toggleLearning').addEventListener('click', async event => {
+  event.target.disabled = true;
+  try { await learningAction(jobAgentLearning.learning?.status === 'active' ? 'pause' : 'resume'); showToast(jobAgentLearning.learning?.status === 'active' ? 'Learning resumed' : 'Learning paused'); }
+  catch (error) { showToast(error.message); }
+  finally { event.target.disabled = false; }
+});
+$('exportLearning').addEventListener('click', () => {
+  if (!jobAgentLearning.learning) return;
+  const blob = new Blob([JSON.stringify({ learning: jobAgentLearning.learning, facts: jobAgentLearning.facts }, null, 2)], { type: 'application/json' });
+  const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `1ststep-learned-profile-${new Date().toISOString().slice(0, 10)}.json`; link.click(); URL.revokeObjectURL(link.href);
+});
+$('rollbackLearning').addEventListener('click', async event => {
+  const version = event.target.dataset.version;
+  if (!version || !window.confirm('Restore the prior verified learning policy? Your confirmed facts and applications will not change.')) return;
+  event.target.disabled = true;
+  try { await learningAction('rollback', { version }); showToast('Previous learning policy restored'); }
+  catch (error) { showToast(error.message); }
+  finally { event.target.disabled = false; }
+});
+$('deleteLearning').addEventListener('click', async event => {
+  if (!window.confirm('Delete your learned preferences, source history, proposals, and learning audit? Your applicant vault and applications remain separate.')) return;
+  event.target.disabled = true;
+  try {
+    const response = await fetchWithTimeout('/api/job-agent-learning', { method: 'DELETE', headers: apiAuthorizationHeaders() }, REQUEST_TIMEOUTS.persistence);
+    if (!response.ok) throw new Error('The learned profile could not be deleted.');
+    jobAgentLearning = { version: 0, learning: null, facts: [], status: 'synced' }; renderLearningCenter(); showToast('Learned profile deleted');
+  } catch (error) { showToast(error.message); }
+  finally { event.target.disabled = false; }
+});
+$('learningCenter').addEventListener('click', async event => {
+  const correctId = event.target?.dataset?.learningCorrect;
+  const revokeId = event.target?.dataset?.learningRevoke;
+  const approveId = event.target?.dataset?.learningApprove;
+  if (correctId) {
+    const preference = jobAgentLearning.learning?.preferences?.find(item => item.id === correctId);
+    const value = window.prompt(`Correct ${preference?.label || 'this preference'}. This confirmed value will apply to future matching.`, learnedValuePreview(preference?.normalizedValue));
+    if (value == null || !value.trim()) return;
+    event.target.disabled = true;
+    try { await learningAction('correct-preference', { id: correctId, value, originalSource: 'Learning Center user correction' }); applyCorrectedPreferenceLocally(preference, value); showToast('Preference corrected'); } catch (error) { showToast(error.message); } finally { event.target.disabled = false; }
+  }
+  if (revokeId && window.confirm('Stop using this preference in future job searches?')) {
+    event.target.disabled = true;
+    try { await learningAction('revoke-preference', { id: revokeId }); showToast('Preference revoked'); } catch (error) { showToast(error.message); } finally { event.target.disabled = false; }
+  }
+  if (approveId && window.confirm('Approve this evaluated high-risk change? This does not authorize data transmission or application submission.')) {
+    event.target.disabled = true;
+    try { await learningAction('approve-proposal', { id: approveId }); showToast('Learning change approved'); } catch (error) { showToast(error.message); } finally { event.target.disabled = false; }
+  }
 });
 $('composer').addEventListener('submit', event => { event.preventDefault(); const input = $('messageInput'); const value = input.value.trim(); if (!value) return; addMessage('user', escapeHtml(value)); input.value = ''; respond(value); });
 $('messages').addEventListener('click', event => { const value = event.target?.dataset?.prompt; if (!value) return; addMessage('user', escapeHtml(value)); respond(value); });
@@ -2980,6 +3176,7 @@ $('closeNeedsYou').addEventListener('click', closeNeedsYou);
 $('needsYouOverlay').addEventListener('click', event => { if (event.target === $('needsYouOverlay')) closeNeedsYou(); });
 $('pauseRun').addEventListener('click', async () => {
   missionState.runState = 'Paused';
+  if (durableRun && !['Finished', 'Failed'].includes(durableRun.status)) durableRun = { ...durableRun, status: 'Paused', lifecycleState: 'Paused' };
   saveAll(); renderMission();
   if (durableRun?.id && hasApiSession() && !['Finished', 'Failed'].includes(durableRun.status)) {
     try {
@@ -2995,6 +3192,7 @@ $('pauseRun').addEventListener('click', async () => {
 });
 $('resumeRun').addEventListener('click', async () => {
   missionState.runState = missionState.discovery?.status === 'error' ? 'Searching' : 'Preparing';
+  if (durableRun && ['Paused', 'Failed'].includes(durableRun.status)) durableRun = { ...durableRun, status: 'Searching', lifecycleState: 'Queued', nextRetryAt: new Date().toISOString() };
   saveAll(); renderMission();
   if (durableRun?.id && hasApiSession() && ['Paused', 'Failed'].includes(durableRun.status)) {
     try {
@@ -3627,6 +3825,7 @@ async function hydrateAccountWorkflow() {
   await hydrateDurableRun();
   await hydrateDurablePackages();
   await hydrateDurableApplicationSessions();
+  await hydrateJobAgentLearning();
 }
 start();
 loadSessionCapabilities().then(async () => {

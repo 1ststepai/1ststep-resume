@@ -195,12 +195,17 @@ function buildBlastText(firstName) {
 }
 
 export default async function handler(req, res) {
-  // Only allow GET
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  if (!['GET', 'POST'].includes(req.method)) return res.status(405).json({ error: 'Method not allowed' });
+  const production = String(process.env.VERCEL_ENV || '').toLowerCase() === 'production';
+  const legacyAction = String(req.query.action || '');
+  if (legacyAction) {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Administrative actions require POST.' });
+    if (process.env.HEALTH_LEGACY_ADMIN_ACTIONS_ENABLED !== 'true') return res.status(404).json({ error: 'Not found.' });
+  } else if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   // ── Admin stats mode (?mode=admin&secret=ADMIN_SECRET) ───────────────────────
   if (req.query.mode === 'admin') {
-    const provided = req.headers['x-admin-secret'] || req.query.secret;
+    const provided = req.headers['x-admin-secret'] || (production ? '' : req.query.secret);
     const expected = process.env.ADMIN_SECRET;
     if (!safeEquals(provided, expected)) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -233,7 +238,7 @@ export default async function handler(req, res) {
   // POST-style action tunnelled through GET using x-admin-secret header.
   // Usage: GET /api/health?action=blast&tag=beta&dryRun=true
   if (req.query.action === 'blast') {
-    const provided = req.headers['x-admin-secret'] || req.query.secret;
+    const provided = req.headers['x-admin-secret'] || (production ? '' : req.query.secret);
     const expected = process.env.ADMIN_SECRET;
     if (!safeEquals(provided, expected)) return res.status(401).json({ error: 'Unauthorized' });
 
@@ -310,7 +315,7 @@ export default async function handler(req, res) {
   // Upserts a comma-separated list of emails into GHL with beta tags.
   // Use this to manually add existing beta users who were never captured in GHL.
   if (req.query.action === 'backfill') {
-    const provided = req.headers['x-admin-secret'] || req.query.secret;
+    const provided = req.headers['x-admin-secret'] || (production ? '' : req.query.secret);
     const expected = process.env.ADMIN_SECRET;
     if (!safeEquals(provided, expected)) return res.status(401).json({ error: 'Unauthorized' });
 

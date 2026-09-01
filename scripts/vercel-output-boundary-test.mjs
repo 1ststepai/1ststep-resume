@@ -104,18 +104,32 @@ for (const policyPage of ['terms.html', 'privacy.html']) {
   assert(source.equals(output), `${policyPage} changed while preparing public output`);
 }
 
-const functionEntries = await readdir(functionsRoot, { withFileTypes: true });
-const functionNames = new Set(functionEntries.filter(entry => entry.isDirectory() && entry.name.endsWith('.func')).map(entry => entry.name));
+async function functionDirsUnder(directory, prefix = '') {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const found = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const relative = `${prefix}${entry.name}`;
+    if (entry.name.endsWith('.func')) found.push(relative);
+    else found.push(...await functionDirsUnder(path.join(directory, entry.name), `${relative}/`));
+  }
+  return found;
+}
+const functionNames = new Set(await functionDirsUnder(functionsRoot));
 for (const requiredFunction of [
   'health.func',
   'app-config.func',
   'concierge-state.func',
   'job-agent-runs.func',
   'user-session.func',
+  'health/live.func',
+  'health/ready.func',
+  'health/dependencies.func',
+  'health/workers.func',
 ]) {
   assert(functionNames.has(requiredFunction), `Expected serverless API function missing: api/${requiredFunction}`);
 }
-assert.equal(functionNames.size, 36, `Unexpected API function count: ${functionNames.size}`);
+assert.equal(functionNames.size, 41, `Unexpected API function count: ${functionNames.size}`);
 
 const outputConfig = JSON.parse(await readFile(path.join(outputRoot, 'config.json'), 'utf8'));
 const routeText = JSON.stringify(outputConfig.routes || []);
@@ -167,7 +181,7 @@ try {
     '/scripts/',
     '/docs/',
     '/dist/',
-    '/dist/1ststep-job-agent-greenhouse-v1.2.0.zip',
+    '/dist/1ststep-job-agent-greenhouse-v1.3.0.zip',
     '/1ststep-extension/',
     '/test-results/',
   ]) {

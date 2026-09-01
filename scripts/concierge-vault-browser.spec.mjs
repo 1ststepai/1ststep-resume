@@ -68,6 +68,11 @@ test('saved-info privacy controls render safely for a signed-out user', async ({
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await expect(page).toHaveTitle(/Job Agent/);
+  await expect(page.locator('body')).not.toHaveClass(/workspace-ready/);
+  await expect(page.locator('#agentProgress')).toBeHidden();
+  await expect(page.locator('#agentConfiguration')).toBeHidden();
+  await expect(page.locator('#agentConversation')).toBeHidden();
+  await expect(page.locator('#openAgentAccess')).toHaveText('Sign in');
   await expect(page.locator('#openDesk')).toBeHidden();
   await page.locator('#openVault').click();
   await expect(page.locator('#vaultOverlay')).toHaveClass(/open/);
@@ -362,6 +367,8 @@ test('a signed user restores the latest encrypted discovery run on a new device 
     });
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await expect(page.locator('body')).toHaveClass(/workspace-ready/);
+  await expect(page.locator('#agentProgress')).toBeVisible();
   await expect(page.locator('#dailyGoalMessage')).toContainText('Strategic Sourcing Manager');
   await expect(page.locator('#runStateTrack [data-run-state="Paused"]')).toHaveClass(/active/);
   expect(await page.evaluate(() => localStorage.getItem('1ststep_job_agent_run_v1'))).toBeNull();
@@ -1134,4 +1141,67 @@ test('vault copy asks an unauthenticated visitor to sign in rather than blaming 
     await expect(status).toContainText('Sign in with Job Agent access');
     await expect(status).not.toContainText('until encrypted storage is enabled');
   }
+});
+
+test('Learning Center renders only persisted confirmed rules and remains usable on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.route('**/api/session-capabilities*', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ adminConsole: false, jobAgentAccess: true, tier: 'complete', sessionAuthentication: 'opaque-session' }),
+  }));
+  await page.route('**/api/job-agent-learning*', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({
+      version: 4,
+      learning: {
+        status: 'active', activePolicyVersion: 'learning-2',
+        preferences: [{
+          id: 'preference_remote_only', key: 'remoteOnly', label: 'Remote only', normalizedValue: true,
+          status: 'active', userConfirmed: true, verificationStatus: 'user-confirmed',
+        }],
+        recentImprovements: [{ type: 'PREFERENCE_CORRECTED', at: new Date().toISOString() }],
+        policyVersions: [{ version: 'learning-2', parentVersion: 'learning-1' }],
+        sourcePerformance: [{
+          provider: 'greenhouse', employer: 'Verified employer', priorityScore: 81,
+          verifiedRequisitions: 3, consecutiveFailures: 0,
+        }],
+        humanActions: [], proposals: [],
+      },
+      facts: [], exportable: true, deletable: true,
+    }),
+  }));
+  await page.goto(`${baseUrl}?uiFixture=subscriber`, { waitUntil: 'networkidle' });
+  await page.locator('#learningCenter summary').click();
+
+  await expect(page.locator('#learningStatus')).toHaveText('Learning active');
+  await expect(page.locator('#learningPreferences')).toContainText('Remote only');
+  await expect(page.locator('#learningPreferences')).toContainText('confirmed by you');
+  await expect(page.locator('#learningSources')).toContainText('greenhouse · Verified employer');
+  await expect(page.locator('#learningImprovements')).toContainText('Preference corrected');
+  await expect(page.locator('#rollbackLearning')).toBeVisible();
+  expect(await page.evaluate(() => document.body.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+});
+
+test('mobile persisted retry state supports keyboard Pause and Play again without losing progress', async ({ page }) => {
+  const now = new Date('2026-09-01T12:00:00.000Z').toISOString();
+  const retryAt = new Date('2026-09-01T12:05:00.000Z').toISOString();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(({ now, retryAt }) => {
+    sessionStorage.setItem('1ststep_concierge_mission_v1', JSON.stringify({ mission: { role: 'Procurement Manager', workModes: ['Remote'], location: 'New Jersey', target: 10 }, messages: [], discovery: { status: 'queued' }, runState: 'Searching' }));
+    sessionStorage.setItem('1ststep_job_agent_run_v1', JSON.stringify({ id: 'run_resilience_fixture_1', operationId: 'op_resilience_fixture_1', taskType: 'direct_employer_discovery', status: 'Searching', lifecycleState: 'Retrying', attempt: 2, maxAttempts: 4, nextRetryAt: retryAt, lastHeartbeatAt: now, createdAt: now, updatedAt: now, events: [{ id: 'event_retry_1', type: 'RETRY_SCHEDULED', state: 'Retrying', attempt: 2, at: now }] }));
+  }, { now, retryAt });
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await expect(page.locator('#runStateSummary')).toContainText('Retrying one source');
+  await expect(page.locator('#runStateTiming')).toContainText('next run');
+  const pause = page.locator('#pauseRun');
+  await pause.focus();
+  await expect(pause).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#runStateSummary')).toContainText('progress is saved');
+  const playAgain = page.locator('#resumeRun');
+  await expect(playAgain).toBeVisible();
+  await playAgain.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#runStateSummary')).toContainText('Queued');
+  expect(await page.evaluate(() => document.body.scrollWidth > document.documentElement.clientWidth)).toBe(false);
 });

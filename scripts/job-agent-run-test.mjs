@@ -33,20 +33,20 @@ class FakeRedis {
     if (record.version !== Number(args[0])) return ['conflict', String(record.version)];
     if (script.includes("record.status ~= 'Searching'")) {
       if (!['Searching', 'Preparing'].includes(record.status)) return ['not_claimable', record.status];
-      record.status = 'Searching'; record.version += 1; record.attempt += 1; record.leaseTokenHash = args[1];
-      record.leaseUntil = args[2]; record.updatedAt = args[3]; this.values.set(keys[0], JSON.stringify(record));
+      record.status = 'Searching'; record.lifecycleState = 'Searching'; record.version += 1; record.attempt += 1; record.leaseTokenHash = args[1];
+      record.leaseUntil = args[2]; record.updatedAt = args[3]; record.lastHeartbeatAt = args[3]; record.events.push(JSON.parse(args[7])); this.values.set(keys[0], JSON.stringify(record));
       await this.zadd(keys[1], args[6], args[5]); return ['claimed', JSON.stringify(record)];
     }
     if (script.includes('record.leaseTokenHash ~= ARGV[2]')) {
       if (record.leaseTokenHash !== args[1]) return ['lease_lost'];
       record.version += 1; record.status = args[2]; record.updatedAt = args[3]; record.leaseUntil = args[4];
       record.leaseTokenHash = args[5]; record.resultEnvelope = JSON.parse(args[6]); record.lastErrorCode = args[7];
-      record.nextAttemptAt = args[8]; this.values.set(keys[0], JSON.stringify(record)); await this.zrem(keys[1], args[12]);
+      record.nextAttemptAt = args[8]; record.nextRetryAt = args[8]; record.lifecycleState = args[13]; if (args[14]) record.lastHeartbeatAt = args[14]; record.events.push(JSON.parse(args[15])); this.values.set(keys[0], JSON.stringify(record)); await this.zrem(keys[1], args[12]);
       if (args[10] === 'enqueue') await this.zadd(keys[1], args[11], args[12]);
       return ['updated', JSON.stringify(record)];
     }
     record.version += 1; record.status = args[1]; record.updatedAt = args[2]; record.nextAttemptAt = args[3];
-    record.leaseUntil = ''; record.leaseTokenHash = ''; if (args[8] === 'reset') record.attempt = 0; this.values.set(keys[0], JSON.stringify(record));
+    record.leaseUntil = ''; record.leaseTokenHash = ''; record.nextRetryAt = args[3]; record.lifecycleState = args[9]; record.events.push(JSON.parse(args[10])); if (args[8] === 'reset') record.attempt = 0; this.values.set(keys[0], JSON.stringify(record));
     await this.zrem(keys[1], args[5]); if (args[6] === 'enqueue') await this.zadd(keys[1], args[7], args[5]);
     return ['updated', JSON.stringify(record)];
   }
@@ -66,6 +66,9 @@ assert.throws(() => validateJobAgentMission({ role: '' }), /role or role family/
 
 const first = await createJobAgentRun({ redis, subject, partitionSecret, dataEncryptionKey, mission, idempotencyKey: 'launch_12345678', now });
 assert.equal(first.run.status, 'Searching');
+assert.equal(first.run.lifecycleState, 'Queued');
+assert.match(first.run.operationId, /^op_/);
+assert.equal(first.run.events[0].type, 'RUN_QUEUED');
 assert.equal(first.run.mission.salaryMin, 100000);
 const replay = await createJobAgentRun({ redis, subject, partitionSecret, dataEncryptionKey, mission, idempotencyKey: 'launch_12345678', now });
 assert.equal(replay.replayed, true);
@@ -74,10 +77,13 @@ assert.equal(await readJobAgentRun({ redis, subject: 'different@example.test', p
 
 let claimed = await claimJobAgentRun({ redis, runId: first.run.id, dataEncryptionKey, now });
 assert.equal(claimed.run.attempt, 1);
+assert.equal(claimed.run.lifecycleState, 'Searching');
 let heartbeat = await heartbeatJobAgentRun({ redis, runId: first.run.id, leaseToken: claimed.leaseToken, dataEncryptionKey, now });
 assert.equal(heartbeat.status, 'Searching');
+assert.equal(heartbeat.lastHeartbeatAt, now.toISOString());
 let finished = await finishJobAgentRun({ redis, runId: first.run.id, leaseToken: claimed.leaseToken, dataEncryptionKey, result: { jobs: [], sourceSummary: [], authority: 'direct-employer' }, now });
 assert.equal(finished.status, 'Finished');
+assert.equal(finished.lifecycleState, 'Completed');
 assert.equal(finished.result.authority, 'direct-employer');
 
 const second = await createJobAgentRun({ redis, subject, partitionSecret, dataEncryptionKey, mission, idempotencyKey: 'launch_87654321', now: new Date(now.getTime() + 1_000) });
@@ -98,8 +104,11 @@ assert.equal(resumed.status, 'Searching');
 claimed = await claimJobAgentRun({ redis, runId: second.run.id, dataEncryptionKey, now });
 let retried = await failJobAgentRun({ redis, runId: second.run.id, leaseToken: claimed.leaseToken, dataEncryptionKey, errorCode: 'SOURCE_TIMEOUT', now });
 assert.equal(retried.status, 'Searching');
+assert.equal(retried.lifecycleState, 'Retrying');
+assert.equal(retried.events.at(-1).type, 'RETRY_SCHEDULED');
 assert.equal(retried.lastErrorCode, 'SOURCE_TIMEOUT');
-assert.equal(retryDelaySeconds(1), 30);
+assert.equal(retryDelaySeconds(1, 0), 30);
+assert.equal(retryDelaySeconds(1, 1), 38);
 
 const crash = await createJobAgentRun({ redis, subject, partitionSecret, dataEncryptionKey, mission, idempotencyKey: 'launch_crash_1', now });
 const abandonedLease = await claimJobAgentRun({ redis, runId: crash.run.id, dataEncryptionKey, now, leaseSeconds: 45 });

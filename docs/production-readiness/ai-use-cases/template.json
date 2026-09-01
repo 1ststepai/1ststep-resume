@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "featureId": "replace-with-stable-id",
+  "featureName": "Human-readable feature name",
+  "owner": "Named role or accountable person",
+  "reviewedAt": "YYYY-MM-DD",
+  "expiresAt": "YYYY-MM-DD",
+  "productionDecision": "revise",
+  "humanApprovalRequired": true,
+  "scores": {
+    "technologyReadiness": 1,
+    "workflowValue": 1,
+    "userReadiness": 1,
+    "dataReadiness": 1,
+    "expectedBusinessValue": 1,
+    "securityPrivacyGovernanceRisk": 5
+  },
+  "rationales": {
+    "technologyReadiness": "Explain the score and cite evidence.",
+    "workflowValue": "Explain the score and cite evidence.",
+    "userReadiness": "Explain the score and cite evidence.",
+    "dataReadiness": "Explain the score and cite evidence.",
+    "expectedBusinessValue": "Explain the score and cite evidence.",
+    "securityPrivacyGovernanceRisk": "Explain the score and cite evidence. Five means highest risk."
+  },
+  "answers": {
+    "userProblem": "What user problem does this solve?",
+    "automationEvidence": "What evidence proves it should be automated?",
+    "requiredData": "What data does it require?",
+    "agentReadScope": "What can the agent read?",
+    "agentChangeScope": "What can the agent change?",
+    "humanApproval": "What requires human approval?",
+    "safeFailure": "How does it fail safely?",
+    "pauseOrRevoke": "How is it paused or revoked?",
+    "costPerUser": "What does it cost per user?",
+    "costPerOperation": "What does it cost per operation?",
+    "successMeasurement": "How will success be measured?",
+    "removalCriteria": "What would cause us to remove the feature?"
+  },
+  "evidence": ["List source, test, staging, production, or explicit unknown evidence."],
+  "blockers": ["List every unresolved blocker."],
+  "notes": "No production approval is implied by completing this assessment."
+}

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {
-  dedupePublicJobs, discoverPublicJobs, fetchPublicAtsJson, jobMatchesMission, normalizePublicPostings, publicAtsProviderDescriptor, publicGreenhouseJobUrl, publicLeverJobUrl, publicSourceUrl, reverifyPublicJob, validatePublicSource, verifyPublicApplyPath,
+  dedupePublicJobs, discoverPublicJobs, fetchPublicAtsJson, jobMatchesMission, normalizePublicPostings, publicAtsProviderDescriptor, publicGreenhouseJobUrl, publicLeverJobUrl, publicSmartRecruitersJobUrl, publicSourceRequestUrls, publicSourceUrl, reverifyPublicJob, validatePublicSource, verifyPublicApplyPath,
 } from '../lib/public-ats-discovery.js';
 import { JOB_RELEVANCE_POLICY_VERSION, jobTitleMatchesMission, restoredJobCardIsRelevant } from '../lib/job-mission-relevance.js';
 import discoveryHandler from '../api/concierge-discovery.js';
@@ -9,6 +9,7 @@ import { DEFAULT_PUBLIC_ATS_SOURCES } from '../lib/public-ats-catalog.js';
 const greenhouse = { provider: 'greenhouse', slug: 'fixtureco', employer: 'Fixture Co' };
 const lever = { provider: 'lever', slug: 'leverfixture', employer: 'Lever Fixture' };
 const ashby = { provider: 'ashby', slug: 'ashbyfixture', employer: 'Ashby Fixture' };
+const smartRecruiters = { provider: 'smartrecruiters', slug: 'SmartFixture', employer: 'Smart Fixture' };
 
 assert.equal(publicSourceUrl(greenhouse), 'https://boards-api.greenhouse.io/v1/boards/fixtureco/jobs?content=false');
 assert.equal(publicGreenhouseJobUrl(greenhouse, '42'), 'https://boards-api.greenhouse.io/v1/boards/fixtureco/jobs/42');
@@ -16,12 +17,16 @@ assert.throws(() => publicGreenhouseJobUrl(greenhouse, '../42'), /identity is in
 assert.equal(publicSourceUrl(lever), 'https://api.lever.co/v0/postings/leverfixture?mode=json');
 assert.equal(publicLeverJobUrl(lever, 'LEV-7'), 'https://api.lever.co/v0/postings/leverfixture/LEV-7');
 assert.equal(publicSourceUrl(ashby), 'https://api.ashbyhq.com/posting-api/job-board/ashbyfixture?includeCompensation=true');
+assert.equal(publicSourceUrl(smartRecruiters), 'https://api.smartrecruiters.com/v1/companies/SmartFixture/postings?limit=100&destination=PUBLIC');
+assert.equal(publicSmartRecruitersJobUrl(smartRecruiters, '744000123456789'), 'https://api.smartrecruiters.com/v1/companies/SmartFixture/postings/744000123456789');
+assert.throws(() => publicSmartRecruitersJobUrl(smartRecruiters, '../private'), /identity is invalid/);
+assert.equal(publicSourceRequestUrls(smartRecruiters, { role: 'buyer', roleFamilies: ['buyer', 'procurement operations'] }).length, 2);
 assert.throws(() => validatePublicSource({ provider: 'custom', slug: 'https://internal.test', employer: 'Bad' }), /Unsupported/);
 assert.throws(() => validatePublicSource({ provider: 'lever', slug: '../private', employer: 'Bad' }), /slug is invalid/);
-assert.equal(DEFAULT_PUBLIC_ATS_SOURCES.length, 28);
+assert.equal(DEFAULT_PUBLIC_ATS_SOURCES.length, 37);
 assert.ok(DEFAULT_PUBLIC_ATS_SOURCES.every(source => validatePublicSource(source)));
 const providerDescriptor = publicAtsProviderDescriptor(greenhouse);
-assert.equal(providerDescriptor.contractVersion, 1);
+assert.equal(providerDescriptor.contractVersion, 2);
 assert.equal(providerDescriptor.authentication, 'none');
 assert.equal(providerDescriptor.redirectPolicy, 'error');
 assert.equal(providerDescriptor.llmTokensPerRequest, 0);
@@ -77,9 +82,18 @@ const ashbyJobs = normalizePublicPostings(ashby, { apiVersion: '1', jobs: [{
 assert.equal(ashbyJobs[0].remote, true);
 assert.equal(ashbyJobs[0].salaryMax, 140000);
 assert.equal(normalizePublicPostings(ashby, { apiVersion: '1', jobs: [{ ...ashbyJobs[0], isListed: false }] }).length, 0);
+const smartRecruitersJobs = normalizePublicPostings(smartRecruiters, { content: [{
+  id: '744000123456789', name: 'Procurement Program Manager', releasedDate: '2026-08-29T12:00:00Z',
+  location: { city: 'New York', region: 'NY', country: 'US', remote: true }, typeOfEmployment: { label: 'Full-time' },
+}] });
+assert.equal(smartRecruitersJobs[0].remote, true);
+assert.equal(smartRecruitersJobs[0].countryCode, 'US');
+assert.equal(smartRecruitersJobs[0].applyUrl, 'https://jobs.smartrecruiters.com/SmartFixture/744000123456789');
+assert.equal(smartRecruitersJobs[0].sourceEvidence, 'Published SmartRecruiters employer Posting API');
 assert.throws(() => verifyPublicApplyPath(greenhouse, { ...greenhouseJobs[0], applyUrl: 'https://attacker.example/jobs/42' }), /does not match/);
 assert.throws(() => verifyPublicApplyPath(lever, { ...leverJobs[0], applyUrl: 'https://jobs.lever.co/other/LEV-7/apply' }), /does not match/);
 assert.throws(() => verifyPublicApplyPath(ashby, { ...ashbyJobs[0], applyUrl: 'https://jobs.ashbyhq.com/ashbyfixture/OTHER/application' }), /does not match/);
+assert.throws(() => verifyPublicApplyPath(smartRecruiters, { ...smartRecruitersJobs[0], applyUrl: 'https://jobs.smartrecruiters.com/Other/744000123456789' }), /does not match/);
 const customGreenhouse = { ...greenhouse, allowedApplyHosts: ['careers.fixture.example'] };
 assert.equal(verifyPublicApplyPath(customGreenhouse, {
   ...greenhouseJobs[0], jobUrl: 'https://careers.fixture.example/opening?gh_jid=42', applyUrl: 'https://careers.fixture.example/opening?gh_jid=42',
@@ -135,21 +149,24 @@ const payloads = new Map([
   ] }],
   [publicGreenhouseJobUrl(greenhouse, '42'), { id: 42, title: 'Strategic Procurement Manager', absolute_url: greenhouseJobs[0].applyUrl, location: { name: greenhouseJobs[0].location }, updated_at: greenhouseJobs[0].postedDate, content: greenhouseJobs[0].description }],
   [publicLeverJobUrl(lever, 'LEV-7'), { id: 'LEV-7', text: 'Senior Buyer', hostedUrl: leverJobs[0].jobUrl, applyUrl: leverJobs[0].applyUrl, descriptionPlain: leverJobs[0].description, categories: { location: 'Remote, US' }, workplaceType: 'remote', salaryRange: { min: 95000, max: 120000 } }],
+  [publicSmartRecruitersJobUrl(smartRecruiters, '744000123456789'), { id: '744000123456789', name: 'Procurement Program Manager', active: true, releasedDate: '2026-08-29T12:00:00Z', location: { city: 'New York', region: 'NY', country: 'US', remote: true }, typeOfEmployment: { label: 'Full-time' }, jobAd: { sections: { jobDescription: { text: 'Lead procurement transformation. Salary $110,000 - $140,000.' } } } }],
 ]);
+const smartRecruitersListPayload = { content: [{ id: '744000123456789', name: 'Procurement Program Manager', releasedDate: '2026-08-29T12:00:00Z', location: { city: 'New York', region: 'NY', country: 'US', remote: true }, typeOfEmployment: { label: 'Full-time' } }] };
+for (const url of publicSourceRequestUrls(smartRecruiters, { role: 'buyer', roleFamilies: ['buyer', 'procurement operations', 'procurement program manager'] })) payloads.set(url, smartRecruitersListPayload);
 const result = await discoverPublicJobs({
-  mission: { role: 'buyer', roleFamilies: ['buyer', 'procurement operations'], workMode: 'Remote', salaryMin: 100000 }, sources: [greenhouse, lever, ashby],
+  mission: { role: 'buyer', roleFamilies: ['buyer', 'procurement operations', 'procurement program manager'], workMode: 'Remote', salaryMin: 100000 }, sources: [greenhouse, lever, ashby, smartRecruiters],
   fetchImpl: async url => ({ ok: true, json: async () => payloads.get(url) }),
 });
-assert.equal(result.jobs.length, 3);
-assert.deepEqual(new Set(result.jobs.map(job => job.provider)), new Set(['greenhouse', 'lever', 'ashby']));
-assert.equal(result.sourceSummary.length, 3);
+assert.equal(result.jobs.length, 4);
+assert.deepEqual(new Set(result.jobs.map(job => job.provider)), new Set(['greenhouse', 'lever', 'ashby', 'smartrecruiters']));
+assert.equal(result.sourceSummary.length, 4);
 assert.equal(result.sourceSummary.find(source => source.provider === 'ashby').unlistedExcluded, 1);
 assert.equal(result.sourceSummary.find(source => source.provider === 'ashby').invalidApplyPaths, 0);
-assert.equal(result.sourceSummary.reduce((sum, source) => sum + source.requestCount, 0), 5);
-assert.equal(result.sourceSummary.reduce((sum, source) => sum + source.completedRequestCount, 0), 5);
+assert.equal(result.sourceSummary.reduce((sum, source) => sum + source.requestCount, 0), 9);
+assert.equal(result.sourceSummary.reduce((sum, source) => sum + source.completedRequestCount, 0), 9);
 assert.ok(result.sourceSummary.every(source => source.failedRequestCount === 0 && source.llmTokens === 0));
 assert.ok(result.jobs.every(job => job.applyPathVerified === true));
-assert.deepEqual(result.filterSummary, { scanned: 3, duplicatesRemoved: 0, rejectedByMission: 0, limitedOut: 0, verificationFailed: 0, rejectedAfterVerification: 0, matched: 3, returned: 3 });
+assert.deepEqual(result.filterSummary, { scanned: 4, duplicatesRemoved: 0, rejectedByMission: 0, limitedOut: 0, verificationFailed: 0, rejectedAfterVerification: 0, matched: 4, returned: 4 });
 assert.deepEqual(result.errors, []);
 
 console.log('Public ATS discovery tests passed.');

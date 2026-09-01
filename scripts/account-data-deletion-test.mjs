@@ -23,6 +23,7 @@ function fixture({ failAt = '' } = {}) {
       deleteSubmissionTasks: operation('submissionTasks', { deleted: 7 }),
       deleteReceiptTasks: operation('receiptTasks', { deleted: 8 }),
       deleteVault: operation('vault', { deleted: true }),
+      deleteLearning: operation('learning', { deleted: true }),
       deleteCampaign: operation('campaign', { deleted: true }),
       deleteConsent: operation('consent', { deleted: true }),
       deleteSchedule: operation('schedule', { deleted: true }),
@@ -39,6 +40,7 @@ assert.equal(result.accountExports.deleted, 1);
 assert.equal(result.followUps.deleted, 2);
 assert.equal(result.sessions.deleted, 5);
 assert.equal(result.vault.deleted, true);
+assert.equal(result.learning.deleted, true);
 assert.equal(result.campaign.deleted, true);
 assert.equal(result.consent.deleted, true);
 assert.equal(result.schedule.deleted, true);

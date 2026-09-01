@@ -28,8 +28,13 @@ const routePolicies = Object.freeze({
   'extension-application-handoff.js': /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/,
   'ghl-stage.js': /authenticateApiRequest/,
   'health.js': /safeEquals\(.*cronSecret/,
+  'health/dependencies.js': /isAdminSubject/,
+  'health/live.js': /status: 'healthy', alive: true/,
+  'health/ready.js': /jobAgentDependencyHealth/,
+  'health/workers.js': /isAdminSubject/,
   'job-agent-consent.js': /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/,
   'job-agent-email-events.js': /verifyJobAgentResendWebhook/,
+  'job-agent-learning.js': /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/,
   'job-agent-notifications.js': /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/,
   'job-agent-operations.js': /isAdminSubject/,
   'job-agent-readiness.js': /authenticateApiRequest/,
@@ -46,7 +51,14 @@ const routePolicies = Object.freeze({
   'user-session.js': /authenticateApiRequest/,
 });
 
-const apiFiles = (await readdir(path.join(root, 'api'))).filter(file => file.endsWith('.js')).sort();
+async function listApiFiles(directory = path.join(root, 'api'), prefix = '') {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const nested = await Promise.all(entries.map(entry => entry.isDirectory()
+    ? listApiFiles(path.join(directory, entry.name), `${prefix}${entry.name}/`)
+    : Promise.resolve(entry.name.endsWith('.js') ? [`${prefix}${entry.name}`] : [])));
+  return nested.flat().sort();
+}
+const apiFiles = await listApiFiles();
 const routes = [];
 const apiSources = {};
 for (const file of apiFiles) {
@@ -66,7 +78,7 @@ assert.match(sessions, /SESSION_TTL_SECONDS = 7 \* 24 \* 60 \* 60/);
 assert.match(sessions, /revokeAllUserSessions/);
 assert.doesNotMatch(Object.entries(apiSources).filter(([file]) => file !== 'application-receipts.js').map(([, source]) => source).join('\n'), /req\.(?:body|query)\??\.tenantId/);
 assert.match(apiSources['application-receipts.js'], /verifyInternalWorkerRequest[\s\S]*const tenantId = String\(req\.body\?\.tenantId/);
-for (const route of ['applicant-vault.js', 'application-audit.js', 'application-package-artifact.js', 'application-package-render.js', 'application-packages.js', 'application-sessions.js', 'concierge-state.js', 'employer-browser-session.js', 'extension-application-handoff.js', 'job-agent-consent.js', 'job-agent-notifications.js', 'job-agent-runs.js', 'job-agent-schedule.js']) {
+for (const route of ['applicant-vault.js', 'application-audit.js', 'application-package-artifact.js', 'application-package-render.js', 'application-packages.js', 'application-sessions.js', 'concierge-state.js', 'employer-browser-session.js', 'extension-application-handoff.js', 'job-agent-consent.js', 'job-agent-learning.js', 'job-agent-notifications.js', 'job-agent-runs.js', 'job-agent-schedule.js']) {
   assert.match(apiSources[route], /auth\.subject/, `${route} must resolve tenant ownership from the authenticated subject.`);
 }
 
@@ -83,7 +95,7 @@ for (const file of sourceFiles) {
   assert.doesNotMatch(source, highConfidenceSecret, `${file} contains a high-confidence hardcoded secret pattern.`);
 }
 const clientBundle = [await read('api/app-config.js'), await read('concierge.js'), await read('1ststep-extension/background.js'), await read('1ststep-extension/content.js')].join('\n');
-assert.doesNotMatch(clientBundle, /(?:STRIPE_SECRET_KEY|OPENAI_API_KEY|ANTHROPIC_API_KEY|TIER_SECRET|BETA_DATA_ENCRYPTION_KEY|CRON_SECRET|JOB_AGENT_EXTENSION_HANDOFF_SECRET)/);
+assert.doesNotMatch(clientBundle, /(?:STRIPE_SECRET_KEY|OPENAI_API_KEY|ANTHROPIC_API_KEY|TIER_SECRET|BETA_DATA_ENCRYPTION_KEY|CRON_SECRET|JOB_AGENT_EXTENSION_HANDOFF_SECRET|CLERK_SECRET_KEY|CLERK_JWT_KEY|DATABASE_URL|CLOUDFLARE_R2_SECRET_ACCESS_KEY)/);
 
 const packageJson = JSON.parse(await read('package.json'));
 for (const [name, version] of Object.entries({ ...(packageJson.dependencies || {}), ...(packageJson.devDependencies || {}) })) {
@@ -96,11 +108,28 @@ assert.deepEqual(lock.packages[''].dependencies, packageJson.dependencies);
 assert.deepEqual(lock.packages[''].devDependencies, packageJson.devDependencies);
 assert.doesNotMatch(JSON.stringify(packageJson), /(?:git\+|https?:\/\/|file:)/);
 
-const databaseImports = /(?:from\s+['"](?:pg|mysql2?|sqlite3?|mongoose|sequelize|@prisma\/client)['"]|require\(['"](?:pg|mysql2?|sqlite3?|mongoose|sequelize|@prisma\/client)['"]\))/;
+const unapprovedDatabaseImports = /(?:from\s+['"](?:pg|mysql2?|sqlite3?|mongoose|sequelize|@prisma\/client)['"]|require\(['"](?:pg|mysql2?|sqlite3?|mongoose|sequelize|@prisma\/client)['"]\))/;
 const productionSource = currentSourceEntries.map(([, source]) => source).join('\n');
 const backendSource = currentSourceEntries.filter(([file]) => /^(?:api|lib)\/.+\.js$/.test(file)).map(([, source]) => source).join('\n');
-assert.doesNotMatch(productionSource, databaseImports, 'No SQL or document-database client is approved in this Redis-backed build.');
+assert.doesNotMatch(productionSource, unapprovedDatabaseImports, 'Only the reviewed Neon serverless client is approved for the relational migration foundation.');
 assert.doesNotMatch(backendSource, /(?:\.query|\.execute|\$queryRaw|\$executeRaw)\(\s*`[^`]*\$\{/i, 'Interpolated raw database query construction is forbidden.');
+const postgresStore = await read('lib/postgres-tenant-store.js');
+const clerkIdentity = await read('lib/clerk-identity.js');
+const r2Storage = await read('lib/cloudflare-r2-private-storage.js');
+const postgresMigration = await read('migrations/001_job_agent_authoritative_store.sql');
+const learningMigration = await read('migrations/002_job_agent_continuous_improvement.sql');
+assert.match(postgresStore, /from '@neondatabase\/serverless'/);
+assert.match(postgresStore, /sql`select set_config\('app\.tenant_id'/);
+assert.doesNotMatch(postgresStore, /\.query\(|\.unsafe\(|stringify\(.*sql/i, 'The Neon integration must use parameterized tagged templates only.');
+assert.match(postgresMigration, /force row level security/);
+assert.match(postgresMigration, /revoke all on all tables in schema public from public/);
+assert.match(learningMigration, /force row level security/);
+assert.match(learningMigration, /revoke all on candidate_preferences/);
+assert.match(clerkIdentity, /authorizedParties/);
+assert.match(clerkIdentity, /verification\?\.status/);
+assert.doesNotMatch(clerkIdentity, /console\.(?:log|error|warn)/);
+assert.match(r2Storage, /IfNoneMatch: options\.allowOverwrite === false \? '\*'/);
+assert.doesNotMatch(r2Storage, /ACL:\s*['"]public/i);
 
 const vercel = JSON.parse(await read('vercel.json'));
 const globalHeaders = Object.fromEntries(vercel.headers.find(item => item.source === '/(.*)').headers.map(item => [item.key.toLowerCase(), item.value]));
@@ -133,7 +162,7 @@ console.log(JSON.stringify({
     authentication: { passed: true, passwordStorage: 'not-applicable-passwordless-and-provider-auth', opaqueRevocableSessions: true },
     authorization: { passed: true, explicitlyReviewedRoutes: routes.length, tenantOwnershipFromAuthenticatedSubject: true },
     secrets: { passed: true, trackedSensitiveFiles: 0, highConfidenceSourceMatches: 0 },
-    injection: { passed: true, databaseModel: 'redis-keyed-stores-and-bounded-lua', sqlClients: 0 },
+    injection: { passed: true, databaseModel: 'redis-coordination-plus-disabled-neon-tenant-store', sqlClients: 1, parameterizedTaggedTemplates: true, forcedTenantRls: true },
     headers: { passed: true, strictConciergeCsp: true, sourceMapsTracked: false },
     dependencies: { passed: true, exactDirectVersions: true, lockfileVersion: lock.lockfileVersion },
     errorHandling: { passed: true, rawExceptionResponses: 0, rawPersonLinkedLogs: 0 },

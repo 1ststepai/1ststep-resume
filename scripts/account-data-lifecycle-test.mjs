@@ -72,7 +72,7 @@ const residualRedis = new FakeRedis([
   `1ststep:vault:v1:${otherTenantId}:idem:${'7'.repeat(64)}`,
 ]);
 assert.deepEqual(await deleteTenantResidualIdempotencyKeys({ redis: residualRedis, tenantId }), {
-  deleted: 6, patternsExamined: 6, contentFree: true, containsCandidateValues: false,
+  deleted: 6, patternsExamined: 7, contentFree: true, containsCandidateValues: false,
 });
 assert.equal(residualRedis.values.size, 1);
 assert.equal(residualRedis.values.has(`1ststep:vault:v1:${otherTenantId}:idem:${'7'.repeat(64)}`), true);

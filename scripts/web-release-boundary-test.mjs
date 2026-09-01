@@ -25,7 +25,7 @@ function excludedByDirectoryRule(path) {
 for (const path of [
   '1ststep-extension/content.js',
   '1ststep-extension/manifest.json',
-  'dist/1ststep-job-agent-greenhouse-v1.2.0.zip',
+  'dist/1ststep-job-agent-greenhouse-v1.3.0.zip',
   'artifacts/controlled-extension/RELEASE-INTEGRITY.json',
 ]) {
   assert.equal(excludedByDirectoryRule(path), true, `${path} must be excluded from the Vercel web release`);
@@ -59,7 +59,7 @@ for (const pathname of [
   '/dist/',
   '/1ststep-extension/',
   '/test-results/',
-  '/dist/1ststep-job-agent-greenhouse-v1.2.0.zip',
+  '/dist/1ststep-job-agent-greenhouse-v1.3.0.zip',
 ]) {
   const response = middleware(new Request(`https://preview.example.test${pathname}`));
   assert.equal(response.status, 404, `Forbidden path must return a non-200 response: ${pathname}`);

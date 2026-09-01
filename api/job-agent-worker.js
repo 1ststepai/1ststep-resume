@@ -18,6 +18,7 @@ import { readApplicationSubmissionTaskQueueHealth } from '../lib/application-sub
 import { readApplicationReceiptTaskQueueHealth } from '../lib/application-receipt-task-store.js';
 import { processExpiredAccountDataExports, processNextAccountDataExportTask, readAccountDataExportQueueHealth } from '../lib/account-data-export-task.js';
 import { buildCompleteAccountDataExport } from '../lib/account-data-export-builder.js';
+import { jobAgentLearningConfiguration, processNextJobAgentLearningMaintenance } from '../lib/job-agent-continuous-improvement-worker.js';
 
 export const maxDuration = 180;
 
@@ -55,6 +56,7 @@ export async function executeJobAgentWorkerCycle({
   readSubmissionQueue = readApplicationSubmissionTaskQueueHealth,
   readReceiptQueue = readApplicationReceiptTaskQueueHealth,
   readAccountExportQueue = readAccountDataExportQueueHealth,
+  processLearning = processNextJobAgentLearningMaintenance,
   clock = () => new Date(), logError = value => console.error(value),
 }) {
   const startedAt = clock();
@@ -69,6 +71,7 @@ export async function executeJobAgentWorkerCycle({
   const submissionTasks = [];
   const receiptTasks = [];
   const operatorAlerts = [];
+  const learningMaintenance = [];
   let consequentialQueueHealth = { status: 'unknown', contentFree: true, containsCandidateValues: false, submission: null, receipt: null };
   let operatorAlertQueueHealth = { status: 'unknown', pending: null, overdue: null, failed: null, contentFree: true, containsCandidateValues: false };
   let browserReconciliation = { status: 'not-run' };
@@ -178,6 +181,21 @@ export async function executeJobAgentWorkerCycle({
       failed = true;
       await recordSafely(() => recordEvent('durable_run_failure', { redis: config.redis, now: clock() }));
       logError(JSON.stringify({ type: 'job-agent-durable-worker-error', name: error?.name || 'unknown' }));
+      break;
+    }
+  }
+  const learningEnabled = jobAgentLearningConfiguration(env).enabled;
+  const learningLimit = learningEnabled ? Math.min(2, Math.max(0, Number(query.learningLimit) || 1)) : 0;
+  for (let index = 0; index < learningLimit; index += 1) {
+    try {
+      const result = await processLearning({ ...config, env, now: clock() });
+      if (!result) break;
+      learningMaintenance.push({ status: result.status, proposal: result.proposal || null, expansionCandidates: Number(result.expansionCandidates) || 0 });
+      await recordSafely(() => recordEvent(`learning_maintenance_${result.status}`, { redis: config.redis, now: clock() }));
+    } catch (error) {
+      failed = true;
+      await recordSafely(() => recordEvent('learning_maintenance_failure', { redis: config.redis, now: clock() }));
+      logError(JSON.stringify({ type: 'job-agent-learning-worker-error', name: error?.name || 'unknown' }));
       break;
     }
   }
@@ -361,7 +379,7 @@ export async function executeJobAgentWorkerCycle({
   await recordSafely(() => recordHeartbeat({ redis: config.redis, now: clock(), outcome: failed ? 'failed' : 'succeeded' }));
   return {
     httpStatus: failed ? 500 : 200,
-    body: { ok: !failed, scheduled, scheduledCount: scheduled.length, processed, count: processed.length, followUps, followUpCount: followUps.length, notifications, notificationCount: notifications.length, browserReconciliation, browserTasks, browserTaskCount: browserTasks.length, submissionReconciliation, submissionTasks, submissionTaskCount: submissionTasks.length, receiptTasks, receiptTaskCount: receiptTasks.length, consequentialQueueHealth, operatorAlerts, operatorAlertCount: operatorAlerts.length, operatorAlertQueueHealth, browserSessionCleanup, browserSessionCleanupCount: browserSessionCleanup.length, artifactCleanup, accountExport, accountExportCleanup, accountExportQueueHealth, monetarySpendReconciliation, submissionsEnabled: submissionConfig.ready === true },
+    body: { ok: !failed, scheduled, scheduledCount: scheduled.length, processed, count: processed.length, learningMaintenance, learningMaintenanceCount: learningMaintenance.length, followUps, followUpCount: followUps.length, notifications, notificationCount: notifications.length, browserReconciliation, browserTasks, browserTaskCount: browserTasks.length, submissionReconciliation, submissionTasks, submissionTaskCount: submissionTasks.length, receiptTasks, receiptTaskCount: receiptTasks.length, consequentialQueueHealth, operatorAlerts, operatorAlertCount: operatorAlerts.length, operatorAlertQueueHealth, browserSessionCleanup, browserSessionCleanupCount: browserSessionCleanup.length, artifactCleanup, accountExport, accountExportCleanup, accountExportQueueHealth, monetarySpendReconciliation, submissionsEnabled: submissionConfig.ready === true },
   };
 }
 
