@@ -28,6 +28,8 @@ Evidence is admissible only when it identifies the control, scope, environment, 
 | E-011 | 3,8,13 | Implemented | Database isolation/recovery report, machine evidence, read-only catalog inventory, and pgTAP suite define the exact staging/restore evidence contract | 2026-09-01 | Repository static analysis only | Not staging/production evidence |
 | E-009 | 12 | Unknown | Log-drain retention, alert delivery receipt, dashboard SLO, and on-call acknowledgement | 2026-09-01 | Production | Warning |
 | E-010 | 6,9,10,11 | Unknown | Measured runtime quota, cache, concurrency, fairness, capacity, and failover behavior | 2026-09-01 | Staging/Production | Warning |
+| E-012 | 1,2,5,10 | Verified in staging | Protected Preview `dpl_CPqjxie64YwfUrrar3qzGrdr3WoF` rendered the first-use concierge, exposed 41 intended API functions, passed liveness and live-discovery smoke with submissions disabled, and returned the intended CSP, security, and cache headers. Readiness failed closed because signed-beta infrastructure is intentionally incomplete | 2026-09-01 | Commit `d899db2a899cfded756e38130ee864295f0a553b`; Vercel Preview | Warning; production unchanged |
+| E-013 | 12 | Verified in staging | A bounded, content-free read of Preview runtime request logs corroborated the expected synthetic outcomes: liveness/config/discovery 200, incomplete readiness 503, unsigned session capabilities 401, and no application log messages | 2026-09-01 | Deployment `dpl_CPqjxie64YwfUrrar3qzGrdr3WoF`; nine retained request summaries | Warning; log drain, retention, alert receipt, and on-call response remain unknown |
 
 ## Persisting new evidence
 
