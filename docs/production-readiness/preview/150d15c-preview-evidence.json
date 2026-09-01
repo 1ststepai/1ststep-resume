@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-01T23:45:00Z",
+  "environment": "Vercel Preview",
+  "sourceCommit": "150d15ce082a2932eba245b297d2d46afbdf860c",
+  "runtimeSha256": "f5625a51fd554ad5a38dea5ad140cc5d7153af5d076b496fca3ff1cbe2ae8a40",
+  "deployment": {
+    "id": "dpl_1234TcPAayhdctQZ4g8c64jCqoVY",
+    "url": "https://1ststep-resume-2uu9awcoh-1ststep.vercel.app",
+    "target": "preview",
+    "readyState": "READY",
+    "protected": true
+  },
+  "checks": {
+    "releaseGate": "passed",
+    "ciWorkflowPolicy": "passed",
+    "rollbackPreflightTests": "passed",
+    "previewLogEvidenceTests": "passed",
+    "truthfulFirstUseHtml": true,
+    "healthLive": "healthy",
+    "healthReady": "unavailable-fail-closed",
+    "durableRateLimit": "passed",
+    "liveEmployerFeedsChecked": 36,
+    "exactSyntheticMatches": 2,
+    "submissionsEnabled": false
+  },
+  "browserQa": {
+    "desktopViewport": "1440x900",
+    "mobileViewport": "375x844",
+    "horizontalOverflow": false,
+    "consoleErrorsOrWarnings": 0,
+    "startControlVisibleAndEnabled": true,
+    "onboardingDialogOpened": true,
+    "desktopBrowserLoadMilliseconds": 445,
+    "documentLanguage": "en",
+    "duplicateIds": 0,
+    "unnamedButtons": 0,
+    "unnamedLinks": 0,
+    "imagesMissingAlt": 0,
+    "positiveTabindex": 0,
+    "mainLandmarks": 1,
+    "mobileNavLabelPixels": 10,
+    "mobileNavTargetPixels": "73x45",
+    "scope": "Bounded browser and semantic checks; not a full WCAG or Lighthouse certification"
+  },
+  "observability": {
+    "providerRequestLogsSampled": true,
+    "qualifyingRecords": 16,
+    "expectedRouteStatuses": {
+      "/api/health/live": 200,
+      "/api/health/ready": 503,
+      "/api/app-config": 200,
+      "/api/concierge-preview-smoke": 200
+    },
+    "contentBearingAllowlistedRecords": 0,
+    "unexpectedStatusRecords": 0,
+    "missingRoutes": [],
+    "rawMessagesEmitted": false,
+    "rawLogsRetained": false,
+    "providerRetentionVerified": false,
+    "logDrainVerified": false,
+    "alertDeliveryVerified": false,
+    "onCallResponseVerified": false
+  },
+  "capacity": {
+    "probeDeployed": true,
+    "protectedPreviewProbeExecuted": false,
+    "reason": "SCOPED_PREVIEW_BYPASS_SECRET_NOT_AVAILABLE",
+    "signedUserFairnessTested": false,
+    "providerQuotasVerified": false,
+    "capacityClaimed": false
+  },
+  "remoteReview": {
+    "ciPolicyVerifiedLocally": true,
+    "remoteBranchPresent": false,
+    "remoteCiExecuted": false,
+    "pushAuthorized": false,
+    "reviewRequestAuthorized": false
+  },
+  "externalActions": {
+    "productionTrafficChanged": false,
+    "migrationApplied": false,
+    "candidateDataTransmitted": false,
+    "employerContacted": false,
+    "applicationSubmitted": false
+  }
+}
