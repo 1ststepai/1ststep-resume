@@ -40,6 +40,8 @@ This approval must not activate browser execution, employer submission, email, b
 
 The exact bounded command is documented in [`staging-capacity-probe.md`](staging-capacity-probe.md). The script refuses Production hosts and cannot exceed 25 requests/five concurrent requests.
 
+Current evidence: a read-only Preview environment-variable name listing contains no `VERCEL_AUTOMATION_BYPASS_SECRET`. No secret value was requested, displayed, written, or inferred, and no capacity claim has been made.
+
 ## Decision 4: operations and alerts
 
 Provide or approve:
