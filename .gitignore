@@ -3,11 +3,13 @@
 !.env.example
 
 node_modules/
+.public-web/
 dist/
 build/
 .vercel/
 .next/
 coverage/
+tmp/
 
 *.log
 npm-debug.log*

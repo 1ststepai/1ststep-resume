@@ -1,0 +1,45 @@
+# Line-ending policy for this repository.
+# Text is stored as LF in git and checked out as LF. Node, Vercel and every
+# editor in use handle LF on Windows; this ends the CRLF-vs-LF churn that made
+# ~115 files show as modified with no content change.
+
+* text=auto eol=lf
+
+# --- Digest-pinned policy documents: NEVER normalise ------------------------
+# terms.html and privacy.html are SHA-256 verified by
+# scripts/verify-job-agent-policy-bundle.mjs against the digests checked into
+# lib/job-agent-policy-bundle.js. Any byte change - including a line-ending
+# rewrite - breaks that check and, by design, requires counsel review plus an
+# intentional version and digest update.
+terms.html   -text
+privacy.html -text
+
+# --- Windows shells: keep CRLF in the working tree --------------------------
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# --- POSIX shell: must stay LF ---------------------------------------------
+*.sh  text eol=lf
+
+# --- Binary assets: never diffed, never normalised --------------------------
+*.png   binary
+*.PNG   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.mp4   binary
+*.mov   binary
+*.zip   binary
+*.pak   binary
+*.pdf   binary
+*.docx  binary
+*.pptx  binary
+*.xlsx  binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+*.eot   binary
