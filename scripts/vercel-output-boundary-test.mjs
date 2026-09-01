@@ -64,6 +64,7 @@ const expectedStatic = [
   'client/prohibited-secret.js',
   '1ststep-logo.png',
   '1ststep-ai-icon.png',
+  'robots.txt',
 ];
 
 for (const file of expectedStatic) {
@@ -114,12 +115,20 @@ for (const requiredFunction of [
 ]) {
   assert(functionNames.has(requiredFunction), `Expected serverless API function missing: api/${requiredFunction}`);
 }
-assert(functionNames.size >= 30, `Unexpectedly low API function count: ${functionNames.size}`);
+assert.equal(functionNames.size, 36, `Unexpected API function count: ${functionNames.size}`);
 
 const outputConfig = JSON.parse(await readFile(path.join(outputRoot, 'config.json'), 'utf8'));
 const routeText = JSON.stringify(outputConfig.routes || []);
 for (const route of ['/app', '/concierge', '/pricing', '/terms', '/privacy']) {
   assert(routeText.includes(route), `Expected route missing from Vercel output config: ${route}`);
+}
+assert(routeText.includes('/api'), 'Expected API function routing missing from Vercel output config');
+assert(routeText.includes('middleware'), 'Expected forbidden-path middleware missing from Vercel output config');
+const middlewareRoute = (outputConfig.routes || []).find(route => route.middlewarePath === 'middleware');
+assert(middlewareRoute, 'Expected Vercel routing middleware entry is missing');
+assert.notEqual(middlewareRoute.src, '^/.*$', 'Forbidden-path middleware must not intercept every route');
+for (const routeToken of ['lib', 'scripts', 'docs', 'dist', '1ststep-extension', 'test-results', 'DESIGN', 'gitattributes']) {
+  assert(middlewareRoute.src.includes(routeToken), `Compiled middleware matcher is missing ${routeToken}`);
 }
 
 const pageRoutes = new Map([
@@ -147,7 +156,7 @@ await new Promise((resolve, reject) => {
 try {
   const address = outputServer.address();
   const origin = `http://127.0.0.1:${address.port}`;
-  for (const route of [...pageRoutes.keys(), '/style.css', '/concierge.js', '/client/concierge-domain.js', '/1ststep-logo.png']) {
+  for (const route of [...pageRoutes.keys(), '/robots.txt', '/style.css', '/concierge.js', '/client/concierge-domain.js', '/1ststep-logo.png']) {
     assert.equal((await fetch(`${origin}${route}`)).status, 200, `Expected public route failed: ${route}`);
   }
   for (const route of [
@@ -155,11 +164,12 @@ try {
     '/lib/job-agent-policy-levels.js',
     '/DESIGN.md',
     '/.gitattributes',
-    '/scripts/smoke-test.cjs',
-    '/docs/JOB_AGENT_RUNTIME.md',
+    '/scripts/',
+    '/docs/',
+    '/dist/',
     '/dist/1ststep-job-agent-greenhouse-v1.2.0.zip',
-    '/1ststep-extension/manifest.json',
-    '/test-results/example.json',
+    '/1ststep-extension/',
+    '/test-results/',
   ]) {
     assert.equal((await fetch(`${origin}${route}`)).status, 404, `Internal path was unexpectedly public: ${route}`);
   }

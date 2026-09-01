@@ -30,6 +30,7 @@ videos/
 *.cmd
 *.ps1
 *.txt
+!robots.txt
 *.docx
 diff*.txt
 test*.html
