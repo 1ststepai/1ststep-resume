@@ -109,6 +109,8 @@ assert.match(conciergeHtml, /Daily target \(not a guarantee\)/);
 assert.match(conciergeHtml, /id="openAgentAccess"[^>]*>Sign in</);
 assert.match(conciergeJs, /classList\.toggle\('workspace-ready', workspaceReady\)/);
 assert.match(conciergeCss, /body:not\(\.workspace-ready\) \.daily-dashboard/);
+assert.match(conciergeCss, /@media\(max-width:720px\)[\s\S]*?\.agent-header nav button\{[^}]*font-size:10\.5px/, 'Mobile navigation labels must remain readable at the primary breakpoint');
+assert.match(conciergeCss, /@media\(max-width:390px\)\{\.agent-header nav button\{font-size:10px\}/, 'Narrow mobile navigation labels must not regress below 10px');
 assert.match(conciergeHtml, /id="sourceMemory"/);
 assert.match(conciergeHtml, /id="funnelMetrics"/);
 assert.match(conciergeHtml, /Admin evidence and operating controls/);
