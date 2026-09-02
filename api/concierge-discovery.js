@@ -4,7 +4,13 @@ import { applyApiHeaders, authenticateApiRequestOrGuest, hasJsonContentType, isO
 import { enforceDurableRateLimit, sendRateLimitResult } from '../lib/durable-rate-limit.js';
 import { recordConfiguredJobAgentOperationalEvent } from '../lib/job-agent-operational-metrics.js';
 
-export const maxDuration = 30;
+export const maxDuration = 45;
+export const USER_DISCOVERY_RUNTIME = Object.freeze({
+  requestTimeoutMs: 4_000,
+  detailTimeoutMs: 3_000,
+  sourceConcurrency: 20,
+  providerRequestConcurrency: 2,
+});
 
 function configuredSources() {
   if (process.env.CONCIERGE_PUBLIC_ATS_SOURCES === undefined) return DEFAULT_PUBLIC_ATS_SOURCES;
@@ -47,7 +53,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const result = await discoverPublicJobs({ mission: req.body?.mission || {}, sources, limit: req.body?.limit || 50 });
+    const result = await discoverPublicJobs({
+      mission: req.body?.mission || {},
+      sources,
+      limit: req.body?.limit || 50,
+      runtime: USER_DISCOVERY_RUNTIME,
+    });
     return res.status(200).json({ ...result, submissionsEnabled: false, costMode: 'no-paid-job-api', access: auth.guest ? 'guest' : 'signed', status: 'complete' });
   } catch (error) {
     await recordConfiguredJobAgentOperationalEvent('discovery_failure');

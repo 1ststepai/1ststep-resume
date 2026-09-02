@@ -3,7 +3,8 @@ import {
   dedupePublicJobs, discoverPublicJobs, fetchPublicAtsJson, jobMatchesMission, normalizePublicPostings, publicAtsProviderDescriptor, publicDiscoveryRuntimeOptions, publicGreenhouseJobUrl, publicLeverJobUrl, publicSmartRecruitersJobUrl, publicSourceRequestUrls, publicSourceUrl, reverifyPublicJob, validatePublicSource, verifyPublicApplyPath,
 } from '../lib/public-ats-discovery.js';
 import { JOB_RELEVANCE_POLICY_VERSION, jobTitleMatchesMission, restoredJobCardIsRelevant } from '../lib/job-mission-relevance.js';
-import discoveryHandler from '../api/concierge-discovery.js';
+import discoveryHandler, { maxDuration as discoveryMaxDuration, USER_DISCOVERY_RUNTIME } from '../api/concierge-discovery.js';
+import { maxDuration as previewSmokeMaxDuration, SMOKE_DISCOVERY_RUNTIME } from '../api/concierge-preview-smoke.js';
 import { DEFAULT_PUBLIC_ATS_SOURCES } from '../lib/public-ats-catalog.js';
 
 const greenhouse = { provider: 'greenhouse', slug: 'fixtureco', employer: 'Fixture Co' };
@@ -30,6 +31,14 @@ assert.deepEqual(publicDiscoveryRuntimeOptions(), {
 });
 assert.deepEqual(publicDiscoveryRuntimeOptions({ requestTimeoutMs: 1, detailTimeoutMs: 99_000, sourceConcurrency: 99, providerRequestConcurrency: 0 }), {
   requestTimeoutMs: 1_000, detailTimeoutMs: 15_000, sourceConcurrency: 20, providerRequestConcurrency: 1,
+});
+assert.equal(previewSmokeMaxDuration, 30);
+assert.deepEqual(SMOKE_DISCOVERY_RUNTIME, {
+  requestTimeoutMs: 2_500, detailTimeoutMs: 2_000, sourceConcurrency: 20, providerRequestConcurrency: 2,
+});
+assert.equal(discoveryMaxDuration, 45);
+assert.deepEqual(USER_DISCOVERY_RUNTIME, {
+  requestTimeoutMs: 4_000, detailTimeoutMs: 3_000, sourceConcurrency: 20, providerRequestConcurrency: 2,
 });
 const providerDescriptor = publicAtsProviderDescriptor(greenhouse);
 assert.equal(providerDescriptor.contractVersion, 2);

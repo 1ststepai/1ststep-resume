@@ -4,10 +4,10 @@ import { DEFAULT_PUBLIC_ATS_SOURCES } from '../lib/public-ats-catalog.js';
 import { discoverPublicJobs } from '../lib/public-ats-discovery.js';
 
 export const maxDuration = 30;
-const SMOKE_DISCOVERY_RUNTIME = Object.freeze({
+export const SMOKE_DISCOVERY_RUNTIME = Object.freeze({
   requestTimeoutMs: 2_500,
   detailTimeoutMs: 2_000,
-  sourceConcurrency: 12,
+  sourceConcurrency: 20,
   providerRequestConcurrency: 2,
 });
 

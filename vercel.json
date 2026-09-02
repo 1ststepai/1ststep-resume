@@ -18,7 +18,7 @@
     "api/claude.js":              { "maxDuration": 60 },
     "api/ai.js":                  { "maxDuration": 60 },
     "api/jobs.js":                { "maxDuration": 30 },
-    "api/concierge-discovery.js": { "maxDuration": 30 },
+    "api/concierge-discovery.js": { "maxDuration": 45 },
     "api/concierge-preview-smoke.js": { "maxDuration": 30 },
     "api/job-agent-runs.js":       { "maxDuration": 45 },
     "api/job-agent-worker.js":     { "maxDuration": 60, "includeFiles": "node_modules/{@napi-rs,pdfjs-dist,pdfkit}/**/*" },
