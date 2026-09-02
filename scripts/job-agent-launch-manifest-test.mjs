@@ -50,7 +50,11 @@ const readyEnv = {
   JOB_AGENT_ALERT_WEBHOOK_URL: 'https://alerts.example.test/job-agent',
   JOB_AGENT_ALERT_ALLOWED_HOSTS: 'alerts.example.test',
   JOB_AGENT_ALERT_BEARER_TOKEN: 'w'.repeat(48),
+  JOB_AGENT_ALERTING_APPROVED: 'true',
   JOB_AGENT_ALERT_CONTRACT_VERSION: 'alerts-2026-08',
+  JOB_AGENT_ALERT_COOLDOWN_SECONDS: '900',
+  JOB_AGENT_ALERT_RETENTION_DAYS: '90',
+  JOB_AGENT_ALERT_ACKNOWLEDGEMENT_MINUTES: '15',
   STRIPE_WEBHOOK_IDEMPOTENCY_SECRET: 'i'.repeat(48),
   JOB_AGENT_RECEIPT_SECRET: 'q'.repeat(48),
   AI_GLOBAL_DAILY_UNITS: '200',
@@ -145,6 +149,13 @@ assert.equal(manifest.supportAndIncidentOwnership.supportOwnerAssigned, true);
 assert.equal(manifest.supportAndIncidentOwnership.incidentOwnerAssigned, true);
 assert.equal(manifest.supportAndIncidentOwnership.runbookFingerprintMatches, true);
 assert.equal(manifest.supportAndIncidentOwnership.containsOwnerIdentifiers, false);
+assert.equal(manifest.operatorAlerting.ready, true);
+assert.equal(manifest.operatorAlerting.approved, true);
+assert.equal(manifest.operatorAlerting.retentionDays, 90);
+assert.equal(manifest.operatorAlerting.acknowledgementWindowMinutes, 15);
+assert.equal(manifest.operatorAlerting.containsEndpointOrCredential, false);
+assert.equal(Object.hasOwn(manifest.operatorAlerting, 'url'), false);
+assert.equal(Object.hasOwn(manifest.operatorAlerting, 'bearerToken'), false);
 assert.equal(manifest.assistedExecutionMode, 'greenhouse-extension');
 assert.ok(manifest.capabilities.assistedApplication.blockers.includes('GREENHOUSE_EXTENSION_HANDOFF_NOT_CONFIGURED'));
 assert.ok(manifest.capabilities.assistedApplication.blockers.includes('ASSISTED_APPLICATION_NOT_APPROVED'));

@@ -28,6 +28,21 @@ assert.equal(jobAgentOperatorAlertConfiguration({
   JOB_AGENT_ALERT_BEARER_TOKEN: 'x'.repeat(32), UPSTASH_REDIS_REST_URL: 'https://redis.example.test', UPSTASH_REDIS_REST_TOKEN: 'token',
 }), null);
 
+const configuredEnv = {
+  JOB_AGENT_ALERTING_APPROVED: 'true', JOB_AGENT_ALERT_WEBHOOK_URL: 'https://alerts.example.test/hook',
+  JOB_AGENT_ALERT_ALLOWED_HOSTS: 'alerts.example.test', JOB_AGENT_ALERT_BEARER_TOKEN: 'x'.repeat(32),
+  JOB_AGENT_ALERT_CONTRACT_VERSION: 'alerts-2026-08', JOB_AGENT_ALERT_RETENTION_DAYS: '90',
+  JOB_AGENT_ALERT_ACKNOWLEDGEMENT_MINUTES: '15', UPSTASH_REDIS_REST_URL: 'https://redis.example.test',
+  UPSTASH_REDIS_REST_TOKEN: 'token',
+};
+const configured = jobAgentOperatorAlertConfiguration(configuredEnv);
+assert.equal(configured.approved, true);
+assert.equal(configured.retentionDays, 90);
+assert.equal(configured.acknowledgementWindowMinutes, 15);
+assert.equal(jobAgentOperatorAlertConfiguration({ ...configuredEnv, JOB_AGENT_ALERTING_APPROVED: '' }), null);
+assert.equal(jobAgentOperatorAlertConfiguration({ ...configuredEnv, JOB_AGENT_ALERT_RETENTION_DAYS: '29' }), null);
+assert.equal(jobAgentOperatorAlertConfiguration({ ...configuredEnv, JOB_AGENT_ALERT_ACKNOWLEDGEMENT_MINUTES: '1441' }), null);
+
 const redis = new FakeRedis();
 const requests = [];
 const options = {
