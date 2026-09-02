@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {
-  dedupePublicJobs, discoverPublicJobs, fetchPublicAtsJson, jobMatchesMission, normalizePublicPostings, publicAtsProviderDescriptor, publicGreenhouseJobUrl, publicLeverJobUrl, publicSmartRecruitersJobUrl, publicSourceRequestUrls, publicSourceUrl, reverifyPublicJob, validatePublicSource, verifyPublicApplyPath,
+  dedupePublicJobs, discoverPublicJobs, fetchPublicAtsJson, jobMatchesMission, normalizePublicPostings, publicAtsProviderDescriptor, publicDiscoveryRuntimeOptions, publicGreenhouseJobUrl, publicLeverJobUrl, publicSmartRecruitersJobUrl, publicSourceRequestUrls, publicSourceUrl, reverifyPublicJob, validatePublicSource, verifyPublicApplyPath,
 } from '../lib/public-ats-discovery.js';
 import { JOB_RELEVANCE_POLICY_VERSION, jobTitleMatchesMission, restoredJobCardIsRelevant } from '../lib/job-mission-relevance.js';
 import discoveryHandler from '../api/concierge-discovery.js';
@@ -25,6 +25,12 @@ assert.throws(() => validatePublicSource({ provider: 'custom', slug: 'https://in
 assert.throws(() => validatePublicSource({ provider: 'lever', slug: '../private', employer: 'Bad' }), /slug is invalid/);
 assert.equal(DEFAULT_PUBLIC_ATS_SOURCES.length, 37);
 assert.ok(DEFAULT_PUBLIC_ATS_SOURCES.every(source => validatePublicSource(source)));
+assert.deepEqual(publicDiscoveryRuntimeOptions(), {
+  requestTimeoutMs: 8_000, detailTimeoutMs: 6_000, sourceConcurrency: 8, providerRequestConcurrency: 2,
+});
+assert.deepEqual(publicDiscoveryRuntimeOptions({ requestTimeoutMs: 1, detailTimeoutMs: 99_000, sourceConcurrency: 99, providerRequestConcurrency: 0 }), {
+  requestTimeoutMs: 1_000, detailTimeoutMs: 15_000, sourceConcurrency: 20, providerRequestConcurrency: 1,
+});
 const providerDescriptor = publicAtsProviderDescriptor(greenhouse);
 assert.equal(providerDescriptor.contractVersion, 2);
 assert.equal(providerDescriptor.authentication, 'none');

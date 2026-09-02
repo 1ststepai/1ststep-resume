@@ -4,6 +4,12 @@ import { DEFAULT_PUBLIC_ATS_SOURCES } from '../lib/public-ats-catalog.js';
 import { discoverPublicJobs } from '../lib/public-ats-discovery.js';
 
 export const maxDuration = 30;
+const SMOKE_DISCOVERY_RUNTIME = Object.freeze({
+  requestTimeoutMs: 2_500,
+  detailTimeoutMs: 2_000,
+  sourceConcurrency: 12,
+  providerRequestConcurrency: 2,
+});
 
 export default async function handler(req, res) {
   applyApiHeaders(req, res);
@@ -17,16 +23,22 @@ export default async function handler(req, res) {
   });
   if (!limit.ok) return sendRateLimitResult(res, limit, 'Preview verification limit reached.');
 
+  const startedAt = Date.now();
   const discovery = await discoverPublicJobs({
     mission: { role: 'procurement', workModes: ['Remote', 'Hybrid'], employmentTypes: ['Full-time', 'Contract'], location: 'Newark, NJ' },
     sources: DEFAULT_PUBLIC_ATS_SOURCES,
     limit: 5,
+    runtime: SMOKE_DISCOVERY_RUNTIME,
   });
-  return res.status(200).json({
-    ok: true,
+  const sourcesChecked = discovery.sourceSummary.filter(source => source.status === 'ok' || source.status === 'partial').length;
+  const ok = sourcesChecked > 0;
+  return res.status(ok ? 200 : 503).json({
+    ok,
     durableRateLimit: 'passed',
-    sourcesChecked: discovery.sourceSummary.filter(source => source.status === 'ok').length,
+    sourceAttempts: discovery.sourceSummary.length,
+    sourcesChecked,
     matches: discovery.jobs.length,
+    durationMs: Math.max(0, Date.now() - startedAt),
     submissionsEnabled: false,
   });
 }
