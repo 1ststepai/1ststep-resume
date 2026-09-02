@@ -4,10 +4,10 @@ This is the operator path from the current protected Preview to a controlled Pro
 
 ## Current release identity
 
-- Release candidate commit: `150d15ce082a2932eba245b297d2d46afbdf860c`
-- Runtime SHA-256: `f5625a51fd554ad5a38dea5ad140cc5d7153af5d076b496fca3ff1cbe2ae8a40`
+- Release candidate commit: `45afe330237fe9fa8f51f3fe17da9599cc9677d9`
+- Runtime SHA-256: `0a73c90e96db11868eae20812462fdb5ee1fb1d664dc5d8f3fdb4214bdf9e25b`
 - Core CI-hardening commit: `307e48d2fb1c134da3252959ba8b5ed3efc6285e`
-- Exact protected Preview: `dpl_1234TcPAayhdctQZ4g8c64jCqoVY`
+- Exact protected Preview: `dpl_ELeJmsXYJFZdKP976hHjBcSUDkyb`
 - Current Production/rollback reference: `dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM`
 - Production state: unchanged and not candidate-parity
 
