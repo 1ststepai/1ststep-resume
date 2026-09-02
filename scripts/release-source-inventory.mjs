@@ -73,6 +73,7 @@ const toolingOnlyModules = new Set([
   'lib/job-agent-object-storage-drill.js',
   'lib/job-agent-database-runtime-evidence.js',
   'lib/job-agent-recovery-evidence.js',
+  'lib/job-agent-signed-capacity-evidence.js',
   'lib/job-agent-pricing.js',
   'lib/job-agent-readiness-drill-client.js',
   'lib/job-agent-release-preflight.js',
