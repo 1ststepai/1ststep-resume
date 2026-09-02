@@ -7,7 +7,7 @@ This file is an operator checklist, not an authorization record. Checking a box 
 - Latest runtime candidate: commit `16089681c330c1684a526e786a466e4a2b6f917e`; runtime SHA-256 `219a40b7d38f4a4e0a88cd75897c552faa18c2d247d05457857ddc782b7a94a7`.
 - Protected Preview: `dpl_Ae8h7AVH4kAwDvhLVJfex8n11KRL` (Ready; exact candidate, fail-closed sign-in UX, live route behavior, bounded representative discovery canary, capacity result, and content-free request logs verified).
 - Protected Preview capacity: 10/10 liveness responses were HTTP 200 at concurrency 2; p50 109 ms, p95/max 243 ms, no bodies read, no bypass secret, and no writes. The discovery canary returned 3/3 HTTP 200 and clearly distinguished eight representative source attempts across four providers from the 37-source catalog. This is not a Production-capacity, full-catalog-per-run, signed-user-fairness, queue-throughput, or plan-quota claim.
-- Isolated-data preflight: canonical digest valid; current operator environment has no Supabase CLI, no local container runtime, and no nonproduction target attestation. It made no network call and proved no target.
+- Isolated-data preflight: canonical digest valid; current operator environment has no Supabase CLI or local container runtime and no nonproduction target attestation. A separate authenticated read-only Supabase inventory found two healthy projects, both assigned to another product, with zero development branches and zero eligible 1stStep.ai target. No schema or data was inspected and no resource was created.
 - Current Production/rollback reference: `dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM` (Ready, but not candidate-parity).
 - Full local release gate: passed.
 - Production dependency audit: source commit `0510756bed9537de9bba87eb1566150268d57408` adds a separate bounded CI job; the local `npm audit --omit=dev --audit-level=high` check found zero vulnerabilities across 167 production dependencies (181 total dependency entries). Remote CI execution is still unknown because the branch has not been pushed.
@@ -26,7 +26,7 @@ Then separately authorize only this scope:
 
 > Apply `supabase/migrations/20260901195545_job_agent_canonical_baseline.sql` to the proven isolated target; run the role-aware pgTAP pack, Supabase advisors, grant/RLS matrix inspection, and content-free schema evidence. Do not link to, inspect candidate rows in, or mutate Production.
 
-Current evidence: neither Docker nor Podman, a local PostgreSQL command/service, nor a linked Supabase project is available. `npx supabase status` fails before database inspection because the container runtime is absent.
+Current evidence: neither Docker nor Podman nor a local PostgreSQL command/service is available. `npx supabase status` fails before database inspection because the container runtime is absent. The authenticated Supabase account contains no eligible 1stStep.ai project or branch; current Supabase documentation states that data-less isolated branches are a Pro-plan capability, so branch or project creation requires organization selection, exact cost disclosure, and explicit cost confirmation before creation.
 
 ## Decision 2: private storage and recovery exercise
 
