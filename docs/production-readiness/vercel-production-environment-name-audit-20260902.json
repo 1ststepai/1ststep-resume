@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-02T03:01:00Z",
+  "environment": "Vercel Production",
+  "auditMode": "variable-names-only",
+  "contentFree": true,
+  "secretValuesRead": false,
+  "secretValuesEmitted": false,
+  "performsWrites": false,
+  "observedVariableNames": 47,
+  "requiredVariableNames": 126,
+  "presentRequiredVariableNames": 24,
+  "absentRequiredVariableNames": 102,
+  "observedNameDigestSha256": "e228aa8180aec98b785f53a00632008712dbc00e12d5c05a858a25d604afb480",
+  "controls": {
+    "durable-runtime": { "present": 7, "required": 7 },
+    "private-storage": { "present": 0, "required": 6 },
+    "consent": { "present": 0, "required": 5 },
+    "scheduling": { "present": 0, "required": 2 },
+    "needs-you-delivery": { "present": 2, "required": 5 },
+    "cost-controls": { "present": 14, "required": 24 },
+    "controlled-beta": { "present": 0, "required": 8 },
+    "audit-archive": { "present": 0, "required": 11 },
+    "operator-alerting": { "present": 0, "required": 8 },
+    "signed-launch-evidence": { "present": 0, "required": 7 },
+    "support-ownership": { "present": 0, "required": 8 },
+    "document-render": { "present": 0, "required": 2 },
+    "assisted-greenhouse": { "present": 0, "required": 8 },
+    "final-submission": { "present": 0, "required": 24 }
+  },
+  "configurationValuesValidated": false,
+  "deployedRuntimeVerified": false,
+  "productionReadinessClaimed": false,
+  "externalActions": {
+    "environmentChanged": false,
+    "productionTrafficChanged": false,
+    "paidFeatureActivated": false,
+    "credentialTransmitted": false
+  }
+}
