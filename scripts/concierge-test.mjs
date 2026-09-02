@@ -80,6 +80,12 @@ assert.match(conciergeHtml, /Your agent keeps moving and only asks when you’re
 assert.match(conciergeHtml, /id="openGuidedLaunch"/);
 assert.match(conciergeHtml, /id="guidedLaunchOverlay"[^>]*role="dialog"[^>]*aria-modal="true"/);
 for (const stage of ['goal', 'resume', 'path', 'work', 'employment', 'salary', 'review']) assert.match(conciergeHtml, new RegExp(`data-guided-stage="${stage}"`));
+assert.match(conciergeHtml, /class="guided-answer-grid" role="radiogroup" aria-labelledby="guidedLaunchTitle"/);
+for (const titleId of ['workStepTitle', 'employmentStepTitle', 'salaryStepTitle']) assert.match(conciergeHtml, new RegExp(`role="radiogroup" aria-labelledby="${titleId}"`));
+assert.equal((conciergeHtml.match(/role="radio" aria-checked="false"/g) || []).length, 13, 'Every guided single-choice option must expose radio semantics before hydration');
+assert.match(conciergeJs, /button\.setAttribute\('aria-checked', String\(selected\)\)/);
+assert.match(conciergeJs, /button\.tabIndex = selected \|\| \(!groupHasSelection && button === peers\[0\]\) \? 0 : -1/);
+assert.match(conciergeJs, /function handleGuidedRadioKeydown\(event\)[\s\S]*?ArrowLeft[\s\S]*?ArrowDown[\s\S]*?target\.focus\(\)/);
 assert.match(conciergeHtml, /Nothing is submitted during setup/);
 assert.match(conciergeJs, /GUIDED_LAUNCH_STAGES = Object\.freeze\(\['goal', 'resume', 'path', 'work', 'employment', 'salary', 'review'\]\)/);
 assert.match(conciergeJs, /searchGoal: guidedSelection\.goal/);

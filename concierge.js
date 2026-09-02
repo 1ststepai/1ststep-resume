@@ -1439,10 +1439,12 @@ function renderGuidedLaunch() {
   $('guidedLaunchBack').disabled = guidedLaunchStep === 0;
   $('guidedLaunchNext').hidden = stage === 'review';
   $('guidedLaunchNext').disabled = !guidedStageIsReady(stage);
-  document.querySelectorAll('[data-guided-goal]').forEach(button => {
+  const goalButtons = [...document.querySelectorAll('[data-guided-goal]')];
+  goalButtons.forEach((button, index) => {
     const selected = button.dataset.guidedGoal === guidedSelection.goal;
     button.classList.toggle('selected', selected);
     button.setAttribute('aria-checked', String(selected));
+    button.tabIndex = selected || (!guidedSelection.goal && index === 0) ? 0 : -1;
   });
   if (stage === 'review') {
     const path = selectedOpportunityPath();
@@ -2302,7 +2304,15 @@ function renderMission() {
   $('openGuidedLaunch').querySelector('span').textContent = missionActive ? 'Update my Job Agent' : 'Start my Job Agent';
   document.body.classList.toggle('mission-active', missionActive);
   document.body.classList.toggle('workspace-ready', workspaceReady);
-  document.querySelectorAll('[data-launch-choice]').forEach(button => button.classList.toggle('selected', String(guidedSelection[button.dataset.launchChoice]) === button.dataset.value));
+  const launchChoiceButtons = [...document.querySelectorAll('[data-launch-choice]')];
+  launchChoiceButtons.forEach(button => {
+    const peers = launchChoiceButtons.filter(peer => peer.dataset.launchChoice === button.dataset.launchChoice);
+    const selected = String(guidedSelection[button.dataset.launchChoice]) === button.dataset.value;
+    const groupHasSelection = peers.some(peer => String(guidedSelection[peer.dataset.launchChoice]) === peer.dataset.value);
+    button.classList.toggle('selected', selected);
+    button.setAttribute('aria-checked', String(selected));
+    button.tabIndex = selected || (!groupHasSelection && button === peers[0]) ? 0 : -1;
+  });
   renderAgentConfiguration();
   renderNeedsYouQueue();
   renderOpportunityPaths();
@@ -2992,11 +3002,50 @@ $('guidedLaunchBack').addEventListener('click', () => {
 });
 $('guidedLaunchNext').addEventListener('click', advanceGuidedLaunch);
 $('guidedLaunchOverlay').addEventListener('click', event => { if (event.target === $('guidedLaunchOverlay')) closeGuidedLaunch(); });
-document.querySelectorAll('[data-guided-goal]').forEach(button => button.addEventListener('click', () => {
+function chooseGuidedGoal(button, advance = false) {
   guidedSelection.goal = button.dataset.guidedGoal;
   saveGuidedLaunchDraft(); renderMission();
-  setTimeout(advanceGuidedLaunch, 160);
-}));
+  if (advance) setTimeout(advanceGuidedLaunch, 160);
+}
+
+function chooseGuidedLaunchChoice(button, advance = false) {
+  const key = button.dataset.launchChoice;
+  guidedSelection[key] = key === 'salary' ? Number(button.dataset.value) : button.dataset.value;
+  if (key === 'workMode' && guidedSelection.workMode === 'Remote') guidedSelection.location = 'United States';
+  if (key === 'workMode' && guidedSelection.workMode !== 'Remote' && guidedSelection.location === 'United States') {
+    guidedSelection.location = '';
+    $('launchLocation').value = '';
+  }
+  missionState.pathScan = null;
+  saveGuidedLaunchDraft(); renderMission();
+  if (!advance) return;
+  if (key === 'workMode' && guidedSelection.workMode !== 'Remote' && !$('launchLocation').value) $('launchLocation').focus();
+  const stageForKey = { workMode: 'work', employmentType: 'employment', salary: 'salary' }[key];
+  const canAdvance = stageForKey === GUIDED_LAUNCH_STAGES[guidedLaunchStep] && (key !== 'workMode' || guidedSelection.workMode === 'Remote');
+  if (canAdvance) setTimeout(advanceGuidedLaunch, 160);
+}
+
+function handleGuidedRadioKeydown(event) {
+  const supportedKeys = ['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown', 'Home', 'End'];
+  if (!supportedKeys.includes(event.key)) return;
+  const group = event.currentTarget.closest('[role="radiogroup"]');
+  const radios = group ? [...group.querySelectorAll('[role="radio"]')] : [];
+  if (!radios.length) return;
+  const currentIndex = Math.max(0, radios.indexOf(event.currentTarget));
+  const nextIndex = event.key === 'Home' ? 0
+    : event.key === 'End' ? radios.length - 1
+      : (currentIndex + (['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : -1) + radios.length) % radios.length;
+  const target = radios[nextIndex];
+  event.preventDefault();
+  if (target.hasAttribute('data-guided-goal')) chooseGuidedGoal(target);
+  else chooseGuidedLaunchChoice(target);
+  setTimeout(() => target.focus(), 0);
+}
+
+document.querySelectorAll('[data-guided-goal]').forEach(button => {
+  button.addEventListener('click', () => chooseGuidedGoal(button, true));
+  button.addEventListener('keydown', handleGuidedRadioKeydown);
+});
 $('quickUploadResume').addEventListener('click', openResumeSetup);
 $('quickBuildResume').addEventListener('click', () => {
   guidedLaunchOpen = false;
@@ -3020,21 +3069,10 @@ $('opportunityPaths').addEventListener('click', event => {
   saveGuidedLaunchDraft(); renderOpportunityPaths(); renderGuidedLaunch();
   if (GUIDED_LAUNCH_STAGES[guidedLaunchStep] === 'path') setTimeout(advanceGuidedLaunch, 160);
 });
-document.querySelectorAll('[data-launch-choice]').forEach(button => button.addEventListener('click', () => {
-  const key = button.dataset.launchChoice;
-  guidedSelection[key] = key === 'salary' ? Number(button.dataset.value) : button.dataset.value;
-  if (key === 'workMode' && guidedSelection.workMode === 'Remote') guidedSelection.location = 'United States';
-  if (key === 'workMode' && guidedSelection.workMode !== 'Remote' && guidedSelection.location === 'United States') {
-    guidedSelection.location = '';
-    $('launchLocation').value = '';
-  }
-  missionState.pathScan = null;
-  saveGuidedLaunchDraft(); renderMission();
-  if (key === 'workMode' && guidedSelection.workMode !== 'Remote' && !$('launchLocation').value) $('launchLocation').focus();
-  const stageForKey = { workMode: 'work', employmentType: 'employment', salary: 'salary' }[key];
-  const canAdvance = stageForKey === GUIDED_LAUNCH_STAGES[guidedLaunchStep] && (key !== 'workMode' || guidedSelection.workMode === 'Remote');
-  if (canAdvance) setTimeout(advanceGuidedLaunch, 160);
-}));
+document.querySelectorAll('[data-launch-choice]').forEach(button => {
+  button.addEventListener('click', () => chooseGuidedLaunchChoice(button, true));
+  button.addEventListener('keydown', handleGuidedRadioKeydown);
+});
 $('launchLocation').addEventListener('input', event => { guidedSelection.location = event.target.value.trim(); saveGuidedLaunchDraft(); renderOpportunityPaths(); renderGuidedLaunch(); });
 $('jobLaunchForm').addEventListener('submit', async event => {
   event.preventDefault();
