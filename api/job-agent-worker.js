@@ -2,7 +2,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { applyApiHeaders } from '../lib/api-security.js';
 import { jobAgentRuntimeConfiguration, processNextJobAgentRun } from '../lib/job-agent-worker.js';
 import { processNextJobAgentSchedule } from '../lib/job-agent-schedule-store.js';
-import { recordJobAgentOperationalEvent, recordJobAgentWorkerHeartbeat } from '../lib/job-agent-operational-metrics.js';
+import { recordJobAgentOperationalEvent, recordJobAgentWorkerExecution } from '../lib/job-agent-operational-metrics.js';
 import { processNextNeedsYouNotification } from '../lib/job-agent-notification-store.js';
 import { processExpiredApplicationPackageArtifacts } from '../lib/job-agent-object-storage.js';
 import { processNextEmployerBrowserTask, reconcileNextStaleEmployerBrowserTask } from '../lib/employer-browser-task-worker.js';
@@ -51,7 +51,7 @@ export async function executeJobAgentWorkerCycle({
   processAccountExport = processNextAccountDataExportTask,
   processAccountExportCleanup = processExpiredAccountDataExports,
   reconcileSpend = reconcileStaleJobAgentSpendReservations,
-  recordEvent = recordJobAgentOperationalEvent, recordHeartbeat = recordJobAgentWorkerHeartbeat,
+  recordEvent = recordJobAgentOperationalEvent, recordExecution = recordJobAgentWorkerExecution, recordHeartbeat = null,
   sendAlert = sendConfiguredJobAgentOperatorAlert,
   processOperatorAlert = processNextJobAgentOperatorAlert,
   readOperatorAlertQueue = readJobAgentOperatorAlertQueueHealth,
@@ -62,7 +62,10 @@ export async function executeJobAgentWorkerCycle({
   clock = () => new Date(), logError = value => console.error(value),
 }) {
   const startedAt = clock();
-  await recordSafely(() => recordHeartbeat({ redis: config.redis, now: startedAt, outcome: 'started' }));
+  // recordHeartbeat remains an injection-only compatibility seam for older tests
+  // and callers. Production uses the execution receipt path.
+  const recordWorkerExecution = recordHeartbeat || recordExecution;
+  await recordSafely(() => recordWorkerExecution({ redis: config.redis, now: startedAt, phase: 'started', outcome: 'started' }));
   await recordSafely(() => recordEvent('background_worker_invocation', { redis: config.redis, now: startedAt }));
   const processed = [];
   const scheduled = [];
@@ -378,10 +381,23 @@ export async function executeJobAgentWorkerCycle({
     await recordSafely(() => recordEvent('operator_alert_queue_observation_failure', { redis: config.redis, now: clock() }));
     logError(JSON.stringify({ type: 'job-agent-operator-alert-queue-observation-error', name: error?.name || 'unknown' }));
   }
-  await recordSafely(() => recordHeartbeat({ redis: config.redis, now: clock(), outcome: failed ? 'failed' : 'succeeded' }));
+  const activity = {
+    scheduled: scheduled.length,
+    durableRuns: processed.length,
+    browserTasks: browserTasks.length,
+    submissionTasks: submissionTasks.length,
+    receiptTasks: receiptTasks.length,
+    notifications: notifications.length,
+    followUps: followUps.length,
+    learningMaintenance: learningMaintenance.length,
+    cleanupTasks: browserSessionCleanup.length + Number(artifactCleanup.deleted || 0) + Number(accountExportCleanup.deleted || 0),
+  };
+  const workPerformed = Object.values(activity).some(value => value > 0);
+  const completedAt = clock();
+  await recordSafely(() => recordWorkerExecution({ redis: config.redis, now: completedAt, phase: 'completed', outcome: failed ? 'failed' : 'succeeded', activity }));
   return {
     httpStatus: failed ? 500 : 200,
-    body: { ok: !failed, scheduled, scheduledCount: scheduled.length, processed, count: processed.length, learningMaintenance, learningMaintenanceCount: learningMaintenance.length, followUps, followUpCount: followUps.length, notifications, notificationCount: notifications.length, browserReconciliation, browserTasks, browserTaskCount: browserTasks.length, submissionReconciliation, submissionTasks, submissionTaskCount: submissionTasks.length, receiptTasks, receiptTaskCount: receiptTasks.length, consequentialQueueHealth, operatorAlerts, operatorAlertCount: operatorAlerts.length, operatorAlertQueueHealth, browserSessionCleanup, browserSessionCleanupCount: browserSessionCleanup.length, artifactCleanup, accountExport, accountExportCleanup, accountExportQueueHealth, monetarySpendReconciliation, submissionsEnabled: submissionConfig.ready === true },
+    body: { ok: !failed, executionMode: 'durable-work-cycle', workPerformed, executionReceipt: { contentFree: true, containsCandidateValues: false, completedAt: completedAt.toISOString(), outcome: failed ? 'failed' : 'succeeded', activity }, scheduled, scheduledCount: scheduled.length, processed, count: processed.length, learningMaintenance, learningMaintenanceCount: learningMaintenance.length, followUps, followUpCount: followUps.length, notifications, notificationCount: notifications.length, browserReconciliation, browserTasks, browserTaskCount: browserTasks.length, submissionReconciliation, submissionTasks, submissionTaskCount: submissionTasks.length, receiptTasks, receiptTaskCount: receiptTasks.length, consequentialQueueHealth, operatorAlerts, operatorAlertCount: operatorAlerts.length, operatorAlertQueueHealth, browserSessionCleanup, browserSessionCleanupCount: browserSessionCleanup.length, artifactCleanup, accountExport, accountExportCleanup, accountExportQueueHealth, monetarySpendReconciliation, submissionsEnabled: submissionConfig.ready === true },
   };
 }
 

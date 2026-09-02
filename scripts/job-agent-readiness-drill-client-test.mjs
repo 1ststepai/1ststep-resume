@@ -14,7 +14,7 @@ const env = {
 };
 const responseBody = {
   status: 'ready', readyFor: 'signed-beta', durableStore: 'reachable', encryptionConfigured: true,
-  tenantPartitioningConfigured: true, backgroundWorker: { status: 'healthy' },
+  tenantPartitioningConfigured: true, backgroundWorker: { status: 'healthy', executionMode: 'durable-work-cycle' },
   launchManifest: { capabilities: { signedBeta: { eligible: true } }, submissionsEnabled: false },
   externalApplicationExecution: false, submissionsEnabled: false,
   ...Object.fromEntries(JOB_AGENT_READINESS_DRILL_LIFECYCLES.map(key => [key, 'verified'])),
@@ -45,11 +45,11 @@ await assert.rejects(() => runProductionReadinessDrill({ env: { ...env, JOB_AGEN
 await assert.rejects(() => runProductionReadinessDrill({ env: { ...env, JOB_AGENT_READINESS_URL: 'https://preview.example.test/api/job-agent-readiness' }, fetchImpl: async () => assert.fail('must not fetch') }), /exactly/i);
 await assert.rejects(() => runProductionReadinessDrill({ env, fetchImpl: async () => ({ ok: true, status: 200, json: async () => ({ ...responseBody, applicantVaultLifecycle: 'not-requested' }) }) }), /applicantVaultLifecycle/);
 try {
-  await runProductionReadinessDrill({ env, fetchImpl: async () => ({ ok: false, status: 503, json: async () => ({ failedStage: 'background-worker-heartbeat' }) }) });
+  await runProductionReadinessDrill({ env, fetchImpl: async () => ({ ok: false, status: 503, json: async () => ({ failedStage: 'background-worker-execution' }) }) });
   assert.fail('failed readiness must reject');
 } catch (error) {
   assert.equal(error.requestAttempts, 1);
-  assert.match(error.message, /^READINESS_HTTP_503_background-worker-heartbeat$/);
+  assert.match(error.message, /^READINESS_HTTP_503_background-worker-execution$/);
 }
 const timeout = new DOMException('timed out', 'TimeoutError');
 await assert.rejects(async () => {

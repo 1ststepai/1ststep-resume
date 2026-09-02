@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { JOB_AGENT_OPERATIONAL_EVENTS, jobAgentCostControlSummary, jobAgentOperationalMetricsConfiguration, readJobAgentOperationalMetrics, recordJobAgentOperationalEvent, recordJobAgentWorkerHeartbeat } from '../lib/job-agent-operational-metrics.js';
+import { JOB_AGENT_OPERATIONAL_EVENTS, jobAgentCostControlSummary, jobAgentOperationalMetricsConfiguration, readJobAgentOperationalMetrics, recordJobAgentOperationalEvent, recordJobAgentWorkerExecution } from '../lib/job-agent-operational-metrics.js';
 
 class FakeRedis {
   constructor() { this.hashes = new Map(); this.values = new Map(); }
@@ -55,7 +55,7 @@ await recordJobAgentOperationalEvent('stripe_webhook_retry_deferred', { redis, n
 await recordJobAgentOperationalEvent('stripe_webhook_failure', { redis, now });
 await recordJobAgentOperationalEvent('audit_head_archive_completed', { redis, now });
 await recordJobAgentOperationalEvent('audit_head_archive_failure', { redis, now });
-await recordJobAgentWorkerHeartbeat({ redis, now, outcome: 'succeeded' });
+await recordJobAgentWorkerExecution({ redis, now, phase: 'completed', outcome: 'succeeded', activity: { scheduled: 1, durableRuns: 1 } });
 await assert.rejects(() => recordJobAgentOperationalEvent('candidate@example.com', { redis, now }), /Unsupported/);
 await assert.rejects(() => recordJobAgentOperationalEvent('provider_input_tokens', { redis, now, amount: -1 }), /Invalid/);
 const report = await readJobAgentOperationalMetrics({ redis, days: 2, now });
@@ -91,6 +91,10 @@ assert.equal(report.totals.audit_head_archive_completed, 1);
 assert.equal(report.totals.audit_head_archive_failure, 1);
 assert.equal(report.backgroundWorker.status, 'healthy');
 assert.equal(report.backgroundWorker.outcome, 'succeeded');
+assert.equal(report.backgroundWorker.executionMode, 'durable-work-cycle');
+assert.equal(report.backgroundWorker.phase, 'completed');
+assert.equal(report.backgroundWorker.workPerformed, true);
+assert.equal(report.backgroundWorker.activity.durableRuns, 1);
 assert.equal(report.days.length, 2);
 assert.deepEqual(Object.keys(report.totals), [...JOB_AGENT_OPERATIONAL_EVENTS]);
 assert.doesNotMatch(JSON.stringify(report), /candidate@example/);
@@ -104,8 +108,8 @@ assert.equal(costControls.caps.applicationPackageGlobalDailyUnits, 300);
 assert.equal(jobAgentCostControlSummary({}).caps.guidedAiGlobalDailyUnits, null);
 const stale = await readJobAgentOperationalMetrics({ redis, days: 1, now: new Date('2026-08-29T22:00:01.000Z') });
 assert.equal(stale.backgroundWorker.status, 'stale');
-await recordJobAgentWorkerHeartbeat({ redis, now, outcome: 'started' });
+await recordJobAgentWorkerExecution({ redis, now, phase: 'started', outcome: 'started' });
 const incomplete = await readJobAgentOperationalMetrics({ redis, days: 1, now: new Date('2026-08-29T19:31:00.000Z') });
 assert.equal(incomplete.backgroundWorker.status, 'incomplete');
-await assert.rejects(() => recordJobAgentWorkerHeartbeat({ redis, now, outcome: 'candidate@example.test' }), /Unsupported/);
+await assert.rejects(() => recordJobAgentWorkerExecution({ redis, now, outcome: 'candidate@example.test' }), /Unsupported/);
 console.log('Content-free Job Agent operational metrics tests passed.');

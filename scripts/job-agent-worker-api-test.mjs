@@ -7,7 +7,7 @@ assert.equal(maxDuration, deploymentConfig.functions['api/job-agent-worker.js'].
 assert.equal(maxDuration, 60, 'worker must preserve the bounded 60-second drain contract from the recovery runbook');
 
 const events = [];
-const heartbeats = [];
+const executions = [];
 let cleanupRuns = 0;
 const queueReaders = {
   readSubmissionQueue: async () => ({ status: 'idle', pending: 0, overdue: 0, reconciliationPending: 0, reconciliationDue: 0, contentFree: true }),
@@ -32,7 +32,7 @@ const success = await executeJobAgentWorkerCycle({
   reconcileBrowserTask: async () => ({ status: 'idle' }),
   processBrowserTask: async () => ({ status: 'completed', transmittedFieldCount: 2, externalApplicationExecution: true, submitted: false }),
   recordEvent: async event => { events.push(event); },
-  recordHeartbeat: async value => { heartbeats.push(value.outcome); },
+  recordExecution: async value => { executions.push(value); },
   clock: () => new Date('2026-08-30T04:00:00.000Z'),
 });
 assert.equal(success.httpStatus, 200);
@@ -50,7 +50,13 @@ assert.deepEqual(success.body.notifications, [{ status: 'provider-accepted', att
 assert.deepEqual(success.body.followUps, [{ status: 'enqueued', attempt: 1 }]);
 assert.equal(success.body.monetarySpendReconciliation.settledAtMaximum, 1);
 assert.deepEqual(events, ['background_worker_invocation', 'monetary_spend_reconciled', 'employer_browser_session_cleanup_completed', 'schedule_enqueued', 'schedule_replayed', 'schedule_deferred', 'needs_you_notification_queued', 'needs_you_notification_provider_accepted', 'employer_browser_task_completed']);
-assert.deepEqual(heartbeats, ['started', 'succeeded']);
+assert.deepEqual(executions.map(value => value.outcome), ['started', 'succeeded']);
+assert.equal(success.body.executionMode, 'durable-work-cycle');
+assert.equal(success.body.workPerformed, true);
+assert.equal(success.body.executionReceipt.contentFree, true);
+assert.equal(success.body.executionReceipt.containsCandidateValues, false);
+assert.equal(success.body.executionReceipt.activity.scheduled, 3);
+assert.equal(success.body.executionReceipt.activity.durableRuns, 1);
 
 const reconciliationEvents = [];
 const recovered = await executeJobAgentWorkerCycle({
@@ -222,4 +228,4 @@ assert.deepEqual(failedHeartbeats, ['started', 'failed']);
 assert.equal(failedLogs.length, 1);
 assert.doesNotMatch(failedLogs[0], /private candidate payload/);
 
-console.log('Job Agent worker heartbeat, content-free scheduler metrics, bounded drain, and safe failure tests passed.');
+console.log('Job Agent durable execution receipts, content-free scheduler metrics, bounded drain, and safe failure tests passed.');

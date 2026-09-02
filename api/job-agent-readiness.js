@@ -11,7 +11,7 @@ import { employerBrowserSessionProviderConfiguration } from '../lib/employer-bro
 import { createApplicationSession, pauseApplicationSession } from '../lib/application-session-domain.js';
 import { createDurableApplicationSession, deleteDurableApplicationSession, listDurableApplicationSessionAudit, readDurableApplicationSession, updateDurableApplicationSession } from '../lib/application-session-store.js';
 import { createUserSession, readUserSession, revokeUserSession } from '../lib/user-session-store.js';
-import { readJobAgentWorkerHealth, recordConfiguredJobAgentOperationalEvent } from '../lib/job-agent-operational-metrics.js';
+import { readJobAgentWorkerExecutionHealth, recordConfiguredJobAgentOperationalEvent } from '../lib/job-agent-operational-metrics.js';
 import { jobAgentOperatorAlertConfiguration, sendConfiguredJobAgentOperatorAlert } from '../lib/job-agent-operator-alert.js';
 import { jobAgentConsentPolicyConfiguration } from '../lib/job-agent-consent-domain.js';
 import { jobAgentConsentEnforcementRequired } from '../lib/job-agent-consent-store.js';
@@ -136,10 +136,10 @@ export default async function handler(req, res) {
     if (String(response).toUpperCase() !== 'PONG') throw new Error('Unexpected store response.');
     durableStore = 'reachable';
     if (backgroundScheduling.enabled) {
-      readinessStage = 'background-worker-heartbeat';
-      backgroundWorker = await readJobAgentWorkerHealth({ redis: config.redis });
+      readinessStage = 'background-worker-execution';
+      backgroundWorker = await readJobAgentWorkerExecutionHealth({ redis: config.redis });
       if (String(process.env.VERCEL_ENV || '').toLowerCase() === 'production' && !['healthy', 'running'].includes(backgroundWorker.status)) {
-        throw new Error('Background worker heartbeat is not healthy.');
+        throw new Error('Background worker execution is not healthy.');
       }
     }
     readinessStage = 'durable-lifecycle';
@@ -391,7 +391,7 @@ export default async function handler(req, res) {
     return res.status(503).json({
       status: 'unavailable', durableStore: readinessStage === 'redis-ping' ? 'unreachable' : durableStore,
       failedStage: String(readinessStage).replace(/[^a-z0-9-]/gi, '').slice(0, 80) || 'unknown',
-      ...(readinessStage === 'background-worker-heartbeat' ? { backgroundScheduling: 'configured', backgroundWorker } : {}),
+      ...(readinessStage === 'background-worker-execution' ? { backgroundScheduling: 'configured', backgroundWorker } : {}),
       externalApplicationExecution: false, submissionsEnabled: false,
     });
   }
