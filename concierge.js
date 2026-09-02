@@ -73,6 +73,7 @@ let campaignStore = createCampaignStore(loadWorkflowJson(CAMPAIGN_KEY, {}));
 let dailyGoal = loadWorkflowJson(DAILY_GOAL_KEY, { target: 10, updatedAt: null });
 let campaignSync = { version: 0, hydrated: false, status: 'local', timer: null, inFlight: false, queued: false };
 let sessionCapabilities = { adminConsole: false, jobAgentAccess: false, tier: 'guest', checked: false, authentication: 'none', expiresAt: null, pilotAccess: null, jobAgentConsent: null, jobAgentConsentPolicyConfigured: null, jobAgentConsentVersion: 0 };
+let publicAppConfig = { authentication: { restoreAccessAvailable: null } };
 let operationalMetrics = null;
 let durableRun = loadWorkflowJson(JOB_AGENT_RUN_KEY, null);
 let jobAgentSchedule = { version: 0, schedule: null, enabled: null, status: 'local' };
@@ -969,16 +970,32 @@ function renderAgentAccessState() {
     : pilotInviteRequired ? 'Check pilot access' : 'Unlock my job agent';
 }
 
+async function loadPublicAppConfig() {
+  try {
+    const response = await fetchWithTimeout('/api/app-config', {}, REQUEST_TIMEOUTS.capability);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return;
+    publicAppConfig = {
+      authentication: {
+        restoreAccessAvailable: data.authentication?.restoreAccessAvailable === true,
+      },
+    };
+  } catch {
+    publicAppConfig = { authentication: { restoreAccessAvailable: null } };
+  }
+}
+
 function openAgentAccess() {
   agentRestoreChallenge = '';
   $('agentAccessCode').hidden = true;
   $('agentAccessCodeLabel').hidden = true;
   $('agentAccessCode').required = false;
   $('agentAccessCode').value = '';
-  $('verifyAgentAccess').textContent = hasJobAgentAccess() ? 'Access is active' : 'Email me a code';
-  $('verifyAgentAccess').disabled = hasJobAgentAccess();
+  const restoreUnavailable = publicAppConfig.authentication.restoreAccessAvailable === false;
+  $('verifyAgentAccess').textContent = hasJobAgentAccess() ? 'Access is active' : restoreUnavailable ? 'Sign in unavailable' : 'Email me a code';
+  $('verifyAgentAccess').disabled = hasJobAgentAccess() || restoreUnavailable;
   $('agentSessionActions').hidden = !hasApiSession();
-  $('agentAccessEmail').disabled = hasJobAgentAccess();
+  $('agentAccessEmail').disabled = hasJobAgentAccess() || restoreUnavailable;
   const pilotInviteRequired = sessionCapabilities.pilotAccess?.code === 'JOB_AGENT_PILOT_INVITE_REQUIRED';
   $('agentAccessMessage').textContent = hasJobAgentAccess()
     ? 'Your signed account has controlled-beta Job Agent access.'
@@ -986,7 +1003,9 @@ function openAgentAccess() {
       ? 'You’re signed in, but this controlled beta is currently limited to invited members. Your saved-data controls remain available.'
       : sessionCapabilities.pilotAccess?.code === 'JOB_AGENT_PILOT_NOT_CONFIGURED'
         ? 'Controlled-beta admission is temporarily unavailable. No Job Agent work can start.'
-        : 'We’ll email a one-time code. Enter it here—not in chat.';
+        : restoreUnavailable
+          ? 'Secure sign-in is not configured for this environment. No code was sent.'
+          : 'We’ll email a one-time code. Enter it here—not in chat.';
   $('agentAccessMessage').className = hasJobAgentAccess() ? 'good' : pilotInviteRequired ? 'warn' : '';
   $('agentAccessOverlay').classList.add('open');
 }
@@ -1313,6 +1332,11 @@ async function deleteAccountData() {
 async function submitAgentAccess(event) {
   event.preventDefault();
   if (hasJobAgentAccess()) return;
+  if (publicAppConfig.authentication.restoreAccessAvailable === false) {
+    $('agentAccessMessage').textContent = 'Secure sign-in is not configured for this environment. No code was sent.';
+    $('agentAccessMessage').className = 'warn';
+    return;
+  }
   const email = $('agentAccessEmail').value.trim().toLowerCase();
   const code = $('agentAccessCode').value.trim();
   const message = $('agentAccessMessage');
@@ -3828,6 +3852,7 @@ async function hydrateAccountWorkflow() {
   await hydrateJobAgentLearning();
 }
 start();
+loadPublicAppConfig();
 loadSessionCapabilities().then(async () => {
   await hydrateAccountWorkflow();
 });

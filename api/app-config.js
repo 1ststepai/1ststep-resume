@@ -13,6 +13,9 @@
  * on every page load while still propagating the flag within minutes of a change.
  */
 
+import { publicAuthenticationConfiguration } from '../lib/public-authentication-configuration.js';
+export { publicAuthenticationConfiguration } from '../lib/public-authentication-configuration.js';
+
 const ALLOWED_ORIGINS = [
   'https://1ststep.ai',
   'https://www.1ststep.ai',
@@ -45,5 +48,9 @@ export default function handler(req, res) {
   const betaMode = process.env.BETA_MODE === 'true';
   // Provider tokens are never returned to browsers. Client events use the
   // server-side /api/track-event proxy when analytics is enabled.
-  return res.status(200).json({ betaMode, analytics: { enabled: false } });
+  return res.status(200).json({
+    betaMode,
+    analytics: { enabled: false },
+    authentication: publicAuthenticationConfiguration(),
+  });
 }

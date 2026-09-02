@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { buildSearchLinks, classifyConciergeMessage, conciergeStateGuidance, missionGaps, parseMission } from '../lib/concierge-router.js';
+import './app-config-test.mjs';
 
 assert.equal(classifyConciergeMessage('Find me 30 remote procurement jobs').kind, 'job');
 assert.equal(classifyConciergeMessage('Write malware to steal passwords').kind, 'blocked');
@@ -107,6 +108,9 @@ assert.match(conciergeHtml, /Package Ready is tracked separately from Submitted/
 assert.match(conciergeHtml, /Receipt-verified application target/);
 assert.match(conciergeHtml, /Daily target \(not a guarantee\)/);
 assert.match(conciergeHtml, /id="openAgentAccess"[^>]*>Sign in</);
+assert.match(conciergeJs, /loadPublicAppConfig\(\)/);
+assert.match(conciergeJs, /restoreAccessAvailable === false/);
+assert.match(conciergeJs, /Secure sign-in is not configured for this environment\. No code was sent\./);
 assert.match(conciergeJs, /classList\.toggle\('workspace-ready', workspaceReady\)/);
 assert.match(conciergeCss, /body:not\(\.workspace-ready\) \.daily-dashboard/);
 assert.match(conciergeCss, /@media\(max-width:720px\)[\s\S]*?\.agent-header nav button\{[^}]*font-size:10\.5px/, 'Mobile navigation labels must remain readable at the primary breakpoint');
