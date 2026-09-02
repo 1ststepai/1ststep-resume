@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { JOB_AGENT_OPERATIONAL_EVENTS, jobAgentCostControlSummary, readJobAgentOperationalMetrics, recordJobAgentOperationalEvent, recordJobAgentWorkerHeartbeat } from '../lib/job-agent-operational-metrics.js';
+import { JOB_AGENT_OPERATIONAL_EVENTS, jobAgentCostControlSummary, jobAgentOperationalMetricsConfiguration, readJobAgentOperationalMetrics, recordJobAgentOperationalEvent, recordJobAgentWorkerHeartbeat } from '../lib/job-agent-operational-metrics.js';
 
 class FakeRedis {
   constructor() { this.hashes = new Map(); this.values = new Map(); }
@@ -15,6 +15,21 @@ class FakeRedis {
 }
 
 const redis = new FakeRedis();
+const originalWarn = console.warn;
+const configurationWarnings = [];
+let injectedConfiguration;
+try {
+  console.warn = (...args) => configurationWarnings.push(args.join(' '));
+  injectedConfiguration = jobAgentOperationalMetricsConfiguration({
+    UPSTASH_REDIS_REST_URL: 'https://redis.example.test',
+    UPSTASH_REDIS_REST_TOKEN: 'synthetic-test-token',
+  });
+} finally {
+  console.warn = originalWarn;
+}
+assert.ok(injectedConfiguration?.redis, 'An explicitly supplied Redis environment must construct the metrics client.');
+assert.deepEqual(configurationWarnings, [], 'Explicit Redis configuration must not fall back to process.env or emit missing-environment warnings.');
+assert.equal(jobAgentOperationalMetricsConfiguration({}), null, 'Missing Redis configuration must remain fail-closed.');
 const now = new Date('2026-08-29T19:20:00.000Z');
 await recordJobAgentOperationalEvent('provider_failure', { redis, now });
 await recordJobAgentOperationalEvent('provider_failure', { redis, now });
