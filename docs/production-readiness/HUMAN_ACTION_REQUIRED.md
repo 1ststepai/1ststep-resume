@@ -4,9 +4,9 @@ This file is an operator checklist, not an authorization record. Checking a box 
 
 ## Current verified boundary
 
-- Latest runtime candidate: commit `16089681c330c1684a526e786a466e4a2b6f917e`; runtime SHA-256 `219a40b7d38f4a4e0a88cd75897c552faa18c2d247d05457857ddc782b7a94a7`.
-- Protected Preview: `dpl_Ae8h7AVH4kAwDvhLVJfex8n11KRL` (Ready; exact candidate, fail-closed sign-in UX, live route behavior, bounded representative discovery canary, capacity result, and content-free request logs verified).
-- Protected Preview capacity: 10/10 liveness responses were HTTP 200 at concurrency 2; p50 109 ms, p95/max 243 ms, no bodies read, no bypass secret, and no writes. The discovery canary returned 3/3 HTTP 200 and clearly distinguished eight representative source attempts across four providers from the 37-source catalog. This is not a Production-capacity, full-catalog-per-run, signed-user-fairness, queue-throughput, or plan-quota claim.
+- Latest runtime candidate: commit `14a4ec86212549ae5f40a8422cc60a9068b11825`; runtime SHA-256 `f29a996d00551d246ca82d0ebf51f1ebdf4b901ecc51da0f81d327389517d95b`.
+- Protected Preview: `dpl_EF8SFMAdzaUJiG3MtRTfnixG1ysa` (Ready; exact candidate, fail-closed sign-in UX, live route behavior, bounded representative discovery canary, capacity result, and content-free request logs verified).
+- Protected Preview capacity: 10/10 liveness responses were HTTP 200 at concurrency 2; p50 104 ms, p95/max 185 ms, no bodies read, no bypass secret, and no writes. The discovery canary returned 3/3 HTTP 200 and clearly distinguished eight representative source attempts across four providers from the 37-source catalog; one run completed seven of eight attempted sources without misrepresenting the result. This is not a Production-capacity, full-catalog-per-run, signed-user-fairness, queue-throughput, or plan-quota claim.
 - Isolated-data preflight: canonical digest valid; current operator environment has no Supabase CLI or local container runtime and no nonproduction target attestation. A separate authenticated read-only Supabase inventory found two healthy active projects, both assigned to another product, with zero development branches and zero eligible 1stStep.ai target. The sole visible organization is on the Free Plan; current Supabase billing documentation grants two Free projects across organizations where the account is an Owner or Administrator, so the free allocation is already occupied. No schema or data was inspected and no resource was created.
 - Current Production/rollback reference: `dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM` (Ready, but not candidate-parity).
 - Full local release gate: passed.
@@ -54,7 +54,7 @@ Provide or approve:
 - [ ] Exact allowed alert host, endpoint contract version, and protected bearer-token provisioning method.
 - [ ] One synthetic content-free alert-delivery and receiver-acknowledgement exercise.
 
-A sender-side 2xx is not delivery proof. Retain receiver-side acknowledgement evidence without candidate or tenant values.
+The candidate now fails closed unless alerting approval, the exact HTTPS allowlist, protected token, Redis outbox, contract version, 30-730 day retention, and 1-1,440 minute acknowledgement window all validate. Delivery evidence is scope-bound to the endpoint, contract, retention, acknowledgement window, and deterministic event contract. A sender-side 2xx is not delivery proof. Retain receiver-side acknowledgement evidence without candidate or tenant values.
 
 ## Decision 5: remote review and CI
 
