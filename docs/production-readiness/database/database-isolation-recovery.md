@@ -103,6 +103,27 @@ npm run security:recovery-evidence -- --artifact <protected-redacted-artifact.js
 
 The verifier is implementation/test evidence only until a real isolated exercise produces a valid artifact and separately signed launch evidence.
 
+### Isolated database runtime evidence contract
+
+The repository also includes a strict, content-free verifier for a future separately authorized isolated-target database audit. A valid artifact must be bound to the clean current commit and runtime digest and must prove:
+
+- a Supabase target fingerprint different from the Production fingerprint, with no Production access;
+- the exact canonical migration digest, applied history digest, no schema drift, and no destructive statements;
+- all 20 Job Agent tables present with RLS and forced RLS, no unexpected application objects or Data API exposure;
+- a non-login, non-`BYPASSRLS` backend role and zero unexpected `PUBLIC`, `anon`, or `authenticated` privileges;
+- operation-specific policies on all 20 tables with no `PUBLIC`, `FOR ALL`, or incomplete update policy;
+- all 19 pgTAP cases passed, including direct-role denial and adversarial cross-tenant reads, writes, ownership transfer, relationships, and invalid context;
+- zero security/performance advisor errors and zero unaccepted warnings;
+- private raw-output digests and an inspection timestamp no older than 30 days.
+
+Unknown/additional fields and candidate-bearing values are rejected. Successful validation emits only control booleans, the verified table/test counts, and an artifact digest. It performs no database connection, query, migration, write, billing, evidence signing, or Production action.
+
+```powershell
+npm run security:database-runtime-evidence -- --artifact <protected-redacted-artifact.json>
+```
+
+This closes the code-side evidence ambiguity, not the live control. Layers 3 and 8 remain Critical until a real isolated target passes the contract.
+
 ## Safe operator sequence
 
 After a non-production target is supplied, first capture the installed tool's behavior rather than relying on stale commands:
