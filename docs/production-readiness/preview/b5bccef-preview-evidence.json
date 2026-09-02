@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-02T00:43:00Z",
+  "environment": "Vercel Preview",
+  "sourceCommit": "b5bccef1d0fc671eaa8fac221747faba76521d07",
+  "runtimeSha256": "570a3ad68abcb7e3fe3fd266d34f68cd3faf8482fcc8352e18a765d3264ccd18",
+  "deployment": {
+    "id": "dpl_AbWD1vi8EvDMCucnLRSQ9eeHN8pZ",
+    "url": "https://1ststep-resume-dbca4qlvl-1ststep.vercel.app",
+    "target": "preview",
+    "readyState": "READY",
+    "protected": true
+  },
+  "checks": {
+    "releaseGate": "passed",
+    "truthfulFirstUseHtml": true,
+    "healthLive": "healthy",
+    "healthReady": "unavailable-fail-closed",
+    "durableRateLimit": "passed",
+    "liveEmployerFeedsChecked": 36,
+    "exactSyntheticMatches": 2,
+    "submissionsEnabled": false
+  },
+  "authenticationUx": {
+    "publicContract": { "restoreAccessAvailable": false },
+    "dialogVisible": true,
+    "emailFieldEnabled": false,
+    "sendCodeControlEnabled": false,
+    "message": "Secure sign-in is not configured for this environment. No code was sent.",
+    "secretNamesOrValuesReturned": false,
+    "providerRequestAttempted": false
+  },
+  "isolatedDataPreflight": {
+    "contentFree": true,
+    "performsExternalCalls": false,
+    "writesExternalState": false,
+    "canonicalMigrationDigestMatches": true,
+    "supabaseCliAvailable": false,
+    "localContainerRuntimeAvailable": false,
+    "operatorAttestationReady": false,
+    "readyForAuthorizedReadOnlyAudit": false,
+    "isolatedTargetProven": false,
+    "liveRlsVerified": false,
+    "backupRestoreVerified": false
+  },
+  "observability": {
+    "providerRequestLogsSampled": true,
+    "qualifyingRecords": 4,
+    "expectedRouteStatuses": {
+      "/api/health/live": 200,
+      "/api/health/ready": 503,
+      "/api/app-config": 200,
+      "/api/concierge-preview-smoke": 200
+    },
+    "contentBearingAllowlistedRecords": 0,
+    "unexpectedStatusRecords": 0,
+    "missingRoutes": [],
+    "rawMessagesEmitted": false,
+    "rawLogsRetained": false
+  },
+  "externalActions": {
+    "productionTrafficChanged": false,
+    "databaseConnected": false,
+    "migrationApplied": false,
+    "backupRestored": false,
+    "candidateDataTransmitted": false,
+    "employerContacted": false,
+    "applicationSubmitted": false
+  }
+}

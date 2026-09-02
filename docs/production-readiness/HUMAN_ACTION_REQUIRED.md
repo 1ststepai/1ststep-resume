@@ -4,8 +4,9 @@ This file is an operator checklist, not an authorization record. Checking a box 
 
 ## Current verified boundary
 
-- Latest runtime candidate: commit `86ac74a21f0630337b07b5e5e422fece10ee0cfa`; runtime SHA-256 `b1b4351e525154b358197687cc613a79ad9bdcb7d767a0d1cd72810dc16aa0d4`.
-- Protected Preview: `dpl_2ZhDmYkX6UV7Uo2qRWmrNdf9w1vB` (Ready; exact candidate, fail-closed sign-in UX, injected Redis configuration, live route behavior, and content-free request logs verified).
+- Latest runtime candidate: commit `b5bccef1d0fc671eaa8fac221747faba76521d07`; runtime SHA-256 `570a3ad68abcb7e3fe3fd266d34f68cd3faf8482fcc8352e18a765d3264ccd18`.
+- Protected Preview: `dpl_AbWD1vi8EvDMCucnLRSQ9eeHN8pZ` (Ready; exact candidate, fail-closed sign-in UX, live route behavior, and content-free request logs verified).
+- Isolated-data preflight: canonical digest valid; current operator environment has no Supabase CLI, no local container runtime, and no nonproduction target attestation. It made no network call and proved no target.
 - Current Production/rollback reference: `dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM` (Ready, but not candidate-parity).
 - Full local release gate: passed.
 - Production traffic, migrations, candidate transmission, employer contact, and application submission: unchanged/not performed.
