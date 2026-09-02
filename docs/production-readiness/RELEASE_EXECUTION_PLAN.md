@@ -79,6 +79,7 @@ Exit proof: `Submitted` remains impossible until an authoritative employer recei
 - [ ] Explicitly authorize the branch push and review request.
 - [ ] Require green remote Production Readiness Gate CI and human review; do not merge automatically.
 - [x] Re-run the complete local gate and exact-Preview verifier against the current local candidate; repeat after remote review because the branch has not been pushed.
+- [x] Retain a content-free candidate index binding commit `70736f3`, runtime digest, exact protected Preview, fresh Production guard, and the Ready alias-owning rollback target without authorizing rollback or release.
 - [ ] Reconcile the 13-layer scorecard, full execution plan, evidence register, runbook, rollback preflight, and approval queue to the same commit and runtime digest.
 
 Exit proof: one reviewable artifact has green local/remote gates, exact protected Preview evidence, capacity evidence, alert/recovery evidence, a fixed rollback target, and no unaccepted Critical layer.

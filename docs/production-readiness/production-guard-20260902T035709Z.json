@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-09-02T03:57:10.382Z",
+  "origin": "https://app.1ststep.ai",
+  "contentFree": true,
+  "containsCandidateValues": false,
+  "performsWrites": false,
+  "performsExternalApplicationActions": false,
+  "boundary": {
+    "ok": true,
+    "conciergeStatus": 200,
+    "conciergeCspPresent": true,
+    "protectedRouteStatuses": {
+      "/api/job-agent-readiness": 401,
+      "/api/job-agent-operations": 401,
+      "/api/concierge-state": 401
+    }
+  },
+  "candidateParity": {
+    "ok": false,
+    "expectedMismatch": true,
+    "mismatchedAssets": [
+      "/concierge",
+      "/concierge.html",
+      "/concierge.js",
+      "/persistent-concierge.css"
+    ],
+    "candidatePromoted": false
+  },
+  "productionTrafficChanged": false,
+  "productionEnvironmentChanged": false
+}

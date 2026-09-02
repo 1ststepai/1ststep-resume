@@ -25,6 +25,16 @@ npm run security:release-preflight
 5. Require an explicit owner deployment decision. A passing local suite or signed artifact does not authorize production mutation, enable a provider, approve cost, or prove external evidence.
 6. Record SHA-256 hashes for `index.html`, `app.js`, `concierge.html`, and `concierge.js` before deployment.
 7. Require the launch manifest to report `accessPolicy.ready: true`, `accessPolicy.dedicatedBillingEnabled: false`, and `accessPolicy.createsCharges: false`. A legacy paid tier without an explicit encrypted Job Agent grant must remain denied.
+8. Require the retained exact-Preview record to match the reviewed runtime digest and deployment ID. A liveness sample is not signed-user capacity evidence. Before beta expansion, validate separately approved redacted artifacts with:
+
+```powershell
+npm run security:database-runtime-evidence -- --artifact <isolated-database-artifact.json>
+npm run security:recovery-evidence -- --artifact <isolated-restore-artifact.json>
+npm run security:signed-capacity-evidence -- --artifact <signed-capacity-artifact.json> --deployment-id <exact-preview-id> --deployment-origin <exact-preview-origin>
+```
+
+Each command is a verifier, not authorization to create resources, migrate data, run load, restore a backup, contact an employer, or deploy. Require all referenced private raw-evidence digests to be retained in the separately approved private audit location.
+9. Run the rollback preflight against the exact currently approved Ready Production target and retain its content-free result beside the candidate index. Do not treat an old deployment ID in this runbook as current evidence.
 
 ## Deployment
 
@@ -45,6 +55,7 @@ Do not use `vercel build` followed by `vercel deploy --prebuilt` from this Windo
 5. From a protected operator environment, call authenticated read-only readiness and require the approved launch mode and current signed evidence. Require `launchManifest.evidence.controlledBetaRelease.integrity: signed-scope-bound`, the reviewed evidence ID/time, and exact equality between the approved commit/runtime identity and the deployed candidate. Do not place the readiness secret in a URL or logs. For the separately authorized create → restore → delete lifecycle verification, use only `npm run security:production-readiness-drill` with the exact production URL, server-only cron secret, and `JOB_AGENT_READINESS_DRILL_CONFIRMATION=CREATE_RESTORE_DELETE_SYNTHETIC_RECORDS`; retain its content-free output. Do not retry an outcome-unknown timeout until operations confirms the prior attempt and cleanup state.
 6. Perform desktop and mobile browser QA of the guided launch, My Jobs, Needs You, Saved Info, access restoration, timeout/retry, and admin denial. Do not use real candidate data or employer submissions for release QA.
 7. Confirm `externalApplicationExecution: false` and `submissionsEnabled: false` unless those later modes were separately approved, configured, and independently evidenced.
+8. Compare the deployed commit/runtime identity, exact Preview evidence, runtime configuration manifest, signed capacity artifact, database/RLS artifact, recovery artifact, alert receipt, remote CI run, and rollback-target evidence to the reviewed candidate index. Missing evidence is `unknown` and blocks acceptance; it is never inferred from local tests or environment-variable names.
 
 If any acceptance check fails, the release is not accepted. Do not weaken CSP, authentication, receipt rules, evidence expiry, cost caps, or approval gates to make the check pass.
 
