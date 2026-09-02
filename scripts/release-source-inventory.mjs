@@ -71,6 +71,7 @@ const toolingOnlyModules = new Set([
   'lib/encrypted-record-maintenance.js',
   'lib/encrypted-record-recovery.js',
   'lib/job-agent-object-storage-drill.js',
+  'lib/job-agent-database-runtime-evidence.js',
   'lib/job-agent-recovery-evidence.js',
   'lib/job-agent-pricing.js',
   'lib/job-agent-readiness-drill-client.js',
