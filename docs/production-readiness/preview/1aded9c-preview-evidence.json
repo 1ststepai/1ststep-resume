@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-02T03:18:00Z",
+  "environment": "Vercel Preview",
+  "sourceCommit": "1aded9c9b6b58e6f8557abbfb3e207c4b0943864",
+  "runtimeSha256": "a3fcae6de5e1c5aff90c9ad856e67494b468293c39c25847fb189aab43ee8354",
+  "deployment": {
+    "id": "dpl_E2D1cHiTdHg9Si2qhc1frrYpe1qW",
+    "url": "https://1ststep-resume-dupxhnp2w-1ststep.vercel.app",
+    "target": "preview",
+    "readyState": "READY",
+    "protected": true
+  },
+  "checks": {
+    "releaseGate": "passed",
+    "cleanCandidatePreflight": "passed-after-commit",
+    "healthLiveStatus": 200,
+    "healthReadyStatus": 503,
+    "readinessBehavior": "unavailable-fail-closed",
+    "appConfigStatus": 200,
+    "restoreAccessAvailable": false,
+    "submissionsEnabled": false
+  },
+  "recoveryEvidenceContract": {
+    "implemented": true,
+    "tested": true,
+    "targetFingerprintSeparationRequired": true,
+    "exactMigrationDigestRequired": true,
+    "approvedRpoAndRtoRequired": true,
+    "reconciliationAndCleanupRequired": true,
+    "productionConnectionForbidden": true,
+    "managedRestoreExecuted": false,
+    "managedRecoveryVerified": false
+  },
+  "discoveryCanary": {
+    "catalogSources": 37,
+    "sourcesAttemptedPerRun": 8,
+    "providersRepresented": 4,
+    "runs": 3,
+    "statusHistogram": { "200": 3 },
+    "sourcesCheckedPerRun": [8, 8, 8],
+    "matchesPerRun": [1, 1, 1],
+    "functionDurationMs": { "min": 1406, "max": 1718 },
+    "fullCatalogClaimedCheckedPerRun": false,
+    "candidateValuesTransmitted": false,
+    "employerActionPerformed": false
+  },
+  "capacity": {
+    "probeExecuted": true,
+    "authenticationMode": "vercel-cli-session",
+    "bypassSecretPresent": false,
+    "path": "/api/health/live",
+    "requests": 10,
+    "concurrency": 2,
+    "expectedStatus": 200,
+    "statusHistogram": { "200": 10 },
+    "latencyMs": { "p50": 112, "p95": 129, "max": 129, "limitP95": 5000 },
+    "unexpectedResponses": 0,
+    "responseBodiesRead": false,
+    "performsWrites": false,
+    "productionCapacityClaimed": false,
+    "signedUserFairnessVerified": false,
+    "queueThroughputVerified": false,
+    "planQuotaVerified": false
+  },
+  "observability": {
+    "providerRequestLogsSampled": true,
+    "qualifyingRecords": 16,
+    "expectedRouteStatuses": {
+      "/api/health/live": 200,
+      "/api/health/ready": 503,
+      "/api/app-config": 200,
+      "/api/concierge-preview-smoke": 200
+    },
+    "contentBearingAllowlistedRecords": 0,
+    "unexpectedStatusRecords": 0,
+    "missingRoutes": [],
+    "rawMessagesEmitted": false,
+    "rawLogsRetained": false
+  },
+  "externalActions": {
+    "productionTrafficChanged": false,
+    "productionEnvironmentChanged": false,
+    "migrationApplied": false,
+    "backupRestored": false,
+    "paidInfrastructureActivated": false,
+    "candidateDataTransmitted": false,
+    "employerContacted": false,
+    "applicationSubmitted": false
+  }
+}

@@ -4,9 +4,9 @@ This file is an operator checklist, not an authorization record. Checking a box 
 
 ## Current verified boundary
 
-- Latest runtime candidate: commit `0b3e5ba121688517dab544111523bee0682859f5`; runtime SHA-256 `e3f34b296733d9285f1bd2a52d0d00a436def77e132785ddd8f53287bca255da`.
-- Protected Preview: `dpl_8Jn77zQeCGYydjBckKAfYsFMoxYV` (Ready; exact candidate, fail-closed sign-in UX, live route behavior, bounded representative discovery canary, capacity result, and content-free request logs verified).
-- Protected Preview capacity: 10/10 liveness responses were HTTP 200 at concurrency 2; p50 115 ms, p95/max 232 ms, no bodies read, no bypass secret, and no writes. The discovery canary returned 3/3 HTTP 200 and clearly distinguished eight representative source attempts across four providers from the 37-source catalog; one run completed seven of eight attempted sources without misrepresenting the result. This is not a Production-capacity, full-catalog-per-run, signed-user-fairness, queue-throughput, or plan-quota claim.
+- Latest runtime candidate: commit `1aded9c9b6b58e6f8557abbfb3e207c4b0943864`; runtime SHA-256 `a3fcae6de5e1c5aff90c9ad856e67494b468293c39c25847fb189aab43ee8354`.
+- Protected Preview: `dpl_E2D1cHiTdHg9Si2qhc1frrYpe1qW` (Ready; exact candidate, fail-closed sign-in UX, live route behavior, bounded representative discovery canary, capacity result, and content-free request logs verified).
+- Protected Preview capacity: 10/10 liveness responses were HTTP 200 at concurrency 2; p50 112 ms, p95/max 129 ms, no bodies read, no bypass secret, and no writes. The discovery canary returned 3/3 HTTP 200 and completed all eight representative source attempts across four providers from the 37-source catalog. This is not a Production-capacity, full-catalog-per-run, signed-user-fairness, queue-throughput, or plan-quota claim.
 - Production configuration names: a value-blind audit found 47 observed names, 24 of 126 required names present, and 102 required names absent. Durable-runtime names are complete, but private storage, controlled beta, audit archive, operator alerting, signed launch evidence, support ownership, document rendering, assisted Greenhouse, and final submission remain materially incomplete by name alone. No value was read, and name presence does not prove a valid or working configuration.
 - Isolated-data preflight: canonical digest valid; current operator environment has no Supabase CLI or local container runtime and no nonproduction target attestation. A separate authenticated read-only Supabase inventory found two healthy active projects, both assigned to another product, with zero development branches and zero eligible 1stStep.ai target. The sole visible organization is on the Free Plan; current Supabase billing documentation grants two Free projects across organizations where the account is an Owner or Administrator, so the free allocation is already occupied. No schema or data was inspected and no resource was created.
 - Current Production/rollback reference: `dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM` (Ready; read-only guard reverified 2026-09-02T02:49:55Z; protected routes deny unsigned access, but all four concierge assets remain intentionally not candidate-parity).
@@ -31,11 +31,14 @@ Current evidence: neither Docker nor Podman nor a local PostgreSQL command/servi
 
 ## Decision 2: private storage and recovery exercise
 
+- [x] Implement and test a strict content-free recovery-evidence contract that requires distinct source/restore/Production fingerprints, exact migration identity, approved cost/RPO/RTO limits, encrypted backup policy, zero cross-tenant and orphan findings, integrity reconciliation, and cleanup proof.
 - [ ] Approve an isolated, non-production private object store and malware-scanner test configuration, including any provider cost ceiling.
 - [ ] Approve a separate isolated backup/PITR restore exercise and evidence retention location.
 - [ ] Name the recovery owner and approve target RPO/RTO values or revisions to the documented beta targets.
 
 This approval must not activate browser execution, employer submission, email, billing, or Production data access.
+
+After the separately authorized restore, validate the redacted artifact with `npm run security:recovery-evidence -- --artifact <protected-redacted-artifact.json>`. A passing artifact is necessary but does not authorize or perform a restore, sign launch evidence, or prove any unrecorded provider behavior.
 
 ## Decision 3: signed-user capacity and dependency-failure evidence
 

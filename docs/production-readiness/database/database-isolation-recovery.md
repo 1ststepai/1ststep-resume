@@ -83,6 +83,26 @@ Supabase's current PITR documentation lists hourly add-on pricing of approximate
 
 No restore was performed. RPO, RTO, integrity counts, audit continuity, idempotency-key continuity, receipt linkage, and tenant-isolation reconciliation remain **Unknown**.
 
+### Recovery evidence contract
+
+The repository now includes a strict, content-free verifier for the redacted artifact produced by a future separately authorized restore exercise. It requires:
+
+- distinct SHA-256 fingerprints for the isolated source, isolated new restore target, and Production fingerprint-only reference;
+- an explicit no-Production-access/no-destructive-Production-action boundary;
+- the exact canonical migration SHA-256;
+- approved owner, cost ceiling, RPO, and RTO scope without exposing the owner or target identifiers;
+- encrypted provider backup policy, retention, recovery point, and ordered restore timestamps;
+- at least the 20 known tables, zero orphaned relationships, zero cross-tenant violations, verified integrity/audit continuity, and verified restore-target cleanup;
+- measured RPO/RTO within the approved limits and evidence no older than 90 days.
+
+Unknown or additional fields are rejected so candidate values, target references, or narrative claims cannot be smuggled into the retained release artifact. Successful validation emits only booleans, measured RPO/RTO, and an artifact digest. It performs no network calls, writes, restore, migration, billing, signing, or Production action.
+
+```powershell
+npm run security:recovery-evidence -- --artifact <protected-redacted-artifact.json>
+```
+
+The verifier is implementation/test evidence only until a real isolated exercise produces a valid artifact and separately signed launch evidence.
+
 ## Safe operator sequence
 
 After a non-production target is supplied, first capture the installed tool's behavior rather than relying on stale commands:

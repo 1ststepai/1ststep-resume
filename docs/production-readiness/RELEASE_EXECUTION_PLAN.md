@@ -8,7 +8,7 @@ This is the operator path from the current protected Preview to a controlled Pro
 - Runtime SHA-256: `219a40b7d38f4a4e0a88cd75897c552faa18c2d247d05457857ddc782b7a94a7`
 - Core CI-hardening commit: `307e48d2fb1c134da3252959ba8b5ed3efc6285e`
 - Production dependency-audit commit: `0510756bed9537de9bba87eb1566150268d57408`
-- Exact protected Preview: `dpl_8Jn77zQeCGYydjBckKAfYsFMoxYV`
+- Exact protected Preview: `dpl_E2D1cHiTdHg9Si2qhc1frrYpe1qW`
 - Current Production/rollback reference: `dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM`
 - Production state: unchanged and not candidate-parity
 
