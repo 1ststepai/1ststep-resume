@@ -46,10 +46,11 @@ After the separately authorized restore, validate the redacted artifact with `np
 
 - [x] Complete one capped protected Preview liveness run: 10 GET requests, concurrency 2, only `/api/health/live`, expected 200, no bodies retained, and no writes.
 - [x] Record the actual hosting shape: active Vercel Pro plan, `iad1` function/default region, Fluid Compute enabled, standard fixed build machine, and Node 24.x.
+- [x] Implement and test the strict redacted evidence contract that must pass before any signed-user fairness, queue, dependency-failure, quota, or cost result is accepted.
 - [ ] Approve queue-depth, signed-user concurrency, latency, provider-quota, and cost ceilings for the durable signed-beta runtime.
 - [ ] Separately approve the signed-user queue/fairness, backpressure, saturation, and dependency-failure exercises after that runtime exists.
 
-The completed liveness probe used the authenticated Vercel CLI transport, not a protection-bypass secret. The script remains Preview-only, exact-deployment-bound, GET-only, body-free, and capped at 25 requests/five concurrent requests. This closes only the protected Preview liveness sample; it does not prove signed-user fairness, queue throughput, provider quotas, failover, or Production capacity.
+The latest liveness probe used the authenticated Vercel CLI transport, not a protection-bypass secret. Exact Preview `dpl_9DLBhVkEo9JAvr8uN2kGBpqxJyUv` returned 10/10 HTTP 200 responses at concurrency two, p50 106 ms and p95/max 145 ms. The script remains Preview-only, exact-deployment-bound, GET-only, body-free, and capped at 25 requests/five concurrent requests. The new evidence verifier does not run or authorize a signed-user exercise. Signed-user fairness, queue throughput, provider quotas, failover, cost, and Production capacity therefore remain unverified.
 
 ## Decision 4: operations and alerts
 

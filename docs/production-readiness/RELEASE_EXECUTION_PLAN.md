@@ -74,6 +74,7 @@ Exit proof: `Submitted` remains impossible until an authoritative employer recei
 ## Phase 6 - capacity, remote review, and release candidate
 
 - [x] Complete the capped 10-request/concurrency-2 protected Preview liveness probe through the authenticated Vercel CLI transport, without a bypass secret, response bodies, or writes.
+- [x] Add a strict content-free acceptance contract for the separately approved synthetic signed-user fairness, rate-limit, queue/backpressure, dependency-failure, provider-quota, cost, and cleanup evidence.
 - [ ] Record plan, region, concurrency, queue-depth, latency, and cost assumptions; run approved signed-user fairness and dependency-failure drills after the durable runtime exists.
 - [ ] Explicitly authorize the branch push and review request.
 - [ ] Require green remote Production Readiness Gate CI and human review; do not merge automatically.

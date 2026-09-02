@@ -33,4 +33,6 @@ This transport invokes only `vercel curl` GET requests with fixed curl flags, di
 
 ## Current state
 
-The harness and its local safety/concurrency/failure tests pass. The linked project identity and Node 24 runtime were read from Vercel, but plan quotas were not exposed by that read-only inspection. No protected-Preview load result, signed-user fairness result, provider quota, saturation point, or production capacity claim exists yet.
+The harness and its local safety/concurrency/failure tests pass. Exact protected Preview `dpl_9DLBhVkEo9JAvr8uN2kGBpqxJyUv` returned 10/10 liveness HTTP 200 responses at concurrency two, p50 106 ms and p95/max 145 ms, without response bodies, a bypass secret, or writes. This remains a liveness sample, not a signed-user or Production capacity result.
+
+Candidate `70736f3` adds a separate fail-closed verifier for a future approved synthetic signed-user exercise. The artifact must bind the clean commit/runtime and exact Preview deployment; reject Production; prove zero starvation and cross-tenant interference; exercise durable tenant/global rate limits and fail-closed behavior; measure explicit queue backpressure, drain, wait, depth, and lease safety; contain a synthetic provider failure without a retry storm; stay within approved latency, quota, provider-unit, and cost ceilings; and complete cleanup. The verifier performs no load, writes, deployment, employer action, or approval itself. No signed-user exercise, provider quota, saturation point, or Production capacity claim exists yet.
