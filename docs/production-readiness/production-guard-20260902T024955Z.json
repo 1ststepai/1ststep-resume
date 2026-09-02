@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-09-02T02:49:55.683Z",
+  "environment": "Vercel Production",
+  "contentFree": true,
+  "containsCandidateValues": false,
+  "performsWrites": false,
+  "changesTraffic": false,
+  "deployment": {
+    "id": "dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM",
+    "target": "production",
+    "readyState": "READY",
+    "alias": "https://app.1ststep.ai"
+  },
+  "boundary": {
+    "ok": true,
+    "conciergeStatus": 200,
+    "strictCspPresent": true,
+    "protectedReadinessStatus": 401,
+    "protectedOperationsStatus": 401,
+    "protectedStateStatus": 401
+  },
+  "candidateParity": {
+    "ok": false,
+    "mismatchedAssets": [
+      "/concierge",
+      "/concierge.html",
+      "/concierge.js",
+      "/persistent-concierge.css"
+    ],
+    "candidatePromotionClaimed": false
+  }
+}
