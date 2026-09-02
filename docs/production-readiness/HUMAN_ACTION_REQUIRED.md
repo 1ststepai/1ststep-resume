@@ -39,7 +39,8 @@ This approval must not activate browser execution, employer submission, email, b
 ## Decision 3: signed-user capacity and dependency-failure evidence
 
 - [x] Complete one capped protected Preview liveness run: 10 GET requests, concurrency 2, only `/api/health/live`, expected 200, no bodies retained, and no writes.
-- [ ] Record the actual plan, region, concurrency, queue-depth, latency, and cost ceilings for the durable signed-beta runtime.
+- [x] Record the actual hosting shape: active Vercel Pro plan, `iad1` function/default region, Fluid Compute enabled, standard fixed build machine, and Node 24.x.
+- [ ] Approve queue-depth, signed-user concurrency, latency, provider-quota, and cost ceilings for the durable signed-beta runtime.
 - [ ] Separately approve the signed-user queue/fairness, backpressure, saturation, and dependency-failure exercises after that runtime exists.
 
 The completed liveness probe used the authenticated Vercel CLI transport, not a protection-bypass secret. The script remains Preview-only, exact-deployment-bound, GET-only, body-free, and capped at 25 requests/five concurrent requests. This closes only the protected Preview liveness sample; it does not prove signed-user fairness, queue throughput, provider quotas, failover, or Production capacity.
@@ -55,6 +56,8 @@ Provide or approve:
 - [ ] One synthetic content-free alert-delivery and receiver-acknowledgement exercise.
 
 The candidate now fails closed unless alerting approval, the exact HTTPS allowlist, protected token, Redis outbox, contract version, 30-730 day retention, and 1-1,440 minute acknowledgement window all validate. Delivery evidence is scope-bound to the endpoint, contract, retention, acknowledgement window, and deterministic event contract. A sender-side 2xx is not delivery proof. Retain receiver-side acknowledgement evidence without candidate or tenant values.
+
+Current read-only Vercel evidence found zero configured drains and one visible default team-wide alert rule. The rule was not inspected, and it is not evidence of a project-specific destination, retention, delivery, or acknowledgement. No alert, drain, integration, or paid feature was created or changed.
 
 ## Decision 5: remote review and CI
 
