@@ -7,6 +7,7 @@ This is the operator path from the current protected Preview to a controlled Pro
 - Release candidate commit: `a1776d81d466f0249686387b1abc36d2b100be44`
 - Runtime SHA-256: `0e047c3a79b2eab7f341fc1bb6406e75016acfb2658bde94adfd09035f84e3a8`
 - Core CI-hardening commit: `307e48d2fb1c134da3252959ba8b5ed3efc6285e`
+- Production dependency-audit commit: `0510756bed9537de9bba87eb1566150268d57408`
 - Exact protected Preview: `dpl_A8rpbCDYU8e9LPEKhLogHS5KQ2zu`
 - Current Production/rollback reference: `dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM`
 - Production state: unchanged and not candidate-parity
@@ -72,7 +73,7 @@ Exit proof: `Submitted` remains impossible until an authoritative employer recei
 
 ## Phase 6 - capacity, remote review, and release candidate
 
-- [ ] Supply a scoped Preview bypass secret only through the protected shell and authorize the capped 10-request/concurrency-2 liveness probe.
+- [x] Complete the capped 10-request/concurrency-2 protected Preview liveness probe through the authenticated Vercel CLI transport, without a bypass secret, response bodies, or writes.
 - [ ] Record plan, region, concurrency, queue-depth, latency, and cost assumptions; run approved signed-user fairness and dependency-failure drills after the durable runtime exists.
 - [ ] Explicitly authorize the branch push and review request.
 - [ ] Require green remote Production Readiness Gate CI and human review; do not merge automatically.

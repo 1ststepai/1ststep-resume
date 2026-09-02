@@ -10,6 +10,7 @@ This file is an operator checklist, not an authorization record. Checking a box 
 - Isolated-data preflight: canonical digest valid; current operator environment has no Supabase CLI, no local container runtime, and no nonproduction target attestation. It made no network call and proved no target.
 - Current Production/rollback reference: `dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM` (Ready, but not candidate-parity).
 - Full local release gate: passed.
+- Production dependency audit: source commit `0510756bed9537de9bba87eb1566150268d57408` adds a separate bounded CI job; the local `npm audit --omit=dev --audit-level=high` check found zero vulnerabilities across 167 production dependencies (181 total dependency entries). Remote CI execution is still unknown because the branch has not been pushed.
 - Production traffic, migrations, candidate transmission, employer contact, and application submission: unchanged/not performed.
 - Production approval: blocked by scorecard layers 3, 8, and 13.
 - Complete ordered operator path: [`RELEASE_EXECUTION_PLAN.md`](RELEASE_EXECUTION_PLAN.md). It maps the 34 current launch actions to phases and exit proof; it grants no authorization.
@@ -35,15 +36,13 @@ Current evidence: neither Docker nor Podman, a local PostgreSQL command/service,
 
 This approval must not activate browser execution, employer submission, email, billing, or Production data access.
 
-## Decision 3: protected Preview capacity evidence
+## Decision 3: signed-user capacity and dependency-failure evidence
 
-- [ ] Provide a scoped Preview protection-bypass secret only in the protected shell as `VERCEL_AUTOMATION_BYPASS_SECRET`; do not paste it into chat, documentation, or a tracker.
-- [ ] Authorize one capped run: 10 GET requests, concurrency 2, only `/api/health/live`, expected 200, p95 ceiling 5,000 ms, no bodies retained.
-- [ ] Separately approve the signed-user queue/fairness and dependency-failure exercise after the durable signed-beta runtime exists.
+- [x] Complete one capped protected Preview liveness run: 10 GET requests, concurrency 2, only `/api/health/live`, expected 200, no bodies retained, and no writes.
+- [ ] Record the actual plan, region, concurrency, queue-depth, latency, and cost ceilings for the durable signed-beta runtime.
+- [ ] Separately approve the signed-user queue/fairness, backpressure, saturation, and dependency-failure exercises after that runtime exists.
 
-The exact bounded command is documented in [`staging-capacity-probe.md`](staging-capacity-probe.md). The script refuses Production hosts and cannot exceed 25 requests/five concurrent requests.
-
-Current evidence: a read-only Preview environment-variable name listing contains no `VERCEL_AUTOMATION_BYPASS_SECRET`. No secret value was requested, displayed, written, or inferred, and no capacity claim has been made.
+The completed liveness probe used the authenticated Vercel CLI transport, not a protection-bypass secret. The script remains Preview-only, exact-deployment-bound, GET-only, body-free, and capped at 25 requests/five concurrent requests. This closes only the protected Preview liveness sample; it does not prove signed-user fairness, queue throughput, provider quotas, failover, or Production capacity.
 
 ## Decision 4: operations and alerts
 
