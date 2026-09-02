@@ -10,6 +10,10 @@ export const SMOKE_DISCOVERY_RUNTIME = Object.freeze({
   sourceConcurrency: 20,
   providerRequestConcurrency: 2,
 });
+const SMOKE_PROVIDERS = Object.freeze(['greenhouse', 'lever', 'ashby', 'smartrecruiters']);
+export const PREVIEW_SMOKE_SOURCES = Object.freeze(SMOKE_PROVIDERS.flatMap(provider => (
+  DEFAULT_PUBLIC_ATS_SOURCES.filter(source => source.provider === provider).slice(0, 2)
+)));
 
 export default async function handler(req, res) {
   applyApiHeaders(req, res);
@@ -26,7 +30,7 @@ export default async function handler(req, res) {
   const startedAt = Date.now();
   const discovery = await discoverPublicJobs({
     mission: { role: 'procurement', workModes: ['Remote', 'Hybrid'], employmentTypes: ['Full-time', 'Contract'], location: 'Newark, NJ' },
-    sources: DEFAULT_PUBLIC_ATS_SOURCES,
+    sources: PREVIEW_SMOKE_SOURCES,
     limit: 5,
     runtime: SMOKE_DISCOVERY_RUNTIME,
   });
@@ -35,6 +39,7 @@ export default async function handler(req, res) {
   return res.status(ok ? 200 : 503).json({
     ok,
     durableRateLimit: 'passed',
+    catalogSources: DEFAULT_PUBLIC_ATS_SOURCES.length,
     sourceAttempts: discovery.sourceSummary.length,
     sourcesChecked,
     matches: discovery.jobs.length,
