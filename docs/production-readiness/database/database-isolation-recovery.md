@@ -99,6 +99,18 @@ supabase db advisors --help
 
 Then stop and review the target proof, supported flags, migration transformation, and execution plan before any link, push, reset, restore, or billable operation. Credentials must remain in the operator's secure process environment and must not be committed or included in evidence.
 
+Before any live connection, run the content-free preflight from a protected operator shell. It performs no network calls and writes no external state. It verifies the exact canonical migration digest, local tooling, target-kind declaration, explicit nonproduction attestation, and—for an isolated managed project—different well-formed isolated and Production project references. It deliberately reports `isolatedTargetProven: false`; a successful preflight means only that a separately authorized read-only target audit may begin.
+
+```powershell
+$env:JOB_AGENT_ISOLATED_TARGET_KIND = 'isolated-supabase-project' # or local-supabase
+$env:JOB_AGENT_ISOLATED_SUPABASE_PROJECT_REF = '<protected isolated project ref>'
+$env:JOB_AGENT_PRODUCTION_SUPABASE_PROJECT_REF = '<protected production project ref>'
+$env:JOB_AGENT_ISOLATED_TARGET_CONFIRMATION = 'CONFIRM_ISOLATED_NONPRODUCTION_TARGET'
+npm run security:isolated-data-preflight
+```
+
+Do not paste either project reference into chat, source, evidence, or a tracker. For `local-supabase`, omit both project-reference variables; the preflight instead requires a working local container runtime. A passing result is not permission to link, push, reset, restore, or enable paid infrastructure.
+
 ## Human Action Required
 
 1. Provide and prove a disposable local Supabase stack or isolated staging project, with a masked project reference and explicit statement that it is not production.
