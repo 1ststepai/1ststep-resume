@@ -4,11 +4,11 @@ This is the operator path from the current protected Preview to a controlled Pro
 
 ## Current release identity
 
-- Release candidate commit: `a1776d81d466f0249686387b1abc36d2b100be44`
-- Runtime SHA-256: `0e047c3a79b2eab7f341fc1bb6406e75016acfb2658bde94adfd09035f84e3a8`
+- Release candidate commit: `16089681c330c1684a526e786a466e4a2b6f917e`
+- Runtime SHA-256: `219a40b7d38f4a4e0a88cd75897c552faa18c2d247d05457857ddc782b7a94a7`
 - Core CI-hardening commit: `307e48d2fb1c134da3252959ba8b5ed3efc6285e`
 - Production dependency-audit commit: `0510756bed9537de9bba87eb1566150268d57408`
-- Exact protected Preview: `dpl_A8rpbCDYU8e9LPEKhLogHS5KQ2zu`
+- Exact protected Preview: `dpl_Ae8h7AVH4kAwDvhLVJfex8n11KRL`
 - Current Production/rollback reference: `dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM`
 - Production state: unchanged and not candidate-parity
 
@@ -77,7 +77,7 @@ Exit proof: `Submitted` remains impossible until an authoritative employer recei
 - [ ] Record plan, region, concurrency, queue-depth, latency, and cost assumptions; run approved signed-user fairness and dependency-failure drills after the durable runtime exists.
 - [ ] Explicitly authorize the branch push and review request.
 - [ ] Require green remote Production Readiness Gate CI and human review; do not merge automatically.
-- [ ] Re-run the complete local gate and exact-Preview verifier against the reviewed commit.
+- [x] Re-run the complete local gate and exact-Preview verifier against the current local candidate; repeat after remote review because the branch has not been pushed.
 - [ ] Reconcile the 13-layer scorecard, full execution plan, evidence register, runbook, rollback preflight, and approval queue to the same commit and runtime digest.
 
 Exit proof: one reviewable artifact has green local/remote gates, exact protected Preview evidence, capacity evidence, alert/recovery evidence, a fixed rollback target, and no unaccepted Critical layer.

@@ -4,9 +4,9 @@ This file is an operator checklist, not an authorization record. Checking a box 
 
 ## Current verified boundary
 
-- Latest runtime candidate: commit `a1776d81d466f0249686387b1abc36d2b100be44`; runtime SHA-256 `0e047c3a79b2eab7f341fc1bb6406e75016acfb2658bde94adfd09035f84e3a8`.
-- Protected Preview: `dpl_A8rpbCDYU8e9LPEKhLogHS5KQ2zu` (Ready; exact candidate, fail-closed sign-in UX, live route behavior, bounded capacity result, and content-free request logs verified).
-- Protected Preview capacity: 10/10 liveness responses were HTTP 200 at concurrency 2; p50 100 ms, p95/max 134 ms, no bodies read, no bypass secret, and no writes. This is not a Production-capacity, signed-user-fairness, queue-throughput, or plan-quota claim.
+- Latest runtime candidate: commit `16089681c330c1684a526e786a466e4a2b6f917e`; runtime SHA-256 `219a40b7d38f4a4e0a88cd75897c552faa18c2d247d05457857ddc782b7a94a7`.
+- Protected Preview: `dpl_Ae8h7AVH4kAwDvhLVJfex8n11KRL` (Ready; exact candidate, fail-closed sign-in UX, live route behavior, bounded representative discovery canary, capacity result, and content-free request logs verified).
+- Protected Preview capacity: 10/10 liveness responses were HTTP 200 at concurrency 2; p50 109 ms, p95/max 243 ms, no bodies read, no bypass secret, and no writes. The discovery canary returned 3/3 HTTP 200 and clearly distinguished eight representative source attempts across four providers from the 37-source catalog. This is not a Production-capacity, full-catalog-per-run, signed-user-fairness, queue-throughput, or plan-quota claim.
 - Isolated-data preflight: canonical digest valid; current operator environment has no Supabase CLI, no local container runtime, and no nonproduction target attestation. It made no network call and proved no target.
 - Current Production/rollback reference: `dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM` (Ready, but not candidate-parity).
 - Full local release gate: passed.
