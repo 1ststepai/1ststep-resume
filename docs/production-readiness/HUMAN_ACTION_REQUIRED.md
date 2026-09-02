@@ -4,8 +4,9 @@ This file is an operator checklist, not an authorization record. Checking a box 
 
 ## Current verified boundary
 
-- Latest runtime candidate: commit `b5bccef1d0fc671eaa8fac221747faba76521d07`; runtime SHA-256 `570a3ad68abcb7e3fe3fd266d34f68cd3faf8482fcc8352e18a765d3264ccd18`.
-- Protected Preview: `dpl_AbWD1vi8EvDMCucnLRSQ9eeHN8pZ` (Ready; exact candidate, fail-closed sign-in UX, live route behavior, and content-free request logs verified).
+- Latest runtime candidate: commit `a1776d81d466f0249686387b1abc36d2b100be44`; runtime SHA-256 `0e047c3a79b2eab7f341fc1bb6406e75016acfb2658bde94adfd09035f84e3a8`.
+- Protected Preview: `dpl_A8rpbCDYU8e9LPEKhLogHS5KQ2zu` (Ready; exact candidate, fail-closed sign-in UX, live route behavior, bounded capacity result, and content-free request logs verified).
+- Protected Preview capacity: 10/10 liveness responses were HTTP 200 at concurrency 2; p50 100 ms, p95/max 134 ms, no bodies read, no bypass secret, and no writes. This is not a Production-capacity, signed-user-fairness, queue-throughput, or plan-quota claim.
 - Isolated-data preflight: canonical digest valid; current operator environment has no Supabase CLI, no local container runtime, and no nonproduction target attestation. It made no network call and proved no target.
 - Current Production/rollback reference: `dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM` (Ready, but not candidate-parity).
 - Full local release gate: passed.
