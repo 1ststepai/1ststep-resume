@@ -204,6 +204,39 @@ Application-session domain primitives and the encrypted browser-task queue enfor
 
 Authorization shutdown preserves that ordering. A queued or leased browser task is atomically marked `cancelled` and its application reservation is paused as cancelled-before-start. An `executing` task is never relabeled cancelled or automatically retransmitted; its application remains available to the stale-task reconciler and the response reports cleanup/reconciliation still required. Provider-close failures retain only the encrypted recovery reference for retry, while revoked consent continues to block browser-session restore and all new worker execution. Ordinary current-device or all-device sign-out revokes access sessions, not the user's separately recorded account authorization.
 
+## Subscriber experience requirement
+
+Every subscriber-facing Job Agent screen must pass the Grandma Test defined in
+`docs/SIMPLE_JOB_AGENT_UX.md`: one primary action per screen, one plain-language
+question at a time, no technical vocabulary, automatic saving, visible progress,
+and an explicit plain-language confirmation before any application action.
+
+The acceptance bar is a first-time user completing onboarding in under five
+minutes unaided. A screen fails if a tester asks what a word means or cannot
+find the next button within five seconds.
+
+Two rules in that document are runtime obligations, not presentation choices,
+and are enforced here:
+
+- A captured job is never silently discarded. It persists until processed or
+  explicitly removed by the user.
+- Plain-language state names are a presentation layer over the internal states,
+  which are never renamed, merged or removed. The mapping is fixed in
+  `docs/SIMPLE_JOB_AGENT_UX.md`.
+- No user-facing outcome claim may appear before authoritative receipt evidence
+  exists: nothing may claim or imply the application was delivered or completed.
+  This is contextual, not a banned word list -- "Apply now", "Applying" and
+  "Application" stay legitimate where they claim no outcome. See
+  `docs/SIMPLE_JOB_AGENT_UX.md` for the allowed/disallowed table.
+  Applying before a submission attempt presents as
+  "Working on application". A submission attempted without a receipt presents as
+  "Waiting for employer confirmation" and does not advance to Submitted. Only
+  authoritative receipt evidence reaches "Application confirmed sent"
+  (Submitted), with "Confirmation verified" available for Receipt Verified.
+- The pre-receipt state is not a success state anywhere in the runtime: it must
+  not fire a success notification and must not count toward any completion
+  metric, progress total or completed-application count.
+
 ## Next execution layer
 
 The employer-form worker remains a separate launch gate. Trusted value-free schema extraction, atomic encrypted queue/lease, verified-domain navigation, egress restriction, credential/challenge suspension, attested private-file value handoff, single-use execution ordering, stale-outcome reconciliation, teardown, and exact-host receipt transport are implemented. The next external gate is to build the checked-in runner into a patched snapshot, compute and retain its exact SHA-256, verify same-host egress and teardown against supervised multi-page ATS fixtures, and record snapshot/digest evidence. Live browser-session handoff/restoration and receipt capture remain disabled in the supplied environment pending employer/ATS terms approval, cost authorization, configuration, and supervised verification. The exact-scope final-submit protocol plus encrypted queue, lease, consent/shutdown handling, and stale reconciliation are implemented but independently disabled by default. Final submission becomes eligible only when every launch prerequisite and the scope-bound supervised-execution evidence verify together. Activation remains a separate deployment decision and must not become scraping or unrestricted auto-apply behavior.

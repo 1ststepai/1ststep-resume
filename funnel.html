@@ -333,7 +333,13 @@
       .card { padding: 20px; }
       .btn-row { flex-direction: column; }
     }
-  </style>
+      .capture-status { font-size: 14px; margin-top: 6px; min-height: 20px; color: #8892B0; }
+    .capture-status-ok { color: #10B981; font-weight: 600; }
+    .capture-status-error { color: #F87171; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .capture-retry { background: #6366F1; color: #fff; border: none; border-radius: 8px;
+      padding: 8px 16px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; }
+    .capture-retry:hover { filter: brightness(1.08); }
+</style>
 </head>
 <body>
 <div class="funnel">
@@ -345,6 +351,7 @@
     <div class="job-context">
       <div class="job-context-label">Tailoring your resume for</div>
       <div class="job-context-title" id="uploadJobTitle">Loading job...</div>
+      <div class="capture-status" id="captureStatus" role="status" aria-live="polite"></div>
     </div>
 
     <div class="card">
@@ -594,12 +601,112 @@ function applyJobCapture(jobData, resumeText, persist) {
 })();
 
 // ── Listen for job data from extension (auth-bridge postMessage) ─
+// Job capture from the browser helper.
+// We acknowledge only after the job is saved locally, so a capture is never
+// dropped in transit. Re-delivery of a capture we already saved is answered
+// again but changes nothing.
+const CAPTURE_ID = new URLSearchParams(location.search).get('jobCaptureId') || '';
+const CAPTURE_DONE_KEY = '1ststep_funnel_capture_id';
+let captureSettled = false;
+
+function acknowledgeCapture(captureId) {
+  try {
+    window.postMessage({ type: '1STSTEP_JOB_CAPTURE_ACK', version: '1', captureId }, location.origin);
+  } catch (_) {}
+}
+
 window.addEventListener('message', e => {
+  if (e.source !== window) return;
   if (e.origin !== location.origin) return;
   if (!e.data || e.data.type !== '1STSTEP_JOB_CAPTURE') return;
-  const { jobData, resumeText } = e.data;
-  applyJobCapture(jobData, resumeText, true);
+
+  const { jobData, resumeText, captureId } = e.data;
+  // Exact identity. A capture with no id, or one this page was not opened for,
+  // is never accepted -- not even when the page has no id of its own.
+  if (!CAPTURE_ID || !captureId || captureId !== CAPTURE_ID) return;
+  if (!jobData) return;
+
+  let alreadySaved = false;
+  try { alreadySaved = sessionStorage.getItem(CAPTURE_DONE_KEY) === captureId; } catch (_) {}
+
+  if (!alreadySaved) {
+    let saved = false;
+    try {
+      applyJobCapture(jobData, resumeText, true);
+      if (captureId) sessionStorage.setItem(CAPTURE_DONE_KEY, captureId);
+      saved = true;
+    } catch (_) {
+      saved = false;
+    }
+    // Without a successful save we send no acknowledgement, so the browser
+    // helper keeps the job and Try again can ask for it.
+    if (!saved) return;
+  }
+
+  captureSettled = true;
+  clearCaptureTimeout();
+  showJobSaved();
+  acknowledgeCapture(captureId);
 });
+
+// Visible states for the capture. Plain language only: no ids, no storage, no
+// mention of the extension or of what failed underneath.
+let captureTimeoutId = null;
+
+function clearCaptureTimeout() {
+  if (captureTimeoutId !== null) { clearTimeout(captureTimeoutId); captureTimeoutId = null; }
+}
+
+function showJobSaved() {
+  const el = document.getElementById('captureStatus');
+  if (!el) return;
+  el.textContent = 'Job saved';
+  el.className = 'capture-status capture-status-ok';
+}
+
+function showCaptureFailed() {
+  const el = document.getElementById('captureStatus');
+  if (!el) return;
+  el.className = 'capture-status capture-status-error';
+  el.textContent = '';
+  const text = document.createElement('span');
+  text.textContent = 'We couldn’t load that job.';
+  const retry = document.createElement('button');
+  retry.type = 'button';
+  retry.id = 'captureRetryBtn';
+  retry.className = 'capture-retry';
+  retry.textContent = 'Try again';
+  retry.addEventListener('click', requestCaptureAgain);
+  el.appendChild(text);
+  el.appendChild(retry);
+}
+
+// The page cannot read the browser helper's storage. It asks for its own job by
+// the id already in the address bar, and gets that one or nothing.
+function requestCaptureAgain() {
+  const el = document.getElementById('captureStatus');
+  if (el) { el.className = 'capture-status'; el.textContent = 'Looking for that job…'; }
+  try {
+    window.postMessage({ type: '1STSTEP_JOB_CAPTURE_REQUEST', version: '1', captureId: CAPTURE_ID }, location.origin);
+  } catch (_) {}
+  startCaptureTimeout();
+}
+
+function startCaptureTimeout() {
+  clearCaptureTimeout();
+  captureTimeoutId = setTimeout(() => {
+    captureTimeoutId = null;
+    if (!captureSettled) showCaptureFailed();
+  }, 5000);
+}
+
+// Only wait for a capture when one was actually promised by the link.
+if (CAPTURE_ID) {
+  let restored = false;
+  try { restored = sessionStorage.getItem(CAPTURE_DONE_KEY) === CAPTURE_ID; } catch (_) {}
+  if (restored) { captureSettled = true; showJobSaved(); }
+  else startCaptureTimeout();
+}
 
 // ── DOM refs ─────────────────────────────────────────────────────
 const dropZone      = document.getElementById('dropZone');

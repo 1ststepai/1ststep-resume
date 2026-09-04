@@ -37,7 +37,7 @@
 These block the next phase of the product. Complete in order.
 
 ### 1. Retire jobs.js + free the Vercel slot
-- **STATUS:** ✅ SHIPPED. `api/jobs.js` deleted. Next: Remove job search tab from UI and replace with JD input.
+- **STATUS:** ⚠️ NOT SHIPPED. `api/jobs.js` still exists and is still wired up: `app.js` calls `/api/jobs`, `vercel.json` keeps the function entry and two rewrites, and `app.html` (served at `/app/resume`) loads `app.js`. Legacy search is still reachable. Corrected 2026-09-04.
 - **Why now:** Frees 1 of 12 Vercel function slots. Nothing else can be built without this.
 - **See:** BUG-001, BUG-002
 
@@ -128,7 +128,7 @@ The extension is a future feature, not the current sprint. It has its own depend
 5. **autofill callType in claude.js** — returns structured JSON for form fields. Add via `?action=` param (no new Vercel function)
 6. **GHL extension tags** — `extension_install`, `extension_apply`, `extension_autofill` in `track-event.js`
 7. **LinkedIn Easy Apply** — after Greenhouse/Lever are solid
-8. **Workday** — last, hardest (Shadow DOM)
+8. ~~**Workday**~~ — retired 2026-09-04; files deleted, not planned
 
 ### Extension file structure (reference):
 ```
@@ -143,7 +143,6 @@ The extension is a future feature, not the current sprint. It has its own depend
 │   ├── lever.js          # Start here — stable selectors
 │   ├── linkedin.js       # Multi-step modal — selectors change often
 │   ├── indeed.js         # iframe-based, cross-frame messaging needed
-│   └── workday.js        # ⚠ Shadow DOM — hardest, do last
 └── utils/
     ├── auth.js           # tierToken fetch + cache in chrome.storage
     └── filler.js         # Generic field fill (input, select, textarea, file)

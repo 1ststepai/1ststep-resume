@@ -24,7 +24,7 @@ createServer(async (request, response) => {
   try {
     const pathname = decodeURIComponent(new URL(request.url || '/', 'http://127.0.0.1').pathname);
     if (pathname.startsWith('/api/')) { response.writeHead(404, { 'Content-Type': 'application/json' }); return response.end('{"error":"Not configured in static browser fixture."}'); }
-    const relative = pathname === '/concierge' || pathname === '/concierge/' ? 'concierge.html' : pathname === '/app' || pathname === '/app/' ? 'app.html' : pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
+    const relative = pathname === '/concierge' || pathname === '/concierge/' ? 'concierge.html' : pathname === '/app' || pathname === '/app/' ? 'concierge.html' : pathname === '/app/resume' ? 'app.html' : pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
     const path = resolve(root, relative);
     if (path !== root && !path.startsWith(`${root}${sep}`)) { response.writeHead(403); return response.end(); }
     if (!(await stat(path)).isFile()) throw new Error('not-file');

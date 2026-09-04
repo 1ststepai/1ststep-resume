@@ -13,7 +13,52 @@ async function relayThroughApp(operation, payload = {}) {
   });
 }
 
-chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+// -- pendingJobs mutation queue ----------------------------------------------
+// This service worker is the only writer of pendingJobs. Every mutation runs
+// through one promise chain, so an addition and an acknowledged deletion cannot
+// both read the same snapshot and write back a version missing the other's
+// change. The content-script bridge reads pendingJobs for delivery but never
+// writes it.
+
+const CAPTURE_TTL_MS = 2 * 60 * 1000;
+let pendingJobsMutation = Promise.resolve();
+
+function expirePendingJobs(pendingJobs, now = Date.now()) {
+  for (const id of Object.keys(pendingJobs)) {
+    const entry = pendingJobs[id];
+    if (!entry || typeof entry.createdAt !== 'number' || now - entry.createdAt > CAPTURE_TTL_MS) {
+      delete pendingJobs[id];
+    }
+  }
+  return pendingJobs;
+}
+
+/** Serializes a read-modify-write over pendingJobs. Returns the mutator result. */
+function mutatePendingJobs(mutator) {
+  const run = pendingJobsMutation.then(async () => {
+    const data = await chrome.storage.local.get(['pendingJobs']);
+    const pendingJobs = data.pendingJobs && typeof data.pendingJobs === 'object' ? data.pendingJobs : {};
+    const result = await mutator(pendingJobs);
+    await chrome.storage.local.set({ pendingJobs });
+    return result;
+  });
+  // Keep the chain alive even if one mutation throws.
+  pendingJobsMutation = run.then(() => undefined, () => undefined);
+  return run;
+}
+
+/** Deletes exactly the acknowledged capture. Unknown ids change nothing. */
+function consumeCapture(captureId) {
+  if (typeof captureId !== 'string' || !captureId) return Promise.resolve(false);
+  return mutatePendingJobs(pendingJobs => {
+    expirePendingJobs(pendingJobs);
+    if (!Object.prototype.hasOwnProperty.call(pendingJobs, captureId)) return false;
+    delete pendingJobs[captureId];
+    return true;
+  });
+}
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   (async () => {
     try {
       if (request.action === 'GET_JOB_AGENT_STATUS') return sendResponse(await relayThroughApp('status'));
@@ -28,16 +73,22 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
         const jobs = await chrome.storage.session.get(['current_job']);
         return sendResponse({ success: true, job: jobs.current_job });
       }
+      if (request.action === 'CONSUME_JOB_CAPTURE') {
+        // Only the page bridge on our own app origin may retire a capture.
+        if (!String(sender?.url || '').startsWith(`${APP_URL}/`)) {
+          return sendResponse({ success: false, error: 'Unauthorized capture consumption.' });
+        }
+        const consumed = await consumeCapture(request.captureId);
+        return sendResponse({ success: true, consumed });
+      }
       if (request.action === 'OPEN_IN_APP') {
         const jobCaptureId = crypto.randomUUID();
-        const now = Date.now();
-        const localData = await chrome.storage.local.get(['pendingJobs']);
-        const pendingJobs = localData.pendingJobs || {};
-        for (const id of Object.keys(pendingJobs)) if (now - pendingJobs[id].createdAt > 2 * 60 * 1000) delete pendingJobs[id];
         const mode = request.mode || MODES.TAILOR;
-        pendingJobs[jobCaptureId] = { jobData: request.jobData, mode, createdAt: now };
-        await chrome.storage.local.set({ pendingJobs });
-        const targetUrl = mode === MODES.COVER_LETTER ? `${APP_URL}/app?jobCaptureId=${jobCaptureId}&mode=${mode}` : `${APP_URL}/funnel?jobCaptureId=${jobCaptureId}`;
+        await mutatePendingJobs(pendingJobs => {
+          expirePendingJobs(pendingJobs);
+          pendingJobs[jobCaptureId] = { jobData: request.jobData, mode, createdAt: Date.now() };
+        });
+        const targetUrl = mode === MODES.COVER_LETTER ? `${APP_URL}/app/resume?jobCaptureId=${jobCaptureId}&mode=${mode}` : `${APP_URL}/funnel?jobCaptureId=${jobCaptureId}`;
         const tabs = await chrome.tabs.query({ url: `${APP_URL}/*` });
         if (tabs.length) await chrome.tabs.update(tabs[0].id, { active: true, url: targetUrl });
         else await chrome.tabs.create({ url: targetUrl });

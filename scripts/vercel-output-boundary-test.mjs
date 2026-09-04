@@ -147,7 +147,8 @@ for (const routeToken of ['lib', 'scripts', 'docs', 'dist', '1ststep-extension',
 
 const pageRoutes = new Map([
   ['/', 'index.html'],
-  ['/app', 'app.html'],
+  ['/app', 'concierge.html'],
+  ['/app/resume', 'app.html'],
   ['/concierge', 'concierge.html'],
   ['/pricing', 'pricing.html'],
   ['/terms', 'terms.html'],

@@ -28,4 +28,4 @@ Load `1ststep-extension` as an unpacked extension only in a synthetic or explici
 - Résumé upload: automatic only for the exact approved `resume_pdf` artifact and a single unambiguous Greenhouse résumé control. Bytes are never written to Chrome storage and completion reports only `resumeDocument`.
 - Final submit: never performed by the extension.
 - Receipt: must be independently captured and verified by the server workflow.
-- Ashby, Lever, Workday, SmartRecruiters, iCIMS, and cloud browsers remain later adapters.
+- Ashby, Lever, SmartRecruiters, iCIMS, and cloud browsers remain later adapters. The Workday adapter was retired on 2026-09-04.

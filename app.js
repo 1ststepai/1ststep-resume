@@ -2739,8 +2739,23 @@ ${resume.slice(0, 3000)}
     window.addEventListener('message', (event) => {
       if (event.origin !== window.location.origin) return;
       if (!event.data || event.data.type !== '1STSTEP_JOB_CAPTURE') return;
-      const { jobData, resumeText, mode } = event.data;
+      const { jobData, resumeText, mode, captureId } = event.data;
       if (!jobData) return;
+
+      // Exact capture identity: only accept the job this page was opened for.
+      // A capture with no id, or one that does not match the URL, is rejected
+      // outright rather than being treated as 'probably ours'.
+      const _urlCaptureId = new URLSearchParams(window.location.search).get('jobCaptureId') || '';
+      if (!_urlCaptureId || !captureId || captureId !== _urlCaptureId) return;
+
+      // Re-delivery of a capture already applied is acknowledged again but must
+      // not redo the work below.
+      let _alreadyApplied = false;
+      try { _alreadyApplied = sessionStorage.getItem('1ststep_capture_applied') === captureId; } catch (_) {}
+      if (_alreadyApplied && captureId) {
+        try { window.postMessage({ type: '1STSTEP_JOB_CAPTURE_ACK', version: '1', captureId }, window.location.origin); } catch (_) {}
+        return;
+      }
 
       window._extensionDetected = true;
       trackProductEvent('extension_job_captured', {
@@ -2753,9 +2768,18 @@ ${resume.slice(0, 3000)}
       if (_mobilePromo) _mobilePromo.style.display = 'none';
 
       // Persist for reload survival (e.g. OAuth login redirect clears the page)
+      let _capturePersisted = false;
       try {
         sessionStorage.setItem('1ststep_pending_capture', JSON.stringify({ jobData, ts: Date.now() }));
+        if (captureId) sessionStorage.setItem('1ststep_capture_applied', captureId);
+        _capturePersisted = true;
       } catch (_) {}
+
+      // Acknowledge only after the capture is saved. Without this the browser
+      // helper keeps the job rather than dropping it.
+      if (_capturePersisted && captureId) {
+        try { window.postMessage({ type: '1STSTEP_JOB_CAPTURE_ACK', version: '1', captureId }, window.location.origin); } catch (_) {}
+      }
 
       // If the extension delivered a resume and none is loaded yet, load it now
       // so auto-tailor can fire without requiring the user to re-upload

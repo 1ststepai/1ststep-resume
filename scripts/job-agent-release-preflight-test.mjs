@@ -10,7 +10,7 @@ const root = await mkdtemp(join(tmpdir(), 'job-agent-release-preflight-'));
 try {
   await mkdir(join(root, 'api'));
   await mkdir(join(root, 'lib'));
-  const rootFiles = ['package.json', 'package-lock.json', 'vercel.json', 'index.html', 'app.html', 'app.js', 'style.css', 'concierge.html', 'concierge.js', 'persistent-concierge.css', 'admin.html', 'funnel.html', 'pricing.html', 'privacy.html', 'terms.html', 'resume-builder.js', 'workday.js'];
+  const rootFiles = ['package.json', 'package-lock.json', 'vercel.json', 'index.html', 'app.html', 'app.js', 'style.css', 'concierge.html', 'concierge.js', 'persistent-concierge.css', 'admin.html', 'funnel.html', 'pricing.html', 'privacy.html', 'terms.html', 'resume-builder.js'];
   for (const file of rootFiles) await writeFile(join(root, file), `${file}\n`, 'utf8');
   await writeFile(join(root, 'api', 'fixture.js'), 'export default true;\n', 'utf8');
   await writeFile(join(root, 'lib', 'fixture.js'), 'export const fixture = true;\n', 'utf8');
@@ -20,7 +20,7 @@ try {
   assert.equal(result.ok, true);
   assert.equal(result.contentFree, true);
   assert.equal(result.deploys, false);
-  assert.equal(result.runtime.fileCount, 19);
+  assert.equal(result.runtime.fileCount, 18);
   assert.equal(Object.keys(result.runtime.keyHashes).length, 4);
   assert.equal(result.ignorePolicy.verified, true);
   result = await buildJobAgentReleasePreflight({ root, gitSnapshot: { ...cleanGit, untrackedCount: 2 } });

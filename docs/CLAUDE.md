@@ -1,5 +1,17 @@
 # CLAUDE.md — 1stStep.ai Job Application Extension
 
+> **SUPERSEDED 2026-09-04.** This document describes a multi-ATS extension
+> architecture (`sites/`, `popup/`, `app/`) that the shipped extension no longer
+> uses. The controlled release is **Greenhouse-only**: `manifest.json` grants
+> `https://*.greenhouse.io/*` and `https://app.1ststep.ai/*` and nothing else.
+> `workday.js` and `sites/workday.js` were deleted on 2026-09-04.
+>
+> Do not follow any instruction below that names a `sites/` file, a Workday
+> helper, or a Workday host permission. Adding an ATS requires the controlled-
+> release, privacy, permissions and platform-terms review first.
+>
+> Current contracts: `AGENTS.md`, `docs/AI_MEMORY.md`, `docs/JOB_AGENT_RUNTIME.md`.
+
 This file tells Claude Code everything it needs to know about this project's
 structure, conventions, and rules. Read this before creating or editing any file.
 
@@ -62,8 +74,8 @@ If the answer to any of these is NO — stop and do that step before proceeding.
 
 ## Project Overview
 
-A Chrome MV3 extension that auto-fills job application forms on sites like
-Workday, Greenhouse, and Lever. The companion web app lives at app.1ststep.ai
+A Chrome MV3 extension that auto-fills job application forms on Greenhouse.
+(Historically it targeted Workday and Lever as well; those paths were retired.) The companion web app lives at app.1ststep.ai
 and handles resume building, AI tailoring, and subscription management.
 
 The extension reads the user's resume from `chrome.storage.local` and uses
@@ -86,7 +98,6 @@ site-specific detector scripts to map form fields and fill them automatically.
 │   ├── popup.js
 │   └── popup.css
 ├── sites/                        ← ONE file per job board — all site-specific logic lives here
-│   ├── workday.js                ← Workday SPA detector (Shadow DOM walker)
 │   ├── greenhouse.js
 │   ├── lever.js
 │   ├── ashby.js
@@ -134,7 +145,7 @@ background.js  (service worker)
         │
         │  chrome.tabs.sendMessage / chrome.scripting.executeScript
         ▼
-sites/workday.js  (or greenhouse.js, lever.js, etc.)
+content.js  (Greenhouse only in the controlled release)
         │
         │  detectFields() → fieldMap
         │  applyValues(fieldMap, resume)
@@ -170,15 +181,7 @@ as the relay: it listens for `window.postMessage` and forwards the data into
 - Shared library — do NOT add site-specific logic here
 - Exports: `fillField(el, value)`, `dispatchReactEvents(el)`
 - Uses native input value setter + bubbling events so React/Angular/Vue
-  all acknowledge the change (Workday requires this — `.value =` alone fails)
-
-### `sites/workday.js`
-- Workday is a deeply nested SPA with multiple layers of Shadow DOM
-- Uses `deepQueryAll()` to pierce shadow roots recursively
-- `detectWorkdayFields(contextRoot)` → returns `{ fields, isReady, formStep }`
-- `observeWorkdaySteps(onStepChange)` → MutationObserver with debounce + retry
-- `applyWorkdayValues(fieldMap, values)` → calls `filler.js fillField` per field
-- Exports attached to `window.__1stStep.workday` (no ES module system in MV3 content scripts)
+  all acknowledge the change (React-managed ATS inputs require this — `.value =` alone fails)
 
 ### `app/resume-builder.js`
 - 5-step wizard modal injected into app.1ststep.ai
@@ -226,34 +229,8 @@ chrome.runtime.sendMessage({ type: '...', payload: { ... } });
 ```js
 chrome.scripting.executeScript({
   target: { tabId },
-  files:  ['sites/workday.js'],
+  files:  ['content.js'],
 });
-```
-
----
-
-## Workday Shadow DOM Rules
-
-Workday renders inside multiple nested Shadow roots. Standard `querySelector`
-does not pierce them. Always use the helpers in `sites/workday.js`:
-
-```js
-// WRONG — won't find anything inside Shadow DOM
-document.querySelector('input[data-automation-id]')
-
-// RIGHT — pierces all shadow roots recursively
-deepQueryAll(document, ['input[data-automation-id]'])
-```
-
-React-managed inputs require native setter + events — `.value =` alone is ignored:
-```js
-// WRONG
-el.value = 'John';
-
-// RIGHT (see fillField in filler.js)
-nativeInputValueSetter.call(el, 'John');
-el.dispatchEvent(new Event('input',  { bubbles: true }));
-el.dispatchEvent(new Event('change', { bubbles: true }));
 ```
 
 ---
@@ -261,7 +238,8 @@ el.dispatchEvent(new Event('change', { bubbles: true }));
 ## Adding a New Job Board
 
 1. Create `sites/<boardname>.js` — never in root or app/
-2. Follow the same export pattern as `workday.js`:
+2. Adding any new ATS requires the controlled-release, privacy, permissions and
+   platform-terms review to complete first. Follow the existing export pattern:
    ```js
    window.__1stStep = window.__1stStep ?? {};
    window.__1stStep.<boardname> = { detectFields, applyValues };
@@ -269,30 +247,6 @@ el.dispatchEvent(new Event('change', { bubbles: true }));
 3. Add the site's URL match pattern to `manifest.json` content_scripts
 4. If the site uses React/Angular/Vue, use `filler.js fillField` — do not set `.value` directly
 5. Update the manifest `content_scripts` array — do not use `all_urls`
-
----
-
-## manifest.json Content Scripts (current)
-
-```json
-"content_scripts": [
-  {
-    "matches": ["https://app.1ststep.ai/*"],
-    "js": ["content.js"],
-    "run_at": "document_idle"
-  },
-  {
-    "matches": [
-      "https://*.myworkday.com/*",
-      "https://*.wd1.myworkdayjobs.com/*",
-      "https://*.wd3.myworkdayjobs.com/*",
-      "https://*.wd5.myworkdayjobs.com/*"
-    ],
-    "js": ["filler.js", "sites/workday.js"],
-    "run_at": "document_idle"
-  }
-]
-```
 
 ---
 
@@ -313,8 +267,8 @@ el.dispatchEvent(new Event('change', { bubbles: true }));
 ## Things Claude Code Must Never Do
 
 - **Never** create a new `sites/` file in the project root
-- **Never** use `document.querySelector` inside `sites/workday.js` without
-  going through `deepQueryAll` / `deepQuery`
+- **Never** use `document.querySelector` where fields may sit inside shadow
+  roots — go through the deep-query helpers in `utils/filler.js`
 - **Never** set `el.value = x` directly for React-managed inputs — use `fillField`
 - **Never** call `chrome.storage` from `app/resume-builder.js` — use postMessage relay
 - **Never** add persistent state to `background.js` — it is a MV3 service worker

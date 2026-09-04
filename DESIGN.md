@@ -1,7 +1,7 @@
 # 1stStep.ai — Design System
 
 Scope: the marketing homepage (`index.html`, `home.css`, `home.js`), served at `/`.
-The authenticated workspace (`app.html`, `app.js`, `style.css`), served at `/app`, keeps
+The authenticated workspace (`app.html`, `app.js`, `style.css`), served at `/app/resume` since 2026-09-04 (previously `/app`), keeps
 its own established styling and is **not** governed by this document.
 
 ## Voice
@@ -150,7 +150,7 @@ workspace DOM IDs.
 
 `/` serves `index.html` (the marketing homepage) directly from the filesystem and
 **never redirects** — not for returning users, not for deep links, not for anyone.
-`/app` rewrites to `/app.html` (the workspace).
+`/app` rewrites to `/concierge.html` (the Job Agent) as of 2026-09-04. The legacy workspace `app.html` is served at `/app/resume` as a temporary compatibility surface while its callers and authenticated flows are mapped.
 
 **Changed 2026-08-31:** the forward guard in `home.js` was removed entirely. Deep
 links now address the workspace directly instead of bouncing through `/`:

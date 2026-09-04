@@ -660,7 +660,7 @@
   <div id="tab-ext" class="panel">
  
     <div class="section-note" style="border-color:rgba(107,140,255,0.3);background:rgba(107,140,255,0.07);color:var(--accent4)">
-      🧩 New feature design — 1-click apply on LinkedIn, Indeed, Greenhouse, Lever, Workday, and more. Click any block to expand.
+      🧩 Supervised apply assistance on Greenhouse only. Click any block to expand.
     </div>
  
     <!-- EXT ARCH DIAGRAM -->
@@ -693,7 +693,6 @@
             <span class="tag">sites/indeed.js</span>
             <span class="tag">sites/greenhouse.js</span>
             <span class="tag">sites/lever.js</span>
-            <span class="tag">sites/workday.js</span>
           </div>
         </div>
       </div>
@@ -739,7 +738,6 @@
         <div style="color:var(--muted)">│ &nbsp;&nbsp;├── <span style="color:var(--accent)">indeed.js</span> &nbsp;&nbsp;&nbsp;<span style="color:var(--muted);font-size:10px">// Indeed Apply flow</span></div>
         <div style="color:var(--muted)">│ &nbsp;&nbsp;├── <span style="color:var(--accent)">greenhouse.js</span> <span style="color:var(--muted);font-size:10px">// boards.greenhouse.io — stable selectors</span></div>
         <div style="color:var(--muted)">│ &nbsp;&nbsp;├── <span style="color:var(--accent)">lever.js</span> &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--muted);font-size:10px">// jobs.lever.co — stable selectors</span></div>
-        <div style="color:var(--muted)">│ &nbsp;&nbsp;└── <span style="color:var(--accent3)">workday.js</span> &nbsp;&nbsp;<span style="color:var(--warn);font-size:10px">// ⚠ Shadow DOM — hardest to maintain</span></div>
         <div style="color:var(--muted)">└── utils/</div>
         <div style="color:var(--muted)">&nbsp;&nbsp;&nbsp;&nbsp;├── <span style="color:var(--text)">auth.js</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--muted);font-size:10px">// tierToken fetch + cache in chrome.storage</span></div>
         <div style="color:var(--muted)">&nbsp;&nbsp;&nbsp;&nbsp;└── <span style="color:var(--text)">filler.js</span> &nbsp;&nbsp;&nbsp;<span style="color:var(--muted);font-size:10px">// Generic field fill (input, select, textarea, file)</span></div>
@@ -756,7 +754,7 @@
           <tr><td class="fn-name">Indeed</td><td>Indeed Apply popup</td><td><span class="badge badge-warn">Medium</span></td><td>iframe-based, requires cross-frame messaging</td></tr>
           <tr><td class="fn-name">Greenhouse</td><td>Native form</td><td><span class="badge badge-ok">Easy</span></td><td>Stable selector structure across all companies</td></tr>
           <tr><td class="fn-name">Lever</td><td>Native form</td><td><span class="badge badge-ok">Easy</span></td><td>Stable, predictable HTML</td></tr>
-          <tr><td class="fn-name">Workday</td><td>SPA modal</td><td><span class="badge badge-danger">Hard</span></td><td>Shadow DOM, requires MutationObserver + retries</td></tr>
+          <tr><td class="fn-name">Workday</td><td>SPA modal</td><td><span class="badge">Retired</span></td><td>Obsolete path removed 2026-09-04; Shadow DOM churn made it unmaintainable</td></tr>
           <tr><td class="fn-name">iCIMS / Taleo</td><td>Legacy forms</td><td><span class="badge badge-warn">Medium</span></td><td>Older ATS, inconsistent markup</td></tr>
           <tr><td class="fn-name">Company-direct</td><td>Varies</td><td><span class="badge badge-danger">Hard</span></td><td>No standard — AI fallback heuristic needed</td></tr>
         </tbody>
@@ -2051,7 +2049,7 @@ const EXT_DETAILS = {
         'Fire MutationObserver for SPAs that load forms dynamically',
       ]},
       { title: 'The hard parts', items: [
-        { text: 'Workday uses Shadow DOM — querySelector won\'t reach inputs', type: 'issue' },
+        { text: 'Workday used Shadow DOM; querySelector could not reach inputs. Path retired 2026-09-04.', type: 'issue' },
         { text: 'LinkedIn Easy Apply modal changes selectors frequently', type: 'issue' },
         { text: 'File upload fields (resume PDF) need special handling', type: 'warn' },
         { text: 'React/Vue inputs need dispatchEvent(new Event("input")) not just .value=', type: 'warn' },

@@ -24,6 +24,23 @@ assert.match(files['auth-bridge.js'], /credentials: 'include'/);
 assert.match(files['auth-bridge.js'], /\/api\/extension-application-handoff/);
 assert.match(files['auth-bridge.js'], /\['prepare', 'document', 'complete'\]/);
 assert.doesNotMatch(files['background.js'], /chrome\.storage\.(?:local|session)\.set\([^\n]*(?:document|contentBase64|resumeDocument)/);
+// -- Job capture destination (regression guard) -----------------------------
+// /app serves the Job Agent since 2026-09-04. Captured jobs must open the
+// legacy workspace at /app/resume, because that is where the
+// 1STSTEP_JOB_CAPTURE listener lives. auth-bridge.js deletes the pending job
+// from chrome.storage as it delivers, so a wrong destination loses the capture
+// silently instead of failing loudly. These three assertions pin the whole
+// chain: background opens the route -> auth-bridge posts -> app.js receives.
+const appJs = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+assert.match(files['background.js'], /\$\{APP_URL\}\/app\/resume\?jobCaptureId=/,
+  'job capture must open /app/resume');
+assert.doesNotMatch(files['background.js'], /\$\{APP_URL\}\/app\?jobCaptureId=/,
+  'job capture must not open /app, which now serves the Job Agent');
+assert.match(files['auth-bridge.js'], /type: '1STSTEP_JOB_CAPTURE'/,
+  'auth-bridge must still post the capture contract message');
+assert.match(appJs, /event\.data\.type !== '1STSTEP_JOB_CAPTURE'/,
+  'app.js must still listen for the capture contract message');
+
 assert.deepEqual(manifest.host_permissions.sort(), ['https://*.greenhouse.io/*', 'https://app.1ststep.ai/*'].sort());
 assert.equal(manifest.content_scripts[0].all_frames, false);
 assert.equal('web_accessible_resources' in manifest, false);

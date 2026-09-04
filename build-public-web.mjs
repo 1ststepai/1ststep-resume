@@ -25,7 +25,6 @@ const publicAssets = [
   'home.js',
   'concierge.js',
   'resume-builder.js',
-  'workday.js',
   'client/concierge-router.js',
   'client/concierge-domain.js',
   'client/job-intelligence.js',

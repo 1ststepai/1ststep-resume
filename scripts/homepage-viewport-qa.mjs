@@ -57,9 +57,9 @@ for (const viewport of VIEWPORTS) {
   }));
   note(overflow.scrollWidth <= overflow.clientWidth + 1, `${viewport.name} · no horizontal overflow (${overflow.scrollWidth} vs ${overflow.clientWidth})`);
 
-  // The hero CTA must point into the app
+  // The hero CTA must open the Job Agent
   const heroCta = page.locator('a.btn-primary').first();
-  note((await heroCta.getAttribute('href')) === '/app', `${viewport.name} · primary CTA targets /app`);
+  note((await heroCta.getAttribute('href')) === '/concierge', `${viewport.name} · primary CTA targets /concierge`);
 
   // Two product paths render. The Chrome assistant is a Job Agent capability, not a
   // third peer product, so a third card reappearing is a regression.

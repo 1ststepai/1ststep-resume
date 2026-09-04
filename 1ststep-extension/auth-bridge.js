@@ -31,20 +31,89 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   return true;
 });
 
-async function deliverPendingJob() {
-  try {
-    const jobCaptureId = new URLSearchParams(window.location.search).get('jobCaptureId');
-    const data = await chrome.storage.local.get(['pendingJobs']);
-    const pendingJobs = data.pendingJobs || {};
-    const now = Date.now();
-    let matchedId = jobCaptureId && pendingJobs[jobCaptureId] ? jobCaptureId : null;
-    if (!matchedId) matchedId = Object.keys(pendingJobs).find(id => now - pendingJobs[id].createdAt <= 2 * 60 * 1000) || null;
-    const entry = matchedId ? pendingJobs[matchedId] : null;
-    if (!entry || now - entry.createdAt > 2 * 60 * 1000) return;
-    delete pendingJobs[matchedId];
-    await chrome.storage.local.set({ pendingJobs });
-    window.postMessage({ type: '1STSTEP_JOB_CAPTURE', version: '1', jobData: entry.jobData, resumeText: null, mode: entry.mode || 'tailor' }, window.location.origin);
-  } catch (_) {}
+// -- Job capture handoff -----------------------------------------------------
+// The capture is delivered before it is deleted, and deleted only when the page
+// confirms it has persisted it. Previously the entry was removed first and the
+// message was fire-and-forget, so a page that never received it lost the job
+// with no trace.
+//
+// Identity is exact. The capture id must come from the URL; there is no
+// "most recent pending job" fallback, because that fallback only ever fired
+// once the correct entry was already gone -- at which point it delivered a
+// different job's data to the page.
+
+const CAPTURE_TTL_MS = 2 * 60 * 1000;
+
+function captureIdFromUrl() {
+  return new URLSearchParams(window.location.search).get('jobCaptureId') || '';
 }
+
+async function readPendingJobs() {
+  const data = await chrome.storage.local.get(['pendingJobs']);
+  return data.pendingJobs && typeof data.pendingJobs === 'object' ? data.pendingJobs : {};
+}
+
+/** Posts the one capture named by the URL. Never deletes, never substitutes. */
+async function deliverPendingJob(captureId = captureIdFromUrl()) {
+  try {
+    if (!captureId) return false;
+    const pendingJobs = await readPendingJobs();
+    const entry = pendingJobs[captureId];
+    if (!entry) return false;
+    if (Date.now() - entry.createdAt > CAPTURE_TTL_MS) return false;
+    window.postMessage({
+      type: '1STSTEP_JOB_CAPTURE',
+      version: '1',
+      captureId,
+      jobData: entry.jobData,
+      resumeText: null,
+      mode: entry.mode || 'tailor',
+    }, window.location.origin);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+/**
+ * Hands the acknowledged capture to the service worker, which is the only
+ * writer of pendingJobs. Writing from here would race the worker's own
+ * additions and expiry sweep: both sides would read the same snapshot and the
+ * later write would silently drop the other's change.
+ */
+async function consumeAcknowledgedCapture(captureId) {
+  try {
+    if (!captureId) return false;
+    const response = await chrome.runtime.sendMessage({ action: 'CONSUME_JOB_CAPTURE', captureId });
+    return !!(response && response.success && response.consumed);
+  } catch (_) {
+    return false;
+  }
+}
+
+window.addEventListener('message', event => {
+  // Same-document messages only. event.source must be this window, so another
+  // frame cannot forge an acknowledgement for a capture it never received.
+  if (event.source !== window) return;
+  if (event.origin !== window.location.origin) return;
+  const message = event.data;
+  if (!message || typeof message !== 'object') return;
+  const captureId = typeof message.captureId === 'string' ? message.captureId : '';
+  if (!captureId) return;
+
+  if (message.type === '1STSTEP_JOB_CAPTURE_ACK') {
+    // Only the capture this page was sent may be consumed.
+    if (captureId !== captureIdFromUrl()) return;
+    consumeAcknowledgedCapture(captureId);
+    return;
+  }
+
+  if (message.type === '1STSTEP_JOB_CAPTURE_REQUEST') {
+    // Retry path. The page cannot read extension storage itself, so it asks for
+    // its own capture by id and gets that one or nothing.
+    if (captureId !== captureIdFromUrl()) return;
+    deliverPendingJob(captureId);
+  }
+});
 
 deliverPendingJob();
