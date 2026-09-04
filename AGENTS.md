@@ -25,6 +25,8 @@
 - `api/notify-signup.js` - signup capture, GHL tags, admin email, referral handling.
 - `scripts/smoke-test.cjs` - broad static app regression smoke test.
 - `1ststep-extension/` - Chrome extension job-capture and auth bridge contract.
+- `docs/AI_MEMORY.md` - shared Claude/Codex operating memory and duplicate-prevention contract.
+- `docs/JOB_AGENT_RUNTIME.md` - detailed durable Job Agent architecture and safety gates.
 - `.env.example` - env var names only.
 
 ## Do not touch without explicit approval
@@ -43,6 +45,7 @@
 - Preserve the Chrome extension job-capture contract and supported job-board host permissions.
 - Never expose secrets in frontend code, localStorage, generated HTML, logs, or docs.
 - Keep API changes backward compatible with existing client calls.
+- Never create a second job or application record until the tenant-scoped canonical identity and idempotency checks in `docs/AI_MEMORY.md` have completed. An ambiguous submission outcome is not permission to retry.
 
 ## Required commands before completion
 ```bash

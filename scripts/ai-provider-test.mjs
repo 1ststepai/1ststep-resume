@@ -26,6 +26,23 @@ assert.equal(compatible.provider, 'openai-compatible');
 assert.equal(compatible.url, 'https://models.example/v1/chat/completions');
 assert.equal(compatible.body.model, 'small-model');
 
+const openAiRoutine = buildAiRequest({
+  env: { OPENAI_API_KEY: 'key' }, task: 'concierge', quality: 'fast',
+  system: 'System', messages: [{ role: 'user', content: 'Hello' }],
+});
+assert.equal(openAiRoutine.url, 'https://api.openai.com/v1/responses');
+assert.equal(openAiRoutine.model, 'gpt-5-nano');
+assert.equal(openAiRoutine.body.instructions, 'System');
+assert.equal(openAiRoutine.body.store, false);
+assert.equal(openAiRoutine.body.max_output_tokens, 512);
+
+const openAiDocument = buildAiRequest({
+  env: { OPENAI_API_KEY: 'key' }, task: 'resumeBuilder', quality: 'quality',
+  system: 'System', messages: [{ role: 'user', content: 'Verified facts' }],
+});
+assert.equal(openAiDocument.model, 'gpt-5.6-luna');
+assert.deepEqual(openAiDocument.body.reasoning, { effort: 'low' });
+
 const anthropic = buildAiRequest({
   env: { ANTHROPIC_API_KEY: 'key' }, quality: 'quality', system: 'System', messages: [{ role: 'user', content: 'Hello' }],
 });
@@ -72,10 +89,11 @@ assert.throws(() => buildAiRequest({
 }), /restricted to routine/);
 
 assert.equal(extractAiText('cloudflare', { result: { response: ' Cloudflare reply ' } }), 'Cloudflare reply');
+assert.equal(extractAiText('openai-compatible', { output: [{ content: [{ type: 'output_text', text: ' OpenAI reply ' }] }] }), 'OpenAI reply');
 assert.equal(extractAiText('openai-compatible', { choices: [{ message: { content: ' Compatible reply ' } }] }), 'Compatible reply');
 assert.equal(extractAiText('deepseek', { choices: [{ message: { content: ' DeepSeek reply ' } }] }), 'DeepSeek reply');
 assert.equal(extractAiText('anthropic', { content: [{ text: 'Anthropic ' }, { text: 'reply' }] }), 'Anthropic reply');
-assert.deepEqual(extractAiUsage('openai-compatible', { usage: { prompt_tokens: 120, completion_tokens: 30 } }), { inputTokens: 120, outputTokens: 30 });
+assert.deepEqual(extractAiUsage('openai-compatible', { usage: { input_tokens: 120, output_tokens: 30 } }), { inputTokens: 120, outputTokens: 30 });
 assert.deepEqual(extractAiUsage('deepseek', { usage: { prompt_tokens: 60, completion_tokens: 15 } }), { inputTokens: 60, outputTokens: 15 });
 assert.deepEqual(extractAiUsage('anthropic', { usage: { input_tokens: 80, output_tokens: 20 } }), { inputTokens: 80, outputTokens: 20 });
 assert.deepEqual(extractAiUsage('cloudflare', { result: { usage: { prompt_tokens: 40, completion_tokens: 10 } } }), { inputTokens: 40, outputTokens: 10 });

@@ -49,7 +49,9 @@ const injectionEvaluation = evaluateAiRoutingOutput(injectionFixture, injectedOu
 assert(injectionEvaluation.hardFailures.includes('instruction-injection'));
 
 assert.deepEqual(estimateAiRoutingCost('claude-haiku-4-5-20251001', { inputTokens: 1000, outputTokens: 1000 }), { costUsd: 0.006, priceBasis: 'standard' });
-assert.deepEqual(estimateAiRoutingCost('deepseek-v4-flash', { inputTokens: 1000, outputTokens: 1000 }), { costUsd: 0.00176, priceBasis: 'peak-cache-miss' });
+assert.deepEqual(estimateAiRoutingCost('gpt-5-nano', { inputTokens: 1000, outputTokens: 1000 }), { costUsd: 0.00045, priceBasis: 'standard' });
+assert.deepEqual(estimateAiRoutingCost('gpt-5.6-luna', { inputTokens: 1000, outputTokens: 1000 }), { costUsd: 0.0014, priceBasis: 'standard' });
+assert.deepEqual(estimateAiRoutingCost('deepseek-v4-flash', { inputTokens: 1000, outputTokens: 1000 }), { costUsd: 0.00042, priceBasis: 'cache-miss' });
 const summary = summarizeAiRoutingBenchmark([
   { provider: 'deepseek', passed: true, latencyMs: 100, usage: { inputTokens: 10, outputTokens: 5 }, estimatedCostUsd: 0.001, evaluation: { hardFailures: [] } },
   { provider: 'anthropic', passed: true, latencyMs: 200, usage: { inputTokens: 10, outputTokens: 5 }, estimatedCostUsd: 0.002, evaluation: { hardFailures: [] } },
