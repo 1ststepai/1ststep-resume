@@ -2188,7 +2188,7 @@ function renderAgentConfiguration() {
     : campaign?.schedule?.recurrence || 'Runs when you start or resume it';
   $('configSalary').textContent = mission.salaryMin ? money(mission.salaryMin) : guidedSelection.salary ? money(guidedSelection.salary) : 'No minimum saved';
   $('configLocation').textContent = [...(mission.workModes || [mission.workMode || guidedSelection.workMode]), mission.location || guidedSelection.location].filter(Boolean).join(' · ') || 'Not configured';
-  $('configTarget').textContent = `${Math.min(50, Math.max(1, Number(dailyGoal.target) || 10))} qualified applications per day`;
+  $('configTarget').textContent = `Goal: up to ${Math.min(50, Math.max(1, Number(dailyGoal.target) || 10))} qualified applications per day, based on matching jobs and plan capacity`;
   $('configApproval').textContent = deskState.autonomy.level === 'prepare_only' ? 'Prepare only · confirm before sharing' : 'Confirm personal-data sharing and final submission';
   $('configNotifications').textContent = jobAgentNotifications.preference?.enabled ? 'In-app + generic email Needs You alert' : 'In-app Needs You queue';
 }
@@ -2263,7 +2263,7 @@ function renderMission() {
   const submittedToday = authoritativeReceiptCount([...deskState.roles, ...durableApplicationSessions], new Date());
   const dailyTarget = Math.min(50, Math.max(1, Number(dailyGoal.target) || 10));
   const remainingToday = Math.max(0, dailyTarget - submittedToday);
-  $('missionName').textContent = mission.role ? `${mission.target}-job ${mission.role} sprint` : 'No active mission';
+  $('missionName').textContent = mission.role ? `${mission.role} job search` : 'No active mission';
   $('target').textContent = target;
   $('completed').textContent = submitted;
   $('progressBar').value = target ? Math.min(100, (submitted / target) * 100) : 0;

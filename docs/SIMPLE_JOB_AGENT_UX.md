@@ -6,6 +6,8 @@ The authenticated concierge uses the existing dark 1stStep identity and static f
 
 The primary flow remains: upload or restore a resume, choose a job path, confirm essential criteria, then start the agent. The interface derives resume readiness, mission settings, run state, job cards, actions, and receipt-backed counts from the existing canonical state stores rather than parallel UI-only counters.
 
+The application target is expressed as "up to" the user's goal. The visible explanation must make clear that the actual total depends on qualified non-duplicate jobs, plan allowance, safe system capacity, and required confirmations. A lower total is not an error when supply or a safety/cost boundary is lower, and a higher user goal never overrides those boundaries.
+
 Setup is intentionally split into 15 short reusable core facts and 10 targeted questions that appear only when a verified employer application requires them. Exact address, employer-specific conflicts, certifications, screening, references, account creation, and privacy terms do not block initial discovery. Invalid secret-shaped answers stay unsaved without advancing, and consequential answers require review each time.
 
 A signed user returning on a new browser does not need to remember or paste a run ID. The client restores the tenant’s latest encrypted discovery mission and truthful run state after access verification; package-document runs remain separate and are restored only through their exact application records.

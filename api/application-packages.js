@@ -8,6 +8,7 @@ import { bindPackageToFreshVerifiedDiscovery } from '../lib/discovery-package-bi
 import { jobAgentConsentGate } from '../lib/job-agent-consent-store.js';
 import { JOB_AGENT_POLICY_LEVELS, requireJobAgentPolicyLevel } from '../lib/job-agent-policy-levels.js';
 import { deleteApplicationPackageArtifacts } from '../lib/job-agent-object-storage.js';
+import { jobAgentThroughputDecision, publicJobAgentThroughput } from '../lib/job-agent-throughput-policy.js';
 
 export const maxDuration = 60;
 
@@ -35,14 +36,24 @@ export default async function handler(req, res) {
   // failing the run. The endpoints that actually read or render artifacts keep their own
   // upfront guards, so no document can be served from a less protected path.
 
+  const isRevision = req.method === 'POST' && req.body?.action === 'revise';
   const cost = req.method === 'POST' ? 3 : 1;
+  const planDecision = jobAgentThroughputDecision({ auth, env: process.env, requestedDailyGoal: 50 });
   const limit = await enforceDurableRateLimit(req, {
-    scope: 'application-packages', subject: auth.subject,
+    scope: req.method === 'POST' ? (isRevision ? 'application-package-revisions' : 'application-package-create-daily') : 'application-packages-read', subject: auth.subject,
     ipRule: { limit: 20, window: '1 m', rate: cost },
-    accountRule: { limit: req.method === 'POST' ? 30 : 500, window: '1 d', rate: cost },
+    accountRule: { limit: req.method === 'POST' ? (isRevision ? 30 : planDecision.plan.dailyApplicationLimit * cost) : 500, window: '1 d', rate: cost },
     globalRule: { limit: req.method === 'POST' ? (Number(process.env.PACKAGE_GLOBAL_DAILY_UNITS) || 300) : 10_000, window: '1 d', rate: cost },
   });
   if (!limit.ok) return sendRateLimitResult(res, limit, 'Application-package generation is temporarily rate limited. Your existing documents remain saved.');
+  if (req.method === 'POST' && !isRevision) {
+    const monthlyLimit = await enforceDurableRateLimit(req, {
+      scope: 'application-package-create-monthly', subject: auth.subject,
+      ipRule: { limit: 20, window: '1 m', rate: cost },
+      accountRule: { limit: planDecision.plan.monthlyApplicationLimit * cost, window: '30 d', rate: cost },
+    });
+    if (!monthlyLimit.ok) return sendRateLimitResult(res, monthlyLimit, 'Your current plan has reached its application-preparation allowance. Saved work remains available.');
+  }
 
   const runId = String(req.query?.id || req.body?.runId || '');
   try {
@@ -73,7 +84,7 @@ export default async function handler(req, res) {
       if (!status) return res.status(400).json({ error: 'Use action pause, resume, or retry.' });
       const run = await setJobAgentRunStatus({ ...config, subject: auth.subject, runId, status });
       const processed = status === 'Searching' ? await processSpecificJobAgentRun({ ...config, runId }) : null;
-      return res.status(200).json({ run: clientRun(processed || run), submissionsEnabled: false });
+      return res.status(200).json({ run: clientRun(processed || run), throughput: publicJobAgentThroughput(planDecision), submissionsEnabled: false });
     }
 
     // Generating and storing a tailored resume or cover letter. Output stays in the
@@ -109,7 +120,7 @@ export default async function handler(req, res) {
     });
     const processed = req.body?.runNow === false ? null : await processSpecificJobAgentRun({ ...config, runId: created.run.id });
     const run = processed || await readJobAgentRun({ ...config, subject: auth.subject, runId: created.run.id });
-    return res.status(run?.status === 'Finished' ? 200 : 202).json({ run: clientRun(run), replayed: created.replayed, submissionsEnabled: false });
+    return res.status(run?.status === 'Finished' ? 200 : 202).json({ run: clientRun(run), replayed: created.replayed, throughput: publicJobAgentThroughput(planDecision), submissionsEnabled: false });
   } catch (error) {
     const message = String(error?.message || '');
     if (/requisition is closed/i.test(message)) { await recordConfiguredJobAgentOperationalEvent('direct_employer_reverification_closed'); return res.status(409).json({ error: message, code: 'DIRECT_EMPLOYER_REQUISITION_CLOSED' }); }
