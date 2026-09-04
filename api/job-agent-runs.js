@@ -6,6 +6,7 @@ import {
 import { jobAgentRuntimeConfiguration, processSpecificJobAgentRun } from '../lib/job-agent-worker.js';
 import { recordConfiguredJobAgentOperationalEvent } from '../lib/job-agent-operational-metrics.js';
 import { jobAgentConsentGate } from '../lib/job-agent-consent-store.js';
+import { jobAgentThroughputDecision, publicJobAgentThroughput } from '../lib/job-agent-throughput-policy.js';
 
 export const maxDuration = 45;
 
@@ -72,10 +73,12 @@ export default async function handler(req, res) {
     const consent = await jobAgentConsentGate(config, auth.subject);
     if (!consent.ok) return res.status(consent.status).json({ error: consent.error, code: consent.code });
     const idem = String(req.headers?.['idempotency-key'] || '');
-    const created = await createJobAgentRun({ ...config, subject: auth.subject, mission: req.body?.mission, idempotencyKey: idem });
+    const throughputDecision = jobAgentThroughputDecision({ auth, env: process.env, requestedDailyGoal: req.body?.mission?.target });
+    const mission = { ...(req.body?.mission || {}), target: throughputDecision.effectiveDailyApplicationTarget };
+    const created = await createJobAgentRun({ ...config, subject: auth.subject, mission, idempotencyKey: idem });
     const processed = req.body?.runNow === false ? null : await processSpecificJobAgentRun({ ...config, runId: created.run.id });
     const run = processed || await readJobAgentRun({ ...config, subject: auth.subject, runId: created.run.id });
-    return res.status(processed?.status === 'Finished' ? 200 : 202).json({ run, replayed: created.replayed, submissionsEnabled: false });
+    return res.status(processed?.status === 'Finished' ? 200 : 202).json({ run, replayed: created.replayed, throughput: publicJobAgentThroughput(throughputDecision), submissionsEnabled: false });
   } catch (error) {
     const message = String(error?.message || '');
     if (/required|not allowed|unsupported|cannot be changed|exceeds|safe Idempotency|choose an exact run|latest discovery run/i.test(message)) return res.status(400).json({ error: message });

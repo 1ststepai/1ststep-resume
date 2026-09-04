@@ -5,6 +5,7 @@ import { jobAgentConsentGate } from '../lib/job-agent-consent-store.js';
 import {
   deleteJobAgentSchedule, jobAgentScheduleConfiguration, readJobAgentSchedule, saveJobAgentSchedule,
 } from '../lib/job-agent-schedule-store.js';
+import { jobAgentThroughputDecision, publicJobAgentThroughput } from '../lib/job-agent-throughput-policy.js';
 
 export const maxDuration = 15;
 
@@ -28,7 +29,8 @@ export default async function handler(req, res) {
     const configuration = jobAgentScheduleConfiguration();
     if (req.method === 'GET') {
       const current = await readJobAgentSchedule({ ...config, subject: auth.subject });
-      return res.status(200).json({ ...current, schedulingEnabled: configuration.enabled, schedulingReason: configuration.reason });
+      const throughput = jobAgentThroughputDecision({ auth, env: process.env, requestedDailyGoal: current.schedule?.mission?.target });
+      return res.status(200).json({ ...current, throughput: publicJobAgentThroughput(throughput), schedulingEnabled: configuration.enabled, schedulingReason: configuration.reason });
     }
     if (req.method === 'DELETE') {
       await deleteJobAgentSchedule({ ...config, subject: auth.subject });
@@ -40,12 +42,14 @@ export default async function handler(req, res) {
     if (!hasJsonContentType(req)) return res.status(415).json({ error: 'Content-Type must be application/json.' });
     if (JSON.stringify(req.body || {}).length > 10_000) return res.status(413).json({ error: 'Schedule request is too large.' });
     const expectedVersion = Number(req.body?.version);
+    const throughputDecision = jobAgentThroughputDecision({ auth, env: process.env, requestedDailyGoal: req.body?.mission?.target });
+    const mission = { ...(req.body?.mission || {}), target: throughputDecision.effectiveDailyApplicationTarget };
     const saved = await saveJobAgentSchedule({
-      ...config, subject: auth.subject, mission: req.body?.mission, status: req.body?.status || 'active', expectedVersion,
+      ...config, subject: auth.subject, mission, status: req.body?.status || 'active', expectedVersion,
       idempotencyKey: String(req.headers?.['idempotency-key'] || ''),
     });
     if (saved.conflict) return res.status(409).json({ error: 'Schedule changed in another session.', code: 'VERSION_CONFLICT', version: saved.version });
-    return res.status(200).json({ ...saved, schedulingEnabled: true });
+    return res.status(200).json({ ...saved, throughput: publicJobAgentThroughput(throughputDecision), schedulingEnabled: true });
   } catch (error) {
     const message = String(error?.message || '');
     if (/required|mission|role|schedule|version|Idempotency|private|secret/i.test(message)) return res.status(400).json({ error: message });

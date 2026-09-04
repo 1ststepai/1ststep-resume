@@ -26,7 +26,13 @@ The Job Agent authentication path uses a random opaque `Secure`, `HttpOnly`, hos
 - Missions reject emails, phone numbers, credentials, OTPs, CAPTCHA answers, resumes, and private-profile fields.
 - Public job descriptions are redacted before encrypted persistence.
 
-`GET|POST /api/job-agent-worker` is protected by `Authorization: Bearer CRON_SECRET`. On the connected Vercel Pro project, an hourly cron invokes the worker and drains up to three due daily schedules plus one recovery run. User-started runs execute immediately; the hourly drain is recovery and background continuity, not the primary latency path. A Hobby deployment must remove or consolidate this third cron before deployment because Hobby projects permit only two cron jobs.
+`GET|POST /api/job-agent-worker` is protected by `Authorization: Bearer CRON_SECRET`. On the connected Vercel project, a twice-daily cron wakes the worker and drains bounded due schedules plus recovery work. The cron is a wake-up cadence, not a fixed per-user application quota. User-started runs execute immediately; the scheduled drain is recovery and background continuity, not the primary latency path.
+
+## Adaptive throughput and subscription economics
+
+A user's daily application number is a goal, not a promise and not permission to submit. `lib/job-agent-throughput-policy.js` computes the safe preparation target as the minimum of the explicit user goal, qualifying non-duplicate supply, remaining plan allowance, worst-case provider-budget capacity, and current system capacity. The application submission target is additionally bounded by exact user approvals. No application reaches Submitted without authoritative employer receipt evidence.
+
+Controlled-beta and future subscriber plans have separate daily, rolling-30-day, and monthly provider-budget ceilings. The monthly count is reduced automatically when the configured worst-case package request cost would exceed that plan's provider budget. `/api/job-agent-runs` and `/api/job-agent-schedule` clamp discovery targets through the same policy, while `/api/application-packages` enforces daily and rolling-30-day account limits plus the existing global limit before paid preparation. Deterministic filters, canonical duplicate suppression, and direct-employer verification remain ahead of model use.
 
 ## Required production variables
 
