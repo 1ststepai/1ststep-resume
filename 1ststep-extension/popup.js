@@ -189,6 +189,16 @@ function showJobCard(job, auth) {
 
 }
 
+function renderMatchAssessment(assessment) {
+  const line = document.getElementById('matchLine');
+  const score = document.getElementById('matchPct');
+  const justification = document.getElementById('matchJustification');
+  if (!line || !score || !justification || !Number.isInteger(assessment?.confidenceScore)) return;
+  score.textContent = `${assessment.confidenceScore}% match confidence`;
+  justification.textContent = assessment.tailoringJustification || 'Review the match in 1stStep.ai.';
+  line.style.display = 'block';
+}
+
 // ─── TRACKER STATUS ──────────────────────────────────────────
 
 async function renderTrackerStatus(job) {
@@ -280,7 +290,7 @@ async function autofillPage(auth, btn) {
     const response = await new Promise((resolve) => {
       chrome.tabs.sendMessage(
         tab.id,
-        { action: 'AUTOFILL' },
+        { action: 'AUTOFILL', confirmPrecision: btn.dataset.precisionReviewed === 'true' },
         (r) => {
           if (chrome.runtime.lastError) {
             resolve({ success: false, error: chrome.runtime.lastError.message });
@@ -291,10 +301,20 @@ async function autofillPage(auth, btn) {
       );
     });
 
+    if (response?.matchAssessment) renderMatchAssessment(response.matchAssessment);
+
+    if (response?.reviewRequired) {
+      btn.dataset.precisionReviewed = 'true';
+      btn.textContent = 'Fill approved fields';
+      btn.disabled = false;
+      return;
+    }
+
     if (!response?.success) {
       throw new Error(response?.error || 'Autofill failed.');
     }
 
+    delete btn.dataset.precisionReviewed;
     btn.textContent = `✓ ${response.filled}/${response.total}`;
     setTimeout(() => {
       btn.textContent = originalLabel;

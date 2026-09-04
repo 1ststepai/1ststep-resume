@@ -315,6 +315,9 @@ function applicationContext() {
   return /^[A-Za-z0-9:_-]{8,160}$/.test(sessionId) && Number.isSafeInteger(version) && version > 0 ? { sessionId, version } : null;
 }
 
+let pendingPrecisionHandoff = null;
+const PRECISION_REVIEW_TTL_MS = 90 * 1000;
+
 function decodeBase64Document(value) {
   const encoded = String(value || '');
   if (!encoded || encoded.length > 1_100_000 || !/^[A-Za-z0-9+/]*={0,2}$/.test(encoded)) throw new Error('The approved résumé payload was invalid.');
@@ -381,15 +384,22 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         sendResponse({ success: false, error: 'Open this employer page from the saved 1stStep application workspace.' });
         return;
       }
-      const response = await new Promise((resolve) =>
-        chrome.runtime.sendMessage({ action: 'PREPARE_GREENHOUSE_HANDOFF', payload: { ...context, pageUrl: location.href, fields } }, (r) => {
+      const precisionKey = `${context.sessionId}:${context.version}:${location.href}`;
+      let response;
+      if (msg.confirmPrecision === true && pendingPrecisionHandoff?.key === precisionKey && pendingPrecisionHandoff.expiresAt > Date.now()) {
+        response = { success: true, data: pendingPrecisionHandoff.data };
+        pendingPrecisionHandoff = null;
+      } else {
+        response = await new Promise((resolve) =>
+          chrome.runtime.sendMessage({ action: 'PREPARE_GREENHOUSE_HANDOFF', payload: { ...context, pageUrl: location.href, fields } }, (r) => {
             if (chrome.runtime.lastError) {
               resolve({ success: false, error: chrome.runtime.lastError.message });
             } else {
               resolve(r);
             }
           })
-      );
+        );
+      }
 
       if (!response?.success) {
         sendResponse({ success: false, error: response?.error || 'Autofill request failed.' });
@@ -397,6 +407,22 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       }
       if (response.data?.status === 'waiting-for-user') {
         sendResponse({ success: false, needsYou: true, error: 'This form has a question that needs you. Return to the 1stStep Needs You queue.' });
+        return;
+      }
+      const matchAssessment = response.data?.matchAssessment;
+      const credibleAssessment = Number.isInteger(matchAssessment?.confidenceScore)
+        && matchAssessment.confidenceScore >= Number(matchAssessment.minimumAutofillScore)
+        && matchAssessment.credibleInterviewPath === true
+        && typeof matchAssessment.tailoringJustification === 'string'
+        && matchAssessment.tailoringJustification.trim();
+      if (!credibleAssessment) {
+        pendingPrecisionHandoff = null;
+        sendResponse({ success: false, needsYou: true, matchAssessment, error: 'This match needs review in 1stStep.ai before any fields are filled.' });
+        return;
+      }
+      if (msg.confirmPrecision !== true) {
+        pendingPrecisionHandoff = { key: precisionKey, data: response.data, expiresAt: Date.now() + PRECISION_REVIEW_TTL_MS };
+        sendResponse({ success: true, reviewRequired: true, matchAssessment, filled: 0, submitted: false, receiptVerified: false });
         return;
       }
       const filledFieldKeys = [];
@@ -427,7 +453,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         sendResponse({ success: false, error: completion?.error || 'The partial fill was preserved and moved to Needs You.' });
         return;
       }
-      sendResponse({ success: true, filled: filledFieldKeys.length, total: (response.data?.fields || []).length + (response.data?.document?.available === true ? 1 : 0), scanned: fields.length, submitted: false, receiptVerified: false });
+      sendResponse({ success: true, matchAssessment, filled: filledFieldKeys.length, total: (response.data?.fields || []).length + (response.data?.document?.available === true ? 1 : 0), scanned: fields.length, submitted: false, receiptVerified: false });
     } catch (err) {
       console.error('[1stStep] AUTOFILL error:', err);
       sendResponse({ success: false, error: err.message });

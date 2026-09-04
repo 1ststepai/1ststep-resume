@@ -13,6 +13,7 @@ import { readApplicationPackageArtifact } from '../lib/job-agent-object-storage.
 import { notifyNewApplicationNeedsYouAction } from '../lib/application-needs-you-notifier.js';
 import { reverifyPublicJob } from '../lib/public-ats-discovery.js';
 import { recordConfiguredJobAgentOperationalEvent } from '../lib/job-agent-operational-metrics.js';
+import { evaluateCandidateFit } from '../client/job-intelligence.js';
 
 export const maxDuration = 30;
 
@@ -26,6 +27,36 @@ function exactKeys(body, allowed) {
 
 function safeKeys(input) {
   return [...new Set((Array.isArray(input) ? input : []).slice(0, 80).map(value => String(value || '').trim()).filter(value => /^[A-Za-z][A-Za-z0-9:_-]{0,119}$/.test(value)))].sort();
+}
+
+function activeVaultValue(vault, fieldKey) {
+  const fact = (vault?.facts || []).find(item => item.status === 'active' && item.fieldKey === fieldKey);
+  const version = fact?.versions?.find(item => Number(item.version) === Number(fact.currentVersion)) || fact?.versions?.at(-1);
+  return ['user-confirmed', 'document-verified'].includes(version?.verificationState) ? String(version?.value || '').trim() : '';
+}
+
+function valueList(value) {
+  return String(value || '').split(/[\n,;]+/).map(item => item.trim()).filter(Boolean).slice(0, 80);
+}
+
+export function buildExtensionMatchAssessment({ job, vault, session } = {}) {
+  const profile = {
+    skills: valueList(activeVaultValue(vault, 'skills')),
+    workHistory: [...valueList(activeVaultValue(vault, 'employment')), ...valueList(activeVaultValue(vault, 'achievements'))],
+    education: valueList(activeVaultValue(vault, 'education')),
+    prioritizedRoleFamilies: valueList(activeVaultValue(vault, 'rolePreferences')),
+  };
+  const fit = evaluateCandidateFit(job || {}, profile, { role: session?.role?.title || '' });
+  return {
+    schemaVersion: 1,
+    confidenceScore: Math.round(Number(fit.score) || 0),
+    classification: String(fit.classification || 'Needs review'),
+    tailoringJustification: String(fit.rationale || 'Insufficient verified alignment to justify autofill.').slice(0, 300),
+    matchedEvidence: (fit.matchedEvidence || []).map(value => String(value).slice(0, 80)).slice(0, 4),
+    credibleInterviewPath: fit.credibleInterviewPath === true,
+    minimumAutofillScore: 70,
+    source: 'deterministic-verified-evidence-v1',
+  };
 }
 
 export function verifiedResumeArtifact(run, session) {
@@ -128,6 +159,13 @@ export default async function handler(req, res) {
 
       const vault = await readApplicantVault({ ...config, subject: auth.subject });
       if (!vault?.vault) return res.status(409).json({ error: 'A confirmed applicant vault is required.', code: 'APPLICANT_VAULT_REQUIRED' });
+      const matchAssessment = buildExtensionMatchAssessment({ job: employerReverification.job, vault: vault.vault, session });
+      if (!matchAssessment.credibleInterviewPath || matchAssessment.confidenceScore < matchAssessment.minimumAutofillScore) {
+        return res.status(200).json({
+          status: 'match-review-required', matchAssessment,
+          candidateValuesReturned: false, valuesPersistedByExtension: false, submissionAuthorized: false,
+        });
+      }
       const transientFields = materializeGreenhouseExtensionFields(plan, vault.vault);
       const resume = plan.documentUpload ? await restoreVerifiedResume({ config, subject: auth.subject, session }) : null;
       const mutationNow = new Date();
@@ -145,6 +183,7 @@ export default async function handler(req, res) {
       return res.status(200).json({
         status: 'ready-to-fill', provider: 'greenhouse', adapterVersion: plan.adapterVersion,
         sessionId, version: recordVersion, fieldSchemaHash: plan.fieldSchemaHash, handoffToken,
+        matchAssessment,
         fields: transientFields, leftUnanswered: plan.leftUnanswered,
         document: resume ? {
           available: true, fieldRef: plan.documentUpload.fieldRef, fieldKey: 'resumeDocument',
