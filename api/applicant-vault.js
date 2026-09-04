@@ -3,7 +3,7 @@ import { applyApiHeaders, authenticateApiRequest, hasJsonContentType, isOriginAl
 import { enforceDurableRateLimit, sendRateLimitResult } from '../lib/durable-rate-limit.js';
 import {
   grantVaultConsent, publicVaultSummary, renewVaultConsent, revokeVaultConsent, revokeVaultDocument,
-  revokeVaultFact, upsertVaultDocument, upsertVaultFact,
+  revokeVaultFact, syncCanonicalApplicantProfile, upsertVaultDocument, upsertVaultFact,
 } from '../lib/applicant-vault-domain.js';
 import { deleteApplicantVault, readApplicantVault, saveApplicantVault } from '../lib/applicant-vault-store.js';
 import { jobAgentConsentGate } from '../lib/job-agent-consent-store.js';
@@ -66,6 +66,7 @@ export default async function handler(req, res) {
         'upsert-fact': () => upsertVaultFact(current.vault, input),
         'revoke-fact': () => revokeVaultFact(current.vault, String(input.id || '')),
         'upsert-document': () => upsertVaultDocument(current.vault, input),
+        'sync-profile': () => syncCanonicalApplicantProfile(current.vault, input),
         'revoke-document': () => revokeVaultDocument(current.vault, String(input.id || '')),
         'revoke-consent': () => revokeVaultConsent(current.vault),
       };

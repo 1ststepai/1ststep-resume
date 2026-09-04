@@ -62,6 +62,7 @@ const CAMPAIGN_KEY = '1ststep_persistent_campaigns_v1';
 const DAILY_GOAL_KEY = '1ststep_concierge_daily_goal_v1';
 const JOB_AGENT_RUN_KEY = '1ststep_job_agent_run_v1';
 const VAULT_PREFERENCE_KEY = '1ststep_applicant_vault_preference_v1';
+const RESUME_HANDOFF_KEY = '1ststep_resume_handoff';
 const RESUME_KEYS = ['1ststep_resume', '1ststep_resume_text'];
 const $ = id => document.getElementById(id);
 const list = value => String(value || '').split(/[\n,]/).map(item => item.trim()).filter(Boolean);
@@ -434,16 +435,27 @@ async function hydrateApplicantVault() {
     if (!response.ok) throw new Error(data.error || 'Secure backup is unavailable.');
     applicantVault = { version: Number(data.version) || 0, vault: data.vault || null, status: 'synced', inFlight: false };
     if (vaultEnabled()) {
+      const localResume = savedResumeRecord();
+      let handoff = null;
+      try { handoff = JSON.parse(sessionStorage.getItem(RESUME_HANDOFF_KEY) || 'null'); } catch { handoff = null; }
+      if (handoff?.status === 'ready-for-job-agent-review' && handoff?.source === 'resume-workspace' && localResume.text) {
+        await syncCanonicalApplicantProfile({ facts: [], resume: localResume, ask: false });
+        sessionStorage.removeItem(RESUME_HANDOFF_KEY);
+      }
       for (const fact of applicantVault.vault.facts.filter(item => item.status === 'active')) {
-        if (deskState.reusableFacts.some(item => item.fieldKey === fact.fieldKey)) continue;
         const version = fact.versions.find(item => item.version === fact.currentVersion) || fact.versions.at(-1);
         if (!version?.value) continue;
         deskState = confirmReusableFact(deskState, { fieldKey: fact.fieldKey, value: version.value, confirmed: true, verificationState: version.verificationState, source: `secure-vault:${version.provenance}`, sensitivity: version.sensitivity, autoReuse: version.autoReuse });
       }
       const master = applicantVault.vault.documents.find(document => document.status === 'active' && document.type === 'master-resume');
-      if (master && !hasResume()) {
+      if (master) {
         const version = master.versions.find(item => item.version === master.currentVersion) || master.versions.at(-1);
-        if (version?.text) saveResumeText(version.text, 'secure-vault', version.fileName || '');
+        const local = savedResumeRecord();
+        const cloudTime = new Date(version?.createdAt || 0).getTime();
+        const localTime = new Date(local.savedAt || 0).getTime();
+        if (version?.text && (!local.text || local.source === 'secure-vault' || cloudTime >= localTime)) {
+          saveResumeText(version.text, 'secure-vault', version.fileName || '');
+        }
       }
       saveAll(); renderAll();
     }
@@ -482,26 +494,36 @@ async function enableApplicantVault({ ask = true } = {}) {
   }
   await vaultAction('grant-consent', { scopes: ['confirmed-facts', 'documents'] });
   localStorage.setItem(VAULT_PREFERENCE_KEY, 'enabled');
-  for (const fact of deskState.reusableFacts) await backupConfirmedFact(fact, false);
-  const resume = savedResumeText();
-  if (resume) await backupResume(resume, '', false);
+  await syncCanonicalApplicantProfile({ facts: deskState.reusableFacts, resume: savedResumeRecord(), ask: false });
+  return true;
+}
+
+function canonicalFactInput(fact) {
+  return {
+    fieldKey: fact.fieldKey, label: fact.label, value: fact.value, provenance: fact.source || 'candidate confirmation', confidence: 1,
+    verificationState: fact.verificationState === 'document-verified' ? 'document-verified' : 'user-confirmed', sensitivity: fact.sensitivity,
+    autoReuse: CONSEQUENTIAL_QUESTION_KEYS.has(fact.fieldKey) ? false : fact.autoReuse === true, scope: fact.scope || {},
+  };
+}
+
+async function syncCanonicalApplicantProfile({ facts = [], resume = null, ask = true } = {}) {
+  if (!vaultEnabled() && !(await enableApplicantVault({ ask }))) return false;
+  const input = { facts: facts.map(canonicalFactInput) };
+  if (resume?.text) input.masterResume = {
+    text: resume.text, fileName: resume.fileName || '', provenance: 'candidate-reviewed',
+    qa: { atsTextExtracted: true, renderedPagesReviewed: false },
+  };
+  if (!input.facts.length && !input.masterResume) return true;
+  await vaultAction('sync-profile', input);
   return true;
 }
 
 async function backupConfirmedFact(fact, ask = true) {
-  if (!vaultEnabled() && !(await enableApplicantVault({ ask }))) return false;
-  await vaultAction('upsert-fact', {
-    fieldKey: fact.fieldKey, label: fact.label, value: fact.value, provenance: fact.source || 'candidate confirmation', confidence: 1,
-    verificationState: fact.verificationState === 'document-verified' ? 'document-verified' : 'user-confirmed', sensitivity: fact.sensitivity,
-    autoReuse: CONSEQUENTIAL_QUESTION_KEYS.has(fact.fieldKey) ? false : fact.autoReuse === true, scope: fact.scope || {},
-  });
-  return true;
+  return syncCanonicalApplicantProfile({ facts: [fact], ask });
 }
 
 async function backupResume(resumeText, fileName = '', ask = true) {
-  if (!vaultEnabled() && !(await enableApplicantVault({ ask }))) return false;
-  await vaultAction('upsert-document', { type: 'master-resume', title: 'Master resume', text: resumeText, fileName, provenance: 'candidate-reviewed', qa: { atsTextExtracted: true, renderedPagesReviewed: false } });
-  return true;
+  return syncCanonicalApplicantProfile({ resume: { text: resumeText, fileName }, ask });
 }
 
 async function backupPackageDocument(type, title, documentText, fileName = '') {
@@ -1590,7 +1612,7 @@ async function scanOpportunityPaths() {
     saveAll(); renderOpportunityPaths();
   }
 }
-function savedResumeText() {
+function savedResumeRecord() {
   for (const key of RESUME_KEYS) {
     let raw = sessionStorage.getItem(key);
     if (!raw) {
@@ -1603,12 +1625,16 @@ function savedResumeText() {
     if (!raw) continue;
     try {
       const parsed = JSON.parse(raw);
-      const text = typeof parsed === 'string' ? parsed : parsed?.text;
-      if (String(text || '').trim()) return String(text).trim();
-    } catch { if (raw.trim()) return raw.trim(); }
+      const resumeText = typeof parsed === 'string' ? parsed : parsed?.text;
+      if (String(resumeText || '').trim()) return {
+        text: String(resumeText).trim(), source: typeof parsed === 'object' ? String(parsed.source || '') : 'legacy-text',
+        fileName: typeof parsed === 'object' ? String(parsed.fileName || '') : '', savedAt: typeof parsed === 'object' ? String(parsed.savedAt || '') : '',
+      };
+    } catch { if (raw.trim()) return { text: raw.trim(), source: 'legacy-text', fileName: '', savedAt: '' }; }
   }
-  return '';
+  return { text: '', source: '', fileName: '', savedAt: '' };
 }
+function savedResumeText() { return savedResumeRecord().text; }
 function sanitizeResumeText(text) {
   let clean = String(text || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ' ');
   const patterns = [
