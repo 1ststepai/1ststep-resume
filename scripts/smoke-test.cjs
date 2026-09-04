@@ -92,7 +92,7 @@ section('Required DOM elements');
 // Grouped by feature area — add new IDs here when building new features.
 const REQUIRED_IDS = [
   // File upload / resume input
-  'fileInput', 'fileDrop', 'resumeText', 'clearFileBtn',
+  'fileInput', 'fileDrop', 'resumeText', 'clearFileBtn', 'continueToJobAgentBtn',
 
   // Main action buttons
   'runBtn', 'searchBtn', 'positioningAnalyzeBtn', 'positioningUseBtn', 'positioningClearBtn', 'positioningActiveBadge',
@@ -216,6 +216,10 @@ if (js) {
 section('Workflow guidance smoke');
 
 if (html) {
+  if (/id="continueToJobAgentBtn"/.test(html)) pass('Resume workspace has a clear Job Agent handoff');
+  else fail('Resume workspace Job Agent handoff is missing');
+  if (/function\s+continueResumeToJobAgent\s*\(/.test(js) && /1ststep_resume_handoff/.test(js) && /\/concierge\?from=resume-workspace&resume=ready/.test(js)) pass('Resume handoff preserves the existing resume and returns to the Job Agent');
+  else fail('Resume workspace does not implement the Job Agent handoff contract');
   if (/id="currentObjectiveBar"/.test(html) && /id="currentObjectiveText"/.test(html)) pass('Current objective bar is present');
   else fail('Current objective bar is missing');
 
@@ -536,7 +540,7 @@ section('Required global functions');
 // Functions called from HTML inline handlers or dynamically generated HTML.
 // These must be top-level (not nested inside blocks where they'd be inaccessible).
 const REQUIRED_FUNCTIONS = [
-  'switchMode', 'runTailoring', 'searchJobs',
+  'switchMode', 'runTailoring', 'searchJobs', 'continueResumeToJobAgent',
   'toggleTheme', 'checkBetaAccess', 'verifySubscription',
   'openUpgradeModal', 'closeUpgradeModal',
   'openFeedbackModal', 'closeFeedbackModal',

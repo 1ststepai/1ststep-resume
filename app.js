@@ -733,6 +733,7 @@ function collapseLetterSpacing(text) {
 
       // -- Resume textarea - save to localStorage (debounced) ----------------
       let _resumeSaveTimer;
+      document.getElementById('continueToJobAgentBtn')?.addEventListener('click', continueResumeToJobAgent);
       document.getElementById('resumeText').addEventListener('input', () => {
         updateCounts();
         refreshSetupSteps();
@@ -6563,6 +6564,32 @@ ${desc}`;
       sessionStorage.removeItem(RESUME_KEY);
       localStorage.removeItem(RESUME_KEY);
       syncActivePositioningContext();
+    }
+
+    function continueResumeToJobAgent() {
+      const saved = loadResume();
+      const typed = document.getElementById('resumeText')?.value.trim() || '';
+      const text = sanitizeResumeText(fileContent || typed || saved?.text || '');
+      if (text.length < 200) {
+        switchMode('resume');
+        showToast('Add your resume first, then choose Use in Job Agent.', 'warning');
+        revealResumeUploadArea();
+        return;
+      }
+      saveResume({
+        source: saved?.source || (fileContent ? 'file' : 'text'),
+        text,
+        fileName: saved?.fileName || document.getElementById('fileName')?.textContent || 'Resume',
+      });
+      sessionStorage.setItem('1ststep_resume_handoff', JSON.stringify({
+        version: 1,
+        source: 'resume-workspace',
+        status: 'ready-for-job-agent-review',
+        createdAt: new Date().toISOString(),
+        containsCandidateValues: false,
+      }));
+      trackProductEvent('resume_handoff_to_job_agent', { source: saved?.source || (fileContent ? 'file' : 'text') });
+      window.location.assign('/concierge?from=resume-workspace&resume=ready');
     }
 
     function openProfileModal() {
