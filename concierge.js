@@ -199,6 +199,11 @@ function loadJson(key, fallback) {
 }
 function loadWorkflowJson(key, fallback) {
   try {
+    if (key !== DAILY_GOAL_KEY) {
+      sessionStorage.removeItem(key);
+      localStorage.removeItem(key);
+      return fallback;
+    }
     const sessionValue = sessionStorage.getItem(key);
     if (sessionValue) return JSON.parse(sessionValue) || fallback;
     const legacyValue = localStorage.getItem(key);
@@ -232,9 +237,9 @@ function saveAll() {
     scheduleCampaignSync();
     return;
   }
-  sessionStorage.setItem(MISSION_KEY, JSON.stringify(missionState));
-  sessionStorage.setItem(DESK_KEY, JSON.stringify(deskState));
-  sessionStorage.setItem(CAMPAIGN_KEY, JSON.stringify(campaignStore));
+  sessionStorage.removeItem(MISSION_KEY);
+  sessionStorage.removeItem(DESK_KEY);
+  sessionStorage.removeItem(CAMPAIGN_KEY);
   sessionStorage.setItem(DAILY_GOAL_KEY, JSON.stringify(dailyGoal));
   localStorage.removeItem(MISSION_KEY);
   localStorage.removeItem(DESK_KEY);

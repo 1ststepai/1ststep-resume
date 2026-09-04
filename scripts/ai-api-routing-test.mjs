@@ -53,8 +53,9 @@ try {
     const calls = [];
     globalThis.fetch = async (url, options) => {
       calls.push({ url: String(url), headers: options?.headers });
-      if (String(url).includes('api.deepseek.com')) return failure.response();
-      if (String(url).includes('api.anthropic.com')) {
+      const hostname = new URL(String(url)).hostname;
+      if (hostname === 'api.deepseek.com') return failure.response();
+      if (hostname === 'api.anthropic.com') {
         return {
           ok: true,
           status: 200,

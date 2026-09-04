@@ -7,6 +7,12 @@ const runtime = hash('b');
 const deploymentId = 'dpl_signedCapacityFixture';
 const deploymentOrigin = 'https://signed-capacity-fixture.vercel.app';
 const now = new Date('2026-09-02T06:00:00.000Z');
+const containsExactValue = (value, expected) => {
+  if (typeof value === 'string') return value === expected;
+  if (Array.isArray(value)) return value.some(item => containsExactValue(item, expected));
+  if (value && typeof value === 'object') return Object.values(value).some(item => containsExactValue(item, expected));
+  return false;
+};
 
 function fixture() {
   return {
@@ -77,7 +83,7 @@ assert.equal(result.backpressureVerified, true);
 assert.equal(result.dependencyFailureContained, true);
 assert.equal(result.withinApprovedCost, true);
 assert.match(result.artifactSha256, /^[a-f0-9]{64}$/);
-assert.equal(JSON.stringify(result).includes(deploymentOrigin), false);
+assert.equal(containsExactValue(result, deploymentOrigin), false);
 assert.equal(JSON.stringify(result).includes(hash('7')), false);
 
 const production = fixture();

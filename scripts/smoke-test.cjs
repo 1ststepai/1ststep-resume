@@ -711,6 +711,17 @@ function escRe(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function textOutsideTags(markup) {
+  let text = '';
+  let insideTag = false;
+  for (const character of String(markup)) {
+    if (character === '<') insideTag = true;
+    else if (character === '>') insideTag = false;
+    else if (!insideTag) text += character;
+  }
+  return text.trim();
+}
+
 A11Y_FILES.forEach(rel => {
   const src = readIfExists(rel);
   const markup = src.split(/<script\b/i)[0];
@@ -734,7 +745,7 @@ A11Y_FILES.forEach(rel => {
 
   const unnamedIconButtons = [...markup.matchAll(/<button\b(?![^>]*(?:aria-label|aria-labelledby))[^>]*>([\s\S]*?)<\/button>/gi)]
     .filter(([, body]) => {
-      const text = body.replace(/<[^>]+>/g, '').trim();
+      const text = textOutsideTags(body);
       const hasOnlySvg = /<svg\b/i.test(body) && text.length === 0;
       return hasOnlySvg || ['×', '✕', '★', 'â˜…', '↻', '?'].includes(text);
     });

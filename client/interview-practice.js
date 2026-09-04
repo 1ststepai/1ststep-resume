@@ -133,7 +133,7 @@ export function buildAnswerCoachingRequest({ question, answer, role = {}, confir
 export function extractCoachingGrounding(content) {
   const text = String(content || '');
   const section = tag => {
-    const match = new RegExp(`<${tag}>\s*([\s\S]*?)\s*</${tag}>`).exec(text);
+    const match = new RegExp(`<${tag}>\\s*([\\s\\S]*?)\\s*</${tag}>`).exec(text);
     return match ? match[1] : '';
   };
   return { answer: section('candidate_practice_answer'), groundingText: section('confirmed_candidate_facts') };

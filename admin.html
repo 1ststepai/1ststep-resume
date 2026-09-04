@@ -284,7 +284,6 @@
 </div>
 
 <script>
-  const SESSION_KEY = '1ststep_admin_secret';
   let countdownVal = 30;
   let countdownTimer = null;
   let secret = '';
@@ -316,7 +315,6 @@
 
       // First successful load — show dashboard
       if (isLogin || document.getElementById('auth-gate').style.display !== 'none') {
-        sessionStorage.setItem(SESSION_KEY, secret);
         document.getElementById('auth-gate').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
         startCountdown();
@@ -419,12 +417,6 @@
     document.getElementById('error-bar').style.display = 'none';
   }
 
-  // ── Resume session ───────────────────────────────────────────────────
-  const saved = sessionStorage.getItem(SESSION_KEY);
-  if (saved) {
-    secret = saved;
-    loadStats(true);
-  }
 </script>
 </body>
 </html>

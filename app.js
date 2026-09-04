@@ -3911,7 +3911,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
           document.getElementById('tierErrorPassBtn')?.addEventListener('click', openUpgradeModal);
           setTimeout(() => openUpgradeModal(), 400);
         } else {
-          document.getElementById('resumeOutput').innerHTML = `<div class="error-box"><strong>Error:</strong> ${err.message}<br><br>Common fixes:<br>- Check your internet connection and try again<br>- If the error says "529", Anthropic is temporarily overloaded - wait 30 seconds<br>- Contact support at evan@1ststep.ai if the problem persists</div>`;
+          document.getElementById('resumeOutput').innerHTML = `<div class="error-box"><strong>Error:</strong> ${escHtml(err.message)}<br><br>Common fixes:<br>- Check your internet connection and try again<br>- If the error says "529", Anthropic is temporarily overloaded - wait 30 seconds<br>- Contact support at evan@1ststep.ai if the problem persists</div>`;
         }
       } finally {
         btn.disabled = false;
@@ -5367,7 +5367,7 @@ ${_resumeSlice}
       const primaryIsIndeed = /indeed\.com/i.test(primaryLink);
 
       return {
-        id: job.job_id || String(Math.random()),
+        id: job.job_id || `job_${globalThis.crypto.randomUUID()}`,
         title: job.job_title || 'Position',
         company: { display_name: job.employer_name || '' },
         location: { display_name: locationStr },
@@ -5456,9 +5456,11 @@ ${_resumeSlice}
     }
 
     // -- AI Salary Estimation --------------------------------------------------
+    const salaryEstimateCache = Object.create(null);
+
     async function estimateMissingSalaries(jobs) {
       // Filter jobs that are both missing salary AND not already cached
-      const _salCache = (() => { try { return JSON.parse(localStorage.getItem('salaryCache') || '{}'); } catch { return {}; } })();
+      const _salCache = salaryEstimateCache;
 
       // Apply cached estimates immediately (no API call needed)
       jobs.forEach(j => {
@@ -5516,10 +5518,9 @@ ${jobList}`,
             el.innerHTML = `~${escHtml(est.range)} <span style="font-size:10px;opacity:0.7">(est.)</span>`;
           }
         });
-        // Persist updated cache (cap to 500 entries to avoid bloat)
+        // Keep estimates memory-only; compensation data must not be persisted in clear text.
         const cacheKeys = Object.keys(_salCache);
         if (cacheKeys.length > 500) cacheKeys.slice(0, cacheKeys.length - 500).forEach(k => delete _salCache[k]);
-        try { localStorage.setItem('salaryCache', JSON.stringify(_salCache)); } catch { }
       } catch { /* silent - salary estimate is best-effort */ }
     }
 
@@ -5546,7 +5547,7 @@ ${jobList}`,
       const salaryDisplay = salaryStr
         ? `<div class="job-salary-badge">${salaryStr}</div>`
         : salaryEst
-          ? `<div class="job-salary-badge estimated">~${salaryEst} <span style="font-size:10px;opacity:0.7">(est.)</span></div>`
+          ? `<div class="job-salary-badge estimated">~${escHtml(salaryEst)} <span style="font-size:10px;opacity:0.7">(est.)</span></div>`
           : `<div class="job-salary-badge unknown" id="sal-${jobId}"> Estimating...</div>`;
 
       return `
@@ -5635,10 +5636,27 @@ ${desc}`;
     // -- APPLICATION TRACKER ----------------------------------------------------
     // ===========================================================================
 
-    let applications = JSON.parse(localStorage.getItem('1ststep_applications') || '[]');
+    function applicationForBrowserStorage(app) {
+      return {
+        id: app.id,
+        jobId: app.jobId,
+        title: app.title,
+        company: app.company,
+        location: app.location,
+        appliedDate: app.appliedDate,
+        followUpDate: app.followUpDate,
+        status: app.status,
+        jobUrl: app.jobUrl,
+        resumeSource: app.resumeSource,
+        resumeTailoredFor: app.resumeTailoredFor,
+        tailorHistoryId: app.tailorHistoryId,
+      };
+    }
+
+    let applications = JSON.parse(localStorage.getItem('1ststep_applications') || '[]').map(applicationForBrowserStorage);
 
     function saveApplications() {
-      localStorage.setItem('1ststep_applications', JSON.stringify(applications));
+      localStorage.setItem('1ststep_applications', JSON.stringify(applications.map(applicationForBrowserStorage)));
       updateTrackerBadge();
       syncExtensionStats(true);
     }
@@ -5911,6 +5929,7 @@ ${desc}`;
 
       list.innerHTML = applications.map(app => {
         const status = getStatusInfo(app.status);
+        const appId = String(app.id || '').replace(/[^A-Za-z0-9:_-]/g, '');
         const followUp = app.followUpDate;
         let followUpCls = 'followup-badge';
         let followUpLabel = followUp ? `Follow up: ${followUp}` : 'No follow-up set';
@@ -5920,7 +5939,7 @@ ${desc}`;
         }
 
         const statusOpts = STATUS_OPTIONS.map(s =>
-          `<option value="${s.value}" ${s.value === app.status ? 'selected' : ''}>${s.label}</option>`
+          `<option value="${escHtml(s.value)}" ${s.value === app.status ? 'selected' : ''}>${escHtml(s.label)}</option>`
         ).join('');
 
         return `
@@ -5931,7 +5950,7 @@ ${desc}`;
         <div class="app-row-meta">
           ${app.location ? `<span class="job-meta-pill"> ${escHtml(app.location)}</span>` : ''}
           ${app.salary ? `<span class="job-meta-pill" style="color:#6EE7B7;border-color:rgba(14,159,110,0.3);background:rgba(14,159,110,0.07)"> ${escHtml(app.salary)}</span>` : ''}
-          <span class="job-meta-pill"> ${app.appliedDate}</span>
+          <span class="job-meta-pill"> ${escHtml(app.appliedDate || '')}</span>
           ${app.contactName ? `<span class="job-meta-pill"> ${escHtml(app.contactName)}${app.contactEmail ? ` - <a href="mailto:${escHtml(app.contactEmail)}" style="color:var(--blue)">${escHtml(app.contactEmail)}</a>` : ''}</span>` : ''}
           ${app.notes ? `<span class="job-meta-pill" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(app.notes)}"> ${escHtml(app.notes)}</span>` : ''}
         </div>
@@ -5947,19 +5966,19 @@ ${desc}`;
         ${app.status === 'tailored' ? `
         <div class="tailored-nudge">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Apply today or follow up by ${app.followUpDate || 'soon'}
+          Apply today or follow up by ${escHtml(app.followUpDate || 'soon')}
           ${app.tailorHistoryId ? `<button onclick="switchMode('tailored')" style="margin-left:6px;background:none;border:none;color:var(--brand);font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;padding:0">View resume -></button>` : ''}
         </div>` : ''}
       </div>
       <div class="app-row-right">
-        <select class="status-badge ${status.cls}" onchange="updateStatus('${app.id}', this.value)" style="border:none;cursor:pointer;font-family:'Inter',sans-serif;font-weight:700">
+        <select class="status-badge ${status.cls}" onchange="updateStatus('${appId}', this.value)" style="border:none;cursor:pointer;font-family:'Inter',sans-serif;font-weight:700">
           ${statusOpts}
         </select>
-        <span class="${followUpCls}">${followUpLabel}</span>
+        <span class="${followUpCls}">${escHtml(followUpLabel)}</span>
         <div style="display:flex;gap:4px;margin-top:2px">
           ${app.jobUrl ? `<a class="btn-view-job" href="${escHtml(app.jobUrl)}" target="_blank" rel="noopener" style="font-size:11px;padding:3px 8px">View job</a>` : ''}
-          <button onclick="editApplication('${app.id}')" class="btn-view-job" style="font-size:11px;padding:3px 8px">Edit</button>
-          <button onclick="removeApplication('${app.id}')" class="btn-view-job" style="font-size:11px;padding:3px 8px;color:#FCA5A5" aria-label="Remove application">Remove</button>
+          <button onclick="editApplication('${appId}')" class="btn-view-job" style="font-size:11px;padding:3px 8px">Edit</button>
+          <button onclick="removeApplication('${appId}')" class="btn-view-job" style="font-size:11px;padding:3px 8px;color:#FCA5A5" aria-label="Remove application">Remove</button>
         </div>
       </div>
     </div>`;
@@ -6374,7 +6393,7 @@ ${desc}`;
             ${locked.slice(0, 2).map(entry => {
               const date = new Date(entry.appliedAt || entry.createdAt || entry.tailoredAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
               const label = entry.company ? `${entry.company} - ${entry.jobTitle || 'Untitled Role'}` : (entry.jobTitle || 'Untitled Role');
-              return `<div class="tailor-card vault-card-locked"><div class="tailor-card-info"><div class="tailor-card-title">${label}</div><div class="tailor-card-meta">${date}</div></div></div>`;
+              return `<div class="tailor-card vault-card-locked"><div class="tailor-card-info"><div class="tailor-card-title">${escHtml(label)}</div><div class="tailor-card-meta">${escHtml(date)}</div></div></div>`;
             }).join('')}
           </div>
           <div class="vault-lock-overlay">
@@ -7339,14 +7358,14 @@ ${job.jd.slice(0, 1000)}
           card.style.cssText = 'background:var(--input-bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px';
           card.innerHTML = `
         <div>
-          <div style="font-size:13px;font-weight:600;color:var(--fg)">${kw.job_title || job.title}</div>
+          <div style="font-size:13px;font-weight:600;color:var(--fg)">${escHtml(kw.job_title || job.title)}</div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px">Resume tailored + saved to history</div>
         </div>
         <div style="display:flex;gap:8px">
           <button onclick="copyText('bulkResult_${entry.id}')" style="padding:6px 12px;background:none;border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--muted);cursor:pointer">Copy</button>
           <button onclick="downloadBulkResult('${entry.id}')" style="padding:6px 12px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:6px;font-size:12px;color:#a5b4fc;cursor:pointer;font-weight:600">Download</button>
         </div>
-        <div id="bulkResult_${entry.id}" style="display:none">${tailored.replace(/</g, '&lt;')}</div>
+        <div id="bulkResult_${entry.id}" style="display:none">${escHtml(tailoredClean)}</div>
       `;
           document.getElementById('bulkResults').appendChild(card);
 

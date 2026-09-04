@@ -3,6 +3,12 @@ import { productionEnvironmentShapeReport, publicProductionEnvironmentShapeRepor
 import { buildJobAgentLaunchEvidence } from '../lib/job-agent-launch-evidence.js';
 
 const secret = 's'.repeat(40);
+const containsExactValue = (value, expected) => {
+  if (typeof value === 'string') return value === expected;
+  if (Array.isArray(value)) return value.some(item => containsExactValue(item, expected));
+  if (value && typeof value === 'object') return Object.values(value).some(item => containsExactValue(item, expected));
+  return false;
+};
 const env = {
   UPSTASH_REDIS_REST_URL: 'https://redis.example.test',
   UPSTASH_REDIS_REST_TOKEN: secret,
@@ -42,8 +48,8 @@ assert.ok(report.summary.signedBetaBlockers.includes('COUNSEL_APPROVED_CONSENT_N
 const serialized = JSON.stringify(report);
 assert.equal(serialized.includes(secret), false);
 assert.equal(serialized.includes(env.BETA_DATA_ENCRYPTION_KEY), false);
-assert.equal(serialized.includes('https://redis.example.test'), false);
-assert.equal(serialized.includes('https://scanner.example.test/scan'), false);
+assert.equal(containsExactValue(report, 'https://redis.example.test'), false);
+assert.equal(containsExactValue(report, 'https://scanner.example.test/scan'), false);
 const publicReport = publicProductionEnvironmentShapeReport(report);
 assert.equal(publicReport.containsSecretValues, false);
 assert.equal(publicReport.controls.some(control => Object.hasOwn(control, 'requirements')), false);

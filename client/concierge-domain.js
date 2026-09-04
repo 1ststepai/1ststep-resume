@@ -113,7 +113,7 @@ const asList = value => Array.isArray(value)
   ? value.map(asText).filter(Boolean)
   : asText(value).split(/[,\n;]/).map(item => item.trim()).filter(Boolean);
 const nowIso = value => value || new Date().toISOString();
-const makeId = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const makeId = prefix => `${prefix}_${globalThis.crypto.randomUUID()}`;
 
 export function createTruthProfile(input = {}) {
   return {
