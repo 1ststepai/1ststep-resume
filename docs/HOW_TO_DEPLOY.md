@@ -1,5 +1,7 @@
 # How to Deploy 1stStep.ai Resume Tailor
 
+> **Job Agent warning:** this is a legacy resume-product document and its automatic `git add -A` / commit / push procedure is not approved for the controlled Job Agent beta. Use `docs/JOB_AGENT_DEPLOYMENT_RUNBOOK.md` from the canonical `1ststep-resume-deploy` repository. A deployment, environment change, provider activation, or production drill still requires an explicit owner decision.
+
 ---
 
 ## ⚡ QUICK DEPLOY — run this every time you want to push changes
@@ -70,6 +72,7 @@ These are set in Vercel → Project → Settings → Environment Variables. Do n
 | `RESEND_FROM` | Sender address — `notifications@1ststep.ai` |
 | `STRIPE_SECRET_KEY` | Stripe payments |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signature validation |
+| `STRIPE_WEBHOOK_IDEMPOTENCY_SECRET` | Separate 32-byte-or-stronger HMAC key for durable pseudonymous Stripe event claims |
 | `BETA_MODE` | `"true"` = beta gate on, `"false"` = open to all |
 
 ---

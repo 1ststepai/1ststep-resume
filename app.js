@@ -1,5 +1,45 @@
+/* PDF text extraction — items must be joined by geometry, not by a blank space.
+   A resume with letter-spaced headings emits one item per glyph, so join(' ')
+   produced "P R O C U R E M E N T" and lost every line break. */
+function pdfItemsToText(items) {
+  var out = '';
+  var prev = null;
+  for (var i = 0; i < (items || []).length; i += 1) {
+    var item = items[i];
+    if (!item || typeof item.str !== 'string') continue;
+    if (item.str === '') { if (item.hasEOL) { out += '\n'; prev = null; } continue; }
+    if (prev) {
+      var t = item.transform || [0,0,0,0,0,0];
+      var p = prev.transform || [0,0,0,0,0,0];
+      var line = Math.abs(item.height || prev.height || 10) || 10;
+      var dy = Math.abs((t[5] || 0) - (p[5] || 0));
+      if (dy > line * 0.5) {
+        out += '\n';
+      } else {
+        var gap = (t[4] || 0) - ((p[4] || 0) + (prev.width || 0));
+        if (gap > line * 0.25) out += ' ';
+      }
+    }
+    out += item.str;
+    if (item.hasEOL) { out += '\n'; prev = null; } else { prev = item; }
+  }
+  return out;
+}
+function collapseLetterSpacing(text) {
+  return String(text == null ? '' : text)
+    .replace(/(?:\b[A-Za-z0-9]\b[ \t](?![ \t])){3,}\b[A-Za-z0-9]\b/g, function (run) {
+      return run.replace(/[ \t]+/g, '');
+    })
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n');
+}
+
     // -- State -----------------------------------------------------------------
     let apiKey = localStorage.getItem('1ststep_api_key') || '';
+    if (apiKey) {
+      localStorage.removeItem('1ststep_api_key');
+      apiKey = '';
+    }
     let currentTier = localStorage.getItem('1ststep_tier') || 'free'; // subscription tier - only modified by verifySubscription()
     let outputMode = 'essential'; // UI toggle: 'essential' = resume only, 'complete' = resume + cover letter
     let results = { resume: '', keywords: null, changes: [], coverLetter: '', score: null, positioningBrief: null };
@@ -25,6 +65,12 @@
     const FREE_TO_PRO_PRICE = '$24.99/month';
     const APP_GA_ID = 'G-RYPRPJDLVE';
     const PRO_TIER_ALIASES = new Set(['essential', 'complete', 'pro']);
+    function authenticatedJsonHeaders() {
+      try {
+        const token = JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}').tierToken || '';
+        return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+      } catch { return { 'Content-Type': 'application/json' }; }
+    }
     const PRO_FEATURE_COPY = {
       coverLetter: {
         headline: 'Create unlimited cover letters',
@@ -220,7 +266,7 @@
         try {
           const email = loadProfile?.()?.email;
           if (email) fetch('/api/track-event', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: authenticatedJsonHeaders(),
             body: JSON.stringify({ email, event: `streak_${s.count}` }),
           }).catch(() => {});
         } catch {}
@@ -737,6 +783,40 @@
         }
       } catch (_) {}
 
+      // -- Concierge resume-package handoff ----------------------------------
+      // A verified concierge role can reuse this existing tailoring pipeline.
+      // The request carries the employer posting, never new candidate claims;
+      // runTailoring still derives every statement from the saved master resume.
+      try {
+        const rawConciergeRequest = sessionStorage.getItem('1ststep_concierge_tailor_request_v1');
+        if (rawConciergeRequest) {
+          const request = JSON.parse(rawConciergeRequest);
+          const isFresh = request?.requestedAt && Date.now() - new Date(request.requestedAt).getTime() < 30 * 60 * 1000;
+          if (request?.roleId && request?.jobDescription && isFresh) {
+            window._conciergeTailorRequest = request;
+            const jobText = document.getElementById('jobText');
+            jobText.value = request.jobDescription;
+            jobText.dispatchEvent(new Event('input'));
+            window._capturedJob = {
+              title: request.title || '', company: request.employer || '',
+              url: request.directEmployerUrl || '', site: 'concierge',
+            };
+            setTimeout(() => {
+              switchMode('resume');
+              if (request.title) showJobContext(request.title, request.employer || '');
+              showToast('Verified concierge role loaded. Generating from your saved master resume.', 'info');
+              const resumeReady = !!(fileContent || document.getElementById('resumeText')?.value.trim());
+              if (request.autoStart && resumeReady) runTailoring();
+              else if (!resumeReady) showToast('Save your master resume to generate this package.', 'warning');
+            }, 500);
+          } else {
+            sessionStorage.removeItem('1ststep_concierge_tailor_request_v1');
+          }
+        }
+      } catch (_) {
+        sessionStorage.removeItem('1ststep_concierge_tailor_request_v1');
+      }
+
       // Also hook run button update to resume textarea
       document.getElementById('resumeText').addEventListener('input', updateRunButton);
 
@@ -770,6 +850,8 @@
         document.getElementById('welcomeOverlay').classList.add('visible');
         document.body.style.overflow = 'hidden'; // lock scroll behind modal
         _setChatWidgetVisible(false); // hide chat bubble so it can't be mis-tapped
+        setTimeout(() => _setChatWidgetVisible(false), 1200); // widget may inject after app initialization
+        setTimeout(() => _setChatWidgetVisible(false), 3500);
       } else {
         // Returning user - collapse hero immediately (they know the product)
         document.getElementById('heroSection')?.style.setProperty('display', 'none');
@@ -1076,6 +1158,10 @@
       document.getElementById('paywallBackBtn')?.addEventListener('click', closePaywallVerify);
 
       // Welcome / onboarding
+      document.getElementById('welcomeResumeProductBtn')?.addEventListener('click', _showResumeWelcomePanel);
+      document.getElementById('welcomeExtensionProductBtn')?.addEventListener('click', startExtensionSetup);
+      document.getElementById('welcomeAgentProductBtn')?.addEventListener('click', startJobAgent);
+      document.getElementById('welcomeProductBackBtn')?.addEventListener('click', _showWelcomeProductChooser);
       document.getElementById('welcomeUploadBtn')?.addEventListener('click', () => dismissWelcome('upload'));
       document.getElementById('welcomeBuildBtn')?.addEventListener('click', () => dismissWelcome('build'));
       document.getElementById('welcomeRestoreBtn')?.addEventListener('click', triggerRestoreBackup);
@@ -1216,6 +1302,41 @@
       scheduleMainScrollToTop([0, 160, 520]);
     }
 
+    function _showResumeWelcomePanel() {
+      const chooser = document.getElementById('welcomeProductChooser');
+      const panel = document.getElementById('welcomeResumePanel');
+      if (chooser) chooser.hidden = true;
+      if (panel) panel.hidden = false;
+      document.getElementById('welcomeUploadBtn')?.focus();
+      _pingTracker('onboarding_product_resume');
+    }
+
+    function _showWelcomeProductChooser() {
+      const chooser = document.getElementById('welcomeProductChooser');
+      const panel = document.getElementById('welcomeResumePanel');
+      const pathGrid = document.getElementById('welcomePathGrid');
+      const step2 = document.getElementById('welcomeStep2');
+      if (chooser) chooser.hidden = false;
+      if (panel) panel.hidden = true;
+      if (pathGrid) pathGrid.style.display = '';
+      if (step2) step2.style.display = 'none';
+      document.getElementById('welcomeResumeProductBtn')?.focus();
+    }
+
+    function startExtensionSetup() {
+      _pingTracker('onboarding_product_extension');
+      _closeWelcomeOverlay();
+      const opened = window.open(EXT_INSTALL_URL, '_blank', 'noopener,noreferrer');
+      if (!opened) window.location.assign(EXT_INSTALL_URL);
+      else showToast('Chrome Web Store opened. Return here after installing the assistant.', 'info');
+    }
+
+    function startJobAgent() {
+      _pingTracker('onboarding_product_job_agent');
+      localStorage.setItem('1ststep_welcomed', '1');
+      window.location.assign('/concierge');
+    }
+
     function dismissWelcome(path = false) {
       if (path === 'upload' || path === true) {
         // Keep overlay open - trigger file picker then advance to step 2 when resume lands
@@ -1248,8 +1369,12 @@
         const overlay = document.getElementById('welcomeOverlay');
         if (!overlay?.classList.contains('visible')) return; // already dismissed another way
         // Swap: hide path buttons, show JD step
+        const chooser = document.getElementById('welcomeProductChooser');
+        const panel = document.getElementById('welcomeResumePanel');
         const grid = document.getElementById('welcomePathGrid');
         const step2 = document.getElementById('welcomeStep2');
+        if (chooser) chooser.hidden = true;
+        if (panel) panel.hidden = false;
         if (grid) grid.style.display = 'none';
         if (step2) {
           step2.style.display = 'block';
@@ -1262,9 +1387,11 @@
     function reopenWelcome() {
       closeProfileModal();
       localStorage.removeItem('1ststep_welcomed');
+      _showWelcomeProductChooser();
       document.getElementById('welcomeOverlay').classList.add('visible');
       document.body.style.overflow = 'hidden';
       _setChatWidgetVisible(false);
+      setTimeout(() => _setChatWidgetVisible(false), 1200);
     }
 
 
@@ -1530,7 +1657,7 @@ ${resume.slice(0, 3000)}
           for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             const content = await page.getTextContent();
-            pages.push(content.items.map(item => item.str).join(' '));
+            pages.push(collapseLetterSpacing(pdfItemsToText(content.items)));
           }
           text = pages.join('\n\n');
 
@@ -2612,8 +2739,23 @@ ${resume.slice(0, 3000)}
     window.addEventListener('message', (event) => {
       if (event.origin !== window.location.origin) return;
       if (!event.data || event.data.type !== '1STSTEP_JOB_CAPTURE') return;
-      const { jobData, resumeText, mode } = event.data;
+      const { jobData, resumeText, mode, captureId } = event.data;
       if (!jobData) return;
+
+      // Exact capture identity: only accept the job this page was opened for.
+      // A capture with no id, or one that does not match the URL, is rejected
+      // outright rather than being treated as 'probably ours'.
+      const _urlCaptureId = new URLSearchParams(window.location.search).get('jobCaptureId') || '';
+      if (!_urlCaptureId || !captureId || captureId !== _urlCaptureId) return;
+
+      // Re-delivery of a capture already applied is acknowledged again but must
+      // not redo the work below.
+      let _alreadyApplied = false;
+      try { _alreadyApplied = sessionStorage.getItem('1ststep_capture_applied') === captureId; } catch (_) {}
+      if (_alreadyApplied && captureId) {
+        try { window.postMessage({ type: '1STSTEP_JOB_CAPTURE_ACK', version: '1', captureId }, window.location.origin); } catch (_) {}
+        return;
+      }
 
       window._extensionDetected = true;
       trackProductEvent('extension_job_captured', {
@@ -2626,9 +2768,18 @@ ${resume.slice(0, 3000)}
       if (_mobilePromo) _mobilePromo.style.display = 'none';
 
       // Persist for reload survival (e.g. OAuth login redirect clears the page)
+      let _capturePersisted = false;
       try {
         sessionStorage.setItem('1ststep_pending_capture', JSON.stringify({ jobData, ts: Date.now() }));
+        if (captureId) sessionStorage.setItem('1ststep_capture_applied', captureId);
+        _capturePersisted = true;
       } catch (_) {}
+
+      // Acknowledge only after the capture is saved. Without this the browser
+      // helper keeps the job rather than dropping it.
+      if (_capturePersisted && captureId) {
+        try { window.postMessage({ type: '1STSTEP_JOB_CAPTURE_ACK', version: '1', captureId }, window.location.origin); } catch (_) {}
+      }
 
       // If the extension delivered a resume and none is loaded yet, load it now
       // so auto-tailor can fire without requiring the user to re-upload
@@ -2809,34 +2960,14 @@ ${resume.slice(0, 3000)}
         tierToken: _subCache?.tierToken || '',
       };
 
-      if (isLocal) {
-        // Running locally - use the direct Anthropic API with a local dev key.
-        // Set your key via: triple-click the logo -> Dev Controls.
-        if (!apiKey || !apiKey.startsWith('sk-ant-')) {
-          throw new Error('Running locally: open Dev Controls (triple-click the logo) and paste your API key to test the app before deploying.');
-        }
-        const resp = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true',
-          },
-          body: JSON.stringify(body)
-        });
-        if (!resp.ok) {
-          const err = await resp.json().catch(() => ({}));
-          throw new Error(err.error?.message || `API error ${resp.status}`);
-        }
-        const data = await resp.json();
-        return data.content[0].text;
+      if (isLocal && window.location.protocol === 'file:') {
+        throw new Error('AI requests require the local server so provider keys remain server-side.');
       }
 
       // Deployed on Vercel - use the server-side proxy (API key stays secret).
       const resp = await fetch('/api/claude', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(_subCache?.tierToken ? { Authorization: `Bearer ${_subCache.tierToken}` } : {}) },
         body: JSON.stringify(body)
       });
       if (!resp.ok) {
@@ -3683,6 +3814,21 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
           positioningBriefUsedAt: usingPositioningBrief ? (_currentPositioningUsedAt || new Date().toISOString()) : null,
         };
         saveTailorEntry(tailorEntry);
+        if (window._conciergeTailorRequest?.roleId) {
+          const packageResult = {
+            roleId: window._conciergeTailorRequest.roleId,
+            historyId: tailorEntry.id,
+            documentVersion: `${tailorEntry.id}-v1`,
+            resumeText: atsClean,
+            coverLetterText: coverLetter || '',
+            atsIssues,
+            generatedAt: tailorEntry.tailoredAt,
+          };
+          localStorage.setItem('1ststep_concierge_package_result_v1', JSON.stringify(packageResult));
+          sessionStorage.removeItem('1ststep_concierge_tailor_request_v1');
+          window._conciergeTailorRequest = null;
+          showToast('Concierge package draft generated. Return to Application records for document QA.', 'success');
+        }
         if (usingPositioningBrief) clearActivePositioningContext('consumed');
         trackProductEvent('tailor_completed', {
           mode: outputMode,
@@ -3705,20 +3851,20 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
             const stage = tailorCount === 1 ? 'active_user' : 'power_user';
             fetch('/api/ghl-stage', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: authenticatedJsonHeaders(),
               body: JSON.stringify({ email: _profile.email, stage }),
             }).catch(() => { });
             // Legacy event track (keep for any existing automations)
             if (tailorCount === 1) {
               fetch('/api/track-event', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authenticatedJsonHeaders(),
                 body: JSON.stringify({ email: _profile.email, event: 'first_tailor' }),
               }).catch(() => { });
             } else if (tailorCount === 5) {
               fetch('/api/track-event', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authenticatedJsonHeaders(),
                 body: JSON.stringify({ email: _profile.email, event: 'power_user' }),
               }).catch(() => { });
             }
@@ -3765,7 +3911,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
           document.getElementById('tierErrorPassBtn')?.addEventListener('click', openUpgradeModal);
           setTimeout(() => openUpgradeModal(), 400);
         } else {
-          document.getElementById('resumeOutput').innerHTML = `<div class="error-box"><strong>Error:</strong> ${err.message}<br><br>Common fixes:<br>- Check your internet connection and try again<br>- If the error says "529", Anthropic is temporarily overloaded - wait 30 seconds<br>- Contact support at evan@1ststep.ai if the problem persists</div>`;
+          document.getElementById('resumeOutput').innerHTML = `<div class="error-box"><strong>Error:</strong> ${escHtml(err.message)}<br><br>Common fixes:<br>- Check your internet connection and try again<br>- If the error says "529", Anthropic is temporarily overloaded - wait 30 seconds<br>- Contact support at evan@1ststep.ai if the problem persists</div>`;
         }
       } finally {
         btn.disabled = false;
@@ -4592,7 +4738,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
           for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             const content = await page.getTextContent();
-            pages.push(content.items.map(item => item.str).join(' '));
+            pages.push(collapseLetterSpacing(pdfItemsToText(content.items)));
           }
           text = pages.join('\n\n');
 
@@ -5062,11 +5208,7 @@ ${_resumeSlice}
       try {
         const res = await fetch(nominatimUrl, { headers: { 'Accept-Language': 'en-US,en' } });
         data = await res.json();
-      } catch {
-        // Fallback: try via CORS proxy
-        const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(nominatimUrl)}`);
-        data = await res.json();
-      }
+      } catch { throw new Error('Location lookup is temporarily unavailable.'); }
       if (!data || !data.length) throw new Error(`Could not find "${query}" - try a nearby city name or ZIP code`);
       return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), displayName: data[0].display_name };
     }
@@ -5185,20 +5327,14 @@ ${_resumeSlice}
       }
 
       let res;
-      if (IS_LOCAL_DEV && adzunaAppKey) {
-        // Local dev: call RapidAPI directly using the dev key
-        res = await fetch(`https://jsearch.p.rapidapi.com/search?${params}`, {
-          headers: {
-            'X-RapidAPI-Key': adzunaAppKey,
-            'X-RapidAPI-Host': 'jsearch.p.rapidapi.com',
-          }
-        });
-      } else if (IS_LOCAL_DEV && !adzunaAppKey) {
-        throw new Error('Set a RapidAPI dev key in Dev Controls to test job search locally.');
-      } else {
-        // Deployed: go through Vercel proxy (key is server-side)
-        res = await fetch(`/api/jobs?${params}`);
+      if (IS_LOCAL_DEV && window.location.protocol === 'file:') {
+        throw new Error('Job search requires the local server so provider keys remain server-side.');
       }
+      const subCache = JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}');
+      res = await fetch(`/api/jobs?${params}`, {
+        headers: subCache.tierToken ? { Authorization: `Bearer ${subCache.tierToken}` } : {},
+        signal: AbortSignal.timeout(12_000),
+      });
 
       if (res.status === 403 || res.status === 401) {
         throw new Error('Job search configuration error - contact support at evan@1ststep.ai');
@@ -5231,7 +5367,7 @@ ${_resumeSlice}
       const primaryIsIndeed = /indeed\.com/i.test(primaryLink);
 
       return {
-        id: job.job_id || String(Math.random()),
+        id: job.job_id || `job_${globalThis.crypto.randomUUID()}`,
         title: job.job_title || 'Position',
         company: { display_name: job.employer_name || '' },
         location: { display_name: locationStr },
@@ -5320,9 +5456,11 @@ ${_resumeSlice}
     }
 
     // -- AI Salary Estimation --------------------------------------------------
+    const salaryEstimateCache = Object.create(null);
+
     async function estimateMissingSalaries(jobs) {
       // Filter jobs that are both missing salary AND not already cached
-      const _salCache = (() => { try { return JSON.parse(localStorage.getItem('salaryCache') || '{}'); } catch { return {}; } })();
+      const _salCache = salaryEstimateCache;
 
       // Apply cached estimates immediately (no API call needed)
       jobs.forEach(j => {
@@ -5380,10 +5518,9 @@ ${jobList}`,
             el.innerHTML = `~${escHtml(est.range)} <span style="font-size:10px;opacity:0.7">(est.)</span>`;
           }
         });
-        // Persist updated cache (cap to 500 entries to avoid bloat)
+        // Keep estimates memory-only; compensation data must not be persisted in clear text.
         const cacheKeys = Object.keys(_salCache);
         if (cacheKeys.length > 500) cacheKeys.slice(0, cacheKeys.length - 500).forEach(k => delete _salCache[k]);
-        try { localStorage.setItem('salaryCache', JSON.stringify(_salCache)); } catch { }
       } catch { /* silent - salary estimate is best-effort */ }
     }
 
@@ -5410,7 +5547,7 @@ ${jobList}`,
       const salaryDisplay = salaryStr
         ? `<div class="job-salary-badge">${salaryStr}</div>`
         : salaryEst
-          ? `<div class="job-salary-badge estimated">~${salaryEst} <span style="font-size:10px;opacity:0.7">(est.)</span></div>`
+          ? `<div class="job-salary-badge estimated">~${escHtml(salaryEst)} <span style="font-size:10px;opacity:0.7">(est.)</span></div>`
           : `<div class="job-salary-badge unknown" id="sal-${jobId}"> Estimating...</div>`;
 
       return `
@@ -5499,10 +5636,27 @@ ${desc}`;
     // -- APPLICATION TRACKER ----------------------------------------------------
     // ===========================================================================
 
-    let applications = JSON.parse(localStorage.getItem('1ststep_applications') || '[]');
+    function applicationForBrowserStorage(app) {
+      return {
+        id: app.id,
+        jobId: app.jobId,
+        title: app.title,
+        company: app.company,
+        location: app.location,
+        appliedDate: app.appliedDate,
+        followUpDate: app.followUpDate,
+        status: app.status,
+        jobUrl: app.jobUrl,
+        resumeSource: app.resumeSource,
+        resumeTailoredFor: app.resumeTailoredFor,
+        tailorHistoryId: app.tailorHistoryId,
+      };
+    }
+
+    let applications = JSON.parse(localStorage.getItem('1ststep_applications') || '[]').map(applicationForBrowserStorage);
 
     function saveApplications() {
-      localStorage.setItem('1ststep_applications', JSON.stringify(applications));
+      localStorage.setItem('1ststep_applications', JSON.stringify(applications.map(applicationForBrowserStorage)));
       updateTrackerBadge();
       syncExtensionStats(true);
     }
@@ -5557,7 +5711,7 @@ ${desc}`;
         if (!email) return;
         fetch('/api/track-event', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authenticatedJsonHeaders(),
           body: JSON.stringify({ email, event, ...extra }),
         }).catch(() => { });
       } catch (e) { }
@@ -5775,6 +5929,7 @@ ${desc}`;
 
       list.innerHTML = applications.map(app => {
         const status = getStatusInfo(app.status);
+        const appId = String(app.id || '').replace(/[^A-Za-z0-9:_-]/g, '');
         const followUp = app.followUpDate;
         let followUpCls = 'followup-badge';
         let followUpLabel = followUp ? `Follow up: ${followUp}` : 'No follow-up set';
@@ -5784,7 +5939,7 @@ ${desc}`;
         }
 
         const statusOpts = STATUS_OPTIONS.map(s =>
-          `<option value="${s.value}" ${s.value === app.status ? 'selected' : ''}>${s.label}</option>`
+          `<option value="${escHtml(s.value)}" ${s.value === app.status ? 'selected' : ''}>${escHtml(s.label)}</option>`
         ).join('');
 
         return `
@@ -5795,7 +5950,7 @@ ${desc}`;
         <div class="app-row-meta">
           ${app.location ? `<span class="job-meta-pill"> ${escHtml(app.location)}</span>` : ''}
           ${app.salary ? `<span class="job-meta-pill" style="color:#6EE7B7;border-color:rgba(14,159,110,0.3);background:rgba(14,159,110,0.07)"> ${escHtml(app.salary)}</span>` : ''}
-          <span class="job-meta-pill"> ${app.appliedDate}</span>
+          <span class="job-meta-pill"> ${escHtml(app.appliedDate || '')}</span>
           ${app.contactName ? `<span class="job-meta-pill"> ${escHtml(app.contactName)}${app.contactEmail ? ` - <a href="mailto:${escHtml(app.contactEmail)}" style="color:var(--blue)">${escHtml(app.contactEmail)}</a>` : ''}</span>` : ''}
           ${app.notes ? `<span class="job-meta-pill" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(app.notes)}"> ${escHtml(app.notes)}</span>` : ''}
         </div>
@@ -5811,19 +5966,19 @@ ${desc}`;
         ${app.status === 'tailored' ? `
         <div class="tailored-nudge">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Apply today or follow up by ${app.followUpDate || 'soon'}
+          Apply today or follow up by ${escHtml(app.followUpDate || 'soon')}
           ${app.tailorHistoryId ? `<button onclick="switchMode('tailored')" style="margin-left:6px;background:none;border:none;color:var(--brand);font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;padding:0">View resume -></button>` : ''}
         </div>` : ''}
       </div>
       <div class="app-row-right">
-        <select class="status-badge ${status.cls}" onchange="updateStatus('${app.id}', this.value)" style="border:none;cursor:pointer;font-family:'Inter',sans-serif;font-weight:700">
+        <select class="status-badge ${status.cls}" onchange="updateStatus('${appId}', this.value)" style="border:none;cursor:pointer;font-family:'Inter',sans-serif;font-weight:700">
           ${statusOpts}
         </select>
-        <span class="${followUpCls}">${followUpLabel}</span>
+        <span class="${followUpCls}">${escHtml(followUpLabel)}</span>
         <div style="display:flex;gap:4px;margin-top:2px">
           ${app.jobUrl ? `<a class="btn-view-job" href="${escHtml(app.jobUrl)}" target="_blank" rel="noopener" style="font-size:11px;padding:3px 8px">View job</a>` : ''}
-          <button onclick="editApplication('${app.id}')" class="btn-view-job" style="font-size:11px;padding:3px 8px">Edit</button>
-          <button onclick="removeApplication('${app.id}')" class="btn-view-job" style="font-size:11px;padding:3px 8px;color:#FCA5A5" aria-label="Remove application">Remove</button>
+          <button onclick="editApplication('${appId}')" class="btn-view-job" style="font-size:11px;padding:3px 8px">Edit</button>
+          <button onclick="removeApplication('${appId}')" class="btn-view-job" style="font-size:11px;padding:3px 8px;color:#FCA5A5" aria-label="Remove application">Remove</button>
         </div>
       </div>
     </div>`;
@@ -6238,7 +6393,7 @@ ${desc}`;
             ${locked.slice(0, 2).map(entry => {
               const date = new Date(entry.appliedAt || entry.createdAt || entry.tailoredAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
               const label = entry.company ? `${entry.company} - ${entry.jobTitle || 'Untitled Role'}` : (entry.jobTitle || 'Untitled Role');
-              return `<div class="tailor-card vault-card-locked"><div class="tailor-card-info"><div class="tailor-card-title">${label}</div><div class="tailor-card-meta">${date}</div></div></div>`;
+              return `<div class="tailor-card vault-card-locked"><div class="tailor-card-info"><div class="tailor-card-title">${escHtml(label)}</div><div class="tailor-card-meta">${escHtml(date)}</div></div></div>`;
             }).join('')}
           </div>
           <div class="vault-lock-overlay">
@@ -6574,7 +6729,7 @@ ${desc}`;
       // Fire-and-forget - never block the user flow
       fetch('/api/notify-signup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authenticatedJsonHeaders(),
         body: JSON.stringify({
           firstName: p.firstName,
           lastName: p.lastName,
@@ -7203,14 +7358,14 @@ ${job.jd.slice(0, 1000)}
           card.style.cssText = 'background:var(--input-bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px';
           card.innerHTML = `
         <div>
-          <div style="font-size:13px;font-weight:600;color:var(--fg)">${kw.job_title || job.title}</div>
+          <div style="font-size:13px;font-weight:600;color:var(--fg)">${escHtml(kw.job_title || job.title)}</div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px">Resume tailored + saved to history</div>
         </div>
         <div style="display:flex;gap:8px">
           <button onclick="copyText('bulkResult_${entry.id}')" style="padding:6px 12px;background:none;border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--muted);cursor:pointer">Copy</button>
           <button onclick="downloadBulkResult('${entry.id}')" style="padding:6px 12px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:6px;font-size:12px;color:#a5b4fc;cursor:pointer;font-weight:600">Download</button>
         </div>
-        <div id="bulkResult_${entry.id}" style="display:none">${tailored.replace(/</g, '&lt;')}</div>
+        <div id="bulkResult_${entry.id}" style="display:none">${escHtml(tailoredClean)}</div>
       `;
           document.getElementById('bulkResults').appendChild(card);
 
@@ -8080,7 +8235,7 @@ ${resume.slice(0, 4000)}`,
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const content = await page.getTextContent();
-          pages.push(content.items.map(item => item.str).join(' '));
+          pages.push(collapseLetterSpacing(pdfItemsToText(content.items)));
         }
         const rawText = pages.join('\n\n').trim();
         if (!rawText) throw new Error('No text found in PDF - make sure you saved the LinkedIn PDF correctly');
@@ -9147,5 +9302,3 @@ ${_PRINT_BTN}
       const saved = localStorage.getItem('1ststep_theme') || 'dark';
       applyTheme(saved);
     })();
-
-

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-01T20:05:00Z",
+  "sourceCommit": "77d2086734b8baa7f48760067b168dc522c5bc58",
+  "scope": "repository-static-analysis-only; bound by canonical and source migration digests",
+  "environment": {
+    "isolatedTargetProven": false,
+    "maskedProjectRef": null,
+    "productionExcluded": false,
+    "status": "Human Action Required",
+    "reason": "Supabase CLI 2.116.0 is available and created the canonical migration; Docker, psql, local Supabase configuration, linked project, and a proven non-production project remain unavailable."
+  },
+  "migrationEvidence": {
+    "inventory": "migration-inventory.json",
+    "repositoryCount": 3,
+    "canonicalMigration": "supabase/migrations/20260901195545_job_agent_canonical_baseline.sql",
+    "canonicalSha256": "3c61cb457d58180353ba19aa3669408c80f8f7bb349856d02d549ed1acf5c17a",
+    "duplicatePrefixes": 0,
+    "destructiveStatements": 0,
+    "localHistory": "Unknown",
+    "stagingHistory": "Unknown",
+    "schemaDrift": "Unknown"
+  },
+  "surfaceEvidence": {
+    "inventory": "database-surface-map.json",
+    "tables": 20,
+    "sourceRlsEnabled": 20,
+    "sourceForceRlsEnabled": 20,
+    "views": 0,
+    "materializedViews": 0,
+    "functions": 0,
+    "triggers": 0,
+    "storagePolicies": 0
+  },
+  "isolationEvidence": {
+    "explicitAnonRevokeInSource": true,
+    "explicitAuthenticatedRevokeInSource": true,
+    "serviceRoleBrowserExposureFound": false,
+    "operationSpecificPoliciesInSource": true,
+    "allPoliciesWithoutExplicitRole": 0,
+    "tablesWithoutPolicyInSource": [],
+    "crossTenantReferenceRisks": 0,
+    "pgtapSuite": "supabase/tests/job_agent_rls.test.sql",
+    "pgtapExecution": "NOT_RUN",
+    "pgtapReason": "No proven isolated target or Docker/Postgres runtime."
+  },
+  "advisorEvidence": {
+    "securityAdvisor": "NOT_RUN",
+    "performanceAdvisor": "NOT_RUN",
+    "reason": "No proven isolated target."
+  },
+  "recoveryEvidence": {
+    "backupSchedule": "Unknown",
+    "retention": "Unknown",
+    "pitrEnabled": "Unknown",
+    "restoreTarget": null,
+    "restorePerformed": false,
+    "contentFreeReconciliation": "NOT_RUN",
+    "measuredRpo": "Unknown",
+    "measuredRto": "Unknown",
+    "reason": "A restore requires an isolated target, operator access, and separate authorization for any billable PITR or restore resource."
+  },
+  "status": "Critical",
+  "productionApproval": "BLOCKED",
+  "evidenceFreshness": "Static evidence is invalidated by any migration or database-access change; live evidence has not been established."
+}

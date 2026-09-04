@@ -2,7 +2,7 @@
  * utils/filler.js
  * Generic form filling utility
  * Handles input, select, textarea, and file fields
- * Supports Shadow DOM piercing for complex ATS (Workday, etc.)
+ * Supports Shadow DOM piercing for ATS that render fields in shadow roots
  */
 
 /**
@@ -116,7 +116,7 @@ export function fillFormFields(formFieldsMap, resumeData) {
 
 /**
  * Pierce Shadow DOM to find elements
- * Used for Workday and other ATS with Shadow DOM
+ * Used by supported ATS forms that render fields inside shadow roots
  */
 export function querySelectorDeep(selector) {
   // Try normal DOM first

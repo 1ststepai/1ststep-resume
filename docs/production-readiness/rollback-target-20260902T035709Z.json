@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-09-02T03:57:09.000Z",
+  "contentFree": true,
+  "containsCandidateValues": false,
+  "performsWrites": false,
+  "deploymentId": "dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM",
+  "project": "1ststep-resume",
+  "target": "production",
+  "readyState": "READY",
+  "productionHost": "app.1ststep.ai",
+  "ownsProductionAlias": true,
+  "mode": "pre-rollback-target-verification",
+  "rollbackExecuted": false,
+  "rollbackAuthorized": false
+}

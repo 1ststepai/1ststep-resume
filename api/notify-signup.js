@@ -15,6 +15,8 @@
  */
 
 export const maxDuration = 10;
+import { applyApiHeaders, authenticateApiRequest, hasJsonContentType, isOriginAllowed, requestIp } from '../lib/api-security.js';
+import { enforceDurableRateLimit, sendRateLimitResult } from '../lib/durable-rate-limit.js';
 
 // ── HTML escape helper (EMAIL-01: prevents XSS in admin email) ───────────────
 function escHtml(s) {
@@ -96,34 +98,44 @@ function corsHeaders(req) {
 }
 
 export default async function handler(req, res) {
-  const headers = corsHeaders(req);
-  Object.entries(headers).forEach(([k, v]) => res.setHeader(k, v));
-
+  applyApiHeaders(req, res);
   if (req.method === 'OPTIONS') {
+    if (!isOriginAllowed(req)) return res.status(403).end();
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     return res.status(204).end();
   }
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+  if (!hasJsonContentType(req)) return res.status(415).json({ error: 'Content-Type must be application/json.' });
+  const auth = await authenticateApiRequest(req);
+  if (!auth.ok) return res.status(auth.status).json({ error: 'Request not authorized.', code: auth.code });
 
   // Rate limit — prevents CRM/inbox spam
-  const ip = (req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || '').split(',').pop().trim()
-           || req.socket?.remoteAddress || 'unknown';
+  const ip = requestIp(req);
+  const durableLimit = await enforceDurableRateLimit(req, {
+    scope: 'notify-signup', subject: auth.subject, ip,
+    ipRule: { limit: 5, window: '1 h' },
+    accountRule: { limit: 3, window: '1 d' },
+    globalRule: { limit: 2_000, window: '1 d' },
+  });
+  if (!durableLimit.ok) return sendRateLimitResult(res, durableLimit, 'Too many signup requests. Please try again later.');
   if (isSignupRateLimited(ip)) {
     return res.status(429).json({ error: 'Too many requests' });
   }
 
   const { firstName, lastName, email, referral = {}, referralCode: bodyReferralCode = '' } = req.body || {};
 
-  if (!email || !email.includes('@')) {
+  if (!email || String(email).trim().toLowerCase() !== auth.subject) {
     return res.status(400).json({ error: 'Valid email required' });
   }
 
   // Silently reject disposable email domains — don't tell the client why
   // so bots can't iterate around the blocklist.
   if (isDisposableEmail(email)) {
-    console.log(`Disposable email blocked: ${email}`);
+    console.log('Disposable signup email blocked.');
     return res.status(200).json({ ok: true, results: { ghl: 'skipped', email: 'skipped' } });
   }
 
@@ -165,16 +177,16 @@ export default async function handler(req, res) {
         });
         const data = await r.json();
         if (data.contact?.id) {
-          console.log(`✅ GHL contact captured (attempt ${attempt}): ${data.contact.id} (${email})`);
+          console.log(`GHL signup contact captured on attempt ${attempt}.`);
           results.ghl = 'ok';
           break;
         } else {
-          console.error(`GHL upsert failed (attempt ${attempt}):`, JSON.stringify(data));
+          console.error(JSON.stringify({ type: 'ghl-signup-upsert-failed', status: r.status, attempt }));
           results.ghl = 'error';
           if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
         }
       } catch (err) {
-        console.error(`GHL upsert error (attempt ${attempt}):`, err.message);
+        console.error(JSON.stringify({ type: 'ghl-signup-upsert-error', attempt, name: err?.name || 'unknown' }));
         results.ghl = 'error';
         if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
       }
@@ -219,14 +231,14 @@ export default async function handler(req, res) {
       });
       const data = await r.json();
       if (r.ok) {
-        console.log(`✅ Admin email sent via Resend: ${data.id}`);
+        console.log('Signup notification email sent.');
         results.email = 'sent';
       } else {
-        console.error('Resend error:', JSON.stringify(data));
+        console.error(JSON.stringify({ type: 'signup-notification-failed', status: r.status }));
         results.email = 'error';
       }
     } catch (err) {
-      console.error('Resend send failed:', err.message);
+      console.error(JSON.stringify({ type: 'signup-notification-error', name: err?.name || 'unknown' }));
       results.email = 'error';
     }
   } else {

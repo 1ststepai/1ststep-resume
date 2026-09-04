@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-01T21:15:17.720Z",
+  "origin": "https://app.1ststep.ai",
+  "deployment": {
+    "id": "dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM",
+    "url": "https://1ststep-resume-dxekx8py8-1ststep.vercel.app",
+    "target": "production",
+    "readyState": "READY",
+    "createdAtEpochMs": 1788260846749,
+    "aliases": [
+      "https://app.1ststep.ai",
+      "https://1ststep-resume.vercel.app",
+      "https://1ststep-resume-1ststep.vercel.app"
+    ]
+  },
+  "contentFree": true,
+  "containsCandidateValues": false,
+  "performsWrites": false,
+  "boundary": {
+    "ok": true,
+    "concierge": 200,
+    "conciergeHtml": 200,
+    "jobAgentReadinessUnauthenticated": 401,
+    "jobAgentOperationsUnauthenticated": 401,
+    "conciergeStateUnauthenticated": 401,
+    "strictConciergeCspPresent": true
+  },
+  "publicRoutes": {
+    "healthLive": 404,
+    "healthReady": 404,
+    "appConfig": 200
+  },
+  "assetParity": {
+    "ok": false,
+    "candidateRuntimeCommit": "1f6ed51802c479a429c19d92fcd813448ea047a3",
+    "mismatches": [
+      "/concierge",
+      "/concierge.html",
+      "/concierge.js",
+      "/persistent-concierge.css"
+    ]
+  },
+  "conclusion": "Sampled unauthenticated authorization boundaries pass, but the exact Production deployment is not the candidate artifact and lacks the candidate public health routes.",
+  "productionStateChanged": false
+}

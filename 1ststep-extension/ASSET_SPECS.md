@@ -83,7 +83,7 @@ Chrome Web Store shows these in the listing carousel. Ship at least 3; 5 is idea
 ### Screenshot 3 — "Works on every major ATS"
 **Composition:**
 - Centered headline: "Works where you apply"
-- Grid of ATS logos: LinkedIn, Indeed, Greenhouse, Lever, Workday, iCIMS, Ashby, Jobvite, SmartRecruiters
+- Greenhouse only. The controlled release supports no other ATS; do not show logos for unsupported platforms.
 - Logos in grayscale or monochrome on brand background strip
 - Small footer: "— and more every month"
 

@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "source": "repository-static-analysis-only",
+  "environment": {
+    "target": "unavailable",
+    "classification": "Human Action Required; no staging/local target identified",
+    "maskedProjectRef": null,
+    "productionExcluded": false,
+    "supabaseCliAvailable": null,
+    "dockerAvailable": null,
+    "psqlAvailable": null,
+    "postgresVersion": "Unknown",
+    "supabaseCliVersion": "Not evaluated by deterministic inventory"
+  },
+  "canonicalMigration": {
+    "file": "supabase/migrations/20260901195545_job_agent_canonical_baseline.sql",
+    "sha256": "3c61cb457d58180353ba19aa3669408c80f8f7bb349856d02d549ed1acf5c17a",
+    "bytes": 22954,
+    "reconciledSourceFiles": [
+      "001_job_agent_authoritative_store.sql",
+      "002_job_agent_continuous_improvement.sql",
+      "003_job_agent_resilience.sql"
+    ]
+  },
+  "repositoryMigrations": [
+    {
+      "order": 1,
+      "file": "001_job_agent_authoritative_store.sql",
+      "sha256": "a3fc1a5a671f4860593f1a8c30636bea1ac278a642961989f1038f272a0024e2",
+      "bytes": 9418,
+      "prefix": "001",
+      "supabaseTimestampFormat": false,
+      "destructiveStatements": [],
+      "privilegeStatements": [
+        "revoke all on all tables in schema public from public;",
+        "revoke all on all sequences in schema public from public;",
+        "revoke all on all tables in schema public from anon;",
+        "revoke all on all tables in schema public from authenticated;",
+        "revoke all on all sequences in schema public from anon;",
+        "revoke all on all sequences in schema public from authenticated;",
+        "grant usage on schema public to job_agent_backend;",
+        "grant select, insert, update, delete on app_tenants, app_identities, applicant_profiles, applicant_facts, discovered_jobs, applications, document_versions, human_actions, audit_events to job_agent_backend;",
+        "grant usage, select on all sequences in schema public to job_agent_backend;",
+        "revoke all on tables from anon;",
+        "revoke all on tables from authenticated;",
+        "revoke all on sequences from anon;",
+        "revoke all on sequences from authenticated;"
+      ],
+      "ownershipStatements": []
+    },
+    {
+      "order": 2,
+      "file": "002_job_agent_continuous_improvement.sql",
+      "sha256": "869289e31c561fa5b6c0d745615d7185a56554e69664dc3fc53e261a62934ec5",
+      "bytes": 8719,
+      "prefix": "002",
+      "supabaseTimestampFormat": false,
+      "destructiveStatements": [],
+      "privilegeStatements": [
+        "revoke all on candidate_preferences, fact_corrections, job_sources, source_performance, learning_signals, learning_proposals, evaluation_runs, policy_versions from public;",
+        "revoke all on candidate_preferences, fact_corrections, job_sources, source_performance, learning_signals, learning_proposals, evaluation_runs, policy_versions from anon;",
+        "revoke all on candidate_preferences, fact_corrections, job_sources, source_performance, learning_signals, learning_proposals, evaluation_runs, policy_versions from authenticated;",
+        "grant select, insert, update, delete on candidate_preferences, fact_corrections, job_sources, source_performance, learning_signals, learning_proposals, evaluation_runs, policy_versions to job_agent_backend;"
+      ],
+      "ownershipStatements": []
+    },
+    {
+      "order": 3,
+      "file": "003_job_agent_resilience.sql",
+      "sha256": "00eda238101c958534cac2c8e88de22fb175597f9250968f82f4ada24a5929bd",
+      "bytes": 4189,
+      "prefix": "003",
+      "supabaseTimestampFormat": false,
+      "destructiveStatements": [],
+      "privilegeStatements": [
+        "revoke all on workflow_operations, workflow_events, provider_circuit_states from public;",
+        "revoke all on workflow_operations, workflow_events, provider_circuit_states from anon;",
+        "revoke all on workflow_operations, workflow_events, provider_circuit_states from authenticated;",
+        "grant select, insert, update, delete on workflow_operations, workflow_events, provider_circuit_states to job_agent_backend;"
+      ],
+      "ownershipStatements": []
+    }
+  ],
+  "localMigrationHistory": "Unavailable: no CLI/local stack/configuration",
+  "stagingMigrationHistory": "Unavailable: no proven non-production target",
+  "duplicatePrefixes": [],
+  "missingMigrations": "Unknown until local and staging histories are available",
+  "conflictingMigrations": [],
+  "modifiedHistoricalMigrations": "Unknown without an authoritative applied-history digest",
+  "schemaDrift": "Unknown until a proven non-production target can be inspected",
+  "executionPlan": [
+    "Obtain a disposable local Supabase stack or isolated staging project and prove it is not production.",
+    "Install the Supabase CLI through the approved operator process; capture supabase --version and relevant --help output.",
+    "Create canonical timestamped migrations only with supabase migration new; do not rename or apply the current 001-003 files directly.",
+    "Reconcile current SQL into CLI-generated migrations, preserving digests and recording any transformation.",
+    "Inspect local and staging migration lists before applying anything.",
+    "Apply only to the isolated target, inspect grants/RLS/surface, then run supabase test db and advisors.",
+    "Do not proceed to restore or paid PITR without separate explicit authorization."
+  ]
+}

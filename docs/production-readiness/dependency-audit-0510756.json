@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-02T01:12:25.295Z",
+  "sourceCommit": "0510756bed9537de9bba87eb1566150268d57408",
+  "contentFree": true,
+  "command": "npm audit --omit=dev --audit-level=high",
+  "exitCode": 0,
+  "dependencies": {
+    "production": 167,
+    "development": 4,
+    "optional": 12,
+    "peer": 0,
+    "peerOptional": 0,
+    "total": 181
+  },
+  "vulnerabilities": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "releaseGate": {
+    "exitCode": 0,
+    "head": "0510756bed9537de9bba87eb1566150268d57408",
+    "runtimeSha256": "0e047c3a79b2eab7f341fc1bb6406e75016acfb2658bde94adfd09035f84e3a8",
+    "runtimeParityWithProtectedPreview": true
+  },
+  "remoteCiExecution": "unknown",
+  "productionChanged": false
+}

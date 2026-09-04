@@ -17,7 +17,7 @@ Three core files:
 
 Additional JS loaded at bottom of `index.html`:
 - `resume-builder.js` — step-by-step wizard modal, defines `openResumeBuilder()`
-- `workday.js` — Workday ATS auto-filler
+- `workday.js` — removed 2026-09-04 (Workday auto-filler; path retired)
 
 ---
 

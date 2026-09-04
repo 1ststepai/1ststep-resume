@@ -1,0 +1,477 @@
+{
+  "schemaVersion": 1,
+  "source": "repository-static-analysis-only",
+  "schemas": [
+    "public"
+  ],
+  "accessDefaults": {
+    "anonGrants": "Explicitly revoked in source; target grants remain unknown until inspection",
+    "authenticatedGrants": "Explicitly revoked in source; target grants remain unknown until inspection",
+    "serviceRoleGrants": "Unknown; service_role would bypass RLS and is not an intended browser credential",
+    "dataApiExposure": "Unknown until target Data API configuration is inspected"
+  },
+  "tables": [
+    {
+      "schema": "public",
+      "name": "app_tenants",
+      "source": "001_job_agent_authoritative_store.sql",
+      "sensitive": true,
+      "tenantColumn": true,
+      "foreignKeys": [],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies using app.tenant_id"
+    },
+    {
+      "schema": "public",
+      "name": "app_identities",
+      "source": "001_job_agent_authoritative_store.sql",
+      "sensitive": true,
+      "tenantColumn": true,
+      "foreignKeys": [
+        {
+          "column": "tenant_id",
+          "referencesTable": "app_tenants",
+          "referencesColumn": "tenant_id",
+          "tenantScoped": true
+        }
+      ],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies using app.tenant_id"
+    },
+    {
+      "schema": "public",
+      "name": "applicant_profiles",
+      "source": "001_job_agent_authoritative_store.sql",
+      "sensitive": true,
+      "tenantColumn": true,
+      "foreignKeys": [
+        {
+          "column": "tenant_id",
+          "referencesTable": "app_tenants",
+          "referencesColumn": "tenant_id",
+          "tenantScoped": true
+        }
+      ],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies using app.tenant_id"
+    },
+    {
+      "schema": "public",
+      "name": "applicant_facts",
+      "source": "001_job_agent_authoritative_store.sql",
+      "sensitive": true,
+      "tenantColumn": true,
+      "foreignKeys": [
+        {
+          "column": "tenant_id",
+          "referencesTable": "app_tenants",
+          "referencesColumn": "tenant_id",
+          "tenantScoped": true
+        }
+      ],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies using app.tenant_id"
+    },
+    {
+      "schema": "public",
+      "name": "discovered_jobs",
+      "source": "001_job_agent_authoritative_store.sql",
+      "sensitive": true,
+      "tenantColumn": true,
+      "foreignKeys": [
+        {
+          "column": "tenant_id",
+          "referencesTable": "app_tenants",
+          "referencesColumn": "tenant_id",
+          "tenantScoped": true
+        }
+      ],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies using app.tenant_id"
+    },
+    {
+      "schema": "public",
+      "name": "applications",
+      "source": "001_job_agent_authoritative_store.sql",
+      "sensitive": true,
+      "tenantColumn": true,
+      "foreignKeys": [
+        {
+          "column": "tenant_id",
+          "referencesTable": "app_tenants",
+          "referencesColumn": "tenant_id",
+          "tenantScoped": true
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "job_id"
+          ],
+          "referencesTable": "discovered_jobs",
+          "referencesColumns": [
+            "tenant_id",
+            "id"
+          ],
+          "tenantScoped": true
+        }
+      ],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies using app.tenant_id"
+    },
+    {
+      "schema": "public",
+      "name": "document_versions",
+      "source": "001_job_agent_authoritative_store.sql",
+      "sensitive": true,
+      "tenantColumn": true,
+      "foreignKeys": [
+        {
+          "column": "tenant_id",
+          "referencesTable": "app_tenants",
+          "referencesColumn": "tenant_id",
+          "tenantScoped": true
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "application_id"
+          ],
+          "referencesTable": "applications",
+          "referencesColumns": [
+            "tenant_id",
+            "id"
+          ],
+          "tenantScoped": true
+        }
+      ],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies using app.tenant_id"
+    },
+    {
+      "schema": "public",
+      "name": "human_actions",
+      "source": "001_job_agent_authoritative_store.sql",
+      "sensitive": true,
+      "tenantColumn": true,
+      "foreignKeys": [
+        {
+          "column": "tenant_id",
+          "referencesTable": "app_tenants",
+          "referencesColumn": "tenant_id",
+          "tenantScoped": true
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "application_id"
+          ],
+          "referencesTable": "applications",
+          "referencesColumns": [
+            "tenant_id",
+            "id"
+          ],
+          "tenantScoped": true
+        }
+      ],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies using app.tenant_id"
+    },
+    {
+      "schema": "public",
+      "name": "audit_events",
+      "source": "001_job_agent_authoritative_store.sql",
+      "sensitive": true,
+      "tenantColumn": true,
+      "foreignKeys": [
+        {
+          "column": "tenant_id",
+          "referencesTable": "app_tenants",
+          "referencesColumn": "tenant_id",
+          "tenantScoped": true
+        }
+      ],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies using app.tenant_id"
+    },
+    {
+      "schema": "public",
+      "name": "candidate_preferences",
+      "source": "002_job_agent_continuous_improvement.sql",
+      "sensitive": true,
+      "tenantColumn": true,
+      "foreignKeys": [
+        {
+          "column": "tenant_id",
+          "referencesTable": "app_tenants",
+          "referencesColumn": "tenant_id",
+          "tenantScoped": true
+        }
+      ],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies using app.tenant_id"
+    },
+    {
+      "schema": "public",
+      "name": "fact_corrections",
+      "source": "002_job_agent_continuous_improvement.sql",
+      "sensitive": true,
+      "tenantColumn": true,
+      "foreignKeys": [
+        {
+          "column": "tenant_id",
+          "referencesTable": "app_tenants",
+          "referencesColumn": "tenant_id",
+          "tenantScoped": true
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "preference_id"
+          ],
+          "referencesTable": "candidate_preferences",
+          "referencesColumns": [
+            "tenant_id",
+            "id"
+          ],
+          "tenantScoped": true
+        }
+      ],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies using app.tenant_id"
+    },
+    {
+      "schema": "public",
+      "name": "job_sources",
+      "source": "002_job_agent_continuous_improvement.sql",
+      "sensitive": true,
+      "tenantColumn": false,
+      "foreignKeys": [],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies; global source registry"
+    },
+    {
+      "schema": "public",
+      "name": "source_performance",
+      "source": "002_job_agent_continuous_improvement.sql",
+      "sensitive": true,
+      "tenantColumn": true,
+      "foreignKeys": [
+        {
+          "column": "tenant_id",
+          "referencesTable": "app_tenants",
+          "referencesColumn": "tenant_id",
+          "tenantScoped": true
+        },
+        {
+          "column": "source_id",
+          "referencesTable": "job_sources",
+          "referencesColumn": "id",
+          "tenantScoped": false
+        }
+      ],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies using app.tenant_id"
+    },
+    {
+      "schema": "public",
+      "name": "learning_signals",
+      "source": "002_job_agent_continuous_improvement.sql",
+      "sensitive": true,
+      "tenantColumn": true,
+      "foreignKeys": [
+        {
+          "column": "tenant_id",
+          "referencesTable": "app_tenants",
+          "referencesColumn": "tenant_id",
+          "tenantScoped": true
+        }
+      ],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies using app.tenant_id"
+    },
+    {
+      "schema": "public",
+      "name": "learning_proposals",
+      "source": "002_job_agent_continuous_improvement.sql",
+      "sensitive": true,
+      "tenantColumn": true,
+      "foreignKeys": [
+        {
+          "column": "tenant_id",
+          "referencesTable": "app_tenants",
+          "referencesColumn": "tenant_id",
+          "tenantScoped": true
+        }
+      ],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies using app.tenant_id"
+    },
+    {
+      "schema": "public",
+      "name": "evaluation_runs",
+      "source": "002_job_agent_continuous_improvement.sql",
+      "sensitive": true,
+      "tenantColumn": true,
+      "foreignKeys": [
+        {
+          "column": "tenant_id",
+          "referencesTable": "app_tenants",
+          "referencesColumn": "tenant_id",
+          "tenantScoped": true
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "proposal_id"
+          ],
+          "referencesTable": "learning_proposals",
+          "referencesColumns": [
+            "tenant_id",
+            "id"
+          ],
+          "tenantScoped": true
+        }
+      ],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies using app.tenant_id"
+    },
+    {
+      "schema": "public",
+      "name": "policy_versions",
+      "source": "002_job_agent_continuous_improvement.sql",
+      "sensitive": true,
+      "tenantColumn": true,
+      "foreignKeys": [
+        {
+          "column": "tenant_id",
+          "referencesTable": "app_tenants",
+          "referencesColumn": "tenant_id",
+          "tenantScoped": true
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "proposal_id"
+          ],
+          "referencesTable": "learning_proposals",
+          "referencesColumns": [
+            "tenant_id",
+            "id"
+          ],
+          "tenantScoped": true
+        }
+      ],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies using app.tenant_id"
+    },
+    {
+      "schema": "public",
+      "name": "workflow_operations",
+      "source": "003_job_agent_resilience.sql",
+      "sensitive": true,
+      "tenantColumn": true,
+      "foreignKeys": [
+        {
+          "column": "tenant_id",
+          "referencesTable": "app_tenants",
+          "referencesColumn": "tenant_id",
+          "tenantScoped": true
+        }
+      ],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies using app.tenant_id"
+    },
+    {
+      "schema": "public",
+      "name": "workflow_events",
+      "source": "003_job_agent_resilience.sql",
+      "sensitive": true,
+      "tenantColumn": true,
+      "foreignKeys": [
+        {
+          "column": "tenant_id",
+          "referencesTable": "app_tenants",
+          "referencesColumn": "tenant_id",
+          "tenantScoped": true
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "operation_id"
+          ],
+          "referencesTable": "workflow_operations",
+          "referencesColumns": [
+            "tenant_id",
+            "operation_id"
+          ],
+          "tenantScoped": true
+        }
+      ],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies using app.tenant_id"
+    },
+    {
+      "schema": "public",
+      "name": "provider_circuit_states",
+      "source": "003_job_agent_resilience.sql",
+      "sensitive": true,
+      "tenantColumn": true,
+      "foreignKeys": [
+        {
+          "column": "tenant_id",
+          "referencesTable": "app_tenants",
+          "referencesColumn": "tenant_id",
+          "tenantScoped": true
+        }
+      ],
+      "rlsEnabledInSource": true,
+      "forceRlsInSource": true,
+      "policyModel": "backend-only operation-specific policies using app.tenant_id"
+    }
+  ],
+  "views": [],
+  "materializedViews": [],
+  "functions": [],
+  "triggers": [],
+  "sequences": [],
+  "storageBuckets": [],
+  "storagePolicies": [],
+  "findings": {
+    "missingExplicitAnonRevoke": false,
+    "missingExplicitAuthenticatedRevoke": false,
+    "allCommandPoliciesWithoutToClause": false,
+    "operationSpecificPoliciesAbsent": false,
+    "userMetadataAuthorizationReference": false,
+    "securityDefinerFunctions": [],
+    "views": [],
+    "materializedViews": [],
+    "triggers": [],
+    "sequences": [],
+    "storageObjects": [],
+    "crossTenantReferenceRisks": [],
+    "nonSupabaseTimestampMigrationNames": [
+      "001_job_agent_authoritative_store.sql",
+      "002_job_agent_continuous_improvement.sql",
+      "003_job_agent_resilience.sql"
+    ]
+  }
+}

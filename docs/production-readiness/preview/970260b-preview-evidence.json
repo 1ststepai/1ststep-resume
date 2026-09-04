@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-01T20:58:00Z",
+  "environment": "Vercel Preview",
+  "sourceCommit": "970260b254e73bd4e0a154e05724cfdb6f94830f",
+  "runtimeSha256": "6ab6902456d7ae9766bf5c493a37caf3f437fc46e86bbf59e40dbd8a734f753f",
+  "deployment": {
+    "id": "dpl_aRuM2TzQjwkN4eVYDHroep1JsJvC",
+    "url": "https://1ststep-resume-aqbedxxdi-1ststep.vercel.app",
+    "target": "preview",
+    "readyState": "READY",
+    "protected": true
+  },
+  "checks": {
+    "truthfulFirstUseHtml": true,
+    "healthLive": "healthy",
+    "healthReady": "unavailable-fail-closed",
+    "durableRateLimit": "passed",
+    "liveEmployerFeedsChecked": 36,
+    "exactSyntheticMatches": 2,
+    "submissionsEnabled": false,
+    "workerDurationSeconds": 60,
+    "workerDurationMatchesDeploymentConfiguration": true
+  },
+  "scope": {
+    "browserResponsiveEvidenceInheritedFromUnchangedUiCommit": "d899db2a899cfded756e38130ee864295f0a553b",
+    "configurationShapeInheritedFromSamePreviewEnvironment": true,
+    "signedUserFlowsTested": false,
+    "capacityTested": false,
+    "alertDeliveryTested": false
+  },
+  "externalActions": {
+    "productionTrafficChanged": false,
+    "migrationApplied": false,
+    "candidateDataTransmitted": false,
+    "employerContacted": false,
+    "applicationSubmitted": false
+  }
+}

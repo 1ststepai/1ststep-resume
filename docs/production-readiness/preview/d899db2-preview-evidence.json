@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-01T20:32:13Z",
+  "environment": "Vercel Preview",
+  "sourceCommit": "d899db2a899cfded756e38130ee864295f0a553b",
+  "runtimeSha256": "e17a1dac9ecf863059b0739c5567d6505334160411152aa2f9701a714846cdd9",
+  "deployment": {
+    "id": "dpl_CPqjxie64YwfUrrar3qzGrdr3WoF",
+    "url": "https://1ststep-resume-kzd46a1rb-1ststep.vercel.app",
+    "target": "preview",
+    "readyState": "READY",
+    "protected": true
+  },
+  "build": {
+    "staticAssets": 56,
+    "apiFunctions": 41,
+    "internalSourceLeaks": 0,
+    "extensionPackageLeaks": 0
+  },
+  "checks": {
+    "conciergeRendered": true,
+    "firstUseHeroRendered": true,
+    "signInLabelRendered": true,
+    "firstUseWorkspaceHidden": true,
+    "viewport": "602x623",
+    "horizontalOverflow": false,
+    "healthLive": "healthy",
+    "healthReady": "unavailable-fail-closed",
+    "durableRateLimit": "passed",
+    "liveEmployerFeedsChecked": 35,
+    "exactSyntheticMatches": 2,
+    "submissionsEnabled": false,
+    "conciergeCacheControl": "no-store",
+    "apiCacheControl": "no-store",
+    "homepageCacheControl": "public, max-age=300, stale-while-revalidate=60",
+    "strictConciergeCsp": true,
+    "securityHeaders": true
+  },
+  "configurationShape": {
+    "contentFree": true,
+    "containsSecretValues": false,
+    "readyControls": 0,
+    "totalControls": 14,
+    "missingRequirements": 119,
+    "invalidRequirements": 0,
+    "previewEligible": true,
+    "signedBetaEligible": false,
+    "nextBlocker": "DURABLE_RUNTIME_NOT_CONFIGURED"
+  },
+  "runtimeLogSummary": {
+    "contentFree": true,
+    "window": "bounded post-verification read",
+    "requestSummariesObserved": 9,
+    "applicationLogMessagesObserved": 0,
+    "expectedOutcomesCorroborated": [
+      "liveness-200",
+      "configuration-200",
+      "discovery-smoke-200",
+      "incomplete-readiness-503",
+      "unsigned-session-capabilities-401"
+    ],
+    "notProven": [
+      "log-drain-delivery",
+      "retention",
+      "alert-receipt",
+      "on-call-acknowledgement"
+    ]
+  },
+  "externalActions": {
+    "productionTrafficChanged": false,
+    "migrationApplied": false,
+    "candidateDataTransmitted": false,
+    "employerContacted": false,
+    "applicationSubmitted": false
+  }
+}

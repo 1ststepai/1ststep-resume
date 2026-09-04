@@ -1,279 +1,107 @@
-/**
- * background.js - Service Worker
- * Handles authentication, message routing, and global state management
- */
-
+/** Controlled-beta service worker. Candidate values are never persisted here. */
 const APP_URL = 'https://app.1ststep.ai';
-
-// Canonical mode constants — keep in sync with popup.js
 const MODES = { TAILOR: 'tailor', COVER_LETTER: 'coverLetter' };
 
-// Auth token cache { token, expiry }
-let authTokenCache = null;
-
-/**
- * Fetch the user's tier token from 1stStep.ai backend
- * The token is HMAC-signed and valid for 20 minutes
- */
-async function fetchTierToken(email) {
-  try {
-    const response = await fetch(`${APP_URL}/api/subscription?email=${encodeURIComponent(email)}`);
-    if (!response.ok) throw new Error(`Subscription lookup failed: ${response.status}`);
-
-    const data = await response.json();
-    // data = { tier, status, tierToken, expiresAt }
-
-    authTokenCache = {
-      ...data,
-      fetchedAt: Date.now()
-    };
-
-    return data;
-  } catch (error) {
-    console.error('[1stStep] Tier token fetch failed:', error);
-    return null;
-  }
-}
-
-/**
- * Get cached tier token if valid, otherwise fetch fresh one
- */
-async function getTierToken(email) {
-  // If we have a cached token and it's not expired, use it
-  if (authTokenCache && authTokenCache.expiresAt) {
-    const now = Date.now();
-    const expiryBuffer = 60000; // 1 minute buffer before actual expiry
-    if (now < authTokenCache.expiresAt - expiryBuffer) {
-      return authTokenCache;
-    }
-  }
-
-  // Fetch fresh token
-  return fetchTierToken(email);
-}
-
-/**
- * Get user profile and resume from chrome.storage.sync
- * (synced from app.1ststep.ai localStorage via content script bridge)
- */
-async function getUserData() {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get(['1ststep_profile', '1ststep_resume'], (data) => {
-      resolve({
-        profile: data['1ststep_profile'],
-        resume: data['1ststep_resume']
-      });
+async function relayThroughApp(operation, payload = {}) {
+  const tabs = await chrome.tabs.query({ url: `${APP_URL}/*` });
+  if (!tabs.length) return { success: false, error: 'Open and sign in to 1stStep.ai before continuing.', code: 'JOB_AGENT_APP_TAB_REQUIRED' };
+  return new Promise(resolve => {
+    chrome.tabs.sendMessage(tabs[0].id, { action: 'JOB_AGENT_APP_BRIDGE', operation, payload }, response => {
+      if (chrome.runtime.lastError) resolve({ success: false, error: 'Reload the open 1stStep.ai tab, then try again.', code: 'JOB_AGENT_APP_BRIDGE_UNAVAILABLE' });
+      else resolve(response || { success: false, error: 'The 1stStep.ai bridge did not respond.' });
     });
   });
 }
 
-/**
- * Save user data to chrome.storage.sync
- */
-async function saveUserData(profile, resume) {
-  return new Promise((resolve) => {
-    chrome.storage.sync.set({
-      '1ststep_profile': profile,
-      '1ststep_resume': resume
-    }, resolve);
+// -- pendingJobs mutation queue ----------------------------------------------
+// This service worker is the only writer of pendingJobs. Every mutation runs
+// through one promise chain, so an addition and an acknowledged deletion cannot
+// both read the same snapshot and write back a version missing the other's
+// change. The content-script bridge reads pendingJobs for delivery but never
+// writes it.
+
+const CAPTURE_TTL_MS = 2 * 60 * 1000;
+let pendingJobsMutation = Promise.resolve();
+
+function expirePendingJobs(pendingJobs, now = Date.now()) {
+  for (const id of Object.keys(pendingJobs)) {
+    const entry = pendingJobs[id];
+    if (!entry || typeof entry.createdAt !== 'number' || now - entry.createdAt > CAPTURE_TTL_MS) {
+      delete pendingJobs[id];
+    }
+  }
+  return pendingJobs;
+}
+
+/** Serializes a read-modify-write over pendingJobs. Returns the mutator result. */
+function mutatePendingJobs(mutator) {
+  const run = pendingJobsMutation.then(async () => {
+    const data = await chrome.storage.local.get(['pendingJobs']);
+    const pendingJobs = data.pendingJobs && typeof data.pendingJobs === 'object' ? data.pendingJobs : {};
+    const result = await mutator(pendingJobs);
+    await chrome.storage.local.set({ pendingJobs });
+    return result;
+  });
+  // Keep the chain alive even if one mutation throws.
+  pendingJobsMutation = run.then(() => undefined, () => undefined);
+  return run;
+}
+
+/** Deletes exactly the acknowledged capture. Unknown ids change nothing. */
+function consumeCapture(captureId) {
+  if (typeof captureId !== 'string' || !captureId) return Promise.resolve(false);
+  return mutatePendingJobs(pendingJobs => {
+    expirePendingJobs(pendingJobs);
+    if (!Object.prototype.hasOwnProperty.call(pendingJobs, captureId)) return false;
+    delete pendingJobs[captureId];
+    return true;
   });
 }
 
-/**
- * Listen for messages from content scripts and popup
- */
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  // Async handler - use async IIFE
   (async () => {
     try {
-      switch (request.action) {
-        // ─── AUTH ──────────────────────────────────
-        case 'GET_TIER_TOKEN': {
-          const tierData = await getTierToken(request.email);
-          sendResponse({ success: !!tierData, data: tierData });
-          break;
-        }
-
-        // ─── USER DATA ──────────────────────────────
-        case 'GET_USER_DATA': {
-          const userData = await getUserData();
-          sendResponse({ success: true, data: userData });
-          break;
-        }
-
-        case 'SAVE_USER_DATA': {
-          await saveUserData(request.profile, request.resume);
-          sendResponse({ success: true });
-          break;
-        }
-
-        // ─── JOB DETECTION ──────────────────────────
-        case 'JOB_DETECTED': {
-          // Content script found a job page - extract JD, pass to popup/sidepanel
-          await chrome.storage.session.set({
-            'current_job': {
-              site: request.site,
-              jobId: request.jobId,
-              jobTitle: request.jobTitle,
-              company: request.company,
-              jobDescription: request.jobDescription,
-              applyUrl: request.applyUrl,
-              detectedAt: Date.now()
-            }
-          });
-          sendResponse({ success: true });
-          break;
-        }
-
-        case 'GET_CURRENT_JOB': {
-          const jobs = await chrome.storage.session.get(['current_job']);
-          sendResponse({ success: true, job: jobs.current_job });
-          break;
-        }
-
-        // ─── OPEN IN APP ──────────────────────────────────
-        case 'OPEN_IN_APP': {
-          const jobCaptureId = crypto.randomUUID();
-          const now = Date.now();
-
-          // Read existing map, prune stale entries (> 2 min), add new one
-          // NOTE: must use chrome.storage.local (not session) — content scripts
-          // (auth-bridge.js) cannot access chrome.storage.session.
-          const localData = await chrome.storage.local.get(['pendingJobs']);
-          const pendingJobs = localData.pendingJobs || {};
-          for (const id of Object.keys(pendingJobs)) {
-            if (now - pendingJobs[id].createdAt > 2 * 60 * 1000) delete pendingJobs[id];
-          }
-          const jobMode = request.mode || MODES.TAILOR;
-          pendingJobs[jobCaptureId] = { jobData: request.jobData, mode: jobMode, createdAt: now };
-          await chrome.storage.local.set({ pendingJobs });
-
-          // Cover letter opens main app (tier selector available); tailor opens funnel
-          const targetUrl = jobMode === MODES.COVER_LETTER
-            ? `${APP_URL}/?jobCaptureId=${jobCaptureId}&mode=${MODES.COVER_LETTER}`
-            : `${APP_URL}/funnel?jobCaptureId=${jobCaptureId}`;
-          const existingTabs = await chrome.tabs.query({ url: `${APP_URL}/*` });
-          if (existingTabs.length > 0) {
-            await chrome.tabs.update(existingTabs[0].id, { active: true, url: targetUrl });
-            await chrome.windows.update(existingTabs[0].windowId, { focused: true });
-          } else {
-            await chrome.tabs.create({ url: targetUrl });
-          }
-          sendResponse({ success: true, jobCaptureId });
-          break;
-        }
-
-        // ─── TAILOR REQUEST ──────────────────────────
-        case 'TAILOR_RESUME': {
-          // Forward to 1stStep.ai backend claude.js
-          const tailorResponse = await fetch(`${APP_URL}/api/claude`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              callType: 'tailor',
-              resume: request.resume,
-              jobDescription: request.jobDescription,
-              email: request.email,
-              tierToken: request.tierToken
-            })
-          });
-
-          if (!tailorResponse.ok) {
-            throw new Error(`Tailor failed: ${tailorResponse.status}`);
-          }
-
-          const tailored = await tailorResponse.json();
-          sendResponse({ success: true, data: tailored });
-          break;
-        }
-
-        // ─── AUTOFILL REQUEST ──────────────────────
-        case 'GET_AUTOFILL_MAP': {
-          // Ask claude.js (autofill callType) to produce a {field_id: value} map
-          // based on the candidate's profile+resume and the detected page fields.
-          const fillResponse = await fetch(`${APP_URL}/api/claude`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              callType:  'autofill',
-              model:     'claude-haiku-4-5-20251001',
-              userEmail: request.email,
-              tierToken: request.tierToken,
-              max_tokens: 2048,
-              messages: [{
-                role: 'user',
-                content:
-                  '<profile>\n' + JSON.stringify(request.profile || {}) + '\n</profile>\n\n' +
-                  '<resume>\n' + (request.resume || '') + '\n</resume>\n\n' +
-                  '<form_fields>\n' + JSON.stringify(request.fields || [], null, 2) + '\n</form_fields>\n\n' +
-                  'Return the JSON fill map. Keys must match each field id exactly.'
-              }]
-            })
-          });
-
-          if (!fillResponse.ok) {
-            const err = await fillResponse.json().catch(() => ({}));
-            throw new Error(err.error || `Autofill mapping failed: ${fillResponse.status}`);
-          }
-
-          const fillMap = await fillResponse.json();
-          sendResponse({ success: true, data: fillMap });
-          break;
-        }
-
-        // ─── TRACKER BADGE ─────────────────────────
-        case 'UPDATE_TRACKER_BADGE': {
-          const localData = await chrome.storage.local.get(['1ststep_ext_tracker']);
-          const count = (localData['1ststep_ext_tracker'] || []).length;
-          if (count > 0) {
-            await chrome.action.setBadgeText({ text: String(count) });
-            await chrome.action.setBadgeBackgroundColor({ color: '#4F46E5' });
-          } else {
-            await chrome.action.setBadgeText({ text: '' });
-          }
-          sendResponse({ success: true });
-          break;
-        }
-
-        // ─── TRACKING ──────────────────────────────
-        case 'TRACK_EVENT': {
-          // Fire GHL tag via backend track-event.js
-          await fetch(`${APP_URL}/api/track-event`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: request.email,
-              event: request.event // e.g. 'extension_apply', 'extension_install'
-            })
-          });
-          sendResponse({ success: true });
-          break;
-        }
-
-        default:
-          sendResponse({ success: false, error: 'Unknown action' });
+      if (request.action === 'GET_JOB_AGENT_STATUS') return sendResponse(await relayThroughApp('status'));
+      if (request.action === 'PREPARE_GREENHOUSE_HANDOFF') return sendResponse(await relayThroughApp('prepare', request.payload));
+      if (request.action === 'GET_GREENHOUSE_DOCUMENT') return sendResponse(await relayThroughApp('document', request.payload));
+      if (request.action === 'COMPLETE_GREENHOUSE_HANDOFF') return sendResponse(await relayThroughApp('complete', request.payload));
+      if (request.action === 'JOB_DETECTED') {
+        await chrome.storage.session.set({ current_job: { site: request.site, jobId: request.jobId, jobTitle: request.jobTitle, company: request.company, jobDescription: request.jobDescription, applyUrl: request.applyUrl, detectedAt: Date.now() } });
+        return sendResponse({ success: true });
       }
+      if (request.action === 'GET_CURRENT_JOB') {
+        const jobs = await chrome.storage.session.get(['current_job']);
+        return sendResponse({ success: true, job: jobs.current_job });
+      }
+      if (request.action === 'CONSUME_JOB_CAPTURE') {
+        // Only the page bridge on our own app origin may retire a capture.
+        if (!String(sender?.url || '').startsWith(`${APP_URL}/`)) {
+          return sendResponse({ success: false, error: 'Unauthorized capture consumption.' });
+        }
+        const consumed = await consumeCapture(request.captureId);
+        return sendResponse({ success: true, consumed });
+      }
+      if (request.action === 'OPEN_IN_APP') {
+        const jobCaptureId = crypto.randomUUID();
+        const mode = request.mode || MODES.TAILOR;
+        await mutatePendingJobs(pendingJobs => {
+          expirePendingJobs(pendingJobs);
+          pendingJobs[jobCaptureId] = { jobData: request.jobData, mode, createdAt: Date.now() };
+        });
+        const targetUrl = mode === MODES.COVER_LETTER ? `${APP_URL}/app/resume?jobCaptureId=${jobCaptureId}&mode=${mode}` : `${APP_URL}/funnel?jobCaptureId=${jobCaptureId}`;
+        const tabs = await chrome.tabs.query({ url: `${APP_URL}/*` });
+        if (tabs.length) await chrome.tabs.update(tabs[0].id, { active: true, url: targetUrl });
+        else await chrome.tabs.create({ url: targetUrl });
+        return sendResponse({ success: true, jobCaptureId });
+      }
+      sendResponse({ success: false, error: 'Unknown action' });
     } catch (error) {
-      console.error('[1stStep] Message handler error:', error);
-      sendResponse({ success: false, error: error.message });
+      sendResponse({ success: false, error: error.message || 'Extension request failed.' });
     }
   })();
-
-  // Return true to indicate we'll send response asynchronously
   return true;
 });
 
-/**
- * On extension install, fire tracking event
- */
-chrome.runtime.onInstalled.addListener((details) => {
-  console.log('[1stStep] Extension installed, reason:', details.reason);
-  if (details.reason === 'install') {
-    fetch(`${APP_URL}/api/track-event`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'anonymous', event: 'extension_install' })
-    }).catch(() => {});
-    chrome.tabs.create({ url: `${APP_URL}?welcome=ext` });
-  }
+chrome.runtime.onInstalled.addListener(details => {
+  if (details.reason === 'install') chrome.tabs.create({ url: `${APP_URL}/concierge?welcome=extension` });
 });

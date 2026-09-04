@@ -79,6 +79,6 @@ export async function alertOnAbuse(event, identifier = '', details = '') {
     });
   } catch (err) {
     // Never let alert failure crash the main request
-    console.error('Alert send failed:', err.message);
+    console.error(JSON.stringify({ type: 'legacy-alert-send-failed', name: err?.name || 'unknown' }));
   }
 }

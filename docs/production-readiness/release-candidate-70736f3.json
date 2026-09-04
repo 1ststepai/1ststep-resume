@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-02T03:58:00Z",
+  "reviewState": "not-authorized-for-production",
+  "contentFree": true,
+  "containsCandidateValues": false,
+  "performsWrites": false,
+  "candidate": {
+    "branch": "codex/application-concierge-pilot",
+    "implementationCommit": "70736f37be3025b59ab7b856eb2ce54635c8ec5a",
+    "evidenceBaseCommit": "a119ee03625a17b2cf76d987d11f86ded2692c34",
+    "runtimeSha256": "b3b4f8dd843476dcca458d3dad7c7b3a0d258f3b559fc8d8d0a8c8231c71f4b8",
+    "runtimeFileCount": 169,
+    "releaseGatePassed": true,
+    "cleanPreflightPassed": true
+  },
+  "preview": {
+    "deploymentId": "dpl_9DLBhVkEo9JAvr8uN2kGBpqxJyUv",
+    "origin": "https://1ststep-resume-ld7pe9rpg-1ststep.vercel.app",
+    "readyState": "READY",
+    "protected": true,
+    "livenessStatus": 200,
+    "readinessStatus": 503,
+    "submissionsEnabled": false,
+    "candidateDataTransmitted": false,
+    "employerActionPerformed": false
+  },
+  "productionGuard": {
+    "deploymentId": "dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM",
+    "candidatePromoted": false,
+    "protectedRouteDenialVerified": true,
+    "candidateAssetParity": false,
+    "productionTrafficChanged": false
+  },
+  "rollbackTarget": {
+    "deploymentId": "dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM",
+    "project": "1ststep-resume",
+    "target": "production",
+    "readyState": "READY",
+    "ownsProductionAlias": true,
+    "rollbackExecuted": false,
+    "rollbackAuthorized": false
+  },
+  "evidenceState": {
+    "exactPreview": "verified",
+    "boundedUnsignedLiveness": "verified",
+    "contentFreePreviewLogs": "verified",
+    "databaseRuntimeContract": "implemented-and-tested",
+    "databaseRuntimeExecution": "unknown",
+    "privateStorageExecution": "unknown",
+    "managedRecoveryContract": "implemented-and-tested",
+    "managedRecoveryExecution": "unknown",
+    "signedCapacityContract": "implemented-and-tested",
+    "signedCapacityExecution": "unknown",
+    "alertDeliveryExecution": "unknown",
+    "remoteCi": "unknown",
+    "productionCandidateParity": "not-deployed"
+  },
+  "criticalLayers": [3, 8, 13],
+  "references": [
+    {
+      "path": "docs/production-readiness/preview/70736f3-preview-evidence.json",
+      "sha256": "82a64438583ca63cff16693b7828bd028738d019ec58d7ab5281a074630a4ca6"
+    },
+    {
+      "path": "docs/production-readiness/rollback-target-20260902T035709Z.json",
+      "sha256": "75a0c2aba27d294d3cbb748b1b04a1c381508344b10969ae7d5350b7dc2b7d95"
+    },
+    {
+      "path": "docs/production-readiness/production-guard-20260902T035709Z.json",
+      "sha256": "00764d62dbbf09bf7f3bba13767a514be8880572f443ec3ed9168f34bebd9052"
+    },
+    {
+      "path": "docs/production-readiness/scorecard.json",
+      "sha256": "934cb0b7d6a5cfeb6eb10d0225bd7068e055a181646282df4031153d6b38e27e"
+    },
+    {
+      "path": "docs/production-readiness/HUMAN_ACTION_REQUIRED.md",
+      "sha256": "266852b20b2294deeac476c40a7b4d9368a8204229b2bb82faef1b319e9fce22"
+    },
+    {
+      "path": "docs/JOB_AGENT_DEPLOYMENT_RUNBOOK.md",
+      "sha256": "8fce3e975f12c4726e3c5eeadb5e3eed2fe1847032d1d55324e3ffec61d704fb"
+    }
+  ],
+  "humanApprovals": {
+    "paidInfrastructure": false,
+    "databaseMigration": false,
+    "signedUserExercise": false,
+    "personalDataTransmission": false,
+    "employerActions": false,
+    "gitPush": false,
+    "reviewRequest": false,
+    "productionDeployment": false
+  },
+  "productionEligible": false
+}

@@ -56,6 +56,8 @@ Never expose or commit secrets. Do not read or print `.env*` files. Do not run d
 
 This repo belongs to Evan Pancis and 1stStep.ai.
 
+For any Job Agent, Application Concierge, discovery, package, tracker, or submission work, read `docs/AI_MEMORY.md` and `docs/JOB_AGENT_RUNTIME.md` before editing. The shared-memory section in `docs/AI_MEMORY.md` is the cross-agent contract for Claude and Codex; do not create a parallel architecture or duplicate job/application ledger.
+
 Primary URLs:
 - AI resume builder landing page: https://resume.1ststep.ai/
 - App: https://app.1ststep.ai/

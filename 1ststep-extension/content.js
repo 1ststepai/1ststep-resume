@@ -5,68 +5,20 @@
 
 // ─── SITE SELECTORS ──────────────────────────────────────────
 
-const SITE_SELECTORS = {
-  linkedin: {
-    jobDescriptionSelector: '.jobs-description__content, .jobs-description-content__text, .job-view-layout .jobs-box__html-content, [class*="jobs-description"], .jobs-details__main-content',
-    jobTitleSelector: '.top-card-layout__title, .jobs-unified-top-card__job-title h1, .job-details-jobs-unified-top-card__job-title h1, h1.t-24, h1',
-    companySelector: '.topcard__org-name-link, .jobs-unified-top-card__company-name a, .job-details-jobs-unified-top-card__company-name a, .jobs-unified-top-card__subtitle-primary-grouping a'
-  },
-  indeed: {
-    jobDescriptionSelector: '#jobDescriptionText, .jobsearch-jobDescriptionText, [data-testid="jobsearch-JobComponent-description"]',
-    jobTitleSelector: 'h1.jobsearch-JobInfoHeader-title, h1[data-testid="jobsearch-JobInfoHeader-title"]',
-    companySelector: '.jobsearch-InlineCompanyRating div, [data-testid="inlineHeader-companyName"] a, [data-testid="jobsearch-JobInfoHeader-companyNameSimple"]'
-  },
-  greenhouse: {
-    jobDescriptionSelector: '#content .job-post, #app_body, .job-description, [class*="job-description"]',
-    jobTitleSelector: 'h1.app-title, h1',
-    companySelector: '.company-name, .company'
-  },
-  lever: {
-    // Company extracted via URL fallback in extractCompanyFallback() — the DOM selector
-    // .sort-by-team returns the team name, not the company.
-    jobDescriptionSelector: '.posting-content, .posting-description, .section-wrapper',
-    jobTitleSelector: 'h2[data-qa="posting-name"], .posting-headline h2',
-    companySelector: '.main-header-logo[alt]'
-  },
-  workday: {
-    jobDescriptionSelector: '[data-automation-id="jobPostingDescription"], [class*="jobPostingDescription"]',
-    jobTitleSelector: '[data-automation-id="jobPostingHeader"] h2, [data-automation-id="jobPostingHeader"] h1',
-    companySelector: '[data-automation-id="jobPostingCompanyName"], [data-automation-id="jobPostingHeader"] [class*="subtitle"]'
-  },
-  icims: {
-    jobDescriptionSelector: '.iCIMS_JobContent, #jobContentArea, .job-details',
-    jobTitleSelector: '.iCIMS_Header h1, h1',
-    companySelector: '.iCIMS_EmployerInfo, .employer-name'
-  }
-};
-
-const GENERIC_SELECTORS = {
-  jobDescriptionSelector: [
-    '#job-description', '.job-description', '.jobDescription',
-    '[class*="job-description"]', '[class*="jobDescription"]',
-    '[id*="job-description"]', '[id*="jobDescription"]',
-    '[data-testid="job-details"]', '[data-testid="job-description"]',
-    '.job-details', '.posting-description', 'section[class*="description"]'
-  ].join(', '),
+const GREENHOUSE_SELECTORS = {
+  jobDescriptionSelector: '#content .job-post, #app_body, .job-description, [class*="job-description"]',
   jobTitleSelector: 'h1',
-  companySelector: '[data-testid="companyName"], .company-name, [class*="company-name"], [itemprop="hiringOrganization"] [itemprop="name"]'
+  companySelector: '.company-name, .company, [itemprop="hiringOrganization"] [itemprop="name"]'
 };
 
 // ─── SITE DETECTION ──────────────────────────────────────────
 
 function detectSite() {
-  const h = window.location.hostname;
-  if (h.includes('linkedin.com')) return 'linkedin';
-  if (h.includes('indeed.com')) return 'indeed';
-  if (h.includes('greenhouse.io')) return 'greenhouse';
-  if (h.includes('lever.co') || h.includes('lever.com')) return 'lever';
-  if (h.includes('workday.com')) return 'workday';
-  if (h.includes('icims.com')) return 'icims';
-  return 'unknown';
+  return /(?:^|\.)greenhouse\.io$/i.test(window.location.hostname) ? 'greenhouse' : 'unsupported';
 }
 
 const SITE = detectSite();
-const SEL = SITE_SELECTORS[SITE] || GENERIC_SELECTORS;
+const SEL = GREENHOUSE_SELECTORS;
 console.log(`[1stStep] Loaded on: ${SITE} | host=${location.hostname} | topFrame=${window === window.top}`);
 
 // ─── EXTRACTION ──────────────────────────────────────────────
@@ -77,30 +29,6 @@ function extractText(selector) {
 }
 
 function extractJobDescription() {
-  // For LinkedIn, try expanding collapsed "See more" before reading text
-  if (SITE === 'linkedin') {
-    const expandBtn = document.querySelector(
-      'button.jobs-description__footer-button, ' +
-      'button[aria-label*="more"], ' +
-      '.jobs-description-content__toggle-btn-more, ' +
-      '.jobs-description__toggle-btn'
-    );
-    if (expandBtn) {
-      try { expandBtn.click(); } catch (_) {}
-    }
-
-    // Check inside iframe (job view sometimes rendered there)
-    const iframe = document.querySelector('iframe');
-    if (iframe && iframe.contentDocument) {
-      try {
-        const iframeEl = iframe.contentDocument.querySelector(SEL.jobDescriptionSelector);
-        if (iframeEl) {
-          const text = (iframeEl.innerText || iframeEl.textContent || '').trim();
-          if (text.length > 100) return text;
-        }
-      } catch (_) {} // cross-origin guard
-    }
-  }
   const text = extractText(SEL.jobDescriptionSelector);
   return text && text.length > 100 ? text : null;
 }
@@ -110,8 +38,8 @@ function extractJobDescription() {
 function extractTitleFallback() {
   const raw = document.title || '';
   const cleaned = raw
-    .replace(/\s*[-–|•]\s*(jobs?\s+at|careers?|linkedin|indeed|glassdoor).*/i, '')
-    .replace(/\s*\|\s*(linkedin|indeed|glassdoor|greenhouse|lever|workday).*/i, '')
+    .replace(/\s*[-–|•]\s*(jobs?\s+at|careers?|greenhouse).*/i, '')
+    .replace(/\s*\|\s*greenhouse.*/i, '')
     .trim();
   const parts = cleaned.split(/\s*[|\-–•]\s*/);
   return parts[0]?.trim() || null;
@@ -119,11 +47,6 @@ function extractTitleFallback() {
 
 // Extract company when the DOM selector misses it.
 function extractCompanyFallback() {
-  // Lever: URL pattern is https://jobs.lever.co/company-slug/uuid
-  if (SITE === 'lever') {
-    const m = location.pathname.match(/^\/([^/]+)\//);
-    if (m) return m[1].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-  }
   // og:site_name (many job boards set this to the company name)
   const ogSite = document.querySelector('meta[property="og:site_name"]')?.content?.trim();
   if (ogSite && ogSite.length < 80) return ogSite;
@@ -176,11 +99,8 @@ function removeTailorButton() {
 
 function injectTailorButton(job) {
   if (document.getElementById('1ststep-action-strip')) return;
-
-  chrome.storage.sync.get(['1ststep_resume'], (data) => {
-    if (!chrome.runtime?.id) return;
-    const hasResume = !!(data['1ststep_resume']);
-    const tailorLabel = hasResume ? '⚡ Tailor Resume' : '⚡ Tailor with 1stStep';
+  if (!chrome.runtime?.id) return;
+    const tailorLabel = 'Open in 1stStep';
     const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
 
     const strip = document.createElement('div');
@@ -215,74 +135,8 @@ function injectTailorButton(job) {
       });
     };
 
-    // ── Track button (secondary) ─────────────────────────────
-    const trackBtn = document.createElement('button');
-    trackBtn.id = '1ststep-track-btn';
-    trackBtn.textContent = '＋ Track';
-    trackBtn.style.cssText = [
-      'background:rgba(255,255,255,0.96)',
-      'color:#4F46E5', 'border:1.5px solid rgba(99,102,241,0.4)', 'border-radius:10px',
-      'padding:11px 16px', `font-family:${FONT}`,
-      'font-size:13px', 'font-weight:700', 'cursor:pointer',
-      'box-shadow:0 4px 16px rgba(0,0,0,0.10)',
-      'transition:all 0.15s', 'white-space:nowrap',
-    ].join(';');
-    trackBtn.onmouseover = () => { trackBtn.style.background = '#EEEEFD'; trackBtn.style.borderColor = '#4F46E5'; };
-    trackBtn.onmouseout  = () => { trackBtn.style.background = 'rgba(255,255,255,0.96)'; trackBtn.style.borderColor = 'rgba(99,102,241,0.4)'; };
-    trackBtn.onclick = () => addToTracker(job, trackBtn);
-
-    // Mark already-tracked jobs on load
-    chrome.storage.local.get(['1ststep_ext_tracker'], (localData) => {
-      const tracker = localData['1ststep_ext_tracker'] || [];
-      if (tracker.find(e => e.jobUrl === job.applyUrl)) markTracked(trackBtn);
-    });
-
     strip.appendChild(tailorBtn);
-    strip.appendChild(trackBtn);
     document.body.appendChild(strip);
-  });
-}
-
-function markTracked(btn) {
-  btn.textContent = '✓ Tracked';
-  btn.style.background = '#ECFDF5';
-  btn.style.color = '#059669';
-  btn.style.borderColor = '#059669';
-  btn.disabled = true;
-  btn.onmouseover = null;
-  btn.onmouseout  = null;
-}
-
-function addToTracker(job, btn) {
-  btn.textContent = 'Saving…';
-  btn.disabled = true;
-
-  const entry = {
-    id:             'ext_' + Date.now(),
-    jobTitle:       job.jobTitle || 'Unknown Role',
-    company:        job.company  || '',
-    jobUrl:         job.applyUrl || '',
-    jobDescription: (job.jobDescription || '').slice(0, 5000),
-    location: '', resume: '', coverLetter: '', matchPct: null, notes: '',
-    status:    'not_applied',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    appliedAt: null,
-    tailoredAt: null,
-    source: 'extension',
-  };
-
-  chrome.storage.local.get(['1ststep_ext_tracker'], (data) => {
-    const tracker = data['1ststep_ext_tracker'] || [];
-    if (!tracker.find(e => e.jobUrl === job.applyUrl)) {
-      tracker.unshift(entry);
-      if (tracker.length > 100) tracker.splice(100);
-    }
-    chrome.storage.local.set({ '1ststep_ext_tracker': tracker }, () => {
-      markTracked(btn);
-      chrome.runtime.sendMessage({ action: 'UPDATE_TRACKER_BADGE' }).catch(() => {});
-    });
-  });
 }
 
 // ─── INIT ─────────────────────────────────────────────────────
@@ -332,41 +186,56 @@ function isVisible(el) {
   return rect.width > 0 || rect.height > 0 || el.offsetParent !== null;
 }
 
+const BLOCKED_AUTOFILL_FIELD = /(?:social security|\bssn\b|tax(?:payer)? id|passport|driver'?s? licen[cs]e|date of birth|\bdob\b|\bage\b|gender|sex(?:ual)? orientation|race|ethnicity|religion|marital|disability|veteran|pronouns?|password|passcode|verification code|\botp\b|captcha|signature|e-?sign|certif(?:y|ication)|attest|consent|agree(?:ment)?|arbitration|background|consumer report|drug test|health screen|medical|outside employment|conflict of interest|citizen(?:ship)?|visa|sponsorship|export control|itar|security clearance|criminal|conviction|referral|restrictive agreement|salary acceptance|compensation acceptance|desired salary)/i;
+
+function isBlockedAutofillField(el, label = '') {
+  if (!el) return true;
+  if (['password', 'hidden', 'file', 'checkbox', 'radio'].includes(String(el.type || '').toLowerCase())) return true;
+  const description = [label, el.id, el.name, el.getAttribute?.('aria-label'), el.getAttribute?.('placeholder'), el.autocomplete]
+    .filter(Boolean).join(' ');
+  return BLOCKED_AUTOFILL_FIELD.test(description);
+}
+
 function scanFormFields() {
   const fields = [];
   const seen = new Set();
-  // Excludes file inputs — resume/cover-letter upload is left to the user per product choice.
-  // Also excludes buttons, images, and password fields for obvious reasons.
+  // Password and file controls are included only as value-free schema so the server can
+  // create a Needs You action. fillField() always refuses them.
   const selector =
-    'input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=image]):not([type=reset]):not([type=password]):not([type=file]), ' +
+    'input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=image]):not([type=reset]), ' +
     'select, textarea';
   const elements = document.querySelectorAll(selector);
 
   for (const el of elements) {
     if (!isVisible(el)) continue;
 
-    // Build a stable key — id > name > label > type
     const label = getFieldLabel(el);
-    const key = el.id || el.name || label || (el.type + ':' + fields.length);
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
+    const fieldRef = el.id || el.name || `field_${fields.length + 1}`;
+    const semantic = `${el.name || ''} ${el.id || ''} ${label}`.toLowerCase();
+    const fieldKey = String(el.type || '').toLowerCase() === 'file' && /(?:resume|résumé|curriculum vitae|\bcv\b)/.test(semantic) ? 'resumeDocument'
+      : /first[ _-]?name/.test(semantic) ? 'firstName'
+      : /last[ _-]?name/.test(semantic) ? 'lastName'
+      : /e-?mail/.test(semantic) ? 'email'
+      : /phone|mobile/.test(semantic) ? 'phone'
+      : /postal|zip/.test(semantic) ? 'postalCode'
+      : /\bstate\b|province/.test(semantic) ? 'state'
+      : /\bcity\b/.test(semantic) ? 'city'
+      : /linkedin/.test(semantic) ? 'linkedin'
+      : /portfolio|website/.test(semantic) ? 'portfolio'
+      : /current[ _-]?(?:company|employer)/.test(semantic) ? 'currentEmployer'
+      : /current[ _-]?(?:title|position)/.test(semantic) ? 'currentTitle'
+      : `unknownField${fields.length + 1}`;
+    if (seen.has(fieldRef)) continue;
+    seen.add(fieldRef);
+    if (!el.id && !el.name) el.dataset.firststepFieldRef = fieldRef;
 
     const field = {
-      id:       el.id || '',
-      name:     el.name || '',
-      key:      key,
-      type:     el.type || el.tagName.toLowerCase(),
+      fieldRef,
+      fieldKey,
+      inputType: el.type || el.tagName.toLowerCase(),
       label:    label.slice(0, 120),
       required: !!el.required
     };
-
-    if (el.tagName === 'SELECT') {
-      field.options = Array.from(el.options)
-        .map(o => (o.text || o.value || '').trim())
-        .filter(Boolean)
-        .slice(0, 50);
-    }
-
     fields.push(field);
   }
 
@@ -375,7 +244,6 @@ function scanFormFields() {
 
 function findElementByKey(key) {
   if (!key) return null;
-  // Try id, name, aria-label, then iterate inputs matching the key as label
   try {
     let el = document.getElementById(key);
     if (el) return el;
@@ -386,6 +254,10 @@ function findElementByKey(key) {
   } catch (_) {}
   try {
     let el = document.querySelector(`[aria-label="${CSS.escape(key)}"]`);
+    if (el) return el;
+  } catch (_) {}
+  try {
+    let el = document.querySelector(`[data-firststep-field-ref="${CSS.escape(key)}"]`);
     if (el) return el;
   } catch (_) {}
   // Fallback: scan for a field whose label matches
@@ -401,6 +273,7 @@ function findElementByKey(key) {
 
 function fillField(el, value) {
   if (!el || value === null || value === undefined || value === '') return false;
+  if (isBlockedAutofillField(el, getFieldLabel(el))) return false;
   try {
     const inputSetter    = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,    'value')?.set;
     const textareaSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
@@ -419,12 +292,8 @@ function fillField(el, value) {
     } else if (el.tagName === 'TEXTAREA') {
       const v = String(value);
       if (textareaSetter) textareaSetter.call(el, v); else el.value = v;
-    } else if (el.type === 'checkbox' || el.type === 'radio') {
-      const v = String(value).toLowerCase();
-      const checked = v === 'true' || v === 'yes' || v === '1' || v === 'on';
-      if (checkedSetter) checkedSetter.call(el, checked); else el.checked = checked;
     } else {
-      const v = String(value);
+      const v = String(value).slice(0, 2000);
       if (inputSetter) inputSetter.call(el, v); else el.value = v;
     }
 
@@ -439,36 +308,49 @@ function fillField(el, value) {
   }
 }
 
-function applyFillMap(fillMap) {
-  let filled = 0;
-  let total  = 0;
-  for (const [key, value] of Object.entries(fillMap || {})) {
-    if (value === null || value === undefined || value === '') continue;
-    total++;
-    const el = findElementByKey(key);
-    if (!el) continue;
-    if (fillField(el, value)) filled++;
-  }
-  return { filled, total };
+function applicationContext() {
+  const params = new URLSearchParams(location.hash.replace(/^#/, ''));
+  const sessionId = params.get('1ststep-session') || '';
+  const version = Number(params.get('1ststep-version'));
+  return /^[A-Za-z0-9:_-]{8,160}$/.test(sessionId) && Number.isSafeInteger(version) && version > 0 ? { sessionId, version } : null;
 }
 
-function parseClaudeAutofillResponse(data) {
-  // Anthropic response shape: { content: [{type: 'text', text: '...'}], ... }
-  const text = data?.content?.[0]?.text || '';
-  // Strip optional markdown fences
-  const cleaned = text
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/\s*```\s*$/i, '')
-    .trim();
+function decodeBase64Document(value) {
+  const encoded = String(value || '');
+  if (!encoded || encoded.length > 1_100_000 || !/^[A-Za-z0-9+/]*={0,2}$/.test(encoded)) throw new Error('The approved résumé payload was invalid.');
+  const binary = atob(encoded);
+  if (!binary.length || binary.length > 800_000) throw new Error('The approved résumé payload was outside the safe size limit.');
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes;
+}
+
+async function sha256Hex(bytes) {
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, '0')).join('');
+}
+
+async function fillApprovedResume(documentHandoff, preparedMetadata) {
+  const payload = documentHandoff?.document;
+  if (!payload || payload.fieldKey !== 'resumeDocument' || payload.fieldRef !== preparedMetadata?.fieldRef
+    || payload.documentVersion !== preparedMetadata?.documentVersion || payload.filename !== preparedMetadata?.filename
+    || payload.contentType !== 'application/pdf' || payload.sha256 !== preparedMetadata?.sha256
+    || Number(payload.bytes) !== Number(preparedMetadata?.bytes)) return false;
+  const el = findElementByKey(payload.fieldRef);
+  if (!el || String(el.type || '').toLowerCase() !== 'file') return false;
+  const bytes = decodeBase64Document(payload.contentBase64);
   try {
-    return JSON.parse(cleaned);
-  } catch (err) {
-    // Last-ditch: extract first {...} block
-    const match = cleaned.match(/\{[\s\S]*\}/);
-    if (match) {
-      try { return JSON.parse(match[0]); } catch (_) {}
-    }
-    throw new Error('AI response was not valid JSON.');
+    if (bytes.length !== Number(payload.bytes) || await sha256Hex(bytes) !== String(payload.sha256).toLowerCase()) return false;
+    const file = new File([bytes], payload.filename, { type: 'application/pdf', lastModified: Date.now() });
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    el.files = transfer.files;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    el.dispatchEvent(new Event('blur', { bubbles: true }));
+    return el.files?.length === 1 && el.files[0]?.name === payload.filename && el.files[0]?.size === bytes.length;
+  } finally {
+    bytes.fill(0);
   }
 }
 
@@ -494,49 +376,58 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         return;
       }
 
-      // Read profile + resume from chrome.storage.sync (written by auth-bridge.js)
-      const storage = await new Promise((resolve) =>
-        chrome.storage.sync.get(['1ststep_profile', '1ststep_resume'], resolve)
-      );
-      const profile = storage['1ststep_profile'] || {};
-      const resume  = storage['1ststep_resume']  || '';
-
-      // Ask background service worker to POST /api/claude (callType: autofill)
+      const context = applicationContext();
+      if (!context) {
+        sendResponse({ success: false, error: 'Open this employer page from the saved 1stStep application workspace.' });
+        return;
+      }
       const response = await new Promise((resolve) =>
-        chrome.runtime.sendMessage(
-          {
-            action:    'GET_AUTOFILL_MAP',
-            profile,
-            resume,
-            fields,
-            email:     msg.email,
-            tierToken: msg.tierToken
-          },
-          (r) => {
+        chrome.runtime.sendMessage({ action: 'PREPARE_GREENHOUSE_HANDOFF', payload: { ...context, pageUrl: location.href, fields } }, (r) => {
             if (chrome.runtime.lastError) {
               resolve({ success: false, error: chrome.runtime.lastError.message });
             } else {
               resolve(r);
             }
-          }
-        )
+          })
       );
 
       if (!response?.success) {
         sendResponse({ success: false, error: response?.error || 'Autofill request failed.' });
         return;
       }
-
-      let fillMap;
-      try {
-        fillMap = parseClaudeAutofillResponse(response.data);
-      } catch (err) {
-        sendResponse({ success: false, error: err.message });
+      if (response.data?.status === 'waiting-for-user') {
+        sendResponse({ success: false, needsYou: true, error: 'This form has a question that needs you. Return to the 1stStep Needs You queue.' });
         return;
       }
-
-      const { filled, total } = applyFillMap(fillMap);
-      sendResponse({ success: true, filled, total, scanned: fields.length });
+      const filledFieldKeys = [];
+      const failedFieldKeys = [];
+      let documentResponse = null;
+      if (response.data?.document?.available === true) {
+        documentResponse = await new Promise(resolve => chrome.runtime.sendMessage({
+          action: 'GET_GREENHOUSE_DOCUMENT', payload: { handoffToken: response.data.handoffToken },
+        }, r => resolve(chrome.runtime.lastError ? { success: false, error: chrome.runtime.lastError.message } : r)));
+        if (!documentResponse?.success) failedFieldKeys.push('resumeDocument');
+      }
+      if (response.data?.document?.available === true && documentResponse?.success) {
+        if (await fillApprovedResume(documentResponse.data, response.data.document)) filledFieldKeys.push('resumeDocument');
+        else failedFieldKeys.push('resumeDocument');
+      }
+      if (!failedFieldKeys.includes('resumeDocument')) {
+        for (const field of response.data?.fields || []) {
+          const el = findElementByKey(field.fieldRef);
+          if (el && fillField(el, field.value)) filledFieldKeys.push(field.fieldKey);
+          else failedFieldKeys.push(field.fieldKey);
+        }
+      }
+      const completion = await new Promise(resolve => chrome.runtime.sendMessage({
+        action: 'COMPLETE_GREENHOUSE_HANDOFF',
+        payload: { handoffToken: response.data.handoffToken, filledFieldKeys, failedFieldKeys },
+      }, r => resolve(chrome.runtime.lastError ? { success: false, error: chrome.runtime.lastError.message } : r)));
+      if (!completion?.success) {
+        sendResponse({ success: false, error: completion?.error || 'The partial fill was preserved and moved to Needs You.' });
+        return;
+      }
+      sendResponse({ success: true, filled: filledFieldKeys.length, total: (response.data?.fields || []).length + (response.data?.document?.available === true ? 1 : 0), scanned: fields.length, submitted: false, receiptVerified: false });
     } catch (err) {
       console.error('[1stStep] AUTOFILL error:', err);
       sendResponse({ success: false, error: err.message });

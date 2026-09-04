@@ -16,20 +16,17 @@
  *   GHL_LOCATION_ID  — optional
  */
 
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
+import { applyApiHeaders, hasJsonContentType, isOriginAllowed, requestIp, setAccessSessionCookie } from '../lib/api-security.js';
+import { enforceDurableRateLimit, sendRateLimitResult } from '../lib/durable-rate-limit.js';
 
 export const maxDuration = 15;
-
-const ALLOWED_ORIGINS = [
-  'https://1ststep.ai',
-  'https://www.1ststep.ai',
-  'https://app.1ststep.ai',
-];
 
 // Legacy access audit window. Access code signups now receive free accounts only.
 const BETA_TTL_MS          = 15  * 24 * 60 * 60 * 1000;
 const REVIEWER_TTL_MS      = 365 * 24 * 60 * 60 * 1000;
 const REVIEWER_EMAIL       = '1ststep.reviewer@gmail.com';
+const ACCESS_TOKEN_TTL_MS  = 20 * 60 * 1000;
 
 // Rate limiter — 10 attempts per IP per hour (prevents code brute-forcing)
 const betaAttempts = new Map();
@@ -56,34 +53,35 @@ function signTierToken(email, tier, ttlMs) {
   return `${payload}.${sig}`;
 }
 
-function corsHeaders(req) {
-  const origin  = req.headers['origin'] || '';
-  const allowed = ALLOWED_ORIGINS.includes(origin) || /^https:\/\/[\w-]+\.vercel\.app$/.test(origin);
-  return {
-    'Access-Control-Allow-Origin':  allowed ? origin : ALLOWED_ORIGINS[2],
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
+function secretsEqual(input, expected) {
+  const left = Buffer.from(String(input || ''));
+  const right = Buffer.from(String(expected || ''));
+  return left.length === right.length && timingSafeEqual(left, right);
 }
 
 export default async function handler(req, res) {
-  const headers = corsHeaders(req);
-
+  applyApiHeaders(req, res);
   if (req.method === 'OPTIONS') {
-    return res.status(204).set(headers).end();
+    if (!isOriginAllowed(req)) return res.status(403).end();
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    return res.status(204).end();
   }
-
-  Object.entries(headers).forEach(([k, v]) => res.setHeader(k, v));
-  res.setHeader('Cache-Control', 'no-store');
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+  if (!isOriginAllowed(req)) return res.status(403).json({ error: 'Forbidden' });
+  if (!hasJsonContentType(req)) return res.status(415).json({ error: 'Content-Type must be application/json.' });
 
-  const ip = req.headers['x-real-ip']
-           || (req.headers['x-forwarded-for'] || '').split(',').pop().trim()
-           || req.socket?.remoteAddress
-           || 'unknown';
+  const ip = requestIp(req);
+
+  const durableLimit = await enforceDurableRateLimit(req, {
+    scope: 'beta-access', ip,
+    ipRule: { limit: 10, window: '1 h' },
+    globalRule: { limit: 5_000, window: '1 d' },
+  });
+  if (!durableLimit.ok) return sendRateLimitResult(res, durableLimit, 'Too many access attempts. Please try again later.');
 
   if (isBetaRateLimited(ip)) {
     return res.status(429).json({ valid: false, error: 'Too many attempts — try again later.' });
@@ -92,17 +90,21 @@ export default async function handler(req, res) {
   const { email = '', code = '', firstName = '', lastName = '' } = req.body || {};
 
   // Validate email
-  const cleanEmail = email.trim().toLowerCase();
-  if (!cleanEmail || !cleanEmail.includes('@')) {
+  const cleanEmail = String(email).trim().toLowerCase();
+  if (!/^[^\s@<>|]{1,128}@[^\s@<>|]{1,190}$/.test(cleanEmail)) {
     return res.status(400).json({ valid: false, error: 'Please enter a valid email address.' });
+  }
+  if (![firstName, lastName].every(value => String(value).length <= 80 && !/[<>\u0000-\u001F]/.test(String(value)))) {
+    return res.status(400).json({ valid: false, error: 'Name is invalid.' });
   }
 
   // Validate beta code
   const betaCode = (process.env.BETA_CODE || '').trim();
   if (!betaCode) {
+    if (process.env.VERCEL_ENV === 'production') return res.status(503).json({ valid: false, error: 'Private access is not configured.' });
     // If BETA_CODE is not set in Vercel, beta gate is disabled — let everyone in
     console.warn('BETA_CODE env var not set — beta gate is open to all');
-  } else if (code.trim() !== betaCode) {
+  } else if (!secretsEqual(String(code).trim(), betaCode)) {
     // Deliberate delay to slow brute-forcing (even with rate limiter)
     await new Promise(r => setTimeout(r, 500));
     return res.status(200).json({ valid: false, error: 'Invalid invite code — check your invite and try again.' });
@@ -111,7 +113,9 @@ export default async function handler(req, res) {
   // Keep an expiry for old UI compatibility, but do not issue paid entitlement.
   const ttl        = cleanEmail === REVIEWER_EMAIL ? REVIEWER_TTL_MS : BETA_TTL_MS;
   const expiresAt  = Date.now() + ttl;
-  const tierToken  = '';
+  if (String(process.env.TIER_SECRET || '').length < 32) return res.status(503).json({ valid: false, error: 'Secure access is not configured.' });
+  const tierToken  = signTierToken(cleanEmail, 'free', ACCESS_TOKEN_TTL_MS);
+  setAccessSessionCookie(res, tierToken, { maxAgeSeconds: ACCESS_TOKEN_TTL_MS / 1000 });
 
   // ── Capture in GHL as beta contact ──────────────────────────────────────────
   const apiKey     = process.env.GHL_API_KEY;
@@ -146,20 +150,20 @@ export default async function handler(req, res) {
         const data = await r.json().catch(() => ({}));
         if (!r.ok) {
           // Log full body so we can see exactly what GHL rejected
-          console.error(`GHL beta upsert ${r.status} (attempt ${attempt}):`, JSON.stringify(data));
+          console.error(JSON.stringify({ type: 'ghl-beta-upsert-failed', status: r.status, attempt }));
           if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
           continue;
         }
         contactId = data?.contact?.id || data?.id || null;
         if (contactId) {
-          console.log(`✅ GHL beta contact upserted (attempt ${attempt}): ${contactId} (${cleanEmail})`);
+          console.log(`GHL private-access contact captured on attempt ${attempt}.`);
           break;
         } else {
-          console.error(`GHL beta upsert no contactId (attempt ${attempt}):`, JSON.stringify(data));
+          console.error(`GHL private-access capture returned no contact ID on attempt ${attempt}.`);
           if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
         }
       } catch (err) {
-        console.error(`GHL beta contact exception (attempt ${attempt}):`, err.message);
+        console.error(JSON.stringify({ type: 'ghl-beta-contact-error', attempt, name: err?.name || 'unknown' }));
         if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
       }
     }
@@ -181,14 +185,14 @@ export default async function handler(req, res) {
           }),
         });
         if (!oppRes.ok) throw new Error(`GHL opportunity create failed: ${oppRes.status}`);
-        console.log(`✅ GHL pipeline opportunity created for ${cleanEmail}`);
+        console.log('GHL private-access opportunity created.');
       } catch (err) {
-        console.error('GHL opportunity error:', err.message);
+        console.error(JSON.stringify({ type: 'ghl-beta-opportunity-error', name: err?.name || 'unknown' }));
       }
     }
   }
 
-  console.log(`Legacy access signup moved to free account: ${cleanEmail}`);
+  console.log('Private-access signup created a free account.');
 
   // ── Notify Evan via Resend (FIRST — before GHL so timeout can't block it) ──
   const resendKey = process.env.RESEND_API_KEY;
@@ -222,12 +226,12 @@ export default async function handler(req, res) {
       });
       const resendBody = await resendRes.json().catch(() => ({}));
       if (resendRes.ok) {
-        console.log(`✅ Resend beta email sent: ${resendBody.id}`);
+        console.log('Private-access notification email sent.');
       } else {
-        console.error('Resend beta email error:', resendRes.status, JSON.stringify(resendBody));
+        console.error('Private-access notification email failed:', resendRes.status);
       }
     } catch (err) {
-      console.error('Resend beta email exception:', err.message);
+      console.error(JSON.stringify({ type: 'beta-email-error', name: err?.name || 'unknown' }));
     }
   } else {
     console.warn('RESEND_API_KEY not set — skipping beta notification email');

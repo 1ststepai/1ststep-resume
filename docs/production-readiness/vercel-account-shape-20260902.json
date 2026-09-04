@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-02T02:47:00Z",
+  "contentFree": true,
+  "containsSecretValues": false,
+  "performsWrites": false,
+  "changesBilling": false,
+  "changesTraffic": false,
+  "source": "authenticated-read-only-vercel-cli-api",
+  "teamBilling": {
+    "plan": "pro",
+    "status": "active",
+    "planIteration": "plus"
+  },
+  "projectRuntime": {
+    "nodeVersion": "24.x",
+    "serverlessFunctionRegion": "iad1",
+    "fluidCompute": true,
+    "functionDefaultRegions": ["iad1"],
+    "buildMachineType": "standard",
+    "buildMachineSelection": "fixed"
+  },
+  "observability": {
+    "drainCount": 0,
+    "defaultTeamWideAlertRuleVisible": true,
+    "defaultRuleInspected": false,
+    "projectSpecificRuleVerified": false,
+    "deliveryDestinationVerified": false,
+    "receiverAcknowledgementVerified": false,
+    "retentionVerified": false
+  },
+  "remainingUnknowns": [
+    "function and account quota ceilings",
+    "signed-user queue throughput and fairness",
+    "saturation and dependency-failure behavior",
+    "alert recipient and receiver-side acknowledgement",
+    "log retention destination",
+    "production capacity"
+  ]
+}

@@ -34,7 +34,7 @@
 **Fix:**
 - Remove job search tab from UI entirely
 - Replace with URL/paste JD input field
-- Delete `api/jobs.js` — this frees 1 Vercel function slot
+- Delete `api/jobs.js` — this frees 1 Vercel function slot. **Still open as of 2026-09-04:** `app.js` calls `/api/jobs` and `app.html` is still served at `/app/resume`, so this cannot be deleted until the resume capability is isolated from legacy search.
 - Remove `ADZUNA_API_KEY` from env vars after confirming no other code references it
 **Note:** Do NOT add any fallback. This feature is being removed, not fixed.
 
@@ -197,8 +197,8 @@
 - Phase 1 (now): Add "Copy to Extension" button in web app that writes profile to `chrome.storage` via deep link
 - Phase 2 (with Supabase work): Extension reads profile from Supabase by email+token — the permanent fix
 
-### EXT-BUG-002 — Workday uses Shadow DOM — standard querySelector won't work
-**File:** `1ststep-extension/sites/workday.js`
+### EXT-BUG-002 — Workday uses Shadow DOM — standard querySelector won't work *(HISTORICAL — Workday path retired 2026-09-04)*
+**File:** `1ststep-extension/sites/workday.js` *(deleted 2026-09-04; kept as historical evidence)*
 **Status:** OPEN
 **Fix:** Use `MutationObserver` + retry loop + `shadowRoot` traversal. Start with Greenhouse/Lever instead — stable selectors, high ROI.
 

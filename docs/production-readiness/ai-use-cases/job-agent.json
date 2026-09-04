@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "featureId": "job-agent-controlled-hitl-beta",
+  "featureName": "Persistent human-supervised job-search agent",
+  "owner": "1stStep.ai product and safety owner",
+  "reviewedAt": "2026-09-01",
+  "expiresAt": "2026-10-01",
+  "productionDecision": "blocked",
+  "humanApprovalRequired": true,
+  "scores": {
+    "technologyReadiness": 3,
+    "workflowValue": 5,
+    "userReadiness": 3,
+    "dataReadiness": 2,
+    "expectedBusinessValue": 4,
+    "securityPrivacyGovernanceRisk": 5
+  },
+  "rationales": {
+    "technologyReadiness": "Durable runs, retries, verified-source discovery, document packaging, and human-action queues have broad local coverage; external execution remains disabled.",
+    "workflowValue": "The agent removes repetitive discovery, verification, tailoring, and tracking work while preserving consequential decisions for the user.",
+    "userReadiness": "The guided flow and Needs You queue have browser coverage, but a controlled multi-user usability pilot has not yet produced retained outcome evidence.",
+    "dataReadiness": "A structured vault and provenance model exist, but applied tenant database controls and production data-quality measurements remain unverified.",
+    "expectedBusinessValue": "Time saved and better-qualified applications are plausible, but interview and placement lift has not yet been measured in a representative pilot.",
+    "securityPrivacyGovernanceRisk": "The workflow handles resumes, contact data, employment history, consent, and potential employer transmission, so governance and consequence risks are high even with fail-closed controls."
+  },
+  "answers": {
+    "userProblem": "Job seekers spend substantial time finding current roles, checking direct-employer requisitions, tailoring documents, and tracking blocked applications.",
+    "automationEvidence": "The workflow contains repetitive bounded tasks and the repository has deterministic fixture coverage; real-user time-saved and outcome evidence is still unknown.",
+    "requiredData": "Verified candidate facts, preferences, employment and education history, reusable answers, job requirements, document versions, approvals, and receipt evidence.",
+    "agentReadScope": "Only tenant-owned confirmed facts, explicit preferences, verified direct-employer job content, current workflow state, and the exact document package required for the step.",
+    "agentChangeScope": "It may update internal search, verification, package, queue, and tracker state; employer-facing transmission and submission remain separately gated and disabled.",
+    "humanApproval": "Personal-data transmission, final submission, ambiguous facts, OTP, CAPTCHA, identity verification, unusual certifications, conflicts, and consequential uncertainty require the user.",
+    "safeFailure": "It preserves durable state, marks retry or Needs You, prevents ambiguous retransmission, continues unrelated safe work, and never counts submission without authoritative receipt evidence.",
+    "pauseOrRevoke": "The user can pause the mission, revoke consent or authorization, sign out sessions, and block new execution; started ambiguous external actions remain review-only rather than retried.",
+    "costPerUser": "Unknown until controlled pilot telemetry measures discovery, model, rendering, storage, notification, and worker usage by category without recording personal content.",
+    "costPerOperation": "Configured monetary caps exist for AI and application packaging, but actual blended per-operation cost is unverified and other external categories remain disabled.",
+    "successMeasurement": "Measure qualified verified roles, package completion, Needs You resolution time, authoritative receipts, interviews, user time saved, false matches, cost, and safety exceptions.",
+    "removalCriteria": "Remove or narrow the feature if it cannot maintain truthful receipts, tenant isolation, direct-source accuracy, safe approval boundaries, acceptable cost, or measurable user value."
+  },
+  "evidence": [
+    "Local web release suite passed with 56 public assets and 41 API functions.",
+    "Thirty-six browser scenarios passed, including consent, unknown outcomes, receipt counting, retry, Pause, and Play again.",
+    "Production RLS, restore, alert delivery, representative user outcomes, and per-operation cost remain unknown."
+  ],
+  "blockers": [
+    "Applied tenant database grants and RLS have not been verified in staging.",
+    "Backup/PITR configuration and an isolated restore drill are not verified.",
+    "Representative controlled-pilot value, cost, and safety evidence is absent."
+  ],
+  "notes": "This assessment authorizes no deployment, employer interaction, personal-data transmission, or final submission."
+}

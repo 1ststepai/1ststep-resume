@@ -15,6 +15,9 @@
  *   GHL_STAGE_TRIAL_ENDING, GHL_STAGE_CHURNED
  */
 
+import { applyApiHeaders, authenticateApiRequest, hasJsonContentType, isOriginAllowed } from '../lib/api-security.js';
+import { enforceDurableRateLimit, sendRateLimitResult } from '../lib/durable-rate-limit.js';
+
 const STAGE_ENV_MAP = {
   active_user:           'GHL_STAGE_ACTIVE_USER',
   power_user:            'GHL_STAGE_POWER_USER',
@@ -41,11 +44,25 @@ function corsHeaders(req) {
 }
 
 export default async function handler(req, res) {
-  const headers = corsHeaders(req);
-  if (req.method === 'OPTIONS') return res.status(204).set(headers).end();
-  Object.entries(headers).forEach(([k, v]) => res.setHeader(k, v));
+  applyApiHeaders(req, res);
+  if (req.method === 'OPTIONS') {
+    if (!isOriginAllowed(req)) return res.status(403).end();
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    return res.status(204).end();
+  }
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!hasJsonContentType(req)) return res.status(415).json({ error: 'Content-Type must be application/json.' });
+  const auth = await authenticateApiRequest(req);
+  if (!auth.ok) return res.status(auth.status).json({ error: 'Request not authorized.', code: auth.code });
+  const durableLimit = await enforceDurableRateLimit(req, {
+    scope: 'ghl-stage', subject: auth.subject,
+    ipRule: { limit: 20, window: '1 h' },
+    accountRule: { limit: 20, window: '1 d' },
+    globalRule: { limit: 5_000, window: '1 d' },
+  });
+  if (!durableLimit.ok) return sendRateLimitResult(res, durableLimit, 'Too many account-stage updates. Please try again later.');
 
   const apiKey     = process.env.GHL_API_KEY;
   const locationId = process.env.GHL_LOCATION_ID;
@@ -59,7 +76,7 @@ export default async function handler(req, res) {
   const { email = '', stage = '' } = req.body || {};
   const cleanEmail = email.trim().toLowerCase();
 
-  if (!cleanEmail || !cleanEmail.includes('@')) {
+  if (!cleanEmail || cleanEmail !== auth.subject) {
     return res.status(400).json({ error: 'Invalid email' });
   }
 
@@ -127,12 +144,12 @@ export default async function handler(req, res) {
       if (!updateRes.ok) throw new Error(`Opportunity update failed: ${updateRes.status}`);
     }
 
-    console.log(`✅ GHL stage updated: ${cleanEmail} → ${stage}`);
+    console.log(`GHL stage updated: ${stage}`);
     return res.status(200).json({ ok: true });
 
   } catch (err) {
-    console.error('GHL stage update error:', err.message);
+    console.error(JSON.stringify({ type: 'ghl-stage-update-error', name: err?.name || 'unknown' }));
     // Don't fail the user-facing request over a CRM update
-    return res.status(200).json({ ok: true, skipped: true, error: err.message });
+    return res.status(200).json({ ok: true, skipped: true, reason: 'CRM_UPDATE_UNAVAILABLE' });
   }
 }

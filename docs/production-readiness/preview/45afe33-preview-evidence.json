@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-02T00:10:00Z",
+  "environment": "Vercel Preview",
+  "sourceCommit": "45afe330237fe9fa8f51f3fe17da9599cc9677d9",
+  "runtimeSha256": "0a73c90e96db11868eae20812462fdb5ee1fb1d664dc5d8f3fdb4214bdf9e25b",
+  "deployment": {
+    "id": "dpl_ELeJmsXYJFZdKP976hHjBcSUDkyb",
+    "url": "https://1ststep-resume-c3lqypapr-1ststep.vercel.app",
+    "target": "preview",
+    "readyState": "READY",
+    "protected": true
+  },
+  "checks": {
+    "releaseGate": "passed",
+    "truthfulFirstUseHtml": true,
+    "healthLive": "healthy",
+    "healthReady": "unavailable-fail-closed",
+    "durableRateLimit": "passed",
+    "liveEmployerFeedsChecked": 37,
+    "exactSyntheticMatches": 2,
+    "submissionsEnabled": false
+  },
+  "authenticationUx": {
+    "publicContract": { "restoreAccessAvailable": false },
+    "dialogVisible": true,
+    "emailFieldEnabled": false,
+    "sendCodeControlEnabled": false,
+    "message": "Secure sign-in is not configured for this environment. No code was sent.",
+    "consoleErrorsOrWarnings": 0,
+    "secretNamesOrValuesReturned": false,
+    "providerRequestAttempted": false
+  },
+  "observability": {
+    "providerRequestLogsSampled": true,
+    "qualifyingRecords": 6,
+    "expectedRouteStatuses": {
+      "/api/health/live": 200,
+      "/api/health/ready": 503,
+      "/api/app-config": 200,
+      "/api/concierge-preview-smoke": 200
+    },
+    "contentBearingAllowlistedRecords": 0,
+    "unexpectedStatusRecords": 0,
+    "missingRoutes": [],
+    "rawMessagesEmitted": false,
+    "rawLogsRetained": false,
+    "providerRetentionVerified": false,
+    "logDrainVerified": false,
+    "alertDeliveryVerified": false,
+    "onCallResponseVerified": false
+  },
+  "capacity": {
+    "probeDeployed": true,
+    "protectedPreviewProbeExecuted": false,
+    "reason": "SCOPED_PREVIEW_BYPASS_SECRET_NOT_AVAILABLE",
+    "capacityClaimed": false
+  },
+  "externalActions": {
+    "productionTrafficChanged": false,
+    "migrationApplied": false,
+    "candidateDataTransmitted": false,
+    "employerContacted": false,
+    "applicationSubmitted": false
+  }
+}

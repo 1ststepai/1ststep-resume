@@ -1,152 +1,58 @@
-// Vercel Serverless Function — Job Search Proxy
 import { alertOnAbuse } from './_alert.js';
-// Keeps the RapidAPI key server-side so customers don't need their own.
-//
-// Environment variable required:
-//   RAPIDAPI_KEY = your RapidAPI key (from jsearch plan on rapidapi.com)
-//
-// Set it in Vercel: Project → Settings → Environment Variables
-//
-// JSearch plan: https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch
-// Free tier: 200 calls/month  |  Basic: $10/mo for 500 calls
+import { applyApiHeaders, authenticateApiRequest, isOriginAllowed, requestIp } from '../lib/api-security.js';
+import { enforceDurableRateLimit, sendRateLimitResult } from '../lib/durable-rate-limit.js';
 
 export const maxDuration = 30;
 
-// ── Allowed origins ─────────────────────────────────────────────────────────
-const ALLOWED_ORIGINS = [
-  'https://1ststep.ai',
-  'https://www.1ststep.ai',
-  'https://app.1ststep.ai',
-];
-
-// ── Allowed query parameters forwarded to JSearch ──────────────────────────
-// Explicit allowlist prevents parameter injection / SSRF
 const ALLOWED_PARAMS = new Set([
   'query', 'page', 'num_pages', 'date_posted', 'remote_jobs_only',
   'employment_types', 'job_requirements', 'country', 'radius',
   'job_id', 'extended_publisher_details',
 ]);
-
-// ── Rate limiting ────────────────────────────────────────────────────────────
-const ipWindows = new Map();
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX_CALLS = 30; // job searches are cheaper, allow more
-
-function isRateLimited(ip) {
-  const now = Date.now();
-  const calls = (ipWindows.get(ip) || []).filter(t => now - t < RATE_LIMIT_WINDOW_MS);
-  calls.push(now);
-  ipWindows.set(ip, calls);
-  if (ipWindows.size > 5000) {
-    const oldest = [...ipWindows.keys()].slice(0, 500);
-    oldest.forEach(k => ipWindows.delete(k));
-  }
-  return calls.length > RATE_LIMIT_MAX_CALLS;
-}
-
-// ── Monthly job search counter (COST-01) ─────────────────────────────────────
-// Prevents a single IP from draining the entire JSearch plan quota in one burst.
-// JSearch plan: 50,000 searches/month. Cap per IP: 500/month — well above any
-// legitimate user (even power users rarely exceed 100 searches/month).
-const monthlyJobSearches = new Map(); // "ip:YYYY-MM" → count
-const MONTHLY_JOB_LIMIT  = 500;
-
-function jobSearchMonthKey(ip) {
-  const d = new Date();
-  return `${ip}:${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
-}
-
-function checkMonthlyJobLimit(ip) {
-  const key   = jobSearchMonthKey(ip);
-  const count = (monthlyJobSearches.get(key) || 0) + 1;
-  monthlyJobSearches.set(key, count);
-  if (monthlyJobSearches.size > 10_000) {
-    [...monthlyJobSearches.keys()].slice(0, 1000).forEach(k => monthlyJobSearches.delete(k));
-  }
-  return count > MONTHLY_JOB_LIMIT;
-}
-
 export default async function handler(req, res) {
-  // Security headers
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-
-  // CORS — allow same-origin (no Origin header) and approved external origins
-  const origin = req.headers['origin'] || '';
-  const originAllowed = !origin || ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.vercel.app');
-  if (origin && originAllowed) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-  }
+  applyApiHeaders(req, res);
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') return res.status(204).end();
-
-  if (!originAllowed) return res.status(403).json({ error: 'Forbidden' });
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return isOriginAllowed(req) ? res.status(204).end() : res.status(403).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  // IP resolution — use last trusted hop (JOBS-02: prevents X-Forwarded-For spoofing)
-  const ip = req.headers['x-real-ip']
-           || (req.headers['x-forwarded-for'] || '').split(',').pop().trim()
-           || req.socket?.remoteAddress
-           || 'unknown';
-
-  if (isRateLimited(ip)) {
+  const auth = await authenticateApiRequest(req);
+  if (!auth.ok) return res.status(auth.status).json({ error: auth.code === 'AUTH_REQUIRED' ? 'Sign in again to search jobs.' : 'Request not authorized.', code: auth.code });
+  const ip = requestIp(req);
+  const durableLimit = await enforceDurableRateLimit(req, {
+    scope: 'jobs', subject: auth.subject, ip,
+    ipRule: { limit: 30, window: '1 m' },
+    accountRule: { limit: 200, window: '1 d' },
+    globalRule: { limit: Number(process.env.JOB_SEARCH_GLOBAL_DAILY_CALLS) || 10_000, window: '1 d' },
+  });
+  if (!durableLimit.ok) {
     alertOnAbuse('rate_limited', ip, 'endpoint:jobs');
-    return res.status(429).json({ error: 'Too many searches — please wait a moment and try again.' });
-  }
-
-  // Monthly quota guard (COST-01: prevents draining JSearch plan)
-  if (checkMonthlyJobLimit(ip)) {
-    alertOnAbuse('monthly_limit', ip, 'endpoint:jobs');
-    return res.status(429).json({ error: 'Monthly job search limit reached for this IP.' });
+    return sendRateLimitResult(res, durableLimit, 'Too many searches. Please wait before searching again.');
   }
 
   const apiKey = process.env.RAPIDAPI_KEY;
-  if (!apiKey) {
-    console.error('RAPIDAPI_KEY environment variable not set');
-    return res.status(500).json({ error: 'Job search not configured on server.' });
-  }
-
-  // Build clean params — only forward allowlisted keys
+  if (!apiKey) return res.status(503).json({ error: 'Paid job search is disabled. Public employer-feed discovery remains available.' });
   const safeParams = new URLSearchParams();
   for (const [key, value] of Object.entries(req.query || {})) {
-    if (ALLOWED_PARAMS.has(key) && typeof value === 'string' && value.length < 500) {
-      safeParams.set(key, value);
-    }
+    if (ALLOWED_PARAMS.has(key) && typeof value === 'string' && value.length <= 300) safeParams.set(key, value);
   }
-
-  // Determine endpoint
-  const isDetails = req.url?.includes('/details');
-  const jsearchEndpoint = isDetails ? 'job-details' : 'search';
+  if (!safeParams.get('query') && !safeParams.get('job_id')) return res.status(400).json({ error: 'A job query or job ID is required.' });
+  const endpoint = req.url?.includes('/details') ? 'job-details' : 'search';
 
   try {
-    const upstream = await fetch(`https://jsearch.p.rapidapi.com/${jsearchEndpoint}?${safeParams}`, {
-      headers: {
-        'X-RapidAPI-Key': apiKey,
-        'X-RapidAPI-Host': 'jsearch.p.rapidapi.com',
-      },
+    const upstream = await fetch(`https://jsearch.p.rapidapi.com/${endpoint}?${safeParams}`, {
+      headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': 'jsearch.p.rapidapi.com' },
+      signal: AbortSignal.timeout(12_000),
     });
-
-    if (upstream.status === 403 || upstream.status === 401) {
-      const errBody = await upstream.text().catch(() => '');
-      console.error(`RapidAPI auth failure — status:${upstream.status} body:${errBody.slice(0,200)}`);
-      alertOnAbuse('jsearch_auth_failure', 'rapidapi_key', `status:${upstream.status}`);
-      return res.status(403).json({ error: 'Invalid RapidAPI key on server. Contact support at evan@1ststep.ai' });
+    if (upstream.status === 401 || upstream.status === 403) {
+      alertOnAbuse('jsearch_auth_failure', 'provider', `status:${upstream.status}`);
+      return res.status(502).json({ error: 'The job-search provider is not configured correctly.' });
     }
-    if (upstream.status === 429) {
-      return res.status(429).json({ error: 'Job search is temporarily at capacity — try again shortly.' });
-    }
-    if (!upstream.ok) {
-      return res.status(upstream.status).json({ error: `Job search error ${upstream.status}` });
-    }
-
-    const data = await upstream.json();
-    return res.status(200).json(data);
-
-  } catch (err) {
-    console.error('Job proxy error:', err);
-    return res.status(500).json({ error: err.message || 'Job search failed' });
+    if (upstream.status === 429) return res.status(429).json({ error: 'Job search is temporarily at capacity.' });
+    if (!upstream.ok) return res.status(502).json({ error: 'The job-search provider returned an error.' });
+    return res.status(200).json(await upstream.json());
+  } catch (error) {
+    console.error(JSON.stringify({ type: 'job-provider-failure', name: error.name || 'unknown' }));
+    return res.status(502).json({ error: 'The job-search provider could not be reached.' });
   }
 }
