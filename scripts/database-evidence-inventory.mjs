@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { execFileSync } from 'node:child_process';
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
@@ -14,23 +13,6 @@ const sensitivePattern = /(tenant|identit|profile|fact|preference|job|applicatio
 
 function digest(value) {
   return createHash('sha256').update(value).digest('hex');
-}
-
-function commandAvailable(name) {
-  try {
-    execFileSync('where.exe', [name], { stdio: 'ignore' });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function supabaseCliVersion() {
-  try {
-    return execFileSync('powershell.exe', ['-NoProfile', '-Command', 'npx --no-install supabase --version'], { cwd: root, encoding: 'utf8' }).trim();
-  } catch {
-    return 'Not installed';
-  }
 }
 
 function parseTables(sql, source) {
@@ -165,7 +147,6 @@ async function buildInventory() {
   };
   const canonicalNames = (await readdir(path.join(root, 'supabase', 'migrations'))).filter(name => /^\d{14}_job_agent_canonical_baseline\.sql$/.test(name));
   const canonicalSql = canonicalNames.length === 1 ? await readFile(path.join(root, 'supabase', 'migrations', canonicalNames[0]), 'utf8') : '';
-  const cliVersion = supabaseCliVersion();
   const inventory = {
     schemaVersion: 1,
     source: 'repository-static-analysis-only',
@@ -174,11 +155,11 @@ async function buildInventory() {
       classification: 'Human Action Required; no staging/local target identified',
       maskedProjectRef: null,
       productionExcluded: false,
-      supabaseCliAvailable: cliVersion !== 'Not installed',
-      dockerAvailable: commandAvailable('docker'),
-      psqlAvailable: commandAvailable('psql'),
+      supabaseCliAvailable: null,
+      dockerAvailable: null,
+      psqlAvailable: null,
       postgresVersion: 'Unknown',
-      supabaseCliVersion: cliVersion,
+      supabaseCliVersion: 'Not evaluated by deterministic inventory',
     },
     canonicalMigration: canonicalNames.length === 1 ? { file: `supabase/migrations/${canonicalNames[0]}`, sha256: digest(canonicalSql), bytes: Buffer.byteLength(canonicalSql), reconciledSourceFiles: names } : null,
     repositoryMigrations: migrations,

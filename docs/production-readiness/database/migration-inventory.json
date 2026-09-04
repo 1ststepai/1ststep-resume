@@ -6,11 +6,11 @@
     "classification": "Human Action Required; no staging/local target identified",
     "maskedProjectRef": null,
     "productionExcluded": false,
-    "supabaseCliAvailable": true,
-    "dockerAvailable": false,
-    "psqlAvailable": false,
+    "supabaseCliAvailable": null,
+    "dockerAvailable": null,
+    "psqlAvailable": null,
     "postgresVersion": "Unknown",
-    "supabaseCliVersion": "2.116.0"
+    "supabaseCliVersion": "Not evaluated by deterministic inventory"
   },
   "canonicalMigration": {
     "file": "supabase/migrations/20260901195545_job_agent_canonical_baseline.sql",
