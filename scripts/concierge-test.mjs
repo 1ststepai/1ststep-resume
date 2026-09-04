@@ -202,6 +202,12 @@ assert.doesNotMatch(conciergeHtml.match(/id="jobAgentConsentOverlay"[\s\S]*?id="
 assert.match(conciergeJs, /source: 'guided-popup'/);
 assert.match(conciergeJs, /extractResumeFile/);
 assert.match(conciergeJs, /buildVerifiedResumeDraft/);
+assert.match(conciergeHtml, /href="\/app\/resume">Open full Resume Workspace/);
+assert.match(conciergeJs, /const RESUME_HANDOFF_KEY = '1ststep_resume_handoff'/);
+assert.match(conciergeJs, /await syncCanonicalApplicantProfile\(\{ facts: deskState\.reusableFacts, resume: savedResumeRecord\(\), ask: false \}\)/, 'vault enablement must use one canonical profile sync');
+assert.match(conciergeJs, /vaultAction\('sync-profile', input\)/, 'canonical profile sync must use the atomic vault action');
+assert.match(conciergeJs, /handoff\?\.status === 'ready-for-job-agent-review'[\s\S]*sessionStorage\.removeItem\(RESUME_HANDOFF_KEY\)/, 'explicit resume workspace handoffs must sync before their marker is consumed');
+assert.doesNotMatch(conciergeJs, /for \(const fact of deskState\.reusableFacts\) await backupConfirmedFact/, 'vault enablement must not issue one request per fact');
 assert.match(conciergeJs, /askSmartConcierge/);
 assert.match(conciergeJs, /resumeInterviewActive/);
 assert.match(conciergeJs, /AI_CONSENT_KEY/);

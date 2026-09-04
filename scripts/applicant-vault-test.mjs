@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {
   grantVaultConsent, renewVaultConsent, revokeVaultConsent, revokeVaultDocument, revokeVaultFact,
-  upsertVaultDocument, upsertVaultFact,
+  syncCanonicalApplicantProfile, upsertVaultDocument, upsertVaultFact,
 } from '../lib/applicant-vault-domain.js';
 import {
   decryptApplicantVault, deleteApplicantVault, encryptApplicantVault, readApplicantVault, saveApplicantVault, tenantVaultKey,
@@ -28,6 +28,20 @@ vault = upsertVaultDocument(vault, { type: 'master-resume', title: 'Master resum
 assert.equal(vault.documents[0].versions[0].sha256.length, 64);
 vault = upsertVaultDocument(vault, { type: 'master-resume', title: 'Master resume', text: 'Corrected verified candidate resume content. '.repeat(10), fileName: 'resume-v2.docx', provenance: 'candidate-reviewed', qa: { atsTextExtracted: true, renderedPagesReviewed: true, pageCount: 2 } }, '2026-08-29T12:05:00.000Z');
 assert.equal(vault.documents[0].currentVersion, 2);
+
+const canonicalInput = {
+  facts: [
+    { fieldKey: 'skills', label: 'Verified skills', value: 'Strategic sourcing; vendor management; contracts', provenance: 'candidate correction', confidence: 1, verificationState: 'user-confirmed', autoReuse: true },
+    { fieldKey: 'education', label: 'Education', value: 'Candidate-confirmed education', provenance: 'candidate confirmation', confidence: 1, verificationState: 'user-confirmed', autoReuse: true },
+  ],
+  masterResume: { text: 'Corrected verified candidate resume content. '.repeat(10), fileName: 'resume-v2.docx', provenance: 'candidate-reviewed', qa: { atsTextExtracted: true } },
+};
+const canonical = syncCanonicalApplicantProfile(vault, canonicalInput, '2026-08-29T12:05:30.000Z');
+assert.equal(canonical.facts.find(item => item.fieldKey === 'skills').currentVersion, 2, 'unchanged canonical facts must not create versions');
+assert.equal(canonical.facts.find(item => item.fieldKey === 'education').currentVersion, 1);
+assert.equal(canonical.documents[0].currentVersion, 2, 'unchanged canonical resume must not create a version');
+const canonicalReplay = syncCanonicalApplicantProfile(canonical, canonicalInput, '2026-08-29T12:05:40.000Z');
+assert.equal(canonicalReplay.audit.length, canonical.audit.length, 'repeated canonical sync must be semantically idempotent');
 
 const tenantKey = tenantVaultKey('candidate@example.com', partitionSecret);
 const envelope = encryptApplicantVault(vault, { key: dataEncryptionKey, tenantKey });
