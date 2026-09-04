@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const paths = ['content.js', 'background.js', 'auth-bridge.js', 'popup.js', 'manifest.json'];
+const paths = ['content.js', 'background.js', 'auth-bridge.js', 'popup.js', 'popup.html', 'manifest.json'];
 const files = Object.fromEntries(await Promise.all(paths.map(async path => [path, await readFile(new URL(`../1ststep-extension/${path}`, import.meta.url), 'utf8')])));
 const combined = Object.values(files).join('\n');
 const manifest = JSON.parse(files['manifest.json']);
@@ -46,4 +46,10 @@ assert.equal(manifest.content_scripts[0].all_frames, false);
 assert.equal('web_accessible_resources' in manifest, false);
 assert.equal(manifest.description.toLowerCase().includes('greenhouse'), true);
 
-console.log('Controlled Greenhouse extension uses transient server-authorized values and integrity-checked resume bytes, no raw profile or document storage, no AI field guessing, no local Applied state, narrow hosts, and no-submit completion.');
+assert.match(files['content.js'], /sendResponse\(\{ success: true, reviewRequired: true, matchAssessment, filled: 0, submitted: false/);
+assert.ok(files['content.js'].indexOf('reviewRequired: true') < files['content.js'].indexOf('if (await fillApprovedResume'), 'match review must happen before document or ordinary-field mutation');
+assert.match(files['content.js'], /confirmPrecision: true|msg\.confirmPrecision === true/);
+assert.match(files['popup.js'], /btn\.dataset\.precisionReviewed = 'true'/);
+assert.match(files['popup.html'], /Review match &amp; fill/);
+
+console.log('Controlled Greenhouse extension uses transient server-authorized values and integrity-checked resume bytes, requires match evidence and explicit review before fill, stores no raw profile or document data, performs no AI field guessing, keeps narrow hosts, and never submits.');

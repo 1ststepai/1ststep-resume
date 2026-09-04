@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { confirmApplicationApproval, createApplicationSession } from '../lib/application-session-domain.js';
 import { grantVaultConsent, upsertVaultFact } from '../lib/applicant-vault-domain.js';
 import { createExtensionHandoffToken, extensionApplicationHandoffConfiguration, materializeGreenhouseExtensionFields, planGreenhouseExtensionHandoff, verifyExtensionHandoffToken } from '../lib/extension-application-handoff.js';
-import { verifiedResumeArtifact } from '../api/extension-application-handoff.js';
+import { buildExtensionMatchAssessment, verifiedResumeArtifact } from '../api/extension-application-handoff.js';
 
 const now = new Date('2026-08-30T18:00:00.000Z');
 const secret = 'extension-handoff-secret'.padEnd(48, 'x');
@@ -44,6 +44,17 @@ assert.throws(() => planGreenhouseExtensionHandoff({ session, pageUrl: session.r
 let vault = grantVaultConsent({ scopes: ['confirmed-facts', 'documents'] }, now);
 vault = upsertVaultFact(vault, { id: 'fact_first_name', fieldKey: 'firstName', label: 'First name', value: 'Jordan', provenance: 'candidate confirmation', verificationState: 'user-confirmed', confidence: 1, sensitivity: 'standard', autoReuse: true }, now);
 vault = upsertVaultFact(vault, { id: 'fact_email_address', fieldKey: 'email', label: 'Email', value: 'jordan@example.test', provenance: 'candidate confirmation', verificationState: 'user-confirmed', confidence: 0.99, sensitivity: 'standard', autoReuse: true }, now);
+vault = upsertVaultFact(vault, { id: 'fact_skills', fieldKey: 'skills', label: 'Skills', value: 'Procurement; strategic sourcing; supplier negotiations; SAP', provenance: 'candidate confirmation', verificationState: 'user-confirmed', confidence: 1, sensitivity: 'standard', autoReuse: true }, now);
+vault = upsertVaultFact(vault, { id: 'fact_employment', fieldKey: 'employment', label: 'Employment', value: 'Led procurement operations, strategic sourcing, and supplier programs as a procurement manager', provenance: 'candidate confirmation', verificationState: 'user-confirmed', confidence: 1, sensitivity: 'standard', autoReuse: true }, now);
+vault = upsertVaultFact(vault, { id: 'fact_education', fieldKey: 'education', label: 'Education', value: 'Bachelor degree', provenance: 'candidate confirmation', verificationState: 'user-confirmed', confidence: 1, sensitivity: 'standard', autoReuse: true }, now);
+const matchAssessment = buildExtensionMatchAssessment({
+  job: { title: 'Procurement Manager', description: 'Lead procurement operations, strategic sourcing, supplier negotiations, and SAP programs. Bachelor degree preferred.', remote: true },
+  vault, session,
+});
+assert.equal(matchAssessment.source, 'deterministic-verified-evidence-v1');
+assert.ok(matchAssessment.confidenceScore >= matchAssessment.minimumAutofillScore, JSON.stringify(matchAssessment));
+assert.equal(matchAssessment.credibleInterviewPath, true);
+assert.match(matchAssessment.tailoringJustification, /Credible interview path/);
 const fields = materializeGreenhouseExtensionFields(plan, vault);
 assert.deepEqual(fields.map(field => field.fieldKey), ['firstName', 'email']);
 assert.equal(fields[1].value, 'jordan@example.test');

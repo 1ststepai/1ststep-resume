@@ -37,6 +37,7 @@ test('controlled Greenhouse adapter fills only server-authorized ordinary fields
         let response = { success: true };
         if (message.action === 'PREPARE_GREENHOUSE_HANDOFF') response = { success: true, data: {
           status: 'ready-to-fill', handoffToken: 'synthetic-signed-handoff',
+          matchAssessment: { schemaVersion: 1, confidenceScore: 88, classification: 'Strong Match', tailoringJustification: 'Credible interview path based on functional alignment and verified experience.', matchedEvidence: ['functional alignment', 'experience alignment'], credibleInterviewPath: true, minimumAutofillScore: 70, source: 'deterministic-verified-evidence-v1' },
           fields: [
             { fieldRef: 'first_name', fieldKey: 'firstName', value: 'Jordan' },
             { fieldRef: 'email_address', fieldKey: 'email', value: 'jordan@example.test' },
@@ -57,7 +58,12 @@ test('controlled Greenhouse adapter fills only server-authorized ordinary fields
   }, resumeDocument);
   await page.goto('https://boards.greenhouse.io/fixtureco/jobs/123456#1ststep-session=application_fixture_12345678&1ststep-version=7');
   await page.addScriptTag({ path: contentScript });
-  const result = await page.evaluate(() => window.__sendExtensionMessage({ action: 'AUTOFILL' }));
+  const review = await page.evaluate(() => window.__sendExtensionMessage({ action: 'AUTOFILL' }));
+  expect(review).toMatchObject({ success: true, reviewRequired: true, filled: 0, submitted: false, matchAssessment: { confidenceScore: 88, credibleInterviewPath: true } });
+  await expect(page.locator('#first_name')).toHaveValue('');
+  await expect(page.locator('#email_address')).toHaveValue('');
+  await expect(page.locator('#resume_upload')).toHaveValue('');
+  const result = await page.evaluate(() => window.__sendExtensionMessage({ action: 'AUTOFILL', confirmPrecision: true }));
   expect(result).toMatchObject({ success: true, filled: 3, total: 3, submitted: false, receiptVerified: false });
   await expect(page.locator('#first_name')).toHaveValue('Jordan');
   await expect(page.locator('#email_address')).toHaveValue('jordan@example.test');
@@ -94,7 +100,7 @@ test('Greenhouse adapter rejects a mismatched resume before filling ordinary fie
     window.chrome = { runtime: { id: 'fixture-extension', lastError: null, onMessage: { addListener(fn) { listeners.push(fn); } }, sendMessage(message, callback) {
       window.__bridgeMessages.push(JSON.parse(JSON.stringify(message)));
       let response = { success: true };
-      if (message.action === 'PREPARE_GREENHOUSE_HANDOFF') response = { success: true, data: { status: 'ready-to-fill', handoffToken: 'signed', fields: [{ fieldRef: 'first_name', fieldKey: 'firstName', value: 'Jordan' }], document: metadata } };
+      if (message.action === 'PREPARE_GREENHOUSE_HANDOFF') response = { success: true, data: { status: 'ready-to-fill', handoffToken: 'signed', matchAssessment: { schemaVersion: 1, confidenceScore: 82, classification: 'Strong Match', tailoringJustification: 'Credible interview path based on verified experience.', matchedEvidence: ['experience alignment'], credibleInterviewPath: true, minimumAutofillScore: 70, source: 'deterministic-verified-evidence-v1' }, fields: [{ fieldRef: 'first_name', fieldKey: 'firstName', value: 'Jordan' }], document: metadata } };
       if (message.action === 'GET_GREENHOUSE_DOCUMENT') response = { success: true, data: { document: { ...metadata, available: undefined, contentBase64: corruptedBase64 } } };
       if (message.action === 'COMPLETE_GREENHOUSE_HANDOFF') response = { success: false, error: 'The partial fill was preserved.' };
       if (callback) queueMicrotask(() => callback(response));
@@ -104,7 +110,10 @@ test('Greenhouse adapter rejects a mismatched resume before filling ordinary fie
   }, { metadata, corruptedBase64: corrupted.toString('base64') });
   await page.goto('https://boards.greenhouse.io/fixtureco/jobs/123456#1ststep-session=application_fixture_12345678&1ststep-version=7');
   await page.addScriptTag({ path: contentScript });
-  const result = await page.evaluate(() => window.__sendExtensionMessage({ action: 'AUTOFILL' }));
+  const review = await page.evaluate(() => window.__sendExtensionMessage({ action: 'AUTOFILL' }));
+  expect(review.reviewRequired).toBe(true);
+  await expect(page.locator('#first_name')).toHaveValue('');
+  const result = await page.evaluate(() => window.__sendExtensionMessage({ action: 'AUTOFILL', confirmPrecision: true }));
   expect(result.success).toBe(false);
   await expect(page.locator('#first_name')).toHaveValue('');
   await expect(page.locator('#resume_upload')).toHaveValue('');
