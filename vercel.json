@@ -11,7 +11,7 @@
     },
     {
       "path": "/api/job-agent-worker",
-      "schedule": "0 * * * *"
+      "schedule": "0 0,12 * * *"
     }
   ],
   "functions": {
