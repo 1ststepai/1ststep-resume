@@ -28,6 +28,10 @@ const ALLOWED_HOST_PERMISSIONS = Object.freeze([
 
 function sha256(value) { return createHash('sha256').update(value).digest('hex'); }
 function sorted(value) { return [...value].sort((left, right) => left.localeCompare(right)); }
+function canonicalReleaseValue(name, value) {
+  if (!/\.(?:html|js|json)$/i.test(name)) return value;
+  return Buffer.from(value.toString('utf8').replace(/\r\n?/g, '\n'), 'utf8');
+}
 
 function validateManifest(manifest) {
   if (manifest.manifest_version !== 3) throw new Error('Controlled extension must use Manifest V3.');
@@ -58,7 +62,7 @@ function validateReleaseSource(name, value) {
 export async function buildControlledExtension({ outputDirectory = join(ROOT, 'dist') } = {}) {
   const entries = [];
   for (const name of RELEASE_FILES) {
-    const value = await readFile(join(SOURCE, ...name.split('/')));
+    const value = canonicalReleaseValue(name, await readFile(join(SOURCE, ...name.split('/'))));
     validateReleaseSource(name, value);
     entries.push({ name, value, sha256: sha256(value), bytes: value.length });
   }
