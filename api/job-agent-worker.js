@@ -1,3 +1,4 @@
+import { createWorkerDeadline } from '../lib/job-agent-worker-deadline.js';
 import { timingSafeEqual } from 'node:crypto';
 import { applyApiHeaders } from '../lib/api-security.js';
 import { jobAgentRuntimeConfiguration, processNextJobAgentRun } from '../lib/job-agent-worker.js';
@@ -35,7 +36,20 @@ async function recordSafely(action) {
   catch (error) { console.error(JSON.stringify({ type: 'job-agent-worker-metric-error', name: error?.name || 'unknown' })); }
 }
 
-export async function executeJobAgentWorkerCycle({
+export async function executeJobAgentWorkerCycle(options) {
+  const budget = createWorkerDeadline({ budgetMs: options.budgetMs });
+  try {
+    return await budget.wait(() => executeBoundedCycle({ ...options, budget }));
+  } catch (error) {
+    if (error?.message !== 'WORKER_DEADLINE_EXHAUSTED') throw error;
+    return { httpStatus: 503, body: { ok: false, executionMode: 'durable-work-cycle',
+      outcome: 'unknown', reasonCode: 'WORKER_DEADLINE_EXHAUSTED',
+      contentFree: true, containsCandidateValues: false } };
+  } finally { budget.close(); }
+}
+
+async function executeBoundedCycle({
+  budget,
   config, env = process.env, query = {},
   processSchedule = processNextJobAgentSchedule, processRun = processNextJobAgentRun,
   processNotification = processNextNeedsYouNotification,
@@ -61,6 +75,10 @@ export async function executeJobAgentWorkerCycle({
   processLearning = processNextJobAgentLearningMaintenance,
   clock = () => new Date(), logError = value => console.error(value),
 }) {
+  config = { ...config, redis: budget.guardClient(config.redis), servedTenants: new Set() };
+  [processSchedule, processRun, processNotification, processFollowUp, processBrowserTask, reconcileBrowserTask, processBrowserSessionCleanup, processSubmissionTask, reconcileSubmissionTask, processReceiptTask, processArtifactCleanup, processAccountExport, processAccountExportCleanup, reconcileSpend, recordEvent, recordExecution, sendAlert, processOperatorAlert, readOperatorAlertQueue, readSubmissionQueue, readReceiptQueue, readAccountExportQueue, processLearning] =
+    [processSchedule, processRun, processNotification, processFollowUp, processBrowserTask, reconcileBrowserTask, processBrowserSessionCleanup, processSubmissionTask, reconcileSubmissionTask, processReceiptTask, processArtifactCleanup, processAccountExport, processAccountExportCleanup, reconcileSpend, recordEvent, recordExecution, sendAlert, processOperatorAlert, readOperatorAlertQueue, readSubmissionQueue, readReceiptQueue, readAccountExportQueue, processLearning].map(action => budget.guard(action));
+  if (recordHeartbeat) recordHeartbeat = budget.guard(recordHeartbeat);
   const startedAt = clock();
   // recordHeartbeat remains an injection-only compatibility seam for older tests
   // and callers. Production uses the execution receipt path.
@@ -166,7 +184,7 @@ export async function executeJobAgentWorkerCycle({
   for (let index = 0; index < limit; index += 1) {
     try {
       const run = await processRun(config);
-      if (!run) break;
+      if (!run) continue;
       processed.push({ id: run.id, status: run.status, attempt: run.attempt, errorCode: run.lastErrorCode || null });
       const freshness = run.result?.freshnessSummary;
       if (freshness?.contentFree === true && freshness?.containsCandidateValues === false) {
@@ -185,8 +203,7 @@ export async function executeJobAgentWorkerCycle({
     } catch (error) {
       failed = true;
       await recordSafely(() => recordEvent('durable_run_failure', { redis: config.redis, now: clock() }));
-      logError(JSON.stringify({ type: 'job-agent-durable-worker-error', name: error?.name || 'unknown' }));
-      break;
+      logError(JSON.stringify({ type: 'job-agent-durable-worker-error', name: 'WorkerError' }));
     }
   }
   const learningEnabled = jobAgentLearningConfiguration(env).enabled;
