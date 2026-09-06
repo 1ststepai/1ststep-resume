@@ -1,8 +1,50 @@
 import { test, expect } from '@playwright/test';
 import { jobAgentPolicyBundle } from '../lib/job-agent-policy-bundle.js';
 import { jobAgentStatus } from '../client/concierge-router.js';
+import { grantVaultConsent } from '../lib/applicant-vault-domain.js';
+import { rememberApplicationAnswer, resolveApplicationAnswer, forgetAnswerMemory } from '../lib/application-answer-memory.js';
 
 const baseUrl = process.env.CONCIERGE_TEST_URL || 'http://127.0.0.1:4175/concierge';
+
+test('Needs You remembers an exact answer, restores attribution, and forgets it without transmission', async ({ page }) => {
+  let vault = grantVaultConsent(), version = 1, patch;
+  let session = { id:'application-memory-fixture',version:1,packageRunId:'package-memory-fixture',role:{employer:'Synthetic Employer',title:'Operations Manager',requisitionId:'REQ-MEMORY',directEmployerUrl:'https://careers.example.com/REQ-MEMORY'},documentVersion:'resume-memory-v1',state:'Waiting for You',stage:'employer_form',externalApplicationExecution:false,proposedFields:[],approvals:{transmission:null,submission:null},receipt:null,actions:[{id:'action-memory-fixture',type:'AMBIGUOUS_FACT',status:'open',summary:'Describe your vendor experience.',metadata:{question:'Describe your vendor experience.'}}],timeline:[] };
+  const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.route('**/api/session-capabilities*', route => route.fulfill({json:{jobAgentAccess:true,authentication:'opaque-session'}}));
+  await page.route('**/api/applicant-vault', async route => {
+    if (route.request().method() === 'POST') {
+      const body = route.request().postDataJSON();
+      if (body.action === 'remember-answer') vault = rememberApplicationAnswer(vault, session, body.input);
+      if (body.action === 'forget-memory') vault = forgetAnswerMemory(vault, body.input.id);
+      version++;
+    }
+    await route.fulfill({json:{vault,version}});
+  });
+  await page.route('**/api/application-sessions*', async route => {
+    if (route.request().method() === 'PATCH') { patch = route.request().postDataJSON(); session = {...resolveApplicationAnswer(session,vault,patch),version:2}; }
+    await route.fulfill({json:{session,sessions:[session],submissionsEnabled:false}});
+  });
+  await page.goto(baseUrl,{waitUntil:'networkidle'});
+  await page.locator('#resumeApplication').click();
+  await page.locator('#answerMemoryText').fill('I handled equipment warranty claims and vendor terms at Example Company.');
+  await page.locator('#answerMemoryForm button[type="submit"]').click();
+  await expect(page.locator('#applicationSuggestions')).toContainText('Supplied by remembered fact, version 1');
+  expect(patch.action).toBe('resolve-remembered-answer');
+  expect(JSON.stringify(patch)).not.toContain('equipment warranty');
+  expect(session.approvals).toEqual({transmission:null,submission:null});
+  await page.reload({waitUntil:'networkidle'});
+  await page.locator('#openVault').click();
+  await expect(page.locator('#vaultList')).toContainText('Remembered about you');
+  await expect(page.locator('#vaultList')).toContainText('equipment warranty claims');
+  await page.screenshot({path:`${process.env.TEMP || '/tmp'}/remembered-about-you.png`});
+  await page.setViewportSize({width:390,height:844});
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({path:`${process.env.TEMP || '/tmp'}/remembered-about-you-mobile.png`});
+  await page.locator('[data-memory-forget]').click();
+  await expect(page.locator('#vaultList')).not.toContainText('equipment warranty claims');
+  expect(JSON.stringify(vault)).not.toContain('equipment warranty claims');
+  expect(errors).toEqual([]);
+});
 
 test('running requires recent heartbeat and unexpired lease', () => {
   const now = Date.now();

@@ -5,6 +5,8 @@ import { createDurableApplicationSession, deleteDurableApplicationSession, listD
 import { prepareEmployerBrowserTaskRecord } from '../lib/employer-browser-task-store.js';
 import { enforceDurableRateLimit, sendRateLimitResult } from '../lib/durable-rate-limit.js';
 import { readJobAgentRun } from '../lib/job-agent-run-store.js';
+import { readApplicantVault } from '../lib/applicant-vault-store.js';
+import { resolveApplicationAnswer } from '../lib/application-answer-memory.js';
 import { jobAgentRuntimeConfiguration } from '../lib/job-agent-runtime-configuration.js';
 import { recordConfiguredJobAgentOperationalEvent } from '../lib/job-agent-operational-metrics.js';
 import { jobAgentConsentGate } from '../lib/job-agent-consent-store.js';
@@ -30,7 +32,7 @@ export const EXTERNAL_APPLICATION_SESSION_ACTIONS = Object.freeze([
 ]);
 
 /* Actions where the agent resumes working unattended on the user's behalf. */
-export const AUTHORIZED_APPLICATION_SESSION_ACTIONS = Object.freeze(['resume']);
+export const AUTHORIZED_APPLICATION_SESSION_ACTIONS = Object.freeze(['resume', 'resolve-remembered-answer']);
 
 /* This module mixes internal preparation state with employer-facing steps. Classify per
    ACTION, never per file: an internal operation must not inherit a weaker gate because
@@ -44,6 +46,7 @@ export function applicationSessionPolicyLevel(body = {}) {
 
 export function validateApplicationSessionMutationBody(body = {}) {
   assertNoApplicationSecrets(body, 'applicationSessionRequest');
+  if (body.action === 'resolve-remembered-answer' && Object.keys(body).some(key => !['action', 'actionId', 'factId', 'factVersion', 'confirmed', 'sessionId', 'version'].includes(key))) throw new Error('Remembered answers require value-free references.');
   if (String(body.action || '') === 'confirm-external-step') {
     const allowed = new Set(['action', 'actionId', 'confirmed', 'sessionId', 'version']);
     if (Object.keys(body).some(key => !allowed.has(key))) throw new Error('Employer-site completion accepts only a value-free action confirmation.');
@@ -179,6 +182,10 @@ export default async function handler(req, res) {
     let followUpReminderReservation = null;
     if (action === 'pause') updated = pauseApplicationSession(session, 'Application paused by the job seeker.');
     else if (action === 'resume') updated = resumeApplicationSession(session);
+    else if (action === 'resolve-remembered-answer') {
+      const stored = await readApplicantVault({ ...config, subject: auth.subject });
+      updated = resolveApplicationAnswer(session, stored.vault, req.body);
+    }
     else if (action === 'confirm-transmission') updated = confirmApplicationApproval(session, { kind: 'transmission', confirmed: req.body?.confirmed === true });
     else if (action === 'request-final-review') updated = requestApplicationSubmissionApproval(session, { confirmed: req.body?.confirmed === true });
     else if (action === 'refresh-final-approval') updated = refreshApplicationSubmissionApproval(session);

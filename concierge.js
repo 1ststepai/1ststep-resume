@@ -458,6 +458,7 @@ function renderVaultStatus() {
   const scheduleRow = authenticated ? `<div class="desk-row"><div><strong>Daily background search</strong><small>${escapeHtml(scheduleStatus)} · direct-employer discovery only · no applications submitted</small></div><div class="desk-actions"><button data-schedule-action="${scheduleAction}" ${scheduleAction === 'resume' && (!missionState.mission?.role || !activeJobAgentConsent()) ? 'disabled' : ''}>${scheduleAction === 'pause' ? 'Pause daily search' : 'Resume daily search'}</button></div></div>` : '';
   $('vaultList').innerHTML = [scheduleRow, ...facts.map(fact => {
     const version = fact.versions.find(item => item.version === fact.currentVersion) || fact.versions.at(-1);
+    if (version?.scope?.memory) return `<div class="desk-row"><div><strong>Remembered about you · ${escapeHtml(version.scope.category)}</strong><p>${escapeHtml(version.value)}</p><small>${escapeHtml(fact.label)} · ${escapeHtml(version.scope.kind)} scope · ${escapeHtml(version.scope.employer)} · ${escapeHtml(version.confirmedAt)} · ${version.scope.expiresAt ? `expires ${escapeHtml(version.scope.expiresAt)}` : 'until you edit or forget'}</small></div><div class="desk-actions"><button data-memory-edit="${escapeHtml(fact.id)}">Edit</button><button data-memory-forget="${escapeHtml(fact.id)}">Forget</button></div></div>`;
     return `<div class="desk-row"><div><strong>${escapeHtml(fact.label)}</strong><small>Saved securely · ${escapeHtml(version?.provenance || 'candidate confirmation')} · confidence ${Math.round((Number(version?.confidence) || 0) * 100)}% · version ${fact.currentVersion}${version?.autoReuse ? ' · reusable when meaning matches' : ' · manual review required'}</small></div><div class="desk-actions"><button data-vault-edit-fact="${escapeHtml(fact.fieldKey)}">Edit</button><button data-vault-revoke-fact="${escapeHtml(fact.id)}">Revoke</button></div></div>`;
   }), ...documents.map(document => `<div class="desk-row"><div><strong>${escapeHtml(document.title)}</strong><small>Encrypted document · ${escapeHtml(document.type)} · version ${document.currentVersion} · contents hidden</small></div><div class="desk-actions"><button data-vault-revoke-document="${escapeHtml(document.id)}">Revoke</button></div></div>`)].filter(Boolean).join('') || empty('No encrypted account-backed answers or documents. Unsaved details remain only in this tab.');
 }
@@ -479,7 +480,7 @@ async function hydrateApplicantVault() {
       }
       for (const fact of applicantVault.vault.facts.filter(item => item.status === 'active')) {
         const version = fact.versions.find(item => item.version === fact.currentVersion) || fact.versions.at(-1);
-        if (!version?.value) continue;
+        if (!version?.value || version.scope?.memory) continue;
         deskState = confirmReusableFact(deskState, { fieldKey: fact.fieldKey, value: version.value, confirmed: true, verificationState: version.verificationState, source: `secure-vault:${version.provenance}`, sensitivity: version.sensitivity, autoReuse: version.autoReuse });
       }
       const master = applicantVault.vault.documents.find(document => document.status === 'active' && document.type === 'master-resume');
@@ -509,6 +510,7 @@ async function vaultAction(action, input = {}) {
       body: JSON.stringify({ version: applicantVault.version, action, input }),
     }, REQUEST_TIMEOUTS.persistence);
     const data = await response.json().catch(() => ({}));
+    if (data.code === 'MEMORY_CONFLICT') { const error = new Error(data.error); error.memoryVersion = data.factVersion; throw error; }
     if (response.status === 409) { await hydrateApplicantVault(); throw new Error('Secure backup changed in another session. Review it and try again.'); }
     if (!response.ok) throw new Error(data.error || 'Secure backup could not be updated.');
     applicantVault.version = Number(data.version) || applicantVault.version;
@@ -2673,6 +2675,61 @@ function renderDurableBrowserHandoff(session) {
   $('closeBrowserHandoff').hidden = !handoff.session;
 }
 
+function renderAnswerMemory(session, action) {
+  let panel = $('answerMemoryPanel');
+  if (!panel) { panel = document.createElement('section'); panel.id = 'answerMemoryPanel'; $('applicationActionSummary').after(panel); }
+  panel.replaceChildren();
+  if (action?.type !== 'AMBIGUOUS_FACT' || !action.metadata?.question) {
+    const ref = [...session.actions].reverse().find(a => a.metadata?.answerReference)?.metadata.answerReference;
+    const fact = applicantVault.vault?.facts.find(f => f.id === ref?.factId && f.status === 'active');
+    if (fact) {
+      panel.innerHTML = '<p role="status">Remembered. Saved privately; nothing submitted.</p><button type="button">Edit / Forget</button>';
+      panel.querySelector('button').addEventListener('click', () => { $('vaultOverlay').classList.add('open'); renderVaultStatus(); });
+    }
+    return;
+  }
+  const question = action.metadata.question;
+  const normalize = s => String(s || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();
+  const fact = vaultEnabled() && applicantVault.vault.facts.find(f => {
+    const v = f.versions.find(v => v.version === f.currentVersion), s = v?.scope;
+    return f.status === 'active' && s?.memory && normalize(s.question) === normalize(question)
+      && (!s.expiresAt || Date.parse(s.expiresAt) > Date.now())
+      && (s.kind === 'candidate' || s.kind === 'application' && s.applicationId === session.id || s.kind === 'employer' && s.employer === session.role.employer);
+  });
+  const v = fact?.versions.find(v => v.version === fact.currentVersion);
+  panel.innerHTML = `<form id="answerMemoryForm" class="desk-field"><label for="answerMemoryText">${escapeHtml(question)}</label>
+    ${fact ? `<small>Remembered answer · version ${fact.currentVersion} · ${escapeHtml(v.scope.employer)} · ${escapeHtml(v.confirmedAt)}</small>` : ''}
+    <textarea id="answerMemoryText" rows="3" maxlength="2000" required placeholder="Only what you know to be true">${escapeHtml(v?.value || '')}</textarea>
+    <label for="answerMemoryScope">Use this answer for</label><select id="answerMemoryScope"><option value="candidate">Matching questions</option><option value="employer">Only this employer</option><option value="application">Only this application</option></select>
+    <label for="answerMemoryKind">Remember as</label><select id="answerMemoryKind"><option value="fact">A fact about me</option><option value="preference">My preference</option><option value="permission">An application-specific permission (not submission approval)</option></select>
+    <label class="check-row"><input id="answerMemorySensitive" type="checkbox"> Explicitly remember sensitive screening information, if included</label>
+    <label for="answerMemoryExpiry">Expires on (optional)</label><input id="answerMemoryExpiry" type="date">
+    <small>Ordinary answers are remembered automatically. Passwords and security codes are never accepted. Nothing is sent to the employer by saving.</small>
+    <p id="answerMemoryResult" role="status"></p><button type="submit">Save answer & continue preparation</button></form>`;
+  if (v) { $('answerMemoryScope').value = v.scope.kind; $('answerMemoryKind').value = v.scope.category; }
+  let replaceVersion;
+  $('answerMemoryForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = event.target.querySelector('button[type="submit"]'); button.disabled = true;
+    try {
+      if (!vaultEnabled() && !(await enableApplicantVault({ ask: true }))) throw new Error('Enable encrypted backup to remember this answer, or complete it on the employer site.');
+      const data = await vaultAction('remember-answer', { sessionId: session.id, actionId: action.id, statement: $('answerMemoryText').value, scope: $('answerMemoryScope').value, kind: $('answerMemoryKind').value, sensitiveOptIn: $('answerMemorySensitive').checked, expiresAt: $('answerMemoryExpiry').value || null, replaceVersion });
+      const saved = data.vault.facts.find(f => f.status === 'active' && f.versions.at(-1)?.scope?.actionId === action.id);
+      if (!saved) throw new Error('Answer save could not be verified.');
+      await updateDurableApplicationSession('resolve-remembered-answer', true, { actionId: action.id, factId: saved.id, factVersion: saved.currentVersion });
+      showToast('Remembered. Review, Edit or Forget in Saved Info. Nothing submitted.');
+    } catch (error) {
+      $('answerMemoryResult').textContent = error.message;
+      if (error.memoryVersion) {
+        replaceVersion = undefined;
+        const replace = document.createElement('button'); replace.type = 'button'; replace.textContent = 'Replace my previous answer';
+        replace.onclick = () => { replaceVersion = error.memoryVersion; replace.remove(); $('answerMemoryResult').textContent = 'Replacement selected. Save to confirm, or choose Only this application.'; };
+        $('answerMemoryResult').append(replace);
+      }
+    } finally { button.disabled = false; }
+  });
+}
+
 function renderDurableApplicationWorkspace(session) {
   if (session.receipt) $('applicationBrowserHandoff').hidden = true;
   else renderDurableBrowserHandoff(session);
@@ -2721,6 +2778,13 @@ function renderDurableApplicationWorkspace(session) {
   $('applicationAgentStatus').innerHTML = `<strong>${escapeHtml(session.state)}</strong><br>${escapeHtml(durableApplicationStageLabel(session.stage))}. ${session.externalApplicationExecution === false ? 'No employer action has run.' : ''}`;
   $('applicationAuthorization').innerHTML = `<div class="workspace-row"><strong>${session.approvals?.transmission ? 'Sharing permission saved' : 'No sharing permission yet'}</strong><small>Permission is exact to this employer and ${escapeHtml(session.documentVersion)}. Final submission requires a separate confirmation.</small></div>`;
   $('applicationSuggestions').innerHTML = (session.proposedFields || []).map(item => `<div class="workspace-row"><strong>${escapeHtml(item.label)} → ${escapeHtml(item.maskedPreview)}</strong><small>${escapeHtml(item.provenance)} · ${Math.round(Number(item.confidence || 0) * 100)}% confidence</small></div>`).join('');
+  for (const item of session.actions || []) {
+    const ref = item.metadata?.answerReference;
+    if (!ref) continue;
+    const fact = applicantVault.vault?.facts?.find(f => f.id === ref.factId);
+    const valid = vaultEnabled() && fact?.status === 'active' && fact.currentVersion === ref.factVersion;
+    $('applicationSuggestions').insertAdjacentHTML('beforeend', `<div class="workspace-row"><strong>${escapeHtml(item.metadata.question || 'Screening answer')}</strong><small>${valid ? `Supplied by remembered fact, version ${ref.factVersion}. Prepared only; not sent.` : 'Remembered answer changed or was forgotten. Review again before use.'}</small><button type="button" data-review-memory>Review remembered answer</button></div>`);
+  }
   $('applicationBlockers').innerHTML = (session.actions || []).filter(item => item.status === 'open').map(item => `<div class="workspace-row"><strong>${escapeHtml(item.type.replaceAll('_', ' '))}</strong><small>${escapeHtml(item.summary)}</small></div>`).join('') || empty('No current blocker.');
   $('applicationTimeline').innerHTML = [...(session.timeline || [])].reverse().map(item => `<div class="workspace-row"><strong>${escapeHtml(item.kind.replaceAll('_', ' '))}</strong><small>${escapeHtml(item.summary)} · ${escapeHtml(item.at)}</small></div>`).join('');
   $('applicationReceipt').innerHTML = session.receipt ? `<div class="workspace-row receipt-box"><strong>AUTHORITATIVE EMPLOYER RECEIPT · ${escapeHtml(session.receipt.confirmationId || 'verified')}</strong><small>${escapeHtml(session.documentVersion)} · ${escapeHtml(session.receipt.receivedAt || '')}</small></div>` : empty('No authoritative receipt. This application is not counted as Submitted.');
@@ -2768,7 +2832,9 @@ function renderDurableApplicationWorkspace(session) {
     actionSummary = openAction.summary;
   }
   $('applicationActionTitle').textContent = actionTitle;
+  if (openAction?.type === 'AMBIGUOUS_FACT' && openAction.metadata?.question) actionSummary = 'Save a truthful answer below. Ordinary answers are remembered for matching questions; employer exceptions stay scoped. Saving prepares the answer, but does not fill or submit the employer form.';
   $('applicationActionSummary').textContent = actionSummary;
+  renderAnswerMemory(session, openAction);
   $('advanceApplication').hidden = session.state !== 'Preparing';
   $('advanceApplication').disabled = false;
   $('advanceApplication').textContent = 'Pause safely';
@@ -3493,6 +3559,20 @@ $('deleteVault').addEventListener('click', async () => {
   } catch (error) { $('vaultStatus').textContent = error.message; }
 });
 $('vaultList').addEventListener('click', async event => {
+  if (event.target?.dataset?.memoryForget) {
+    try { await vaultAction('forget-memory', { id: event.target.dataset.memoryForget }); showToast('Forgotten. This answer will no longer be reused.'); }
+    catch (error) { $('vaultStatus').textContent = error.message; }
+    return;
+  }
+  if (event.target?.dataset?.memoryEdit) {
+    const fact = applicantVault.vault.facts.find(f => f.id === event.target.dataset.memoryEdit);
+    const v = fact?.versions.find(v => v.version === fact.currentVersion);
+    const statement = window.prompt('Correct your exact statement. Earlier versions will not be reused.', v?.value || '');
+    if (statement === null) return;
+    try { await vaultAction('edit-memory', { id: fact.id, statement, sensitiveOptIn: v.sensitivity !== 'standard' ? window.confirm('Explicitly remember this updated sensitive screening answer?') : false }); }
+    catch (error) { $('vaultStatus').textContent = error.message; }
+    return;
+  }
   const scheduleAction = event.target?.dataset?.scheduleAction;
   if (scheduleAction) {
     event.target.disabled = true;
@@ -4103,6 +4183,7 @@ async function hydrateAccountWorkflow() {
   await hydrateJobAgentLearning();
 }
 start();
+$('applicationSuggestions').addEventListener('click', event => { if (event.target.hasAttribute('data-review-memory')) { $('vaultOverlay').classList.add('open'); renderVaultStatus(); } });
 $('checkAgentStatus').addEventListener('click', () => checkSimpleAgentStatus());
 $('statusShowJobs').addEventListener('click', () => $('openJobs').click());
 // Refresh the displayed age without issuing background requests or inventing activity.

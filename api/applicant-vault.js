@@ -9,6 +9,8 @@ import { deleteApplicantVault, readApplicantVault, saveApplicantVault } from '..
 import { jobAgentConsentGate } from '../lib/job-agent-consent-store.js';
 import { JOB_AGENT_POLICY_LEVELS, requireJobAgentPolicyLevel } from '../lib/job-agent-policy-levels.js';
 import { dataEncryptionKeyringFromEnvironment } from '../lib/data-encryption-keyring.js';
+import { rememberApplicationAnswer, forgetAnswerMemory } from '../lib/application-answer-memory.js';
+import { readDurableApplicationSession } from '../lib/application-session-store.js';
 
 function configuration() {
   const partitionSecret = String(process.env.RATE_LIMIT_HASH_SECRET || process.env.TIER_SECRET || '');
@@ -58,11 +60,13 @@ export default async function handler(req, res) {
     }
     const input = req.body?.input && typeof req.body.input === 'object' ? req.body.input : {};
     let vault;
+    if (['upsert-fact', 'sync-profile'].includes(action) && JSON.stringify(input).includes('memory_')) throw new Error('Memory edits must use the application-memory controls.');
     if (action === 'grant-consent') {
       vault = current.vault ? renewVaultConsent(current.vault, input) : grantVaultConsent(input);
     } else {
       if (!current.vault) throw new Error('Applicant vault consent is required.');
       const actions = {
+        'forget-memory': () => forgetAnswerMemory(current.vault, String(input.id || '')),
         'upsert-fact': () => upsertVaultFact(current.vault, input),
         'revoke-fact': () => revokeVaultFact(current.vault, String(input.id || '')),
         'upsert-document': () => upsertVaultDocument(current.vault, input),
@@ -70,13 +74,33 @@ export default async function handler(req, res) {
         'revoke-document': () => revokeVaultDocument(current.vault, String(input.id || '')),
         'revoke-consent': () => revokeVaultConsent(current.vault),
       };
-      if (!actions[action]) throw new Error('Unsupported applicant vault action.');
-      vault = actions[action]();
+      if (action === 'remember-answer' || action === 'edit-memory') {
+        let source = input;
+        if (action === 'edit-memory') {
+          const fact = current.vault.facts.find(f => f.id === input.id && f.status === 'active');
+          const v = fact?.versions.find(v => v.version === fact.currentVersion);
+          if (!v?.scope?.memory) throw new Error('An active memory is required.');
+          source = { ...input, actionId: v.scope.actionId, sessionId: v.scope.applicationId, scope: v.scope.kind, kind: v.scope.category, replaceVersion: fact.currentVersion, expiresAt: v.scope.expiresAt };
+        }
+        let session = await readDurableApplicationSession({ ...config, subject: auth.subject, sessionId: String(source.sessionId || '') });
+        if (!session && action === 'edit-memory') {
+          const fact = current.vault.facts.find(f => f.id === input.id);
+          const scope = fact.versions.at(-1).scope;
+          session = { id: scope.applicationId, role: { employer: scope.employer }, actions: [{ id: scope.actionId, type: 'AMBIGUOUS_FACT', status: 'open', metadata: { question: scope.question } }] };
+        }
+        if (!session) throw new Error('The source application is required.');
+        if (action === 'edit-memory') session = { ...session, actions: session.actions.map(a => a.id === source.actionId ? { ...a, status: 'open' } : a) };
+        vault = rememberApplicationAnswer(current.vault, session, source);
+      } else {
+        if (!actions[action]) throw new Error('Unsupported applicant vault action.');
+        vault = actions[action]();
+      }
     }
     const result = await saveApplicantVault({ ...config, subject: auth.subject, vault, expectedVersion: current.version, idempotencyKey: String(req.headers?.['idempotency-key'] || '') });
     if (result.conflict) return res.status(409).json({ error: 'Applicant vault changed in another session.', code: 'VERSION_CONFLICT', version: result.version });
     return res.status(200).json({ ...result, vault: publicVaultSummary(vault) });
   } catch (error) {
+    if (error.code === 'MEMORY_CONFLICT') return res.status(409).json({ error: error.message, code: error.code, factId: error.factId, factVersion: error.version });
     const message = String(error?.message || '');
     if (/required|not allowed|invalid|exceeds|limit|unsupported|must be/i.test(message)) return res.status(400).json({ error: message });
     console.error(JSON.stringify({ type: 'applicant-vault-error', name: error?.name || 'unknown' }));

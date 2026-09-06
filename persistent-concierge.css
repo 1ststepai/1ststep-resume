@@ -467,3 +467,10 @@ button, .resume-upload-label, .question-secondary, .search-link,
 #agentStatusSeen { display: block; color: #64748b; }
 .agent-status-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
 .agent-status-controls button { min-height: 44px; padding: 10px 16px; }
+#vaultOverlay .vault-shell { background:#fff; color:#17223b; }
+#vaultOverlay .vault-actions button { background:#fff; color:#17223b; }
+#vaultOverlay .vault-head button { align-self:flex-start; min-height:44px; }
+#vaultOverlay .vault-head h2 { color:#17223b; }
+#answerMemoryPanel { margin:16px 0; padding:16px; border:1px solid #dbe3ee; border-radius:12px; background:#f8fafc; color:#17223b; }
+#answerMemoryPanel textarea, #answerMemoryPanel select, #answerMemoryPanel input[type="date"] { width:100%; max-width:100%; box-sizing:border-box; padding:10px; }
+#answerMemoryPanel button { min-height:44px; margin-top:10px; }
