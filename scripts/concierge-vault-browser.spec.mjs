@@ -3,6 +3,57 @@ import { jobAgentPolicyBundle } from '../lib/job-agent-policy-bundle.js';
 
 const baseUrl = process.env.CONCIERGE_TEST_URL || 'http://127.0.0.1:4175/concierge';
 
+test('newly reviewed resume survives late sign-in hydration and reaches consent without a second upload', async ({ page }) => {
+  let releaseSession;
+  const sessionReady = new Promise(resolve => { releaseSession = resolve; });
+  const bundle = jobAgentPolicyBundle({ termsVersion: 'terms-beta-1', privacyVersion: 'privacy-beta-1', authorizationVersion: 'job-agent-beta-1' });
+  const consent = { status: 'not-granted', active: false, code: 'JOB_AGENT_CONSENT_REQUIRED', scopes: [], requiredPolicy: bundle.binding, policyBundle: bundle };
+  await page.route('**/api/**', route => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Synthetic unavailable account backup' }) }));
+  await page.route('**/api/app-config', route => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
+  await page.route('**/api/session-capabilities', async route => {
+    await sessionReady;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ jobAgentAccess: true, tier: 'complete', sessionAuthentication: 'opaque-session', jobAgentConsent: consent, jobAgentConsentPolicyConfigured: true }) });
+  });
+  await page.route('**/api/job-agent-consent', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ consent, policyConfigured: true, version: 0 }) }));
+  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await page.locator('#openGuidedLaunch').click();
+  await page.locator('[data-guided-goal="best-fit"]').click();
+  const chooser = page.waitForEvent('filechooser');
+  await page.locator('#quickUploadResume').click();
+  const resume = `Synthetic reviewed resume\n${'Managed sourcing and supplier operations.\n'.repeat(12)}`;
+  await (await chooser).setFiles({ name: 'synthetic-resume.txt', mimeType: 'text/plain', buffer: Buffer.from(resume) });
+  await expect(page.locator('#resumeEditor')).toHaveValue(resume.trim());
+  await page.locator('#saveResume').click();
+  await expect(page.locator('#resumeMeta')).toContainText('available in this tab');
+  releaseSession();
+  await expect.poll(() => page.evaluate(() => document.querySelector('#openAgentAccess').textContent)).not.toBe('Sign in');
+  await page.waitForLoadState('networkidle');
+  expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('1ststep_resume')).text)).toBe(resume.trim());
+  expect(await page.evaluate(() => localStorage.getItem('1ststep_resume'))).toBeNull();
+  page.on('dialog', dialog => dialog.accept());
+  await page.locator('#saveResume').click();
+  await expect(page.locator('#resumeMeta')).toContainText('not backed up to your account');
+  expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('1ststep_resume')).text)).toBe(resume.trim());
+  await page.locator('#closeResumeSetup').click();
+  await expect(page.locator('#quickResumeState')).toContainText('Resume ready');
+  await page.locator('#guidedLaunchNext').click();
+  await page.locator('[data-opportunity-path]').first().click();
+  await page.locator('[data-launch-choice="workMode"][data-value="Remote"]').click();
+  await page.locator('[data-launch-choice="employmentType"][data-value="Full-time"]').click();
+  await page.locator('[data-launch-choice="salary"][data-value="0"]').click();
+  await page.locator('#startJobSearch').click();
+  await expect(page.locator('#resumeOverlay')).not.toHaveClass(/open/);
+  await expect(page.locator('#jobAgentConsentOverlay')).toHaveClass(/open/);
+  await page.screenshot({ path: `${process.env.TEMP || '/tmp'}/resume-handoff-consent.png` });
+  await page.locator('#cancelJobAgentConsent').click();
+  await page.locator('#guidedLaunchClose').click();
+  await page.route('**/api/user-session*', route => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
+  await page.locator('#openAgentAccess').click();
+  await page.locator('#signOutAgent').click();
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem('1ststep_resume'))).toBeNull();
+  await expect(page.locator('#resumeEditor')).toHaveValue('');
+});
+
 test('resume workspace loads executable assets and its Job Agent chooser reaches concierge', async ({ page }) => {
   const assetFailures = [];
   const pageErrors = [];

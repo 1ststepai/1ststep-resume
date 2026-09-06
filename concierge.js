@@ -64,6 +64,9 @@ const JOB_AGENT_RUN_KEY = '1ststep_job_agent_run_v1';
 const VAULT_PREFERENCE_KEY = '1ststep_applicant_vault_preference_v1';
 const RESUME_HANDOFF_KEY = '1ststep_resume_handoff';
 const RESUME_KEYS = ['1ststep_resume', '1ststep_resume_text'];
+// Only a resume reviewed during this page lifetime may survive late account hydration.
+// Never restore an arbitrary previous browser cache across account initialization.
+let reviewedResumeInPage = null;
 const $ = id => document.getElementById(id);
 const list = value => String(value || '').split(/[\n,]/).map(item => item.trim()).filter(Boolean);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
@@ -785,11 +788,17 @@ async function loadSessionCapabilities() {
 
 function initializeAccountWorkflowAuthority() {
   if (!accountWorkflowIsAuthoritative() || LOCAL_APPLICATION_UI_FIXTURE || LOCAL_SUBSCRIBER_UI_FIXTURE) return;
+  const accountEmail = String(loadJson('1ststep_sub_cache', {}).email || '').trim().toLowerCase();
+  const retainedResume = reviewedResumeInPage && (!reviewedResumeInPage.accountEmail || reviewedResumeInPage.accountEmail === accountEmail)
+    ? { ...reviewedResumeInPage, accountEmail } : null;
   clearBrowserWorkflowCopies();
   for (const key of RESUME_KEYS) {
     localStorage.removeItem(key);
     sessionStorage.removeItem(key);
   }
+  reviewedResumeInPage = retainedResume;
+  if (retainedResume) sessionStorage.setItem('1ststep_resume', retainedResume.value);
+  else { $('resumeEditor').value = ''; $('resumeFile').value = ''; }
   missionState = { mission: {}, messages: [], discovery: { status: 'idle' }, runState: null };
   deskState = createDeskState({});
   campaignStore = createCampaignStore({});
@@ -1306,6 +1315,9 @@ async function signOutAgent(allDevices = false) {
 }
 
 function clearSignedAccessState() {
+  reviewedResumeInPage = null;
+  $('resumeEditor').value = '';
+  $('resumeFile').value = '';
   const cache = loadJson('1ststep_sub_cache', {});
   localStorage.setItem('1ststep_sub_cache', JSON.stringify({ email: cache.email || '', tier: 'free', ts: Date.now(), status: 'signed_out' }));
   sessionCapabilities = { adminConsole: false, jobAgentAccess: false, tier: 'free', checked: true, authentication: 'none', expiresAt: null, pilotAccess: null, jobAgentConsent: null, jobAgentConsentPolicyConfigured: null, jobAgentConsentVersion: 0 };
@@ -1723,6 +1735,9 @@ function saveResumeText(text, source, fileName = '') {
   if (clean.length < 100) throw new Error('Add at least 100 characters so there is enough resume content to use.');
   const value = JSON.stringify({ source, text: clean, fileName, savedAt: new Date().toISOString() });
   sessionStorage.setItem('1ststep_resume', value);
+  if (source !== 'secure-vault') reviewedResumeInPage = {
+    value, accountEmail: String(loadJson('1ststep_sub_cache', {}).email || '').trim().toLowerCase(),
+  };
   localStorage.removeItem('1ststep_resume');
   try { window.postMessage({ source: 'app', action: 'SYNC_PROFILE' }, '*'); } catch { /* extension not installed */ }
   return clean;
