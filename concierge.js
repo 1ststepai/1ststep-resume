@@ -146,6 +146,42 @@ let guidedLaunchStep = Math.min(6, Math.max(0, Number(missionState.onboardingDra
 let guidedLaunchOpen = false;
 const GUIDED_LAUNCH_STAGES = Object.freeze(['goal', 'resume', 'path', 'work', 'employment', 'salary', 'review']);
 if (LOCAL_SUBSCRIBER_UI_FIXTURE) guidedSelection = { goal: 'best-fit', pathId: 'procurement', workMode: 'Remote', employmentType: 'Full-time', salary: 100000, location: 'United States' };
+const RESUME_CLICK_CHOICES = Object.freeze({
+  contact: [
+    { label: 'Name + email only', template: 'Jordan Taylor · jordan@email.com' },
+  ],
+  employment: [
+    { label: 'Add one recent job', template: 'Buyer at Acme, 2022-now · Managed 20 vendors' },
+    { label: 'No work experience yet', value: 'No paid work experience yet' },
+    { label: 'Use school or volunteer work', template: 'Volunteer Coordinator at Food Bank, 2024 · Organized 12 volunteers' },
+  ],
+  education: [
+    'High school or GED', 'Associate degree', "Bachelor's degree", "Master's degree", 'Trade school or certification', 'No formal education',
+  ],
+  skills: [
+    { label: 'Customer service', value: 'Customer service', append: true },
+    { label: 'Sales', value: 'Sales', append: true },
+    { label: 'Operations', value: 'Operations', append: true },
+    { label: 'Project coordination', value: 'Project coordination', append: true },
+    { label: 'Microsoft Office', value: 'Microsoft Office', append: true },
+    { label: 'Data & reporting', value: 'Data & reporting', append: true },
+    { label: 'Procurement & sourcing', value: 'Procurement & sourcing', append: true },
+    { label: 'Vendor management', value: 'Vendor management', append: true },
+  ],
+});
+const RESUME_FIELD_GUIDANCE = Object.freeze({
+  contact: 'Keep it short: type your name and email. A phone number is optional.',
+  employment: 'One recent role is enough. Tap a path below, then add only the facts you know.',
+  education: 'Tap the closest level. You can add a school or subject in the box if you want.',
+  skills: 'Tap every skill group that fits you. Add another skill in the box only if it is missing.',
+});
+const RESUME_FIELD_PLACEHOLDERS = Object.freeze({
+  contact: 'Jordan Taylor · jordan@email.com',
+  employment: 'Buyer at Acme, 2022-now · Managed 20 vendors',
+  education: 'Optional: school name or field of study',
+  skills: 'Optional: add another skill',
+});
+
 const QUICK_ANSWERS = Object.freeze({
   authorization: ['Authorized to work in the United States', 'Not currently authorized', 'Unsure'],
   sponsorship: ['No sponsorship required', 'Sponsorship required', 'Unsure'],
@@ -166,7 +202,7 @@ const WORKFLOW_LABELS = Object.freeze({
   transmit: 'Transmit', submit: 'Submit', verify_receipt: 'Verify Receipt',
 });
 const RUN_STATES = Object.freeze(['Searching', 'Preparing', 'Waiting for You', 'Paused', 'Finished']);
-const REQUEST_TIMEOUTS = Object.freeze({ discovery: 30000, aiFast: 20000, aiQuality: 40000, persistence: 10000, capability: 8000 });
+const REQUEST_TIMEOUTS = Object.freeze({ discovery: 40000, aiFast: 20000, aiQuality: 40000, persistence: 10000, capability: 8000 });
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
   const controller = new AbortController();
@@ -200,17 +236,13 @@ function loadJson(key, fallback) {
 }
 function loadWorkflowJson(key, fallback) {
   try {
-    if (key !== DAILY_GOAL_KEY) {
-      sessionStorage.removeItem(key);
-      localStorage.removeItem(key);
-      return fallback;
-    }
     const sessionValue = sessionStorage.getItem(key);
     if (sessionValue) return JSON.parse(sessionValue) || fallback;
     const legacyValue = localStorage.getItem(key);
+    localStorage.removeItem(key);
+    if (key !== DAILY_GOAL_KEY) return fallback;
     if (!legacyValue) return fallback;
     sessionStorage.setItem(key, legacyValue);
-    localStorage.removeItem(key);
     return JSON.parse(legacyValue) || fallback;
   } catch {
     localStorage.removeItem(key);
@@ -238,9 +270,9 @@ function saveAll() {
     scheduleCampaignSync();
     return;
   }
-  sessionStorage.removeItem(MISSION_KEY);
-  sessionStorage.removeItem(DESK_KEY);
-  sessionStorage.removeItem(CAMPAIGN_KEY);
+  sessionStorage.setItem(MISSION_KEY, JSON.stringify(missionState));
+  sessionStorage.setItem(DESK_KEY, JSON.stringify(deskState));
+  sessionStorage.setItem(CAMPAIGN_KEY, JSON.stringify(campaignStore));
   sessionStorage.setItem(DAILY_GOAL_KEY, JSON.stringify(dailyGoal));
   localStorage.removeItem(MISSION_KEY);
   localStorage.removeItem(DESK_KEY);
@@ -752,7 +784,7 @@ async function loadSessionCapabilities() {
 }
 
 function initializeAccountWorkflowAuthority() {
-  if (!accountWorkflowIsAuthoritative()) return;
+  if (!accountWorkflowIsAuthoritative() || LOCAL_APPLICATION_UI_FIXTURE || LOCAL_SUBSCRIBER_UI_FIXTURE) return;
   clearBrowserWorkflowCopies();
   for (const key of RESUME_KEYS) {
     localStorage.removeItem(key);
@@ -1450,6 +1482,17 @@ function guidedStageIsReady(stage = GUIDED_LAUNCH_STAGES[guidedLaunchStep]) {
   return true;
 }
 
+// The overlay is its own scroll container (position:fixed; overflow:auto).
+// Without this, advancing a step kept the previous step’s scroll offset and
+// the new heading opened below the fold.
+let guidedLaunchRenderedStage = null;
+
+function resetGuidedLaunchScroll(overlay) {
+  if (!overlay) return;
+  overlay.scrollTop = 0;
+  overlay.scrollLeft = 0;
+}
+
 function renderGuidedLaunch() {
   const overlay = $('guidedLaunchOverlay');
   if (!overlay) return;
@@ -1461,6 +1504,12 @@ function renderGuidedLaunch() {
     node.classList.toggle('active', active);
     node.hidden = !active;
   });
+  if (!guidedLaunchOpen) {
+    guidedLaunchRenderedStage = null;
+  } else if (guidedLaunchRenderedStage !== stage) {
+    guidedLaunchRenderedStage = stage;
+    resetGuidedLaunchScroll(overlay);
+  }
   $('guidedLaunchProgress').value = guidedLaunchStep + 1;
   $('guidedLaunchProgressText').textContent = `${guidedLaunchStep + 1} of ${GUIDED_LAUNCH_STAGES.length}`;
   $('guidedLaunchBack').disabled = guidedLaunchStep === 0;
@@ -1475,24 +1524,45 @@ function renderGuidedLaunch() {
   });
   if (stage === 'review') {
     const path = selectedOpportunityPath();
+    const resumeReady = hasResume();
     const goalLabels = { 'best-fit': 'Best long-term fit', fast: 'Land a job sooner', explore: 'Explore better opportunities' };
     const salary = guidedSelection.salary ? `$${Math.round(guidedSelection.salary / 1000)}K+` : 'Any salary';
     const location = guidedSelection.workMode === 'Remote' ? 'United States remote' : ($('launchLocation').value.trim() || guidedSelection.location || 'Location needed');
     $('guidedLaunchReview').innerHTML = [
       ['Goal', goalLabels[guidedSelection.goal] || 'Not selected'],
+      ['Resume', resumeReady ? 'Ready' : 'Needed before starting'],
       ['Job path', path?.label || 'Not selected'],
       ['Work', `${guidedSelection.workMode} · ${location}`],
       ['Job type', guidedSelection.employmentType],
       ['Minimum salary', salary],
     ].map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
+    const locationReady = guidedSelection.workMode === 'Remote' || Boolean($('launchLocation').value.trim() || guidedSelection.location);
+    const blocker = !resumeReady
+      ? 'Add your resume before starting. This keeps the agent from guessing about your experience.'
+      : !path
+        ? 'Choose a job path before starting.'
+        : !locationReady
+          ? 'Add a city or commuting area before starting.'
+          : '';
+    $('startJobSearchBlocker').hidden = !blocker;
+    $('startJobSearchHelp').textContent = blocker;
+    $('reviewAddResume').hidden = resumeReady;
+    $('startJobSearch').disabled = Boolean(blocker);
   }
 }
 
 function openGuidedLaunch(options = {}) {
   if (Number.isInteger(options.step)) guidedLaunchStep = Math.min(6, Math.max(0, options.step));
+  if (guidedLaunchStep > 1 && !hasResume()) guidedLaunchStep = 1;
   guidedLaunchOpen = true;
   renderMission();
-  setTimeout(() => document.querySelector('[data-guided-stage].active button:not([disabled]), [data-guided-stage].active input')?.focus(), 0);
+  setTimeout(() => {
+    const overlay = $('guidedLaunchOverlay');
+    resetGuidedLaunchScroll(overlay);
+    const target = document.querySelector('[data-guided-stage].active button:not([disabled]), [data-guided-stage].active input');
+    // preventScroll: focusing the first control used to scroll the heading out of view.
+    target?.focus({ preventScroll: true });
+  }, 0);
 }
 
 function closeGuidedLaunch() {
@@ -1557,9 +1627,9 @@ function renderOpportunityPaths() {
   }).join('');
   const scan = missionState.pathScan;
   $('pathEvidence').textContent = scan?.status === 'complete'
-    ? `Compared ${scan.jobsScanned} current postings across ${scan.sourcesChecked} connected direct-employer feeds and ${OPPORTUNITY_PATHS.length} job paths. Your observed rate appears after 5 receipt-verified applications and is not labeled reliable before 20.`
+    ? `${scan.partial ? 'Some sources could not finish. You can compare again; these results are partial. ' : ''}Compared ${scan.jobsScanned} current postings across ${scan.sourcesChecked} connected direct-employer feeds and ${OPPORTUNITY_PATHS.length} job paths. Your observed rate appears after 5 receipt-verified applications and is not labeled reliable before 20.`
     : scan?.status === 'error'
-      ? `Live comparison needs attention: ${scan.message}. Starter paths remain available.`
+      ? `Live comparison needs attention: ${String(scan.message || '').replace(/[.!?]+$/, '')}. Starter paths remain available.`
       : 'Starter paths come from your confirmed experience. Live opening counts appear only after a direct-employer feed scan.';
   const locationReady = guidedSelection.workMode === 'Remote' || Boolean($('launchLocation').value.trim() || guidedSelection.location);
   $('startJobSearch').disabled = !guidedSelection.pathId || !hasResume() || !locationReady;
@@ -1594,7 +1664,7 @@ async function scanOpportunityPaths() {
     if (!response.ok) throw new Error(data.error || 'Live path comparison is unavailable');
     const ranked = rankOpportunityPaths({ jobs: data.jobs || [], supplyByPath: data.supplyByPath || {}, outcomes: mergeAuthoritativeOutcomeEvidence(deskState.acquisitionOutcomes, durableApplicationSessions), profile: deskState.truthProfile, resumeText: savedResumeText() });
     missionState.pathScan = {
-      status: 'complete', checkedAt: new Date().toISOString(), jobsScanned: Number(data.filterSummary?.scanned) || (data.jobs || []).length,
+      status: 'complete', partial: data.partial === true || data.status === 'partial', checkedAt: new Date().toISOString(), jobsScanned: Number(data.filterSummary?.scanned) || (data.jobs || []).length,
       sourcesChecked: (data.sourceSummary || []).filter(source => ['ok', 'partial'].includes(source.status)).length,
       recommendations: ranked.map(path => ({
         id: path.id, label: path.label, searchRole: path.searchRole, rankScore: path.rankScore,
@@ -1713,6 +1783,16 @@ function safeAction(action) {
   catch (error) { showDeskMessage(error.message, true); return false; }
 }
 
+// Indeterminate "still working" affordance for long-running scans.
+// No percentage and no ETA: a feed scan has no measurable completion ratio,
+// so a numeric bar would be invented progress.
+function workingIndicator(label) {
+  return `<div class="agent-working" role="status" aria-live="polite">`
+    + `<span class="agent-working-track" aria-hidden="true"></span>`
+    + `<span class="agent-working-label">${escapeHtml(label)}</span>`
+    + `</div>`;
+}
+
 function addMessage(role, html, persist = true) {
   const node = document.createElement('div');
   node.className = `bubble ${role}`;
@@ -1787,7 +1867,7 @@ async function askSmartConcierge(input) {
     resumeAvailable: hasResume(), recommendedPriority: guidance.priority,
     productionCapabilities: { publicEmployerFeedDiscovery: true, externalSubmission: false, managedApplicationWorkspace: 'simulated' },
   };
-  const pending = addMessage('assistant', '<strong>Reviewing your mission and deciding the best next step…</strong>', false);
+  const pending = addMessage('assistant', '<strong>Reviewing your mission and deciding the best next step…</strong>' + workingIndicator('Thinking…'), false);
   try {
     const reply = await callAI('concierge', 'fast', `<concierge_state>${escapeXmlData(JSON.stringify(stateSummary))}</concierge_state>\n<user_request>${escapeXmlData(redactChatForModel(input))}</user_request>`, 350);
     pending.remove();
@@ -1804,7 +1884,13 @@ async function discoverMatchingJobs() {
   missionState.runState = 'Searching';
   missionState.discovery = { status: 'searching', checkedAt: new Date().toISOString(), requestId: previousRequestId };
   saveAll(); renderMission();
-  const pending = addMessage('assistant', '<strong>Checking free direct-employer feeds now…</strong><br>A broad scan usually takes 10–25 seconds. I’ll keep only mission matches and suppress duplicates. External applications remain disabled.', false);
+  // The scan is bounded by a shared server deadline and a longer browser
+  // allowance, so it always ends - either complete, or partial with whatever
+  // was verified in time. The copy promises that behaviour, not a duration.
+  const pending = addMessage('assistant', '<strong>Checking free direct-employer feeds now…</strong>'
+    + '<br>I’ll keep only mission matches and suppress duplicates. If a feed is slow I stop waiting and show whatever was verified by then, clearly marked as partial. External applications remain disabled.'
+    + workingIndicator('Searching employer feeds…'), false);
+  pending.setAttribute('aria-busy', 'true');
   $('agentRunState').textContent = 'Checking public employer feeds';
   try {
     const headers = apiAuthorizationHeaders();
@@ -1878,16 +1964,25 @@ async function discoverMatchingJobs() {
     }
     if (missionState.runState !== 'Paused') missionState.runState = 'Preparing';
     saveAll(); renderAll();
-    const checked = (data.sourceSummary || []).filter(source => ['ok', 'partial'].includes(source.status)).length;
-    missionState.discovery = { status: 'complete', checkedAt: new Date().toISOString(), sourcesChecked: checked, matches: added, duplicates, rejectedByMission, rejectedByQualityFloor, requestId, durableRunId: durableRun?.id || null };
+    const sourceSummary = data.sourceSummary || [];
+    const checked = sourceSummary.filter(source => ['ok', 'partial'].includes(source.status)).length;
+    // A run is partial when the server said so, or when any source did not finish.
+    const degraded = sourceSummary.filter(source => !['ok'].includes(source.status)).length;
+    const isPartial = data.partial === true || data.status === 'partial' || degraded > 0;
+    missionState.discovery = { status: 'complete', partial: isPartial, sourcesChecked: checked, sourcesDegraded: degraded, checkedAt: new Date().toISOString(), matches: added, duplicates, rejectedByMission, rejectedByQualityFloor, requestId, durableRunId: durableRun?.id || null };
     saveAll(); renderMission();
+    // Partial coverage is stated plainly rather than being hidden behind a
+    // healthy-looking match count. The matches shown were still verified.
+    const coverageNote = isPartial
+      ? '<div class="coverage-note"><strong>This search was incomplete.</strong> Some sources or requisition checks could not finish. Available matches are preserved and still need the review described above. You can retry the search; missing results are not guaranteed.</div>'
+      : '';
     const topMatches = missionJobs.slice(0, 5).map(job => {
       const details = [job.employmentType, job.workplaceType || job.location].filter(Boolean).map(escapeHtml).join(' · ');
       const fit = evaluateCandidateFit({ ...job, requirements: extractStructuredRequirements(job) }, deskState.truthProfile, mission);
       if (!fit.credibleInterviewPath) return '';
       return `<a class="job-match" href="${escapeHtml(job.applyUrl)}" target="_blank" rel="noopener noreferrer"><strong>${escapeHtml(job.title)}</strong><span>${escapeHtml(job.employer)}${details ? ` · ${details}` : ''} · ${fit.score}/100 ${escapeHtml(fit.classification)}</span></a>`;
     }).join('');
-    addMessage('assistant', `<strong>Found ${added} credible mission match${added === 1 ? '' : 'es'} across ${checked} direct-employer feed${checked === 1 ? '' : 's'}.</strong><br>${duplicates} duplicate${duplicates === 1 ? ' was' : 's were'} suppressed; ${rejectedByMission} off-mission role${rejectedByMission === 1 ? ' was' : 's were'} withheld; ${rejectedByQualityFloor} role${rejectedByQualityFloor === 1 ? ' was' : 's were'} held below the 70-point application floor. Verified fit and your observed outcomes outrank the daily quota. These roles are Found—not Submitted—and still require exact direct-page, geography, travel, schedule, and gap verification.${topMatches ? `<div class="job-matches">${topMatches}</div>` : ''}<div class="quick"><button data-prompt="Show my jobs">Review all matches</button><button data-prompt="Review my current mission">Review mission</button></div>`);
+    addMessage('assistant', `<strong>Found ${added} credible mission match${added === 1 ? '' : 'es'} across ${checked} direct-employer feed${checked === 1 ? '' : 's'}.</strong><br>${duplicates} duplicate${duplicates === 1 ? ' was' : 's were'} suppressed; ${rejectedByMission} off-mission role${rejectedByMission === 1 ? ' was' : 's were'} withheld; ${rejectedByQualityFloor} role${rejectedByQualityFloor === 1 ? ' was' : 's were'} held below the 70-point application floor. Verified fit and your observed outcomes outrank the daily quota. These roles are Found—not Submitted—and still require exact direct-page, geography, travel, schedule, and gap verification.${topMatches ? `<div class="job-matches">${topMatches}</div>` : ''}${coverageNote}<div class="quick">${isPartial ? '<button data-prompt="Retry job discovery">Search the missing feeds again</button>' : ''}<button data-prompt="Show my jobs">Review all matches</button><button data-prompt="Review my current mission">Review mission</button></div>`);
   } catch (error) {
     pending.remove();
     missionState.runState = 'Paused';
@@ -1936,7 +2031,7 @@ function parseCareerStoryResponse(text) {
 async function processCareerStory(input) {
   careerStoryActive = false;
   $('messageInput').placeholder = 'I need 30 remote procurement jobs, $110k+, using my saved resume';
-  const pending = addMessage('assistant', '<strong>Organizing your story into reviewable resume facts…</strong>', false);
+  const pending = addMessage('assistant', '<strong>Organizing your story into reviewable resume facts…</strong>' + workingIndicator('Organizing…'), false);
   try {
     const extracted = parseCareerStoryResponse(await callAI(
       'profileExtractor', 'fast', `<career_story>${escapeXmlData(input)}</career_story>`, 900,
@@ -2269,7 +2364,7 @@ function reviewNeedsYouTarget(target) {
   if (session && (!action?.roleId || action.roleId === session.roleId)) openApplicationWorkspace();
   else {
     addMessage('assistant', `<strong>This item is saved and waiting for you.</strong><br>${escapeHtml(action?.summary || 'Complete the secure step on the employer page, then return here to continue.')} Passwords, OTPs, and CAPTCHA answers stay on the employer site.`);
-    $('agentConversation').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    $('agentConversation').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
   }
   return true;
 }
@@ -2768,13 +2863,22 @@ function openQuestionPopup(fieldKey = '') {
     : corePosition >= 0 ? `Core setup ${corePosition + 1} of ${ONBOARDING_REQUIRED_FIELDS.length} · ${readiness.score}% ready` : 'Asked only when needed · not part of core setup';
   $('questionTitle').textContent = next.label;
   $('questionHelp').textContent = resumeInterviewActive
-    ? 'Give only verified facts. For work history, include employer, title, dates, and truthful outcomes; use semicolons to separate entries.'
+    ? (RESUME_FIELD_GUIDANCE[next.key] || 'Choose an answer below or type one short verified fact.')
     : CONSEQUENTIAL_QUESTION_KEYS.has(next.key)
       ? 'Confirm only what you know. This answer is kept for review and is never silently reused or inferred.'
       : 'Choose a common answer or enter a short correction. This becomes reusable only after you save it.';
-  $('questionValue').value = deskState.reusableFacts.find(item => item.fieldKey === next.key)?.value || '';
-  const choices = QUICK_ANSWERS[next.key] || [];
-  $('questionChoices').innerHTML = choices.map(value => `<button class="question-choice" type="button" data-question-answer="${escapeHtml(value)}">${escapeHtml(value)}</button>`).join('');
+  const currentValue = deskState.reusableFacts.find(item => item.fieldKey === next.key)?.value || '';
+  $('questionValue').value = currentValue;
+  $('questionValue').placeholder = resumeInterviewActive ? (RESUME_FIELD_PLACEHOLDERS[next.key] || 'Type a short answer') : '';
+  const choices = resumeInterviewActive ? (RESUME_CLICK_CHOICES[next.key] || []) : (QUICK_ANSWERS[next.key] || []);
+  $('questionChoices').innerHTML = choices.map(choice => {
+    const option = typeof choice === 'string' ? { label: choice, value: choice } : choice;
+    const selected = option.append ? list(currentValue).includes(option.value) : currentValue === option.value;
+    return `<button class="question-choice${selected ? ' selected' : ''}" type="button"${option.value ? ` data-question-answer="${escapeHtml(option.value)}"` : ''}${option.template ? ` data-question-template="${escapeHtml(option.template)}"` : ''}${option.append ? ' data-question-append="true"' : ''}>${escapeHtml(option.label)}</button>`;
+  }).join('');
+  $('questionLater').textContent = resumeInterviewActive ? 'Finish later' : 'Ask later';
+  const saveButton = $('questionForm').querySelector('button[type="submit"]');
+  if (saveButton) saveButton.textContent = resumeInterviewActive ? 'Save & continue' : 'Save & reuse';
   $('questionOverlay').classList.add('open');
   if (!choices.length) setTimeout(() => $('questionValue').focus(), 0);
 }
@@ -3077,12 +3181,20 @@ document.querySelectorAll('[data-guided-goal]').forEach(button => {
   button.addEventListener('click', () => chooseGuidedGoal(button, true));
   button.addEventListener('keydown', handleGuidedRadioKeydown);
 });
-$('quickUploadResume').addEventListener('click', openResumeSetup);
+$('quickUseSavedResume').hidden = !hasResume();
+$('quickUseSavedResume').addEventListener('click', () => {
+  if (!hasResume()) { openResumeSetup(); return; }
+  advanceGuidedLaunch();
+});
+$('quickUploadResume').addEventListener('click', () => {
+  openResumeSetup();
+  $('resumeFile').click();
+});
+$('reviewAddResume').addEventListener('click', openResumeSetup);
 $('quickBuildResume').addEventListener('click', () => {
   guidedLaunchOpen = false;
   renderGuidedLaunch();
-  startCareerStory();
-  $('agentConversation').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  startResumeInterview();
 });
 $('scanOpportunityPaths').addEventListener('click', scanOpportunityPaths);
 $('jobSectorFilter').addEventListener('change', event => {
@@ -3110,7 +3222,7 @@ $('jobLaunchForm').addEventListener('submit', async event => {
   if (!hasJobAgentAccess()) { openAgentAccess(); return; }
   const path = selectedOpportunityPath();
   if (!hasResume()) { openResumeSetup(); return; }
-  if (!path) { $('pathStepTitle').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+  if (!path) { $('pathStepTitle').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' }); return; }
   const location = guidedSelection.workMode === 'Remote' ? 'United States' : $('launchLocation').value.trim();
   if (!location) {
     $('launchLocation').setCustomValidity('Add a city or commuting area for hybrid or on-site roles.');
@@ -3142,14 +3254,14 @@ $('jobLaunchForm').addEventListener('submit', async event => {
       addMessage('assistant', `<strong>Your search can run, but email alerts are off.</strong><br>${escapeHtml(error.message)} The in-app Needs You queue still works.`);
     });
     discoverMatchingJobs();
-    $('agentConversation').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    $('agentConversation').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
   };
   if (await ensureJobAgentConsent(continueLaunch)) await continueLaunch();
 });
 $('dailyGoalForm').addEventListener('submit', event => { event.preventDefault(); setDailyGoal($('dailyGoalInput').value); });
 document.querySelectorAll('[data-daily-goal]').forEach(button => button.addEventListener('click', () => setDailyGoal(button.dataset.dailyGoal)));
 $('activity').querySelector('summary').addEventListener('click', () => {
-  if (!$('activity').open) setTimeout(() => $('activity').scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+  if (!$('activity').open) setTimeout(() => $('activity').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }), 0);
 });
 $('openLearningVault').addEventListener('click', () => { $('vaultOverlay').classList.add('open'); renderVaultStatus(); });
 $('toggleLearning').addEventListener('click', async event => {
@@ -3205,7 +3317,11 @@ $('composer').addEventListener('submit', event => { event.preventDefault(); cons
 $('messages').addEventListener('click', event => { const value = event.target?.dataset?.prompt; if (!value) return; addMessage('user', escapeHtml(value)); respond(value); });
 $('openJobs').addEventListener('click', () => openJobs('Matches'));
 $('openNeedsYou').addEventListener('click', openNeedsYou);
-$('openAgentStatus').addEventListener('click', () => { $('agentProgress').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('agentProgress').focus?.(); });
+$('openAgentStatus').addEventListener('click', () => {
+  if (!document.body.classList.contains('workspace-ready')) { openGuidedLaunch(); return; }
+  $('agentProgress').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  $('agentProgress').focus?.();
+});
 $('editAgentConfiguration').addEventListener('click', () => openGuidedLaunch({ step: 2 }));
 $('openAgentAccess').addEventListener('click', openAgentAccess);
 $('closeAgentAccess').addEventListener('click', closeAgentAccess);
@@ -3413,6 +3529,7 @@ $('saveResume').addEventListener('click', async () => {
     const text = saveResumeText($('resumeEditor').value, 'concierge-reviewed', $('resumeFile').files[0]?.name || '');
     setResumeMessage(`Resume available in this tab · ${text.length.toLocaleString()} characters.`, 'good');
     showToast('Resume saved');
+    $('quickUseSavedResume').hidden = false;
     renderMission();
     addMessage('assistant', '<strong>Your resume is saved.</strong> I can use it as the master version, build readiness answers from it after your confirmation, and send role-specific tailoring through the existing Resume Tailor.');
     try {
@@ -3487,10 +3604,27 @@ document.addEventListener('keydown', event => {
 });
 document.querySelectorAll('[data-desk-tab]').forEach(node => node.addEventListener('click', () => switchTab(node.dataset.deskTab)));
 $('questionChoices').addEventListener('click', event => {
-  const value = event.target?.dataset?.questionAnswer;
+  const button = event.target?.closest?.('[data-question-answer],[data-question-template]');
+  if (!button) return;
+  const input = $('questionValue');
+  if (button.dataset.questionTemplate) {
+    input.placeholder = button.dataset.questionTemplate;
+    input.focus();
+    document.querySelectorAll('#questionChoices .question-choice').forEach(node => node.classList.toggle('selected', node === button));
+    return;
+  }
+  const value = button.dataset.questionAnswer;
   if (!value) return;
-  $('questionValue').value = value;
-  document.querySelectorAll('[data-question-answer]').forEach(node => node.classList.toggle('selected', node === event.target));
+  if (button.dataset.questionAppend === 'true') {
+    const values = list(input.value);
+    const index = values.indexOf(value);
+    if (index >= 0) values.splice(index, 1); else values.push(value);
+    input.value = values.join(', ');
+    button.classList.toggle('selected', index < 0);
+    return;
+  }
+  input.value = value;
+  document.querySelectorAll('#questionChoices .question-choice').forEach(node => node.classList.toggle('selected', node === button));
 });
 $('questionForm').addEventListener('submit', event => {
   event.preventDefault();

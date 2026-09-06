@@ -1160,7 +1160,7 @@ function collapseLetterSpacing(text) {
 
       // Welcome / onboarding
       document.getElementById('welcomeResumeProductBtn')?.addEventListener('click', _showResumeWelcomePanel);
-      document.getElementById('welcomeExtensionProductBtn')?.addEventListener('click', startExtensionSetup);
+      _applyAssistedApplyGate();
       document.getElementById('welcomeAgentProductBtn')?.addEventListener('click', startJobAgent);
       document.getElementById('welcomeProductBackBtn')?.addEventListener('click', _showWelcomeProductChooser);
       document.getElementById('welcomeUploadBtn')?.addEventListener('click', () => dismissWelcome('upload'));
@@ -1322,6 +1322,28 @@ function collapseLetterSpacing(text) {
       if (pathGrid) pathGrid.style.display = '';
       if (step2) step2.style.display = 'none';
       document.getElementById('welcomeResumeProductBtn')?.focus();
+    }
+
+    // Assisted apply (Chrome assistant) is not offered publicly.
+    // Flip to true ONLY when all three are true, per DESIGN.md:
+    //   1. JOB_AGENT_EXTENSION_HANDOFF_ENABLED is on in production
+    //   2. the Chrome Web Store listing is approved and published
+    //   3. host_permissions covers the ATS platforms the copy names
+    // Present it as a capability of the Job Agent, never as a third product.
+    const ASSISTED_APPLY_PUBLIC = false;
+
+    function _applyAssistedApplyGate() {
+      const card = document.getElementById('welcomeExtensionProductBtn');
+      const grid = document.getElementById('productChoiceGrid');
+      if (!card) return;
+      if (!ASSISTED_APPLY_PUBLIC) {
+        card.hidden = true;
+        grid?.classList.add('is-two-up');
+        return;
+      }
+      card.hidden = false;
+      grid?.classList.remove('is-two-up');
+      card.addEventListener('click', startExtensionSetup);
     }
 
     function startExtensionSetup() {

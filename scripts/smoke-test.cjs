@@ -53,10 +53,10 @@ const apiBeta = fs.existsSync(path.join(ROOT, 'api', 'beta.js'))
 section('HTML structure');
 
 if (html) {
-  if (/<link[^>]+href=["']style\.css["']/.test(html)) pass('style.css linked in <head>');
+  if (/<link[^>]+href=["']\/?style\.css["']/.test(html)) pass('style.css linked in <head>');
   else fail('style.css NOT linked in <head>');
 
-  if (/<script[^>]+src=["']app\.js(?:\?[^"']*)?["']/.test(html)) pass('app.js linked before </body>');
+  if (/<script[^>]+src=["']\/?app\.js(?:\?[^"']*)?["']/.test(html)) pass('app.js linked before </body>');
   else fail('app.js NOT linked');
 
   // Orphaned content after </html>
@@ -704,15 +704,43 @@ function readIfExists(rel) {
 
 const A11Y_FILES = [
   'app.html',
+  'concierge.html',
   'index.html',
   'funnel.html',
   'admin.html',
+  'pricing.html',
+  'privacy.html',
+  'terms.html',
   path.join('1ststep-extension', 'popup.html'),
   path.join('1ststep-extension', 'sidepanel.html'),
 ].filter(rel => fs.existsSync(path.join(ROOT, rel)));
 
+// Remove <script>/<style> ELEMENTS and comments, keeping the markup around them.
+// Splitting on the first <script> skipped ~99% of app.html, so most of the
+// authenticated workspace was never accessibility-checked.
+function stripScriptAndStyle(src) {
+  return String(src)
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ');
+}
+
 function escRe(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// An input is also labelled when it is WRAPPED by a <label> that carries text
+// (implicit labelling). Honouring only <label for> reported 9 false positives in
+// concierge.html, all of them correctly-labelled wrapped controls.
+function implicitlyLabelled(markup, id) {
+  const labels = markup.match(/<label\b[^>]*>[\s\S]*?<\/label\s*>/gi) || [];
+  return labels.some(block => {
+    const QUOTES = String.fromCharCode(34, 39);
+    const idRe = new RegExp('<[a-zA-Z][^>]*\\bid=[' + QUOTES + ']' + escRe(id) + '[' + QUOTES + ']', 'i');
+    if (!idRe.test(block)) return false;
+    const inner = block.replace(/<label\b[^>]*>/i, '').replace(/<\/label\s*>/i, '');
+    return textOutsideTags(inner).length > 0;
+  });
 }
 
 function textOutsideTags(markup) {
@@ -728,7 +756,7 @@ function textOutsideTags(markup) {
 
 A11Y_FILES.forEach(rel => {
   const src = readIfExists(rel);
-  const markup = src.split(/<script\b/i)[0];
+  const markup = stripScriptAndStyle(src);
   if (/<html\b[^>]*\blang=["'][^"']+["']/i.test(markup)) pass(rel + ' has <html lang>');
   else fail(rel + ' is missing <html lang>');
 
@@ -743,7 +771,8 @@ A11Y_FILES.forEach(rel => {
   else fail(rel + ' has ' + missingAlt.length + ' <img> tag(s) missing alt');
 
   const unlabeledFields = [...markup.matchAll(/<(input|textarea|select)\b(?![^>]*(?:aria-label|aria-labelledby|type=["']hidden["']|aria-hidden=["']true["']))[^>]*\bid=["']([^"']+)["'][^>]*>/gi)]
-    .filter(([, , id]) => !new RegExp(`<label\\b[^>]*\\bfor=["']${escRe(id)}["']`, 'i').test(markup));
+    .filter(([, , id]) => !new RegExp(`<label\\b[^>]*\\bfor=["']${escRe(id)}["']`, 'i').test(markup)
+      && !implicitlyLabelled(markup, id));
   if (unlabeledFields.length === 0) pass(rel + ' has no obvious unlabeled fields');
   else unlabeledFields.forEach(([, tag, id]) => fail(rel + ' <' + tag.toLowerCase() + '> #' + id + ' has no obvious accessible label'));
 

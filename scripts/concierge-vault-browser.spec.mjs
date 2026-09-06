@@ -3,6 +3,26 @@ import { jobAgentPolicyBundle } from '../lib/job-agent-policy-bundle.js';
 
 const baseUrl = process.env.CONCIERGE_TEST_URL || 'http://127.0.0.1:4175/concierge';
 
+test('resume workspace loads executable assets and its Job Agent chooser reaches concierge', async ({ page }) => {
+  const assetFailures = [];
+  const pageErrors = [];
+  page.on('response', response => {
+    const path = new URL(response.url()).pathname;
+    if (response.status() >= 400 && ['/style.css', '/product-choice.css', '/app.js', '/resume-builder.js'].includes(path)) {
+      assetFailures.push(`${response.status()} ${path}`);
+    }
+  });
+  page.on('pageerror', error => pageErrors.push(error.message));
+  const resumeWorkspaceUrl = new URL('/app/resume', baseUrl).toString();
+  await page.goto(resumeWorkspaceUrl, { waitUntil: 'networkidle' });
+  await expect(page).toHaveTitle(/Resume Workspace/);
+  await expect(page.locator('#welcomeOverlay')).toHaveClass(/visible/);
+  await page.locator('#welcomeAgentProductBtn').click();
+  await expect(page).toHaveURL(/\/concierge$/);
+  expect(assetFailures).toEqual([]);
+  expect(pageErrors).toEqual([]);
+});
+
 async function routeEncryptedResumeVault(page, resumeText = `Candidate reviewed resume\n${'Verified procurement and vendor-management experience.\n'.repeat(8)}`) {
   await page.route('**/api/applicant-vault', route => route.fulfill({
     status: 200, contentType: 'application/json',
@@ -45,22 +65,36 @@ async function reachGuidedLaunchReview(page, { goal = 'best-fit', salary = '0' }
   await expect(page.locator('#startJobSearch')).toBeVisible();
 }
 
-test('core onboarding stays short and refuses secret-shaped answers without advancing', async ({ page }) => {
+test('two-click resume onboarding stays short and refuses secret-shaped answers without advancing', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('1ststep_applicant_vault_preference_v1', 'device-only'));
   await page.goto(baseUrl);
-  await page.locator('#messageInput').fill('Start onboarding');
-  await page.locator('#composer').evaluate(form => form.requestSubmit());
+  await page.locator('#openGuidedLaunch').click();
+  await page.locator('[data-guided-goal="best-fit"]').click();
+  await page.locator('#quickBuildResume').click();
   await expect(page.locator('#questionOverlay')).toHaveClass(/open/);
-  await expect(page.locator('#questionProgress')).toHaveText('Core setup 1 of 15 · 0% ready');
+  await expect(page.locator('#questionProgress')).toHaveText('Resume setup · 4 essential answers remaining');
+  await expect(page.getByRole('button', { name: 'Name + email only' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save & continue' })).toBeVisible();
   await page.locator('#questionValue').fill('password is hunter2');
   await page.locator('#questionForm').evaluate(form => form.requestSubmit());
   await expect(page.locator('#questionVaultStatus')).toContainText('not saved');
-  await expect(page.locator('#questionProgress')).toHaveText('Core setup 1 of 15 · 0% ready');
+  await expect(page.locator('#questionProgress')).toHaveText('Resume setup · 4 essential answers remaining');
   await page.locator('#questionValue').fill('Jordan Example, jordan@example.test');
   await page.locator('#questionForm').evaluate(form => form.requestSubmit());
-  await expect(page.locator('#questionProgress')).toContainText('Core setup 2 of 15');
-  await expect(page.locator('#questionTitle')).toHaveText('Work authorization');
-  await expect(page.locator('#questionHelp')).toContainText('never silently reused or inferred');
+  await expect(page.locator('#questionProgress')).toHaveText('Resume setup · 3 essential answers remaining');
+  await expect(page.locator('#questionTitle')).toHaveText('Employment history');
+  await expect(page.locator('#questionHelp')).toContainText('One recent role is enough');
+  await page.getByRole('button', { name: 'No work experience yet' }).click();
+  await expect(page.locator('#questionValue')).toHaveValue('No paid work experience yet');
+  await page.locator('#questionForm').evaluate(form => form.requestSubmit());
+  await expect(page.locator('#questionTitle')).toHaveText('Education history');
+  await page.getByRole('button', { name: "Bachelor's degree" }).click();
+  await expect(page.locator('#questionValue')).toHaveValue("Bachelor's degree");
+  await page.locator('#questionForm').evaluate(form => form.requestSubmit());
+  await expect(page.locator('#questionTitle')).toHaveText('Verified skills');
+  await page.getByRole('button', { name: 'Procurement & sourcing' }).click();
+  await page.getByRole('button', { name: 'Vendor management' }).click();
+  await expect(page.locator('#questionValue')).toHaveValue('Procurement & sourcing, Vendor management');
 });
 
 test('saved-info privacy controls render safely for a signed-out user', async ({ page }) => {
@@ -74,6 +108,9 @@ test('saved-info privacy controls render safely for a signed-out user', async ({
   await expect(page.locator('#agentConversation')).toBeHidden();
   await expect(page.locator('#openAgentAccess')).toHaveText('Sign in');
   await expect(page.locator('#openDesk')).toBeHidden();
+  await page.locator('#openAgentStatus').click();
+  await expect(page.locator('#guidedLaunchOverlay')).toHaveClass(/open/);
+  await page.locator('#guidedLaunchClose').click();
   await page.locator('#openVault').click();
   await expect(page.locator('#vaultOverlay')).toHaveClass(/open/);
   await expect(page.locator('#vaultStatus')).toContainText(/Sign in with Job Agent access/);
@@ -277,7 +314,7 @@ test('admin-only evidence shows content-free background worker health', async ({
 
 test('a durable private package is reviewable from a simple job card', async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem('1ststep_concierge_desk_v2', JSON.stringify({
+    sessionStorage.setItem('1ststep_concierge_desk_v2', JSON.stringify({
       roles: [{
         id: 'role-browser-fixture', employer: 'Fixture Employer', title: 'Procurement Manager', requisitionId: 'REQ-1',
         directEmployerUrl: 'https://jobs.example.test/req/1', status: 'Verified - Package Preparation', fitScore: 88,
@@ -679,7 +716,7 @@ test('a slow-feed failure pauses safely and offers one-click retry without claim
 
 test('subscriber work is reduced to simple job cards and one consolidated Needs You queue', async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem('1ststep_concierge_desk_v2', JSON.stringify({
+    sessionStorage.setItem('1ststep_concierge_desk_v2', JSON.stringify({
       roles: [{
         id: 'role-needs-you-fixture', employer: 'Fixture Employer', title: 'Sourcing Manager', requisitionId: 'REQ-2',
         directEmployerUrl: 'https://jobs.example.test/req/2', status: 'Blocked', fitScore: 84,
@@ -709,12 +746,12 @@ test('subscriber work is reduced to simple job cards and one consolidated Needs 
 
 test('status tabs, mission stats, and receipt-only submission counting share one canonical view', async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem('1ststep_concierge_mission_v1', JSON.stringify({
+    sessionStorage.setItem('1ststep_concierge_mission_v1', JSON.stringify({
       mission: { role: 'Procurement Manager', roleFamily: 'procurement', workModes: ['Remote'], employmentTypes: ['Full-time'], salaryMin: 100000, location: 'United States', target: 10 },
       messages: [], discovery: { status: 'complete', matches: 3 }, runState: 'Preparing',
     }));
-    localStorage.setItem('1ststep_resume', `Candidate reviewed resume\n${'Verified sourcing experience.\n'.repeat(12)}`);
-    localStorage.setItem('1ststep_concierge_desk_v2', JSON.stringify({
+    sessionStorage.setItem('1ststep_resume', `Candidate reviewed resume\n${'Verified sourcing experience.\n'.repeat(12)}`);
+    sessionStorage.setItem('1ststep_concierge_desk_v2', JSON.stringify({
       roles: [
         { id: 'found', employer: 'Found Co', title: 'Buyer', status: 'Found', fitScore: 81 },
         { id: 'ready', employer: 'Ready Co', title: 'Sourcing Lead', status: 'Package Ready', fitScore: 88 },

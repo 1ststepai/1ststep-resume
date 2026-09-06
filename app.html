@@ -118,8 +118,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { corePlugins: { preflight: false }, theme: { extend: {} } }</script>
   <link rel="icon" href="/1ststep-ai-icon.png" type="image/png" />
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="product-choice.css" />
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/product-choice.css" />
 </head>
 
 <body>
@@ -1688,7 +1688,7 @@
         <h2 id="productChoiceTitle">How should 1stStep help you today?</h2>
         <p class="product-choice-subtitle">Choose a starting point. Your profile, documents, and progress stay connected.</p>
 
-        <div class="product-choice-grid">
+        <div class="product-choice-grid is-two-up" id="productChoiceGrid">
           <button id="welcomeResumeProductBtn" class="product-choice-card" type="button">
             <span class="product-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3h8l4 4v14H6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v5h4M9 12h6M9 16h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
             <span class="product-choice-title">Build &amp; tailor my resume</span>
@@ -1700,7 +1700,9 @@
             <span class="product-choice-action">Start with my resume</span>
           </button>
 
-          <button id="welcomeExtensionProductBtn" class="product-choice-card" type="button">
+          <!-- Assisted apply is gated. Shown only when ASSISTED_APPLY_PUBLIC is true in app.js.
+           Re-enabling is a copy change, not a rebuild - see DESIGN.md. -->
+          <button id="welcomeExtensionProductBtn" class="product-choice-card" type="button" hidden>
             <span class="product-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M15 13v6M12 16h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
             <span class="product-choice-title">Apply with the Chrome assistant</span>
             <span class="product-choice-description">Bring 1stStep to employer applications, fill verified answers, and pause when you are needed.</span>
@@ -2148,8 +2150,8 @@
   data-widget-id="69dc254ad0d6ea2d59ad3b08"></script>
 
 <!-- Resume Builder Wizard - loaded last so all helpers (saveResume, showToast, etc.) are defined -->
-<script src="app.js?v=ada-a11y-20260428"></script>
-<script src="resume-builder.js?v=28cd652"></script>
+<script src="/app.js?v=route-assets-20260905"></script>
+<script src="/resume-builder.js?v=28cd652"></script>
 
 </body>
 

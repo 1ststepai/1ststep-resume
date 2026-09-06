@@ -119,8 +119,23 @@ assert.match(conciergeJs, /restoreAccessAvailable === false/);
 assert.match(conciergeJs, /Secure sign-in is not configured for this environment\. No code was sent\./);
 assert.match(conciergeJs, /classList\.toggle\('workspace-ready', workspaceReady\)/);
 assert.match(conciergeCss, /body:not\(\.workspace-ready\) \.daily-dashboard/);
-assert.match(conciergeCss, /@media\(max-width:720px\)[\s\S]*?\.agent-header nav button\{[^}]*font-size:10\.5px/, 'Mobile navigation labels must remain readable at the primary breakpoint');
-assert.match(conciergeCss, /@media\(max-width:390px\)\{\.agent-header nav button\{font-size:10px\}/, 'Narrow mobile navigation labels must not regress below 10px');
+// These two assertions previously pinned an exact px value, which failed when the
+// labels were made LARGER. The intent is a readability floor, so assert the floor
+// and accept any unit at or above it.
+function navLabelPx(css, breakpoint) {
+  const blocks = [...css.matchAll(new RegExp(`@media\\(max-width:${breakpoint}px\\)([\\s\\S]*?)(?=@media|$)`, 'g'))];
+  assert.ok(blocks.length, `no @media(max-width:${breakpoint}px) block found`);
+  const rule = blocks.flatMap(media => [...media[1].matchAll(/\.agent-header nav button\s*\{([^}]*)\}/g)]).filter(rule => /font-size:/.test(rule[1])).at(-1);
+  assert.ok(rule, `no .agent-header nav button rule at ${breakpoint}px`);
+  const size = /font-size:\s*([0-9.]+)(px|rem|em)/.exec(rule[1]);
+  assert.ok(size, `no font-size on .agent-header nav button at ${breakpoint}px`);
+  return size[2] === 'px' ? Number(size[1]) : Number(size[1]) * 16;
+}
+
+assert.ok(navLabelPx(conciergeCss, 720) >= 10.5,
+  'Mobile navigation labels must remain readable at the primary breakpoint (>= 10.5px)');
+assert.ok(navLabelPx(conciergeCss, 390) >= 10,
+  'Narrow mobile navigation labels must not regress below 10px');
 assert.match(conciergeHtml, /id="sourceMemory"/);
 assert.match(conciergeHtml, /id="funnelMetrics"/);
 assert.match(conciergeHtml, /Admin evidence and operating controls/);
@@ -214,9 +229,10 @@ assert.match(conciergeJs, /AI_CONSENT_KEY/);
 assert.match(conciergeJs, /redactChatForModel/);
 assert.match(conciergeJs, /fetchWithTimeout\('\/api\/ai'/);
 assert.match(conciergeJs, /fetchWithTimeout\('\/api\/concierge-discovery'/);
-assert.match(conciergeJs, /REQUEST_TIMEOUTS\s*=\s*Object\.freeze\(\{\s*discovery:\s*30000\b/, 'broad direct-employer discovery must retain a 30-second client window');
+assert.match(conciergeJs, /REQUEST_TIMEOUTS\s*=\s*Object\.freeze\(\{\s*discovery:\s*40000\b/, 'discovery must allow the server deadline to finish before the client aborts');
 assert.match(conciergeJs, /filterSummary\?\.scanned/, 'opportunity-path evidence must report the broad source scan rather than only returned matches');
-assert.match(conciergeJs, /A broad scan usually takes 10–25 seconds/, 'the searching state must set an honest expectation for the live employer-feed scan');
+assert.match(conciergeJs, /workingIndicator\('Searching employer feeds…'\)/, 'searching must have an indeterminate, named progress indicator');
+assert.match(conciergeJs, /Some sources or requisition checks could not finish/, 'incomplete coverage must be disclosed without a fabricated reason');
 assert.match(conciergeJs, /evaluateCandidateFit/);
 assert.match(conciergeJs, /rejectedByQualityFloor/);
 assert.match(conciergeJs, /rankOpportunityPaths/);
