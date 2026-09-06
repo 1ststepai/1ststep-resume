@@ -1,5 +1,7 @@
 # Queue draining local handoff
 
+Current disposition: reviewed implementation committed as `0c590a4` and fast-forward integrated into the canonical checkout. New queue-draining and package-lease tests passed again there. No deployment. The original uncommitted/blocked statements below are historical handoff evidence, superseded by this disposition and the coordinator continuation. Temporary cache and unrelated `vercel.json` changes were not committed or integrated from the worker.
+
 ## Coordinator continuation — 2026-09-06
 
 Final local continuation: both additional coverage gaps are now tested. `node --experimental-test-module-mocks scripts/application-package-lease-test.mjs` passes slow generation, rendering, stage renewal and late persistence; the worker rechecks/renews ownership after generation and before artifact transmission. `scripts/job-agent-queue-draining-test.mjs` now models server-time claim eligibility and passes server-ahead/server-behind lease and retry cases. The existing application-package suite passed again after these checks. Final same-provider peer review passes the local candidate, with real-store evidence still required. Smoke rerun: zero failures, six existing warnings. A real locally imported HTTP handler returns 401 Unauthorized anonymously. Browser navigation to that localhost test was blocked by the browser client; no protection was bypassed, and full manual browser/API workflow smoke is not claimed. No deployment.
