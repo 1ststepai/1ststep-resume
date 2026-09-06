@@ -502,7 +502,7 @@ test('the guided tap-through launch starts a truthful no-submit search in a few 
   await expect(page.locator('#startJobSearch')).toBeEnabled();
   await page.locator('#startJobSearch').click();
   await expect(page.locator('#runStateTrack [data-run-state="Preparing"]')).toHaveClass(/active/);
-  await expect(page.locator('#messages')).toContainText('Found 0 credible mission matches');
+  await expect(page.locator('#messages')).toContainText('Found 0 matching jobs');
   await expect(page.locator('#messages')).toContainText('Found—not Submitted');
   expect(submittedMission?.location).toBe('United States');
   expect(submittedMission?.searchGoal).toBe('best-fit');
@@ -709,7 +709,7 @@ test('a signed-in user gives one-time scoped authorization before any agent run 
   await expect(page.locator('#jobAgentConsentOverlay')).not.toHaveClass(/open/);
   await expect.poll(() => runStarts).toBe(1);
   expect(savedAttestations).toEqual({ age18OrOlder: true, termsAccepted: true, privacyAcknowledged: true, candidateAuthorizationAccepted: true });
-  await expect(page.locator('#messages')).toContainText('Found 0 credible mission matches');
+  await expect(page.locator('#messages')).toContainText('Found 0 matching jobs');
 });
 
 test('the same saved-info area can revoke authorization and pause the agent', async ({ page }) => {

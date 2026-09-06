@@ -612,7 +612,7 @@ async function refreshDurablePackage(runId, announce = false) {
     applyDurablePackageRun(data.run);
     if (announce) addMessage('assistant', data.run.result?.resumeText
       ? '<strong>Your role-specific package is ready for review.</strong><br>Private DOCX/PDF files were generated and their text order, hashes, and page count were checked. Isolated visual-render evidence remains required before Package Ready.'
-      : '<strong>Your package is still safely queued.</strong><br>You can close this page; the durable run will resume from its checkpoint.');
+      : '<strong>Your package is still safely queued.</strong><br>You can close this page; work will resume from its saved progress.');
     return data.run;
   } catch (error) {
     if (announce) addMessage('assistant', `<strong>Package status is temporarily unavailable.</strong><br>${escapeHtml(error.message)} Your saved role and master resume remain intact.`);
@@ -627,7 +627,7 @@ async function generateDurablePackage(roleId) {
   if (role.packageRunId && !role.packageDraft) {
     const current = await refreshDurablePackage(role.packageRunId, false);
     if (current?.status !== 'Failed') {
-      if (current) addMessage('assistant', '<strong>Your package checkpoint is current.</strong><br>I’ll keep the draft private and surface it here when generation or review is ready.');
+      if (current) addMessage('assistant', '<strong>Your package progress is up to date.</strong><br>I’ll keep the draft private and show it here when generation or review is ready.');
       return current;
     }
     const retryResponse = await fetchWithTimeout(`/api/application-packages?id=${encodeURIComponent(role.packageRunId)}`, {
@@ -1930,7 +1930,7 @@ async function discoverMatchingJobs() {
         missionState.runState = durableRun.status === 'Failed' ? 'Paused' : durableRun.status;
         missionState.discovery = { ...missionState.discovery, status: 'queued', checkedAt: new Date().toISOString(), requestId };
         saveAll(); renderMission();
-        addMessage('assistant', '<strong>Your search run is safely queued.</strong><br>It can be retried from its durable checkpoint if a feed is slow or temporarily unavailable. Nothing was submitted.<div class="quick"><button data-prompt="Retry job discovery">Check again</button></div>');
+        addMessage('assistant', '<strong>Your search is safely queued.</strong><br>If a job source is slow or temporarily unavailable, the search can be retried from its saved progress. Nothing was submitted.<div class="quick"><button data-prompt="Retry job discovery">Check again</button></div>');
         setTimeout(() => refreshDurableDiscovery(durableRun.id), 5000);
         return;
       }
@@ -1999,7 +1999,7 @@ async function discoverMatchingJobs() {
       if (!fit.credibleInterviewPath) return '';
       return `<a class="job-match" href="${escapeHtml(job.applyUrl)}" target="_blank" rel="noopener noreferrer"><strong>${escapeHtml(job.title)}</strong><span>${escapeHtml(job.employer)}${details ? ` · ${details}` : ''} · ${fit.score}/100 ${escapeHtml(fit.classification)}</span></a>`;
     }).join('');
-    addMessage('assistant', `<strong>Found ${added} credible mission match${added === 1 ? '' : 'es'} across ${checked} direct-employer feed${checked === 1 ? '' : 's'}.</strong><br>${duplicates} duplicate${duplicates === 1 ? ' was' : 's were'} suppressed; ${rejectedByMission} off-mission role${rejectedByMission === 1 ? ' was' : 's were'} withheld; ${rejectedByQualityFloor} role${rejectedByQualityFloor === 1 ? ' was' : 's were'} held below the 70-point application floor. Verified fit and your observed outcomes outrank the daily quota. These roles are Found—not Submitted—and still require exact direct-page, geography, travel, schedule, and gap verification.${topMatches ? `<div class="job-matches">${topMatches}</div>` : ''}${coverageNote}<div class="quick">${isPartial ? '<button data-prompt="Retry job discovery">Search the missing feeds again</button>' : ''}<button data-prompt="Show my jobs">Review all matches</button><button data-prompt="Review my current mission">Review mission</button></div>`);
+    addMessage('assistant', `<strong>Found ${added} matching job${added === 1 ? '' : 's'} across ${checked} direct-employer job feed${checked === 1 ? '' : 's'}.</strong><br>Skipped ${duplicates} duplicate${duplicates === 1 ? '' : 's'}, ${rejectedByMission} job${rejectedByMission === 1 ? '' : 's'} outside your search requirements, and ${rejectedByQualityFloor} job${rejectedByQualityFloor === 1 ? '' : 's'} below the minimum application score of 70 points. Verified fit and your observed outcomes matter more than reaching the daily target. These roles are Found—not Submitted—and still need checks of the exact employer job page, location, travel, schedule, and any missing requirements.${topMatches ? `<div class="job-matches">${topMatches}</div>` : ''}${coverageNote}<div class="quick">${isPartial ? '<button data-prompt="Retry job discovery">Search the missing feeds again</button>' : ''}<button data-prompt="Show my jobs">Review all matches</button><button data-prompt="Review my current mission">Review search requirements</button></div>`);
   } catch (error) {
     pending.remove();
     missionState.runState = 'Paused';
@@ -2343,7 +2343,11 @@ function renderSubscriberJobs() {
 }
 
 function openJobs(tab = 'Matches') { activeJobTab = tab; renderSubscriberJobs(); $('jobsOverlay').classList.add('open'); }
-function closeJobs() { $('jobsOverlay').classList.remove('open'); }
+function closeJobs() {
+  const restoreFocus = $('jobsOverlay').contains(document.activeElement);
+  $('jobsOverlay').classList.remove('open');
+  if (restoreFocus) $('openJobs').focus();
+}
 function openNeedsYou() { renderNeedsYouQueue(); $('needsYouOverlay').classList.add('open'); $('closeNeedsYou').focus(); }
 function closeNeedsYou() { $('needsYouOverlay').classList.remove('open'); }
 
@@ -3530,8 +3534,13 @@ $('resumeRun').addEventListener('click', async () => {
 });
 $('openDesk').addEventListener('click', () => openDesk('pipeline'));
 $('openVault').addEventListener('click', () => { $('vaultOverlay').classList.add('open'); renderVaultStatus(); });
-$('closeVault').addEventListener('click', () => $('vaultOverlay').classList.remove('open'));
-$('vaultOverlay').addEventListener('click', event => { if (event.target === $('vaultOverlay')) $('vaultOverlay').classList.remove('open'); });
+function closeVaultDialog() {
+  const restoreFocus = $('vaultOverlay').contains(document.activeElement);
+  $('vaultOverlay').classList.remove('open');
+  if (restoreFocus) $('openVault').focus();
+}
+$('closeVault').addEventListener('click', closeVaultDialog);
+$('vaultOverlay').addEventListener('click', event => { if (event.target === $('vaultOverlay')) closeVaultDialog(); });
 $('enableVault').addEventListener('click', async () => { try { await enableApplicantVault({ ask: true }); renderVaultStatus(); } catch (error) { $('vaultStatus').textContent = error.message; } });
 $('exportVault').addEventListener('click', () => {
   if (!vaultEnabled()) return;
@@ -3710,23 +3719,94 @@ $('confirmConsequence').addEventListener('click', async event => {
     $('confirmationSubtitle').classList.add('visible-error');
   } finally { button.disabled = false; }
 });
+// Every dismissible dialog, paired with the control that closes it. Escape and the
+// Tab trap previously covered only 3 of the 14 dialogs, so from the other 11 a
+// keyboard user could Tab straight out into the page hidden behind the overlay and
+// had no way to back out without finding the Close button by eye.
+//
+// questionOverlay is deliberately absent from Escape dismissal: its existing
+// Ask later/backdrop behavior remains separate. Closing uses the real button, not the underlying
+// function so keyboard dismissal behaves exactly like clicking Close (drafts saved,
+// focus restored, nothing skipped).
+const DISMISSIBLE_DIALOGS = [
+  ['confirmationOverlay', 'cancelConfirmation'],
+  ['jobAgentConsentOverlay', 'cancelJobAgentConsent'],
+  ['needsYouOverlay', 'closeNeedsYou'],
+  ['applicationOverlay', 'closeApplication'],
+  ['packageReviewOverlay', 'closePackageReview'],
+  ['interviewOverlay', 'closeInterviewPractice'],
+  ['deskOverlay', 'closeDesk'],
+  ['vaultOverlay', 'closeVault'],
+  ['campaignOverlay', 'closeCampaign'],
+  ['resumeOverlay', 'closeResumeSetup'],
+  ['jobsOverlay', 'closeJobs'],
+  ['agentAccessOverlay', 'closeAgentAccess'],
+  ['guidedLaunchOverlay', 'guidedLaunchClose'],
+];
+
+function dialogIsShown(node) {
+  if (!node) return false;
+  const styles = getComputedStyle(node);
+  if (styles.display === 'none' || styles.visibility === 'hidden') return false;
+  const rect = node.getBoundingClientRect();
+  return rect.width > 4 && rect.height > 4;
+}
+
+// Dialogs stack, so the one the user is actually looking at is the highest layer.
+function topmostOpenDialog() {
+  let best = null;
+  let bestZ = -Infinity;
+  document.querySelectorAll('[role="dialog"]').forEach((node, index) => {
+    if (!dialogIsShown(node)) return;
+    const z = Number.parseInt(getComputedStyle(node).zIndex, 10);
+    const rank = (Number.isNaN(z) ? 0 : z) * 1000 + index;
+    if (rank >= bestZ) { bestZ = rank; best = node; }
+  });
+  return best;
+}
+
+function dialogFocusables(dialog) {
+  return [...dialog.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+    .filter(node => !node.hidden && node.getBoundingClientRect().width > 0);
+}
+
 document.addEventListener('keydown', event => {
-  const openDialog = $('confirmationOverlay').classList.contains('open') ? $('confirmationOverlay')
-    : $('needsYouOverlay').classList.contains('open') ? $('needsYouOverlay')
-      : $('jobAgentConsentOverlay').classList.contains('open') ? $('jobAgentConsentOverlay') : null;
+  if (event.key !== 'Escape' && event.key !== 'Tab') return;
+  const openDialog = topmostOpenDialog();
+  if (!openDialog) return;
+
   if (event.key === 'Escape') {
-    if (openDialog === $('confirmationOverlay')) closeConsequenceDialog();
-    else if (openDialog === $('jobAgentConsentOverlay')) closeJobAgentConsent();
-    else if (openDialog) closeNeedsYou();
+    const pair = DISMISSIBLE_DIALOGS.find(([dialogId]) => dialogId === openDialog.id);
+    if (!pair) return;                       // deliberately blocking, leave it open
+    const closeControl = $(pair[1]);
+    if (!closeControl || closeControl.disabled) return;
+    event.preventDefault();
+    closeControl.click();
     return;
   }
-  if (event.key !== 'Tab' || !openDialog) return;
-  const focusable = [...openDialog.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled])')].filter(node => !node.hidden);
+
+  const focusable = dialogFocusables(openDialog);
   if (!focusable.length) return;
   const first = focusable[0];
   const last = focusable.at(-1);
   if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
   else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  else if (!openDialog.contains(document.activeElement)) { event.preventDefault(); first.focus(); }
+});
+
+// Opening a dialog should put the keyboard inside it. Several dialogs left focus
+// on the trigger behind the overlay, so the first Tab landed on hidden content.
+const dialogFocusObserver = new MutationObserver(entries => {
+  for (const entry of entries) {
+    const dialog = entry.target;
+    if (dialog.getAttribute?.('role') !== 'dialog') continue;
+    if (!dialogIsShown(dialog) || dialog.contains(document.activeElement)) continue;
+    const focusable = dialogFocusables(dialog);
+    if (focusable.length) focusable[0].focus({ preventScroll: true });
+  }
+});
+document.querySelectorAll('[role="dialog"]').forEach(dialog => {
+  dialogFocusObserver.observe(dialog, { attributes: true, attributeFilter: ['class', 'hidden', 'style'] });
 });
 document.querySelectorAll('[data-desk-tab]').forEach(node => node.addEventListener('click', () => switchTab(node.dataset.deskTab)));
 $('questionChoices').addEventListener('click', event => {
@@ -3952,13 +4032,13 @@ $('roleForm').addEventListener('submit', event => { event.preventDefault(); safe
     recruiterContact: $('roleRecruiter').value, attestations: list($('roleAttestations').value),
   });
   deskState = result.state; event.target.reset();
-  showDeskMessage(result.duplicate ? 'Duplicate suppressed; durable reason added to the existing role.' : 'Role captured as Found.');
+  showDeskMessage(result.duplicate ? 'This job is already saved. The reason was saved with the existing job.' : 'Role captured as Found.');
 }); });
 
 $('importTracker').addEventListener('click', () => safeAction(() => {
   const applications = loadJson('1ststep_applications', []); const tailored = loadJson('1ststep_tailor_history', []);
   const result = importLegacyEntries(deskState, applications, tailored); deskState = result.state;
-  showDeskMessage(`Imported ${result.imported}; suppressed ${result.duplicates} duplicates; skipped ${result.skipped}. Imported “applied” labels are not treated as receipts.`);
+  showDeskMessage(`Imported ${result.imported}; skipped ${result.duplicates} duplicates and ${result.skipped} other entries. Imported “applied” labels are not treated as receipts.`);
 }));
 
 $('roleList').addEventListener('click', event => {
