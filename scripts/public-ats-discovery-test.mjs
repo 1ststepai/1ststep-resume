@@ -28,9 +28,11 @@ assert.equal(DEFAULT_PUBLIC_ATS_SOURCES.length, 37);
 assert.ok(DEFAULT_PUBLIC_ATS_SOURCES.every(source => validatePublicSource(source)));
 assert.deepEqual(publicDiscoveryRuntimeOptions(), {
   requestTimeoutMs: 8_000, detailTimeoutMs: 6_000, sourceConcurrency: 8, providerRequestConcurrency: 2,
+  detailConcurrency: 8, totalTimeoutMs: 32_000,
 });
 assert.deepEqual(publicDiscoveryRuntimeOptions({ requestTimeoutMs: 1, detailTimeoutMs: 99_000, sourceConcurrency: 99, providerRequestConcurrency: 0 }), {
   requestTimeoutMs: 1_000, detailTimeoutMs: 15_000, sourceConcurrency: 20, providerRequestConcurrency: 1,
+  detailConcurrency: 8, totalTimeoutMs: 32_000,
 });
 assert.equal(previewSmokeMaxDuration, 30);
 assert.deepEqual(SMOKE_DISCOVERY_RUNTIME, {
@@ -42,6 +44,7 @@ assert.ok(PREVIEW_SMOKE_SOURCES.every(source => DEFAULT_PUBLIC_ATS_SOURCES.inclu
 assert.equal(discoveryMaxDuration, 45);
 assert.deepEqual(USER_DISCOVERY_RUNTIME, {
   requestTimeoutMs: 4_000, detailTimeoutMs: 3_000, sourceConcurrency: 20, providerRequestConcurrency: 2,
+  detailConcurrency: 8, totalTimeoutMs: 32_000,
 });
 const providerDescriptor = publicAtsProviderDescriptor(greenhouse);
 assert.equal(providerDescriptor.contractVersion, 2);

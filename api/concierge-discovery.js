@@ -10,6 +10,8 @@ export const USER_DISCOVERY_RUNTIME = Object.freeze({
   detailTimeoutMs: 3_000,
   sourceConcurrency: 20,
   providerRequestConcurrency: 2,
+  detailConcurrency: 8,
+  totalTimeoutMs: 32_000,
 });
 
 function configuredSources() {
@@ -59,7 +61,7 @@ export default async function handler(req, res) {
       limit: req.body?.limit || 50,
       runtime: USER_DISCOVERY_RUNTIME,
     });
-    return res.status(200).json({ ...result, submissionsEnabled: false, costMode: 'no-paid-job-api', access: auth.guest ? 'guest' : 'signed', status: 'complete' });
+    return res.status(200).json({ ...result, submissionsEnabled: false, costMode: 'no-paid-job-api', access: auth.guest ? 'guest' : 'signed', status: result.partial ? 'partial' : 'complete' });
   } catch (error) {
     await recordConfiguredJobAgentOperationalEvent('discovery_failure');
     console.error(JSON.stringify({ type: 'public-ats-discovery-error', name: error?.name || 'unknown' }));
