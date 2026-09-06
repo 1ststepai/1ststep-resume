@@ -1048,6 +1048,7 @@ async function loadPublicAppConfig() {
     publicAppConfig = {
       authentication: {
         restoreAccessAvailable: data.authentication?.restoreAccessAvailable === true,
+        clerkAvailable: data.authentication?.clerk?.enabled === true,
       },
     };
   } catch {
@@ -1056,6 +1057,10 @@ async function loadPublicAppConfig() {
 }
 
 function openAgentAccess() {
+  if (publicAppConfig.authentication.clerkAvailable && !hasApiSession()) {
+    location.assign('/login.html');
+    return;
+  }
   agentRestoreChallenge = '';
   $('agentAccessCode').hidden = true;
   $('agentAccessCodeLabel').hidden = true;
@@ -1314,6 +1319,7 @@ async function signOutAgent(allDevices = false) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || 'Could not sign out safely.');
   clearSignedAccessState();
+  if (publicAppConfig.authentication.clerkAvailable) location.assign('/login.html?mode=sign-out');
 }
 
 function clearSignedAccessState() {

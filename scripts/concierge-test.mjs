@@ -153,7 +153,7 @@ assert.match(conciergeJs, /finalSubmissionExecutionEnabled/);
 assert.match(conciergeHtml, /id="jobsOverlay"/);
 assert.match(conciergeHtml, /id="needsYouList"/);
 assert.match(conciergeHtml, /id="agentAccessOverlay"/);
-assert.match(conciergeHtml, /Dedicated pricing is being measured/);
+assert.match(conciergeHtml, /Job Agent: \$39\/month\./);
 assert.match(conciergeHtml, /id="openEmployerPage"/);
 assert.match(conciergeHtml, /Your password, passkey, OTP, and CAPTCHA answers stay on the employer website/);
 assert.match(conciergeHtml, /id="applicationBrowserHandoff"/);
