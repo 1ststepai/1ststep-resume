@@ -34,7 +34,7 @@ function collapseLetterSpacing(text) {
     .replace(/\n{3,}/g, '\n\n');
 }
 
-import { buildSearchLinks, classifyConciergeMessage, conciergeStateGuidance, missionGaps, parseMission } from './client/concierge-router.js';
+import { buildSearchLinks, classifyConciergeMessage, conciergeStateGuidance, jobAgentStatus, missionGaps, parseMission } from './client/concierge-router.js';
 import {
   ACTION_TYPES, APPLICATION_WORKFLOW_STEPS, DEMO_STAGES, ONBOARDING_REQUIRED_FIELDS, READINESS_FIELDS, REDACTED_WORKFLOW_REPLAY, addActionItem, addRole, advanceManagedApplicationSession, advanceSalesDemo, approveBatch,
   buildCareerStoryDraft, buildReadinessDraftFromSources, buildVerifiedResumeDraft, confirmReadinessDraft, confirmReusableFact, createApprovalBatch, createDeskState, createSalesDemo, deleteReusableFact, discardReadinessDraft,
@@ -1029,7 +1029,7 @@ async function closeDurableBrowserHandoff() {
 function renderAgentAccessState() {
   const active = hasJobAgentAccess();
   const pilotInviteRequired = sessionCapabilities.pilotAccess?.code === 'JOB_AGENT_PILOT_INVITE_REQUIRED';
-  if ($('openAgentAccess')) $('openAgentAccess').textContent = active ? 'Job Agent active' : pilotInviteRequired ? 'Pilot invite required' : 'Sign in';
+  if ($('openAgentAccess')) $('openAgentAccess').textContent = active ? 'Account access enabled' : pilotInviteRequired ? 'Pilot invite required' : 'Sign in';
   if ($('deleteAccountData')) $('deleteAccountData').textContent = 'Delete Job Agent cloud data';
   if (!$('startJobSearch')) return;
   const missionActive = Boolean(missionState.mission?.role);
@@ -2144,18 +2144,48 @@ function runStateSummary(state, detailed = detailedRunState(state)) {
 
 function renderRunState() {
   const state = currentRunState();
+  const evidence = simpleAgentStatus();
+  const unconfirmed = !['Paused', 'Needs you'].includes(evidence.label) && ['waiting', 'idle', 'unknown', 'attention'].includes(evidence.tone);
   const detailed = detailedRunState(state);
   const activeIndex = RUN_STATES.indexOf(state);
   document.querySelectorAll('[data-run-state]').forEach((node, index) => {
-    node.classList.toggle('active', node.dataset.runState === state);
-    node.classList.toggle('complete', activeIndex > 0 && index < activeIndex && state !== 'Paused');
+    node.classList.toggle('active', !unconfirmed && node.dataset.runState === state);
+    node.classList.toggle('complete', !unconfirmed && activeIndex > 0 && index < activeIndex && state !== 'Paused');
   });
-  $('runStateSummary').textContent = runStateSummary(state, detailed);
+  $('runStateSummary').textContent = `${evidence.label} · ${evidence.detail}`;
   const verifiedAt = durableRun?.result?.completedAt || [...(durableRun?.events || [])].reverse().find(item => ['RUN_COMPLETED', 'RUN_PARTIALLY_COMPLETED'].includes(item.type))?.at || null;
   const nextRunAt = jobAgentSchedule.schedule?.status === 'active' ? jobAgentSchedule.schedule.nextRunAt : durableRun?.nextRetryAt;
   $('runStateTiming').textContent = `${verifiedAt ? `Last verified activity ${relativeActivityTime(verifiedAt)}` : 'No completed activity inferred'} · ${nextRunAt ? `next run ${new Date(nextRunAt).toLocaleString()}` : 'no scheduled run'}`;
   $('pauseRun').hidden = !state || ['Paused', 'Finished'].includes(state);
   $('resumeRun').hidden = !['Paused', 'Failed Safely', 'Partially Completed'].includes(detailed);
+  renderSimpleAgentStatus();
+}
+
+let statusCheckUnavailable = false;
+function simpleAgentStatus() {
+  return jobAgentStatus({ run: durableRun, discovery: missionState.discovery,
+    paused: missionState.runState === 'Paused', needsYou: currentRunState() === 'Waiting for You',
+    unavailable: statusCheckUnavailable });
+}
+function renderSimpleAgentStatus() {
+  const status = simpleAgentStatus();
+  $('agentRunState').textContent = status.label;
+  $('agentRunState').dataset.tone = status.tone;
+  $('agentStatusDetail').textContent = status.detail;
+  $('agentStatusSeen').textContent = status.last ? `Last recorded update: ${relativeActivityTime(status.last)}` : 'No worker activity confirmed yet';
+}
+async function checkSimpleAgentStatus(announce = false) {
+  const button = $('checkAgentStatus');
+  if (button.disabled) return;
+  button.disabled = true; button.textContent = 'Checking…';
+  try {
+    if (hasApiSession() && hasJobAgentAccess()) statusCheckUnavailable = !(await hydrateDurableRun());
+    renderRunState();
+    if (announce) {
+      const status = simpleAgentStatus();
+      addMessage('assistant', `<strong>${escapeHtml(status.label)}</strong><br>${escapeHtml(status.detail)}`);
+    }
+  } finally { button.disabled = false; button.textContent = 'Check status'; }
 }
 
 function relativeActivityTime(value) {
@@ -2482,6 +2512,7 @@ function respond(input) {
       : '<strong>I can’t accept passwords, OTPs, CAPTCHA answers, bypasses, or malicious requests.</strong> Keep authentication in your browser; I can queue the human step and continue other job work.';
     addMessage('assistant', copy); return;
   }
+  if (classification.kind === 'status') { checkSimpleAgentStatus(true); return; }
   if (classification.kind === 'off-topic') { addMessage('assistant', 'I only handle job-search work: readiness, discovery, truthful documents, applications, tracking, interviews, and follow-up.'); return; }
   if (classification.kind === 'empty') return;
   if (/confirm these career facts and build my resume/i.test(input) && deskState.readinessDraft?.status === 'pending') {
@@ -3979,13 +4010,14 @@ async function hydrateDurableRun() {
   try {
     const response = await fetchWithTimeout('/api/job-agent-runs?latest=discovery', { headers: apiAuthorizationHeaders() }, REQUEST_TIMEOUTS.persistence);
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) return;
+    if (!response.ok) return false;
+    statusCheckUnavailable = false;
     if (!data.run) {
       durableRun = null;
       cacheDurableRun(null);
       delete missionState.durableRunId;
       saveAll(); renderMission();
-      return;
+      return true;
     }
     durableRun = data.run;
     cacheDurableRun(durableRun);
@@ -4005,7 +4037,8 @@ async function hydrateDurableRun() {
       missionState.runState = durableRun.status === 'Failed' ? 'Paused' : durableRun.status;
       saveAll(); renderMission();
     }
-  } catch { /* device state remains available */ }
+    return true;
+  } catch { return false; /* device state remains available */ }
 }
 
 function restoreDurableDiscoveryRoles(run) {
@@ -4070,6 +4103,10 @@ async function hydrateAccountWorkflow() {
   await hydrateJobAgentLearning();
 }
 start();
+$('checkAgentStatus').addEventListener('click', () => checkSimpleAgentStatus());
+$('statusShowJobs').addEventListener('click', () => $('openJobs').click());
+// Refresh the displayed age without issuing background requests or inventing activity.
+setInterval(renderRunState, 15000);
 loadPublicAppConfig();
 loadSessionCapabilities().then(async () => {
   await hydrateAccountWorkflow();

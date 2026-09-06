@@ -455,3 +455,15 @@ button, .resume-upload-label, .question-secondary, .search-link,
 .needs-you-item button { background: #fff7e6; color: var(--agent-caution); min-height: 48px; font-size: .875rem; }
 .needs-you-item strong { font-size: .9375rem; }
 .needs-you-item em, .needs-you-item div > span { font-size: .75rem; }
+/* One plain-language execution status next to the conversation, not an access badge. */
+.agent-conversation > header { align-items: flex-start; }
+.agent-conversation > header > div { min-width: 0; }
+#agentRunState { display: block; font-size: 1.35rem; font-weight: 750; color: #26304b; margin: 8px 0; }
+#agentRunState::before { content: ''; display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #64748b; margin-right: 10px; }
+#agentRunState[data-tone="working"]::before { background: #15803d; }
+#agentRunState[data-tone="waiting"]::before, #agentRunState[data-tone="attention"]::before { background: #b45309; }
+#agentRunState[data-tone="complete"]::before { background: #15803d; }
+#agentStatusDetail { margin: 0 0 6px; color: #475569; line-height: 1.5; max-width: 64ch; }
+#agentStatusSeen { display: block; color: #64748b; }
+.agent-status-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.agent-status-controls button { min-height: 44px; padding: 10px 16px; }

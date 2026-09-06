@@ -1,7 +1,40 @@
 import { test, expect } from '@playwright/test';
 import { jobAgentPolicyBundle } from '../lib/job-agent-policy-bundle.js';
+import { jobAgentStatus } from '../client/concierge-router.js';
 
 const baseUrl = process.env.CONCIERGE_TEST_URL || 'http://127.0.0.1:4175/concierge';
+
+test('running requires recent heartbeat and unexpired lease', () => {
+  const now = Date.now();
+  const run = { lifecycleState: 'Searching', lastHeartbeatAt: new Date(now - 1000).toISOString(), leaseUntil: new Date(now + 30000).toISOString() };
+  expect(jobAgentStatus({ run, now }).tone).toBe('working');
+  expect(jobAgentStatus({ run, now: now + 100000 }).tone).toBe('waiting');
+  expect(jobAgentStatus({ run: { lifecycleState: 'Searching' }, now }).tone).toBe('waiting');
+  expect(jobAgentStatus({ run, now, unavailable: true }).label).toBe('Status unavailable');
+});
+
+test('queued status is visible and a running question receives status instead of rejection', async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('1ststep_concierge_mission_v1', JSON.stringify({ mission: { role: 'Procurement Manager', target: 10 }, messages: [], discovery: { status: 'queued' } }));
+    sessionStorage.setItem('1ststep_job_agent_run_v1', JSON.stringify({ id: 'synthetic-status', status: 'Searching', lifecycleState: 'Queued', taskType: 'direct_employer_discovery' }));
+  });
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await expect(page.locator('#agentRunState')).toHaveText('Queued — not started yet');
+  await expect(page.locator('#agentStatusDetail')).toContainText('worker has not started');
+  await expect(page.locator('[data-run-state="Searching"]')).not.toHaveClass(/active/);
+  await page.locator('#messageInput').fill('is my agent running currently?');
+  await page.locator('#composer button[type="submit"]').click();
+  await expect(page.locator('#messages')).toContainText('Queued — not started yet');
+  await expect(page.locator('#messages')).not.toContainText('I only handle');
+  await page.locator('#checkAgentStatus').click();
+  await expect(page.locator('#agentRunState')).toHaveText('Queued — not started yet');
+  await page.locator('#agentConversation').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: `${process.env.TEMP || '/tmp'}/agent-status-desktop.png` });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('#agentConversation').scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: `${process.env.TEMP || '/tmp'}/agent-status-mobile.png` });
+});
 
 test('newly reviewed resume survives late sign-in hydration and reaches consent without a second upload', async ({ page }) => {
   let releaseSession;
@@ -490,7 +523,7 @@ test('a stale device run cannot hide a newer tenant discovery run', async ({ pag
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await expect(page.locator('#dailyGoalMessage')).toContainText('Supplier Relationship Manager');
-  await expect(page.locator('#runStateTrack [data-run-state="Searching"]')).toHaveClass(/active/);
+  await expect(page.locator('#agentRunState')).toHaveText('Waiting for a worker update');
   expect(await page.evaluate(() => localStorage.getItem('1ststep_job_agent_run_v1'))).toBeNull();
   expect(await page.evaluate(() => sessionStorage.getItem('1ststep_job_agent_run_v1'))).toBeNull();
   expect(exactRunRequests).toBe(0);
@@ -1279,7 +1312,7 @@ test('mobile persisted retry state supports keyboard Pause and Play again withou
     sessionStorage.setItem('1ststep_job_agent_run_v1', JSON.stringify({ id: 'run_resilience_fixture_1', operationId: 'op_resilience_fixture_1', taskType: 'direct_employer_discovery', status: 'Searching', lifecycleState: 'Retrying', attempt: 2, maxAttempts: 4, nextRetryAt: retryAt, lastHeartbeatAt: now, createdAt: now, updatedAt: now, events: [{ id: 'event_retry_1', type: 'RETRY_SCHEDULED', state: 'Retrying', attempt: 2, at: now }] }));
   }, { now, retryAt });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await expect(page.locator('#runStateSummary')).toContainText('Retrying one source');
+  await expect(page.locator('#runStateSummary')).toContainText('Waiting to retry');
   await expect(page.locator('#runStateTiming')).toContainText('next run');
   const pause = page.locator('#pauseRun');
   await pause.focus();
