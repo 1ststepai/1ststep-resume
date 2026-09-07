@@ -45,8 +45,7 @@ assert.match(codeql, /github\/codeql-action\/analyze@[a-f0-9]{40}/, 'CodeQL anal
 
 const isolatedDatabase = workflows['.github/workflows/isolated-database-verification.yml'];
 assert.match(isolatedDatabase, /^\s*workflow_dispatch:\s*$/m, 'Isolated database verification must be manually triggered');
-assert.match(isolatedDatabase, /push:\s*\n\s*branches:\s*\n\s*- release\/login-pricing-reconciled-20260906\s*\n\s*paths:\s*\n\s*- \.github\/workflows\/isolated-database-verification\.yml/, 'Bootstrap push trigger must be restricted to the release branch and this workflow file');
-assert.doesNotMatch(isolatedDatabase, /^\s*(pull_request|schedule):\s*$/m, 'Isolated database verification must not run for pull requests or schedules');
+assert.doesNotMatch(isolatedDatabase, /^\s*(push|pull_request|schedule):\s*$/m, 'Isolated database verification must not run automatically');
 assert.match(isolatedDatabase, /run:\s*npx --no-install supabase --version/, 'Isolated database verification must use the lockfile-pinned Supabase CLI');
 assert.match(isolatedDatabase, /JOB_AGENT_ISOLATED_TARGET_KIND:\s*local-supabase/, 'Isolated database verification must attest a disposable local target');
 assert.match(isolatedDatabase, /run:\s*npx --no-install supabase test db/, 'Isolated database verification must run the pgTAP suite');

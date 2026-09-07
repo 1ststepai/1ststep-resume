@@ -2,12 +2,6 @@ name: Isolated Database Verification
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - release/login-pricing-reconciled-20260906
-    paths:
-      - .github/workflows/isolated-database-verification.yml
-      - supabase/tests/job_agent_rls.test.sql
 
 permissions:
   contents: read
