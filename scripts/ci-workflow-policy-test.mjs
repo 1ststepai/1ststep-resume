@@ -47,9 +47,9 @@ const isolatedDatabase = workflows['.github/workflows/isolated-database-verifica
 assert.match(isolatedDatabase, /^\s*workflow_dispatch:\s*$/m, 'Isolated database verification must be manually triggered');
 assert.match(isolatedDatabase, /push:\s*\n\s*branches:\s*\n\s*- release\/login-pricing-reconciled-20260906\s*\n\s*paths:\s*\n\s*- \.github\/workflows\/isolated-database-verification\.yml/, 'Bootstrap push trigger must be restricted to the release branch and this workflow file');
 assert.doesNotMatch(isolatedDatabase, /^\s*(pull_request|schedule):\s*$/m, 'Isolated database verification must not run for pull requests or schedules');
-assert.match(isolatedDatabase, /version:\s*2\.116\.0/, 'Isolated database verification must pin the Supabase CLI');
+assert.match(isolatedDatabase, /run:\s*npx --no-install supabase --version/, 'Isolated database verification must use the lockfile-pinned Supabase CLI');
 assert.match(isolatedDatabase, /JOB_AGENT_ISOLATED_TARGET_KIND:\s*local-supabase/, 'Isolated database verification must attest a disposable local target');
-assert.match(isolatedDatabase, /run:\s*supabase test db/, 'Isolated database verification must run the pgTAP suite');
+assert.match(isolatedDatabase, /run:\s*npx --no-install supabase test db/, 'Isolated database verification must run the pgTAP suite');
 assert.match(isolatedDatabase, /run:\s*bash scripts\/isolated-database-ci-drill\.sh/, 'Isolated database verification must run the recovery drill');
 assert.doesNotMatch(isolatedDatabase, /secrets\.|VERCEL_|PRODUCTION_SUPABASE|--prod|db push|link/, 'Isolated database verification must not access deployment or Production credentials');
 

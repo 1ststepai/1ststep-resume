@@ -23,7 +23,7 @@ fi
 
 source_image="$(docker inspect --format '{{.Config.Image}}' "${source_container}")"
 source_postgres_version="$(docker exec "${source_container}" psql -Atq -U postgres -d postgres -c 'show server_version')"
-supabase_cli_version="$(supabase --version | tr -d '\r\n')"
+supabase_cli_version="$(npx --no-install supabase --version | tr -d '\r\n')"
 
 docker exec "${source_container}" psql -v ON_ERROR_STOP=1 -U postgres -d postgres -c \
   "insert into public.app_tenants (tenant_id) values ('${fixture_tenant}') on conflict do nothing" >/dev/null

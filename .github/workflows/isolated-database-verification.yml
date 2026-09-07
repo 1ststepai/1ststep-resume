@@ -36,10 +36,8 @@ jobs:
       - name: Install locked dependencies
         run: npm ci --ignore-scripts
 
-      - name: Install pinned Supabase CLI
-        uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v3.0.0
-        with:
-          version: 2.116.0
+      - name: Verify pinned Supabase CLI
+        run: npx --no-install supabase --version
 
       - name: Verify local-only boundary
         run: npm run security:isolated-data-preflight
@@ -48,13 +46,13 @@ jobs:
           JOB_AGENT_ISOLATED_TARGET_CONFIRMATION: CONFIRM_ISOLATED_NONPRODUCTION_TARGET
 
       - name: Start disposable Supabase database
-        run: supabase db start
+        run: npx --no-install supabase db start
 
       - name: Verify migration reconciliation
         run: npm run db:reconcile:check
 
       - name: Run adversarial tenant-isolation tests
-        run: supabase test db
+        run: npx --no-install supabase test db
 
       - name: Run isolated backup and restore drill
         run: bash scripts/isolated-database-ci-drill.sh
@@ -69,4 +67,4 @@ jobs:
 
       - name: Stop disposable Supabase database
         if: always()
-        run: supabase stop --no-backup || true
+        run: npx --no-install supabase stop --no-backup || true
