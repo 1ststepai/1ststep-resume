@@ -83,7 +83,12 @@
     function showJourney() {
       if (!journey) return;
       journey.dataset.chapter = String(journeyIndex);
-      journey.querySelectorAll('.journey-card').forEach(function (card, i) { card.hidden = i !== journeyIndex; });
+      journey.style.setProperty('--journey-index', String(journeyIndex));
+      journey.querySelectorAll('.journey-card').forEach(function (card, i) {
+        var inactive = i !== journeyIndex;
+        card.setAttribute('aria-hidden', String(inactive));
+        card.inert = inactive;
+      });
       journey.querySelectorAll('[data-chapter-button]').forEach(function (button, i) { button.setAttribute('aria-pressed', String(i === journeyIndex)); });
     }
     var scenes = Array.prototype.slice.call(document.querySelectorAll('[data-motion-scene]'));
@@ -192,6 +197,7 @@
     window.addEventListener('pagehide', function () { window.clearTimeout(timer); window.clearTimeout(journeyTimer); journeyTimer = null; });
     window.addEventListener('pageshow', syncMotion);
     showFrame();
+    showJourney();
     syncMotion();
 
     // ── Testimonials ─────────────────────────────────────────────────────────

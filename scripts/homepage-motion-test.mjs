@@ -7,7 +7,7 @@ const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../home.css', import.meta.url), 'utf8');
 function element() {
   const values = new Set();
-  return { dataset: {}, textContent: '', events: {}, attributes: {}, classList: {
+  return { dataset: {}, textContent: '', events: {}, attributes: {}, inert: false, style: { values: {}, setProperty(name, value) { this.values[name] = value; } }, classList: {
     add: key => values.add(key), remove: key => values.delete(key),
     contains: key => values.has(key), toggle(key, on) { if (on) values.add(key); else values.delete(key); }
   }, addEventListener(name, fn) { this.events[name] = fn; }, setAttribute(name, value) { this.attributes[name] = value; } };
@@ -17,6 +17,12 @@ const items = [element(), element(), element()];
 const buttons = [element(), element(), element()];
 buttons.forEach((button, i) => { button.dataset.previewStep = String(i); });
 const ids = Object.fromEntries(['runSteps','motionToggle','featureMotionToggle','motionExplanation','demoHeadline','demoDocument','demoDetail','demoStatus'].map(id => [id, element()]));
+const journey = element();
+const journeyCards = [element(), element(), element(), element()];
+const journeyButtons = [element(), element(), element(), element()];
+journeyButtons.forEach((button, i) => { button.dataset.chapterButton = String(i); });
+journey.querySelectorAll = selector => selector === '[data-chapter-button]' ? journeyButtons : journeyCards;
+ids.outcomeJourney = journey;
 ids.runSteps.closest = () => scene;
 ids.runSteps.querySelectorAll = selector => selector === '[data-preview-step]' ? buttons : items;
 const query = { matches: false, addEventListener(name, fn) { this.change = fn; } };
@@ -26,7 +32,7 @@ let nextTimer = 0;
 let intersection;
 const document = { readyState: 'complete', hidden: false, documentElement: element(),
   getElementById: id => ids[id] || null,
-  querySelectorAll: selector => selector === '[data-motion-scene]' ? [scene] : [],
+  querySelectorAll: selector => selector === '[data-motion-scene]' ? [scene, journey] : [],
   addEventListener(name, fn) { events[name] = fn; }
 };
 function IntersectionObserver(fn) { intersection = fn; this.observe = () => {}; }
@@ -34,6 +40,9 @@ const window = { matchMedia: () => query, IntersectionObserver,
   setTimeout(fn) { timers.set(++nextTimer, fn); return nextTimer; },
   clearTimeout(id) { timers.delete(id); }, addEventListener() {} };
 vm.runInNewContext(source, { window, document, IntersectionObserver, Set, Date });
+assert.equal(journey.style.values['--journey-index'], '0');
+assert.equal(journeyCards[0].attributes['aria-hidden'], 'false');
+assert.equal(journeyCards[1].inert, true);
 assert.equal(timers.size, 0, 'Offscreen demo must not schedule work');
 intersection([{ target: scene, isIntersecting: true }]);
 assert.equal(timers.size, 1);
@@ -74,6 +83,12 @@ assert.equal(ids.motionToggle.attributes['aria-pressed'], 'false', 'Choosing a s
 intersection([{ target: scene, isIntersecting: true }]);
 assert.equal(scene.classList.contains('motion-running'), true);
 assert.equal(timers.size, 0);
+intersection([{ target: journey, isIntersecting: true }]);
+assert.equal(timers.size, 1, 'Visible journey carousel must schedule its next slide');
+[...timers.values()][0]();
+assert.equal(journey.style.values['--journey-index'], '1');
+assert.equal(journeyCards[0].attributes['aria-hidden'], 'true');
+assert.equal(journeyCards[1].attributes['aria-hidden'], 'false');
 assert(statSync(new URL('../home-momentum.jpg', import.meta.url)).size < 200_000, 'Hero asset stays under 200 KB');
 assert.match(readFileSync(new URL('../build-public-web.mjs', import.meta.url), 'utf8'), /'home-momentum.jpg'/);
 assert.match(html, /class="demo-label">Product tour<\/span>/);
@@ -82,6 +97,8 @@ assert.match(html, /Request early access/);
 assert.match(html, /does not currently submit applications on your behalf/);
 assert.doesNotMatch(html, /Play animations|featureMotionToggle|journeyMotionToggle/);
 assert.equal((html.match(/class="journey-card"/g) || []).length, 4);
+assert.match(html, /class="journey-viewport"/);
+assert.match(html, /class="journey-track"/);
 assert.equal((html.match(/\/ YOUR GOAL/g) || []).length, 2, 'Interviews and offers must be goals, not claimed results');
 assert.match(html, /Employers decide interviews and offers/);
 assert.doesNotMatch(html, /40 (?:jobs|applications)|guaranteed interviews/i);
@@ -90,5 +107,7 @@ assert.match(html, /Nothing will be sent until you approve this application\./);
 assert.match(html, /data-chrome-web-store-url/);
 assert.match(html, /mailto:evan@1ststep.ai/);
 assert.match(css, /prefers-reduced-motion: reduce/);
+assert.match(css, /\.journey-track\s*\{[^}]*transition:\s*transform/);
+assert.match(css, /translate3d\(calc\(var\(--journey-index/);
 assert.doesNotMatch(source, /\bfetch\s*\(|XMLHttpRequest/);
 console.log('PASS: homepage motion lifecycle, pause, offscreen, hidden tab, reduced motion, safety labels and preserved links.');

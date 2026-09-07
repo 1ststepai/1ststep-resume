@@ -468,13 +468,14 @@ section { padding: clamp(62px, 8vw, 104px) 0; }
 }
 
 /* Outcome-led story: preparation is the service; interviews/offers are goals. */
-.outcome-section { background: #f8f9ff; }
+.outcome-section { background: #f8f9ff; scroll-margin-top: 84px; }
 .outcome-heading { text-align: center; margin-bottom: 28px; }
 .outcome-heading h2 { font-size: clamp(32px,4vw,50px); letter-spacing: -.05em; margin-top: 12px; }
 .outcome-stage { position: relative; isolation: isolate; border: 1px solid #e2e5f5; border-radius: 28px; padding: 34px; overflow: hidden; background: #eeedff; }
 .outcome-art { position: absolute; z-index: -1; inset: 0; background: url('/home-momentum.jpg') center / cover; opacity: .65; }
-.journey-card { max-width: 600px; margin: auto; text-align: center; min-height: 370px; padding: 26px; background: #ffffffed; border: 1px solid #fff; border-radius: 22px; box-shadow: 0 20px 60px #3730a31c; animation: chapter-arrive .65s ease both paused; }
-.journey-card[hidden] { display: none; }
+.journey-viewport { max-width: 600px; margin: auto; overflow: hidden; border-radius: 22px; box-shadow: 0 20px 60px #3730a31c; }
+.journey-track { display: flex; width: 100%; transform: translate3d(calc(var(--journey-index, 0) * -100%),0,0); transition: transform .9s cubic-bezier(.22,1,.36,1); will-change: transform; }
+.journey-card { flex: 0 0 100%; width: 100%; margin: 0; text-align: center; min-height: 370px; padding: 26px; background: #ffffffed; border: 1px solid #fff; border-radius: 22px; box-shadow: none; }
 .journey-card h3 { font-size: clamp(25px,3vw,34px); letter-spacing: -.04em; margin: 10px 0; line-height: 1.2; }
 .journey-card > p:last-child { color: #475569; font-size: 14px; max-width: 40ch; margin: 15px auto 0; }
 .journey-graphic { position: relative; height: 205px; display: grid; place-items: center; }
@@ -506,11 +507,10 @@ section { padding: clamp(62px, 8vw, 104px) 0; }
 .compact-details details { padding: 18px 0; border-bottom: 1px solid #e2e8f0; scroll-margin-top: 90px; }
 .compact-details summary { cursor: pointer; font-size: 16px; font-weight: 600; }
 .compact-details p { margin: 12px 0; color: #475569; font-size: 14px; }
-.motion-running .journey-card,.motion-running .tour-pointer { animation-play-state: running; }
-@keyframes chapter-arrive { from { opacity: 0; transform: translateY(18px) scale(.96); } to { opacity: 1; transform: none; } }
+.motion-running .tour-pointer { animation-play-state: running; }
 @keyframes start-click { 0%,100% { transform: translate(24px,16px); } 45%,70% { transform: translate(-10px,-10px); } 60% { transform: translate(-10px,-10px) scale(.85); } }
-@media(max-width: 600px) { .outcome-stage { padding: 20px 12px; } .journey-card { padding: 20px 12px; min-height: 380px; } .journey-foot { flex-direction: column; align-items: flex-start; } .journey-nav { gap: 5px; } .journey-nav button { padding: 9px 12px; font-size: 11px; } .offer-envelope { width: 235px; } .conversation-bubble { right: -5px; } }
-@media(prefers-reduced-motion: reduce) { html:not(.motion-opt-in) .journey-card,html:not(.motion-opt-in) .tour-pointer { animation: none; } }
+@media(max-width: 600px) { .outcome-section { scroll-margin-top: 72px; } .outcome-stage { padding: 20px 12px; } .journey-card { padding: 20px 12px; min-height: 380px; } .journey-foot { flex-direction: column; align-items: flex-start; } .journey-nav { gap: 5px; } .journey-nav button { padding: 9px 12px; font-size: 11px; } .offer-envelope { width: 235px; } .conversation-bubble { position: static; margin: -12px auto 0; width: max-content; max-width: 100%; } }
+@media(prefers-reduced-motion: reduce) { html:not(.motion-opt-in) .journey-track { transition: none; } html:not(.motion-opt-in) .tour-pointer { animation: none; } }
 
 .footer-motion { border: 0; background: transparent; color: #475569; font: inherit; font-size: 12px; cursor: pointer; min-height: 44px; padding: 8px 12px; text-decoration: underline; }
 .footer-motion:focus-visible { outline: 2px solid #4338ca; outline-offset: 3px; }
