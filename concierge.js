@@ -2277,12 +2277,13 @@ function renderNeedsYouQueue() {
   $('headerNeedsYouCount').textContent = actions.length;
   $('headerNeedsYouCount').hidden = actions.length === 0;
   $('needsYouEmpty').hidden = actions.length > 0;
-  $('needsYouList').innerHTML = actions.map(item => {
+  const attentionCards = actions.map(item => {
     const role = deskState.roles.find(entry => entry.id === item.roleId);
     const label = item.roleLabel || (role ? `${role.employer} · ${role.title}` : 'Your job agent');
     const target = item.durable ? `data-review-session="${escapeHtml(item.sessionId)}"` : `data-review-action="${escapeHtml(item.id)}"`;
-    return `<article class="needs-you-item"><div><span>${escapeHtml(needsYouKind(item.type))}</span><strong>${escapeHtml(label)}</strong><small>${escapeHtml(item.summary || 'A secure step needs your attention.')}</small><em>Your saved application will resume after this step.</em></div><button type="button" ${target}>Review</button></article>`;
-  }).join('');
+    return `<article class="needs-you-item"><div><span>${escapeHtml(needsYouKind(item.type))}</span><strong>${escapeHtml(label)}</strong><small>${escapeHtml(item.summary || 'An answer or approval is needed.')}</small><em>Your progress is saved. Only work you approve can resume.</em></div><button type="button" ${target}>Review application</button></article>`;
+  });
+  $('needsYouList').innerHTML = (attentionCards[0] || '') + (attentionCards.length > 1 ? `<details class="application-review-details"><summary>See ${attentionCards.length - 1} other request${attentionCards.length === 2 ? '' : 's'}</summary>${attentionCards.slice(1).join('')}</details>` : '');
 }
 
 function visibleSubscriberRoles(roles = []) {
@@ -2741,6 +2742,7 @@ function renderAnswerMemory(session, action) {
 }
 
 function renderDurableApplicationWorkspace(session) {
+  $('approvalSafetyNote').hidden = Boolean(session.receipt || session.submissionAttempt);
   if (session.receipt) $('applicationBrowserHandoff').hidden = true;
   else renderDurableBrowserHandoff(session);
   const openAction = (session.actions || []).find(item => item.status === 'open');
@@ -3502,7 +3504,7 @@ $('postSubmissionActions').addEventListener('click', async event => {
     button.disabled = false;
   }
 });
-$('needsYouList').addEventListener('click', event => reviewNeedsYouTarget(event.target));
+$('needsYouList').addEventListener('click', event => reviewNeedsYouTarget(event.target)); $('reviewAttentionNow').addEventListener('click', openNeedsYou);
 $('closeNeedsYou').addEventListener('click', closeNeedsYou);
 $('needsYouOverlay').addEventListener('click', event => { if (event.target === $('needsYouOverlay')) closeNeedsYou(); });
 $('pauseRun').addEventListener('click', async () => {

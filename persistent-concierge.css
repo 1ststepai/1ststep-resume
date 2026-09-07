@@ -474,3 +474,14 @@ button, .resume-upload-label, .question-secondary, .search-link,
 #answerMemoryPanel { margin:16px 0; padding:16px; border:1px solid #dbe3ee; border-radius:12px; background:#f8fafc; color:#17223b; }
 #answerMemoryPanel textarea, #answerMemoryPanel select, #answerMemoryPanel input[type="date"] { width:100%; max-width:100%; box-sizing:border-box; padding:10px; }
 #answerMemoryPanel button { min-height:44px; margin-top:10px; }
+/* Low-attention review: readable controls and optional, keyboard-accessible detail. */
+.attention-now,.application-review-details{padding:24px;margin:20px 0;border:1px solid #cbd5e1;border-radius:18px;background:#fff;color:#172033;font-size:17px;line-height:1.6}
+.attention-now h2{font-size:24px;margin:0 0 12px}
+.attention-now button{min-height:48px;padding:12px 22px;background:#4338ca;color:#fff;border:0;border-radius:10px;font-size:17px;font-weight:700}
+.application-review-details summary,.attention-now summary{cursor:pointer;min-height:48px;padding:12px 8px;font-weight:700}
+.application-review-details details{border-top:1px solid #cbd5e1;padding:4px 0}
+.application-review-details .workspace-row{color:#172033;overflow-wrap:anywhere}
+.application-review-details small{color:#475569;font-size:16px}
+.attention-now :focus-visible,.application-review-details :focus-visible,.attention-actions :focus-visible{outline:3px solid #2563eb;outline-offset:4px}
+.attention-actions button,.attention-actions a,.simple-job-card button,.needs-you-item button{min-height:48px;font-size:16px}
+@media(max-width:600px){.attention-now,.application-review-details{padding:18px}.attention-now button{width:100%}.simple-job-card footer{flex-wrap:wrap;gap:12px}.simple-job-card footer strong{max-width:100%;overflow-wrap:anywhere}}
