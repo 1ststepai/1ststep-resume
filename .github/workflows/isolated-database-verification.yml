@@ -1,0 +1,67 @@
+name: Isolated Database Verification
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: isolated-database-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  isolated-supabase:
+    name: Supabase migration, RLS, and recovery drill
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Use application Node version
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install pinned Supabase CLI
+        uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v3.0.0
+        with:
+          version: 2.116.0
+
+      - name: Verify local-only boundary
+        run: npm run security:isolated-data-preflight
+        env:
+          JOB_AGENT_ISOLATED_TARGET_KIND: local-supabase
+          JOB_AGENT_ISOLATED_TARGET_CONFIRMATION: CONFIRM_ISOLATED_NONPRODUCTION_TARGET
+
+      - name: Start disposable Supabase database
+        run: supabase db start
+
+      - name: Verify migration reconciliation
+        run: npm run db:reconcile:check
+
+      - name: Run adversarial tenant-isolation tests
+        run: supabase test db
+
+      - name: Run isolated backup and restore drill
+        run: bash scripts/isolated-database-ci-drill.sh
+
+      - name: Retain content-free verification summary
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: isolated-database-verification-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/isolated-database-ci-summary.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Stop disposable Supabase database
+        if: always()
+        run: supabase stop --no-backup || true
