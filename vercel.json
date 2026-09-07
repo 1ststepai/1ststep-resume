@@ -1,4 +1,9 @@
 {
+  "git": {
+    "deploymentEnabled": {
+      "release/login-pricing-reconciled-20260906": false
+    }
+  },
   "outputDirectory": ".public-web",
   "crons": [
     {

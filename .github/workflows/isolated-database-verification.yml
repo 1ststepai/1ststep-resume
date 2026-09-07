@@ -2,6 +2,18 @@ name: Isolated Database Verification
 
 on:
   workflow_dispatch:
+    inputs:
+      target:
+        description: Disposable target authorized for this run
+        type: choice
+        default: none
+        options:
+          - none
+          - local-supabase
+      confirmation:
+        description: Type CONFIRM_ISOLATED_NONPRODUCTION_TARGET to authorize the local drill
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -11,8 +23,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  authorize-target:
+    name: Check isolated target authorization
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      authorized: ${{ steps.target.outputs.authorized }}
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Check explicit local authorization
+        id: target
+        run: |
+          node scripts/isolated-database-ci-authorization-test.mjs
+          node scripts/isolated-database-ci-authorization.mjs
+        env:
+          JOB_AGENT_ISOLATED_TARGET_KIND: ${{ inputs.target }}
+          JOB_AGENT_ISOLATED_TARGET_CONFIRMATION: ${{ inputs.confirmation }}
+
   isolated-supabase:
     name: Supabase migration, RLS, and recovery drill
+    needs: authorize-target
+    if: needs.authorize-target.outputs.authorized == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -38,7 +72,7 @@ jobs:
         run: npm run security:isolated-data-preflight
         env:
           JOB_AGENT_ISOLATED_TARGET_KIND: local-supabase
-          JOB_AGENT_ISOLATED_TARGET_CONFIRMATION: CONFIRM_ISOLATED_NONPRODUCTION_TARGET
+          JOB_AGENT_ISOLATED_TARGET_CONFIRMATION: ${{ inputs.confirmation }}
 
       - name: Start disposable Supabase database
         run: npx --no-install supabase db start
