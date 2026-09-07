@@ -22,6 +22,7 @@ Documentation or evidence commits may follow the implementation baseline. Before
 - The candidate is pushed to GitHub without creating a deployment.
 - A value-blind Vercel Production audit can be repeated with `npm run security:vercel-environment-names`. It emits names and aggregate control coverage only, never values.
 - The production dependency audit reports zero vulnerabilities. Stripe remains on its existing major version while a compatible `qs` override pins the patched transitive release.
+- The deterministic GitHub output build uses the public Vercel project and organization identifiers and explicitly removes any deployment token from its child process. An expired deployment secret therefore cannot break CI, and the build cannot deploy.
 
 ## Exact path to publish the homepage safely
 

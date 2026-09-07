@@ -38,7 +38,8 @@ jobs:
       - name: Run production-readiness release gate
         run: npm run release:gate
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: team_hCdrlUnNBwc8vozwFwF5WkjP
+          VERCEL_PROJECT_ID: prj_Lo7pjU6rfjxa30mEFE6TFuU0ZTcI
 
   dependency-audit:
     name: Production dependency vulnerability audit
