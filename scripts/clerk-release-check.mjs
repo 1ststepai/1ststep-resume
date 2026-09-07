@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+const origin = new URL(process.argv[2] || 'https://app.1ststep.ai').origin;
+const headers = { Origin: 'https://app.1ststep.ai', 'Cache-Control': 'no-cache' };
+const configResponse = await fetch(`${origin}/api/app-config`, { headers, signal: AbortSignal.timeout(20000) });
+assert.equal(configResponse.status,200,'Public configuration must load');
+const config = await configResponse.json();
+assert.equal(config.authentication?.clerk?.enabled,true,'Production Clerk configuration must be ready');
+assert.equal(config.authentication.clerk.publishableKey,'pk_live_Y2xlcmsuMXN0c3RlcC5haSQ');
+assert.equal(JSON.stringify(config).includes('sk_live_'),false);
+const login = await fetch(`${origin}/login.html`,{headers,signal:AbortSignal.timeout(20000)});
+assert.equal(login.status,200);
+assert.match(login.headers.get('content-security-policy') || '',/script-src 'self' https:\/\/clerk\.1ststep\.ai/);
+assert.match(await login.text(),/src="\/login.js"/);
+const health = await fetch(`${origin}/api/health/ready`,{headers,signal:AbortSignal.timeout(15000)});
+console.log(JSON.stringify({origin,clerkConfiguration:'ready',loginPage:'200',loginCsp:'present',dependencyHealthStatus:health.status,dependencyHealth:await health.json()},null,2));

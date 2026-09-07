@@ -9,6 +9,8 @@ import { jobAgentConsentGate } from '../lib/job-agent-consent-store.js';
 import { JOB_AGENT_POLICY_LEVELS, requireJobAgentPolicyLevel } from '../lib/job-agent-policy-levels.js';
 import { deleteApplicationPackageArtifacts } from '../lib/job-agent-object-storage.js';
 import { jobAgentThroughputDecision, publicJobAgentThroughput } from '../lib/job-agent-throughput-policy.js';
+import { reviewablePackageBase } from '../lib/application-package-revision.js';
+import { waitUntil } from '@vercel/functions';
 
 export const maxDuration = 60;
 
@@ -95,8 +97,8 @@ export default async function handler(req, res) {
     if (req.body?.action === 'revise') {
       const baseRunId = String(req.body?.baseRunId || '');
       const base = await readJobAgentRun({ ...config, subject: auth.subject, runId: baseRunId });
-      if (base?.taskType !== 'application_package' || base.status !== 'Finished' || !base.result?.documentVersion || !base.result?.resumeText || !Array.isArray(base.result?.sourceMap)) {
-        return res.status(409).json({ error: 'The exact finished base package could not be restored for revision.', code: 'BASE_PACKAGE_NOT_READY' });
+      if (!reviewablePackageBase(base)) {
+        return res.status(409).json({ error: 'The exact reviewable base package could not be restored for revision.', code: 'BASE_PACKAGE_NOT_READY' });
       }
       packageMission = {
         ...base.mission,
@@ -118,6 +120,13 @@ export default async function handler(req, res) {
       ...config, subject: auth.subject, mission: packageMission, taskType: 'application_package',
       idempotencyKey: String(req.headers?.['idempotency-key'] || ''),
     });
+    if (req.body?.runNow === false && req.body?.background === true) {
+      // The durable record exists before dispatch. A timeout leaves the leased
+      // run recoverable by cron; replayed requests cannot claim the same lease.
+      waitUntil(processSpecificJobAgentRun({ ...config, runId: created.run.id }).catch(() => {
+        console.error(JSON.stringify({ type: 'application-package-background-interrupted' }));
+      }));
+    }
     const processed = req.body?.runNow === false ? null : await processSpecificJobAgentRun({ ...config, runId: created.run.id });
     const run = processed || await readJobAgentRun({ ...config, subject: auth.subject, runId: created.run.id });
     return res.status(run?.status === 'Finished' ? 200 : 202).json({ run: clientRun(run), replayed: created.replayed, throughput: publicJobAgentThroughput(planDecision), submissionsEnabled: false });

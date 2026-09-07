@@ -112,7 +112,7 @@ assert.doesNotMatch(conciergeHtml.match(/id="agentProgress"[\s\S]*?<\/section>/)
 assert.match(conciergeHtml, /id="dailyGoalForm"/);
 assert.match(conciergeHtml, /authoritative receipts today/);
 assert.match(conciergeHtml, /Package Ready is tracked separately from Submitted/);
-assert.match(conciergeHtml, /Receipt-verified application target/);
+assert.match(conciergeHtml, /Your application target/);
 assert.match(conciergeHtml, /Daily target \(not a guarantee\)/);
 assert.match(conciergeHtml, /id="openAgentAccess"[^>]*>Sign in</);
 assert.match(conciergeJs, /loadPublicAppConfig\(\)/);
@@ -124,13 +124,30 @@ assert.match(conciergeCss, /body:not\(\.workspace-ready\) \.daily-dashboard/);
 // labels were made LARGER. The intent is a readability floor, so assert the floor
 // and accept any unit at or above it.
 function navLabelPx(css, breakpoint) {
-  const blocks = [...css.matchAll(new RegExp(`@media\\(max-width:${breakpoint}px\\)([\\s\\S]*?)(?=@media|$)`, 'g'))];
-  assert.ok(blocks.length, `no @media(max-width:${breakpoint}px) block found`);
-  const rule = blocks.flatMap(media => [...media[1].matchAll(/\.agent-header nav button\s*\{([^}]*)\}/g)]).filter(rule => /font-size:/.test(rule[1])).at(-1);
-  assert.ok(rule, `no .agent-header nav button rule at ${breakpoint}px`);
-  const size = /font-size:\s*([0-9.]+)(px|rem|em)/.exec(rule[1]);
-  assert.ok(size, `no font-size on .agent-header nav button at ${breakpoint}px`);
-  return size[2] === 'px' ? Number(size[1]) : Number(size[1]) * 16;
+  // The stylesheet has many @media blocks at the same breakpoint, so the block
+  // holding the nav rule must be found by brace matching rather than by lazily
+  // scanning to the next @media.
+  const marker = `@media(max-width:${breakpoint}px)`;
+  const sizes = [];
+  for (let at = css.indexOf(marker); at !== -1; at = css.indexOf(marker, at + 1)) {
+    const open = css.indexOf('{', at);
+    if (open === -1) continue;
+    let depth = 0;
+    let close = -1;
+    for (let i = open; i < css.length; i += 1) {
+      if (css[i] === '{') depth += 1;
+      else if (css[i] === '}') { depth -= 1; if (depth === 0) { close = i; break; } }
+    }
+    if (close === -1) continue;
+    const block = css.slice(open + 1, close);
+    for (const rule of block.matchAll(/\.agent-header nav button\s*\{([^}]*)\}/g)) {
+      const size = /font-size:\s*([0-9.]+)(px|rem|em)/.exec(rule[1]);
+      if (size) sizes.push(size[2] === 'px' ? Number(size[1]) : Number(size[1]) * 16);
+    }
+  }
+  assert.ok(sizes.length, `no .agent-header nav button font-size at ${breakpoint}px`);
+  // The smallest declared size is the one that has to clear the floor.
+  return Math.min(...sizes);
 }
 
 assert.ok(navLabelPx(conciergeCss, 720) >= 10.5,
@@ -155,6 +172,7 @@ assert.match(conciergeHtml, /id="jobsOverlay"/);
 assert.match(conciergeHtml, /id="needsYouList"/);
 assert.match(conciergeHtml, /id="agentAccessOverlay"/);
 assert.match(conciergeHtml, /Job Agent: \$39\/month\./);
+assert.match(conciergeHtml, /Billing is not active yet; nothing is charged/);
 assert.match(conciergeHtml, /id="openEmployerPage"/);
 assert.match(conciergeHtml, /Your password, passkey, OTP, and CAPTCHA answers stay on the employer website/);
 assert.match(conciergeHtml, /id="applicationBrowserHandoff"/);
@@ -213,7 +231,8 @@ assert.match(conciergeHtml, /id="jobAgentConsentOverlay"/);
 assert.match(conciergeHtml, /id="dailyBackgroundSearch"[^>]*checked/);
 assert.match(conciergeHtml, /id="emailNeedsYouAlerts"/);
 assert.match(conciergeHtml, /id="savedNeedsYouEmailAlerts"/);
-for (const attestation of ['age18OrOlder', 'termsAccepted', 'privacyAcknowledged', 'candidateAuthorizationAccepted']) assert.match(conciergeHtml, new RegExp(`name="${attestation}"[^>]*required`));
+assert.match(conciergeHtml, /name="allConsentAccepted"[^>]*required/);
+for (const attestation of ['age18OrOlder', 'termsAccepted', 'privacyAcknowledged', 'candidateAuthorizationAccepted']) assert.match(conciergeJs, new RegExp(`${attestation}: accepted`));
 assert.doesNotMatch(conciergeHtml.match(/id="jobAgentConsentOverlay"[\s\S]*?id="toastRegion"/)?.[0] || '', /type="date"/);
 assert.match(conciergeJs, /source: 'guided-popup'/);
 assert.match(conciergeJs, /extractResumeFile/);
