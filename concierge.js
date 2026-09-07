@@ -2145,7 +2145,7 @@ async function discoverMatchingJobs() {
       if (!fit.credibleInterviewPath) return '';
       return `<a class="job-match" href="${escapeHtml(job.applyUrl)}" target="_blank" rel="noopener noreferrer"><strong>${escapeHtml(job.title)}</strong><span>${escapeHtml(job.employer)}${details ? ` · ${details}` : ''} · ${fit.score}/100 ${escapeHtml(fit.classification)}</span></a>`;
     }).join('');
-    addMessage('assistant', `<strong>Found ${added} matching job${added === 1 ? '' : 's'} across ${checked} direct-employer job feed${checked === 1 ? '' : 's'}.</strong><br>Skipped ${duplicates} duplicate${duplicates === 1 ? '' : 's'}, ${rejectedByMission} job${rejectedByMission === 1 ? '' : 's'} outside your search requirements, and ${rejectedByQualityFloor} job${rejectedByQualityFloor === 1 ? '' : 's'} below the minimum application score of 70 points. Verified fit and your observed outcomes matter more than reaching the daily target. These roles are Found—not Submitted—and still need checks of the exact employer job page, location, travel, schedule, and any missing requirements.${topMatches ? `<div class="job-matches">${topMatches}</div>` : ''}${coverageNote}<div class="quick">${isPartial ? '<button data-prompt="Retry job discovery">Search the missing feeds again</button>' : ''}<button data-prompt="Show my jobs">Review all matches</button><button data-prompt="Review my current mission">Review search requirements</button></div>`);
+    addMessage('assistant', `<strong>Found ${added} matching job${added === 1 ? '' : 's'} across ${checked} direct-employer job feed${checked === 1 ? '' : 's'}.</strong><br>Skipped ${duplicates} duplicate${duplicates === 1 ? '' : 's'}, ${rejectedByMission} job${rejectedByMission === 1 ? '' : 's'} outside your search requirements, and ${rejectedByQualityFloor} job${rejectedByQualityFloor === 1 ? '' : 's'} below the minimum application score of 70 points. Verified fit and your observed outcomes matter more than application volume. These roles are Found—not Submitted—and still need checks of the exact employer job page, location, travel, schedule, and any missing requirements.${topMatches ? `<div class="job-matches">${topMatches}</div>` : ''}${coverageNote}<div class="quick">${isPartial ? '<button data-prompt="Retry job discovery">Search the missing feeds again</button>' : ''}<button data-prompt="Show my jobs">Review all matches</button><button data-prompt="Review my current mission">Review search requirements</button></div>`);
     await prepareDiscoveredApplications();
   } catch (error) {
     pending.remove();
@@ -2436,8 +2436,7 @@ function needsYouNextStep(item, role) {
 function renderNeedsYouQueue() {
   const actions = allNeedsYouActions();
   $('attentionNow').hidden = actions.length === 0;
-  $('attentionNowSummary').textContent = `${actions.length} application${actions.length === 1 ? '' : 's'} need${actions.length === 1 ? 's' : ''} your attention.`;
-  $('attentionNowDetails').textContent = 'Review one request at a time. Nothing is sent by opening a request.';
+  document.body.classList.toggle('needs-attention', actions.length > 0);
   $('headerNeedsYouCount').textContent = actions.length;
   $('headerNeedsYouCount').hidden = actions.length === 0;
   $('needsYouEmpty').hidden = actions.length > 0;
@@ -2448,6 +2447,22 @@ function renderNeedsYouQueue() {
     const next = needsYouNextStep(item, role);
     return `<article class="needs-you-item"><div><span>${escapeHtml(next.title)}</span><strong>${escapeHtml(label)}</strong><small>${escapeHtml(next.summary)}</small></div><button type="button" ${target}>${escapeHtml(next.button)}</button></article>`;
   });
+  const first = actions.find(item => {
+    const role = deskState.roles.find(entry => entry.id === item.roleId);
+    return needsYouNextStep(item, role).packageReview;
+  }) || actions[0];
+  if (first) {
+    const role = deskState.roles.find(entry => entry.id === first.roleId);
+    const label = first.roleLabel || (role ? `${role.employer} · ${role.title}` : 'your application');
+    const next = needsYouNextStep(first, role);
+    $('attentionNowTitle').textContent = actions.length === 1 ? 'One application needs you' : `${actions.length} applications need you`;
+    $('attentionNowSummary').textContent = `${next.title} for ${label}. ${next.summary}`;
+    $('reviewAttentionNow').textContent = next.button;
+    delete $('reviewAttentionNow').dataset.reviewSession;
+    delete $('reviewAttentionNow').dataset.reviewAction;
+    if (first.durable) $('reviewAttentionNow').dataset.reviewSession = first.sessionId;
+    else $('reviewAttentionNow').dataset.reviewAction = first.id;
+  }
   $('needsYouList').innerHTML = (attentionCards[0] || '') + (attentionCards.length > 1 ? `<details class="application-review-details"><summary>See ${attentionCards.length - 1} other request${attentionCards.length === 2 ? '' : 's'}</summary>${attentionCards.slice(1).join('')}</details>` : '');
 }
 
@@ -2536,7 +2551,6 @@ function renderAgentConfiguration() {
     : campaign?.schedule?.recurrence || 'Runs when you start or resume it';
   $('configSalary').textContent = mission.salaryMin ? money(mission.salaryMin) : guidedSelection.salary ? money(guidedSelection.salary) : 'No minimum saved';
   $('configLocation').textContent = [...(mission.workModes || [mission.workMode || guidedSelection.workMode]), mission.location || guidedSelection.location].filter(Boolean).join(' · ') || 'Not configured';
-  $('configTarget').textContent = `Daily target: ${Math.min(50, Math.max(1, Number(dailyGoal.target) || 10))}. Actual volume depends on suitable openings, your criteria, required approvals and plan limits; it may be zero.`;
   $('configApproval').textContent = deskState.autonomy.level === 'prepare_only' ? 'Prepare only · confirm before sharing' : 'Confirm personal-data sharing and final submission';
   $('configNotifications').textContent = jobAgentNotifications.preference?.enabled ? 'In-app + generic email Needs You alert' : 'In-app Needs You queue';
 }
@@ -2601,6 +2615,7 @@ function reviewNeedsYouTarget(target) {
   }
   if (session && (!action?.roleId || action.roleId === session.roleId)) openApplicationWorkspace();
   else {
+    document.body.classList.remove('needs-attention');
     const destination = safeEmployerDestination(role?.directEmployerUrl);
     addMessage('assistant', `<strong>${escapeHtml(next.title)}</strong><br>${escapeHtml(next.summary)}${destination ? `<br><a href="${escapeHtml(destination.href)}" target="_blank" rel="noopener noreferrer">Continue on employer site</a>` : '<br>Open Saved Info to check your details, or open Jobs to select the application you want to continue.'}`);
     $('agentConversation').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
@@ -2620,9 +2635,6 @@ function renderMission() {
   const packageReady = (counts['Package Ready'] || 0) + (counts['Awaiting Approval'] || 0);
   const workspaceReady = missionActive || Boolean(durableRun) || deskState.roles.length > 0
     || durableApplicationSessions.length > 0 || openActions > 0;
-  const submittedToday = authoritativeReceiptCount([...deskState.roles, ...durableApplicationSessions], new Date());
-  const dailyTarget = Math.min(50, Math.max(1, Number(dailyGoal.target) || 10));
-  const remainingToday = Math.max(0, dailyTarget - submittedToday);
   $('missionName').textContent = mission.role ? `${mission.role} job search` : 'No active mission';
   $('target').textContent = target;
   $('completed').textContent = submitted;
@@ -2645,15 +2657,9 @@ function renderMission() {
   $('progressInterviews').textContent = subscriberStats.interviews;
   $('progressFollowUp').textContent = subscriberStats.followUpDue;
   $('progressClosed').textContent = subscriberStats.rejectedClosed;
-  $('dailyGoalCompleted').textContent = submittedToday;
-  $('dailyGoalTarget').textContent = dailyTarget;
-  $('dailyGoalRemaining').textContent = remainingToday;
-  $('dailyGoalBar').value = Math.min(100, (submittedToday / dailyTarget) * 100);
-  $('dailyGoalInput').value = dailyTarget;
   $('dailyGoalMessage').textContent = missionActive
-    ? `${mission.role} · ${[...(mission.workModes || [mission.workMode]), ...(mission.employmentTypes || [])].filter(Boolean).join(' · ')} · target only; verified fit outranks volume`
-    : 'This is a target, not a guarantee. Verified fit and observed outcomes outrank volume.';
-  document.querySelectorAll('[data-daily-goal]').forEach(button => button.classList.toggle('selected', Number(button.dataset.dailyGoal) === dailyTarget));
+    ? `${mission.role} · ${[...(mission.workModes || [mission.workMode]), ...(mission.employmentTypes || [])].filter(Boolean).join(' · ')} · suitable openings only`
+    : 'Suitable jobs and verified outcomes matter more than application volume.';
   const discoveryLabels = {
     searching: 'Searching free direct-employer feeds',
     complete: `Search complete · ${missionState.discovery?.matches || 0} new matches`,
@@ -3545,16 +3551,6 @@ function currentWizardStepValid() {
 
 function renderAll() { renderMission(); renderDesk(); renderApplicationWorkspace(); renderCampaignConsole(); renderVaultStatus(); renderLearningCenter(); }
 
-function setDailyGoal(value, announce = true) {
-  const parsed = Math.round(Number(value));
-  if (!Number.isFinite(parsed) || parsed < 1) return;
-  const target = Math.min(50, parsed);
-  dailyGoal = { target, updatedAt: new Date().toISOString() };
-  saveAll();
-  renderMission();
-  if (announce) addMessage('assistant', `<strong>Daily target set to ${target}.</strong><br>This is not a promised number of applications. I’ll prioritize suitable openings within your criteria and plan limits, keep drafts separate, and count submissions only after an employer receipt is verified.`);
-}
-
 $('openGuidedLaunch').addEventListener('click', () => openGuidedLaunch({ step: missionState.mission?.role ? 2 : guidedLaunchStep }));
 $('guidedLaunchClose').addEventListener('click', closeGuidedLaunch);
 $('guidedLaunchBack').addEventListener('click', () => {
@@ -3684,8 +3680,6 @@ $('jobLaunchForm').addEventListener('submit', async event => {
   };
   if (await ensureJobAgentConsent(continueLaunch)) await continueLaunch();
 });
-$('dailyGoalForm').addEventListener('submit', event => { event.preventDefault(); setDailyGoal($('dailyGoalInput').value); });
-document.querySelectorAll('[data-daily-goal]').forEach(button => button.addEventListener('click', () => setDailyGoal(button.dataset.dailyGoal)));
 $('activity').querySelector('summary').addEventListener('click', () => {
   if (!$('activity').open) setTimeout(() => $('activity').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }), 0);
 });
@@ -3807,7 +3801,10 @@ $('postSubmissionActions').addEventListener('click', async event => {
     button.disabled = false;
   }
 });
-$('needsYouList').addEventListener('click', event => reviewNeedsYouTarget(event.target)); $('reviewAttentionNow').addEventListener('click', openNeedsYou);
+$('needsYouList').addEventListener('click', event => reviewNeedsYouTarget(event.target));
+$('reviewAttentionNow').addEventListener('click', event => {
+  if (!reviewNeedsYouTarget(event.currentTarget)) openNeedsYou();
+});
 $('closeNeedsYou').addEventListener('click', closeNeedsYou);
 $('needsYouOverlay').addEventListener('click', event => { if (event.target === $('needsYouOverlay')) closeNeedsYou(); });
 $('pauseRun').addEventListener('click', async () => {

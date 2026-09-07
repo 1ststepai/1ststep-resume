@@ -48,7 +48,7 @@ for (const surface of ['admin', 'application']) for (const width of [375,1440]) 
     await page.route('**/api/session-capabilities*', r => r.fulfill({json:{adminConsole:true,jobAgentAccess:true,authentication:'opaque-session'}}));
     await page.route('**/api/application-sessions*', r => r.fulfill({json:{sessions:[{id:'application-contrast-fixture',version:1,role:{employer:'Synthetic Employer',title:'Operations',directEmployerUrl:'https://careers.example.com/job'},documentVersion:'synthetic-resume-v1',state:'Waiting for You',stage:'employer_form',proposedFields:[],approvals:{},actions:[{id:'action-contrast',type:'AMBIGUOUS_FACT',status:'open',summary:'Review the employer question.',metadata:{}}],timeline:[]}]}}));
     await page.goto(`${base}/concierge`,{waitUntil:'networkidle'});
-    await page.locator(surface === 'admin' ? '#openDesk' : '#resumeApplication').click();
+    await page.locator(surface === 'admin' ? '#openDesk' : '#reviewAttentionNow').click();
     await page.setViewportSize({width,height:900});
     const failures = await page.evaluate(AUDIT);
     expect(failures,JSON.stringify(failures)).toEqual([]);
@@ -90,10 +90,10 @@ for (const surface of SURFACES) {
   }
 }
 
-test('workspace panels never render dark text on a dark panel', async ({ page }) => {
+test('the primary Needs You panel never renders dark text on a dark panel', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(`${base}/concierge?uiFixture=subscriber`);
-  await expect(page.locator('.daily-dashboard')).toBeVisible();
+  await expect(page.locator('#attentionNow')).toBeVisible();
   const unreadable = await page.evaluate(`(() => {
     function lum(rgb){const m=rgb.match(/[\\d.]+/g);if(!m)return null;if(m[3]!==undefined&&Number(m[3])===0)return null;const[r,g,b]=m.map(Number);return 0.2126*r+0.7152*g+0.0722*b;}
     const bad=[];

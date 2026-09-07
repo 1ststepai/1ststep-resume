@@ -3,10 +3,10 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 const origin = String(process.env.APPLICATION_VOLUME_COPY_ORIGIN || '').replace(/\/$/, '');
-for (const [path, expected] of [
-  ['/pricing.html', 'Does Job Agent guarantee a number of applications?'],
-  ['/concierge.html', 'including zero when no suitable openings are found'],
-  ['/concierge.js', 'This is not a promised number of applications.'],
+for (const [path, expected, prohibited] of [
+  ['/pricing.html', 'Does Job Agent guarantee a number of applications?', 'lower than your target'],
+  ['/concierge.html', 'Results vary with your criteria and available openings.', 'Daily target (not a guarantee)'],
+  ['/concierge.js', 'Verified fit and your observed outcomes matter more than application volume.', 'Daily target set to'],
 ]) {
   let content;
   if (origin) {
@@ -17,5 +17,6 @@ for (const [path, expected] of [
     content = await readFile(fileURLToPath(new URL(`..${path}`, import.meta.url)), 'utf8');
   }
   assert.ok(content.includes(expected), `${path}: ${origin ? 'hosted' : 'candidate'} copy missing`);
+  assert.ok(!content.includes(prohibited), `${path}: obsolete subscriber quota copy remains`);
 }
-console.log(`${origin ? 'Hosted' : 'Candidate'} pricing FAQ, dashboard explanation and target confirmation verified.`);
+console.log(`${origin ? 'Hosted' : 'Candidate'} truthful variable-volume copy and removal of subscriber quota controls verified.`);

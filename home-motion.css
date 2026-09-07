@@ -516,6 +516,12 @@ section { padding: clamp(62px, 8vw, 104px) 0; }
 @media(max-width: 600px) { .outcome-section { scroll-margin-top: 72px; } .outcome-stage { padding: 20px 12px; } .journey-card { padding: 20px 12px; min-height: 380px; } .journey-foot { flex-direction: column; align-items: flex-start; } .journey-nav { gap: 5px; } .journey-nav button { padding: 9px 12px; font-size: 11px; } .offer-envelope { width: 235px; } .conversation-bubble { position: static; margin: -12px auto 0; width: max-content; max-width: 100%; } }
 @media(prefers-reduced-motion: reduce) { html:not(.motion-opt-in) .journey-track { transition: none; } html:not(.motion-opt-in) .tour-pointer { animation: none; } }
 
+/* Keep motion graphics legible against the light landing canvas. */
+.demo-stage,.outcome-stage,.studio-card{isolation:isolate}
+.demo-stage::after,.outcome-stage::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;background:radial-gradient(circle at 78% 14%,rgba(99,102,241,.22),transparent 34%),radial-gradient(circle at 16% 78%,rgba(59,130,246,.14),transparent 30%)}
+.mini-job,.floating-note,.extension-popover,.journey-card{box-shadow:0 16px 36px -22px rgba(49,46,129,.46),0 1px 2px rgba(15,23,42,.08)}
+.opportunity-track{filter:drop-shadow(0 10px 18px rgba(67,56,202,.12))}
+
 .footer-motion { border: 0; background: transparent; color: #475569; font: inherit; font-size: 12px; cursor: pointer; min-height: 44px; padding: 8px 12px; text-decoration: underline; }
 .footer-motion:focus-visible { outline: 2px solid #4338ca; outline-offset: 3px; }
 
