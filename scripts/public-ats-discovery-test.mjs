@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import {
   dedupePublicJobs, discoverPublicJobs, fetchPublicAtsJson, jobMatchesMission, normalizePublicPostings, publicAtsProviderDescriptor, publicDiscoveryRuntimeOptions, publicGreenhouseJobUrl, publicLeverJobUrl, publicSmartRecruitersJobUrl, publicSourceRequestUrls, publicSourceUrl, reverifyPublicJob, validatePublicSource, verifyPublicApplyPath,
 } from '../lib/public-ats-discovery.js';
@@ -41,6 +42,10 @@ assert.deepEqual(SMOKE_DISCOVERY_RUNTIME, {
 assert.equal(PREVIEW_SMOKE_SOURCES.length, 8);
 assert.deepEqual(new Set(PREVIEW_SMOKE_SOURCES.map(source => source.provider)), new Set(['greenhouse', 'lever', 'ashby', 'smartrecruiters']));
 assert.ok(PREVIEW_SMOKE_SOURCES.every(source => DEFAULT_PUBLIC_ATS_SOURCES.includes(source)));
+const previewSmokeSource = await readFile(new URL('../api/concierge-preview-smoke.js', import.meta.url), 'utf8');
+assert.match(previewSmokeSource, /probePostgresTenantStore/);
+assert.match(previewSmokeSource, /tenantDatabase: tenantDatabase\.status/);
+assert.doesNotMatch(previewSmokeSource, /databaseUrl|DATABASE_URL/);
 assert.equal(discoveryMaxDuration, 45);
 assert.deepEqual(USER_DISCOVERY_RUNTIME, {
   requestTimeoutMs: 4_000, detailTimeoutMs: 3_000, sourceConcurrency: 20, providerRequestConcurrency: 2,
