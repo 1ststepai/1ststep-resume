@@ -16,7 +16,22 @@ if (!existsSync(projectLinkPath)) {
     throw new Error('A local Vercel project link or the non-secret VERCEL_PROJECT_ID and VERCEL_ORG_ID identifiers are required.');
   }
   mkdirSync(path.dirname(projectLinkPath), { recursive: true });
-  writeFileSync(projectLinkPath, `${JSON.stringify({ projectId, orgId, projectName: '1ststep-resume' }, null, 2)}\n`, { flag: 'wx' });
+  const projectLink = {
+    projectId,
+    orgId,
+    projectName: '1ststep-resume',
+    settings: {
+      framework: null,
+      devCommand: null,
+      installCommand: null,
+      buildCommand: null,
+      outputDirectory: null,
+      rootDirectory: null,
+      directoryListing: false,
+      nodeVersion: '24.x',
+    },
+  };
+  writeFileSync(projectLinkPath, `${JSON.stringify(projectLink, null, 2)}\n`, { flag: 'wx' });
   temporaryProjectLink = true;
 }
 const buildCommand = process.platform === 'win32'
