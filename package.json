@@ -55,7 +55,8 @@
     "security:launch-report": "node scripts/production-launch-manifest-report.mjs",
     "security:environment-shape": "node scripts/production-environment-shape-report.mjs",
     "security:environment-shape:summary": "node scripts/production-environment-shape-report.mjs --summary",
-    "security:vercel-environment-names": "node scripts/vercel-environment-name-audit.mjs",
+    "security:vercel-environment-names": "vercel env ls production --format json | node scripts/vercel-environment-name-audit.mjs --environment production",
+    "security:vercel-environment-names:stdin": "node scripts/vercel-environment-name-audit.mjs",
     "test:environment-shape": "node scripts/production-environment-shape-report-test.mjs",
     "security:live-boundary": "node scripts/verify-live-job-agent-boundary.mjs",
     "security:asset-parity": "node scripts/verify-live-job-agent-asset-parity.mjs",
@@ -95,5 +96,8 @@
   "devDependencies": {
     "@playwright/test": "1.62.1",
     "supabase": "2.116.0"
+  },
+  "overrides": {
+    "qs": "6.16.0"
   }
 }
