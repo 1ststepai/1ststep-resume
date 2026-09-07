@@ -33,6 +33,7 @@ const routePolicies = Object.freeze({
   'health/ready.js': /jobAgentDependencyHealth/,
   'health/workers.js': /isAdminSubject/,
   'job-agent-consent.js': /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/,
+  'job-agent-discord-relay.js': /verifyJobAgentDiscordRelayRequest/,
   'job-agent-email-events.js': /verifyJobAgentResendWebhook/,
   'job-agent-learning.js': /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/,
   'job-agent-notifications.js': /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/,
