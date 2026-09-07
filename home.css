@@ -430,13 +430,15 @@ section { padding: clamp(62px, 8vw, 104px) 0; }
 .feature-motion-controls p { font-size: 12px; color: #475569; }
 .feature-motion-controls button { cursor: pointer; min-height: 44px; padding: 8px 16px; border: 1px solid #c7d2fe; border-radius: 9px; background: white; color: #4338ca; font: inherit; font-size: 13px; font-weight: 600; }
 .feature-motion-controls button:focus-visible { outline: 3px solid #4338ca; outline-offset: 3px; }
-.job-reel { animation: job-reel-scroll 12s linear infinite; animation-play-state: paused; }
+.job-reel { animation: job-reel-scroll 7.2s linear infinite; animation-play-state: paused; }
 .job-reel-group { display: flow-root; }
-.job-reel .mini-job { animation: none; height: 80px; box-sizing: border-box; }
+.job-reel .mini-job { height: 80px; box-sizing: border-box; animation: job-card-focus 3.6s ease-in-out infinite; animation-play-state: paused; will-change: transform,box-shadow,border-color; }
+.job-reel .mini-job:nth-child(2) { animation-delay: -1.2s; }
+.job-reel .mini-job:nth-child(3) { animation-delay: -2.4s; }
 .resume-visual { height: 260px; }
-.edit-text { display: block; flex: 0 1 auto; border-right: 2px solid #6366f1; width: 0; animation: resume-typing 6s steps(24,end) infinite; animation-play-state: paused; }
-.resume-paper { animation: paper-turn 6s ease-in-out infinite; animation-play-state: paused; }
-.resume-done { position: absolute; top: 12px; right: 8px; color: #3730a3; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 18px; padding: 7px 12px; font-size: 11px; animation: resume-complete 6s ease-in-out infinite; animation-play-state: paused; }
+.edit-text { display: block; flex: 0 1 auto; border-right: 2px solid #6366f1; width: 0; animation: resume-typing 4.8s steps(24,end) infinite,caret-blink .7s step-end infinite; animation-play-state: paused; }
+.resume-paper { animation: paper-turn 4.8s ease-in-out infinite; animation-play-state: paused; will-change: transform; }
+.resume-done { position: absolute; top: 12px; right: 8px; color: #3730a3; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 18px; padding: 7px 12px; font-size: 11px; animation: resume-complete 4.8s ease-in-out infinite; animation-play-state: paused; }
 .extension-popover { animation: capture-arrival 6s ease-in-out infinite; animation-play-state: paused; }
 .demo-content h2 { min-height: 36px; }
 .demo-document { transition: background .4s,border-color .4s,transform .55s; }
@@ -447,11 +449,13 @@ section { padding: clamp(62px, 8vw, 104px) 0; }
 .opportunity-group { display: flex; gap: 16px; padding-right: 16px; }
 .opportunity-group > span { flex-shrink: 0; min-width: 205px; display: block; background: #ffffffd9; border: 1px solid #e0e7ff; border-radius: 12px; padding: 13px 20px; font-size: 13px; font-weight: 650; color: #3730a3; }
 .opportunity-group b { display: block; color: #475569; margin-top: 3px; font-size: 11px; font-weight: 400; }
-.motion-running .job-reel,.motion-running .resume-paper,.motion-running .resume-done,.motion-running .opportunity-track { animation-play-state: running; }
+.motion-running .job-reel,.motion-running .job-reel .mini-job,.motion-running .resume-paper,.motion-running .resume-done,.motion-running .opportunity-track { animation-play-state: running; }
 @keyframes job-reel-scroll { to { transform: translateY(-50%); } }
+@keyframes job-card-focus { 0%,100% { transform: translateX(0) scale(1); border-color: #e2e8f0; box-shadow: 0 5px 12px #17203306; } 50% { transform: translateX(8px) scale(.985); border-color: #a5b4fc; box-shadow: 0 12px 26px #4338ca18; } }
 @keyframes opportunity-scroll { to { transform: translateX(-50%); } }
 @keyframes resume-typing { 0%,8% { width: 0; } 52%,85% { width: 25ch; } 100% { width: 0; } }
-@keyframes paper-turn { 0%,15%,100% { transform: translateY(12px) rotate(-6deg); } 55%,85% { transform: translateY(-9px) rotate(1deg); } }
+@keyframes caret-blink { 50% { border-color: transparent; } }
+@keyframes paper-turn { 0%,15%,100% { transform: translateY(17px) rotate(-7deg); } 55%,85% { transform: translateY(-13px) rotate(1.5deg); } }
 @keyframes resume-complete { 0%,48%,100% { opacity: 0; transform: translateY(12px); } 60%,85% { opacity: 1; transform: translateY(0); } }
 @keyframes capture-arrival { 0%,100% { transform: translateY(24px); opacity: .35; } 25%,80% { transform: translateY(-7px); opacity: 1; } }
 @media (max-width: 700px) { .opportunity-stream { margin-inline: 0; } .demo-content h2 { min-height: 58px; } }
@@ -460,7 +464,7 @@ section { padding: clamp(62px, 8vw, 104px) 0; }
   html:not(.motion-opt-in) .edit-text { animation: none; width: auto; border: 0; }
   html:not(.motion-opt-in) .extension-popover { animation: none; }
   html:not(.motion-opt-in) .demo-document { transition: none; transform: none; }
-  .motion-opt-in .edit-text { animation: resume-typing 6s steps(24,end) infinite paused; }
+  .motion-opt-in .edit-text { animation: resume-typing 4.8s steps(24,end) infinite paused,caret-blink .7s step-end infinite paused; }
   .motion-opt-in .floating-note { animation: note-float 8s ease-in-out infinite paused; }
   .motion-opt-in .extension-popover { animation: capture-arrival 6s ease-in-out infinite paused; }
   .motion-opt-in .demo-job::after { animation: match-scan 7.2s ease-in-out infinite paused; }
