@@ -4,6 +4,8 @@ This file is an operator checklist, not an authorization record. Checking a box 
 
 ## Current verified boundary
 
+- Persistent isolated database: a dedicated Neon Free staging project now has the exact canonical migration, 20/20 RLS and forced-RLS tables, zero client-role table privileges, and a 19/19 live adversarial pgTAP result. A separate-branch snapshot restore recovered one synthetic row and cleanup returned the project to one branch, zero snapshots, and zero fixture rows. Preview-only configuration is branch scoped and Sensitive; Production was not accessed or changed. Remaining database work is the signed-user application-to-database check and a separately reviewed Production authoritative-store migration plan.
+
 - Latest runtime candidate: commit `39d28c9c607187c1debe99ab120838b8edb53b57`; runtime SHA-256 `3e8fd271c838153dc899c151dcbdd68a2fccf40e44ccf78b0b2f99ac62c86443`.
 - Protected Preview: `dpl_AiGJMf7zBkHJbwv6CjFtZvNj8STf` (Ready; exact candidate, fail-closed sign-in UX, live route behavior, bounded representative discovery canary, capacity result, and content-free request logs verified).
 - Protected Preview capacity: 10/10 liveness responses were HTTP 200 at concurrency 2; p50 110 ms, p95/max 160 ms, no bodies read, no bypass secret, and no writes. The discovery canary returned 3/3 HTTP 200 and completed all eight representative source attempts across four providers from the 37-source catalog. This is not a Production-capacity, full-catalog-per-run, signed-user-fairness, queue-throughput, or plan-quota claim.
@@ -25,6 +27,7 @@ Choose exactly one:
 - [ ] Supply a separately isolated non-production Supabase/Postgres project through the protected environment, without placing credentials in chat or source.
 - [x] Implement a manual-only GitHub-hosted disposable Supabase workflow that requires no local Docker installation and no Production credentials.
 - [x] Push the exact reviewed commit and run the hosted workflow; run `34094509097` passed and its content-free artifact is retained with the release evidence.
+- [x] Provision a dedicated Neon Free non-Production project, apply the canonical migration, pass the live 19-case tenant-isolation suite, and complete a separate-branch snapshot restore with full synthetic-data cleanup.
 
 Then separately authorize only this scope:
 
