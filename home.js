@@ -84,7 +84,7 @@
     var demo = document.getElementById('runSteps');
     var demoIndex = 0;
     var frames = [
-      ['A role worth a closer look.', 'Your experience comes first', 'Only facts you have confirmed.', 'Match found · example only'],
+      ['A role worth a closer look.', 'Your experience comes first', 'Only facts you have confirmed.', 'Match found'],
       ['Made for this opportunity.', 'Résumé and cover letter prepared', 'Ready for you to read and edit.', 'Documents prepared · not sent'],
       ['Your call. Always.', 'Your application is ready to review', 'Check the answers and attachments first.', 'Waiting for your review · not sent']
     ];
@@ -117,8 +117,9 @@
         button.setAttribute('aria-pressed', String(manualPause || preferencePaused));
       });
       if (motionExplanation) motionExplanation.textContent = preferencePaused
-        ? 'Your device prefers less motion. Play the examples if you would like to see them move.'
-        : 'Animated examples. Fictional jobs, no applications sent.';
+        ? 'Your device prefers less motion. Select Play animations to watch the product tour.'
+        : '';
+      if (motionExplanation) motionExplanation.hidden = !preferencePaused;
       if (!paused && !demoPaused && demo && visibleScenes.has(demo.closest('[data-motion-scene]'))) {
         timer = window.setTimeout(function () {
           demoIndex = (demoIndex + 1) % frames.length;
