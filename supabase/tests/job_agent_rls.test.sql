@@ -6,6 +6,10 @@
 
 begin;
 
+-- The test transaction must be able to assume the same NOLOGIN backend role
+-- used by the server adapter. This membership is rolled back with the suite.
+grant job_agent_backend to current_user;
+
 create extension if not exists pgtap;
 select plan(19);
 
