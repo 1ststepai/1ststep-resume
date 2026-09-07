@@ -2274,6 +2274,9 @@ function allNeedsYouActions() {
 
 function renderNeedsYouQueue() {
   const actions = allNeedsYouActions();
+  $('attentionNow').hidden = actions.length === 0;
+  $('attentionNowSummary').textContent = `${actions.length} application${actions.length === 1 ? '' : 's'} need${actions.length === 1 ? 's' : ''} your attention.`;
+  $('attentionNowDetails').textContent = 'Review one request at a time. Nothing is sent by opening a request.';
   $('headerNeedsYouCount').textContent = actions.length;
   $('headerNeedsYouCount').hidden = actions.length === 0;
   $('needsYouEmpty').hidden = actions.length > 0;
@@ -2343,8 +2346,8 @@ function renderSubscriberJobs() {
   const filtered = records.filter(item => item.tab === activeJobTab);
   $('jobCards').innerHTML = filtered.length ? filtered.map(({ role, applicationSession, status }) => {
     const salary = compensationRange(role.salaryMin, role.salaryMax);
-    const fit = role.fitScore == null ? 'Match strength unavailable' : `${role.fitScore}/100 match`;
-    const location = role.remoteEligibility || role.geographyEligibility || 'Location eligibility unavailable';
+    const fit = 'Why it matches: ' + (role.matchReasons?.[0] || role.fitReasons?.[0] || 'Check the job requirements against your resume.');
+    const location = role.remoteEligibility || role.geographyEligibility || 'Remote and location eligibility not verified';
     return `<article class="simple-job-card"><header><div><p>${escapeHtml(role.employer || 'Employer unavailable')}</p><h4>${escapeHtml(role.title || 'Job title unavailable')}</h4></div><span class="status-badge ${statusBadgeClass(status)}">${escapeHtml(status)}</span></header><div class="simple-job-meta"><span>${escapeHtml(location)}</span><span>${escapeHtml(salary)}</span></div><footer><strong>${escapeHtml(fit)}</strong>${primaryJobAction(role, applicationSession, status)}</footer></article>`;
   }).join('') : `<div class="jobs-empty">No ${escapeHtml(activeJobTab.toLowerCase())} jobs yet. Unavailable counts remain zero until persisted evidence exists.</div>`;
 }
@@ -2789,7 +2792,7 @@ function renderDurableApplicationWorkspace(session) {
   $('fixtureFields').innerHTML = (session.proposedFields || []).map(item => `<div class="fixture-field"><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.maskedPreview)} · verified source</span></div>`).join('');
   $('applicationAgentStatus').innerHTML = `<strong>${escapeHtml(session.state)}</strong><br>${escapeHtml(durableApplicationStageLabel(session.stage))}. ${session.externalApplicationExecution === false ? 'No employer action has run.' : ''}`;
   $('applicationAuthorization').innerHTML = `<div class="workspace-row"><strong>${session.approvals?.transmission ? 'Sharing permission saved' : 'No sharing permission yet'}</strong><small>Permission is exact to this employer and ${escapeHtml(session.documentVersion)}. Final submission requires a separate confirmation.</small></div>`;
-  $('applicationSuggestions').innerHTML = (session.proposedFields || []).map(item => `<div class="workspace-row"><strong>${escapeHtml(item.label)} → ${escapeHtml(item.maskedPreview)}</strong><small>${escapeHtml(item.provenance)} · ${Math.round(Number(item.confidence || 0) * 100)}% confidence</small></div>`).join('');
+  $('applicationSuggestions').innerHTML = (session.proposedFields || []).map(item => `<div class="workspace-row"><strong>${escapeHtml(item.label)} → ${escapeHtml(item.maskedPreview)}</strong><small>Source: ${escapeHtml(item.provenance)}</small></div>`).join('');
   for (const item of session.actions || []) {
     const ref = item.metadata?.answerReference;
     if (!ref) continue;
@@ -2869,7 +2872,7 @@ function renderDurableApplicationWorkspace(session) {
   if (session.receipt) {
     const post = session.postSubmission || { status: 'SUBMITTED', followUp: { status: 'NOT_SCHEDULED' } };
     const followUp = post.followUp || { status: 'NOT_SCHEDULED' };
-    const statusLabel = post.status === 'INTERVIEW' ? 'Interview confirmed' : post.status === 'REJECTED_CLOSED' ? 'Rejected / closed' : 'Receipt verified';
+    const statusLabel = post.status === 'INTERVIEW' ? 'Interview confirmed' : post.status === 'REJECTED_CLOSED' ? 'Rejected / closed' : 'Employer confirmed receipt';
     $('applicationActionPill').textContent = statusLabel;
     $('applicationTitle').textContent = post.status === 'INTERVIEW' ? 'Interview recorded' : post.status === 'REJECTED_CLOSED' ? 'Application closed' : 'Application submitted';
     $('applicationActionTitle').textContent = followUp.status === 'SCHEDULED' ? `Follow-up reminder set for ${new Date(followUp.dueAt).toLocaleDateString()}` : 'What happened next?';
