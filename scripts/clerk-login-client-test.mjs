@@ -26,6 +26,7 @@ assert.equal(success.calls[1].options.headers.Authorization,'Bearer fixture.sess
 assert.equal(success.calls[1].options.credentials,'same-origin');
 assert.equal(success.cache.size,1);
 assert.equal([...success.cache.values()][0].includes('fixture.session.token'),false);
+assert.deepEqual(JSON.parse([...success.cache.values()][0]), { ts: 0, jobAgentSession: true });
 const failed=await run({failure:true});
 assert.equal(failed.redirect,undefined);
 assert.equal(failed.cache.size,0);

@@ -40,10 +40,9 @@ export async function initializeLoginPage({
       });
       const data = await response.json();
       if (!response.ok || !data.signedIn) throw new Error(data.error || 'We could not finish signing you in. Please try again.');
-      // Display cache only. The server's HttpOnly session authorizes every request.
+      // Keep only a fixed login marker. Account fields stay behind the HttpOnly session.
       storage.setItem('1ststep_sub_cache', JSON.stringify({
-        email: data.email, tier: data.tier, ts: now(), jobAgentSession: true,
-        status: data.status, expiresInDays: data.expiresInDays ?? null,
+        ts: now(), jobAgentSession: true,
       }));
       locationRef.replace('/app');
     } catch (error) {
