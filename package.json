@@ -92,6 +92,6 @@
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",
-    "supabase": "^2.116.0"
+    "supabase": "2.116.0"
   }
 }
