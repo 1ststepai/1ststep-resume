@@ -38,6 +38,7 @@ const publicAssets = [
   'client/subscriber-ui-model.js',
   'client/persistent-campaign.js',
   'client/admin-cost-dashboard.js',
+  'client/admin-system-alerts.js',
   'client/prohibited-secret.js',
   'sitemap.xml',
   'robots.txt',

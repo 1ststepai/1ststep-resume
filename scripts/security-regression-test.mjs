@@ -10,6 +10,7 @@ const files = Object.fromEntries(await Promise.all([
   'api/applicant-vault.js', 'api/application-audit.js', 'api/concierge-state.js', 'api/job-agent-consent.js',
   'api/job-agent-operations.js', 'api/job-agent-runs.js', 'api/job-agent-schedule.js', 'api/job-agent-worker.js', 'api/session-capabilities.js',
   'api/application-receipts.js', 'api/application-audit.js', 'lib/internal-worker-auth.js',
+'api/job-agent-discord-relay.js', 'lib/job-agent-discord-relay.js',
 'lib/employer-browser-worker.js', 'lib/extension-application-handoff.js', 'lib/controlled-extension-release.js', 'lib/employer-browser-task-worker.js', 'lib/employer-browser-task-store.js', 'lib/employer-browser-session-provider.js', 'lib/employer-browser-session-store.js', 'lib/employer-browser-session-lifecycle.js', 'lib/employer-browser-session-cleanup.js', 'lib/job-agent-authorization-shutdown.js', 'lib/employer-receipt-verifier.js', 'lib/application-receipt-ingestion.js', 'lib/application-receipt-capture-provider.js', 'lib/application-receipt-evidence-provider.js', 'lib/application-receipt-task-store.js', 'lib/application-receipt-task-worker.js', 'lib/application-submission-provider.js', 'lib/application-submission-task-store.js', 'lib/application-submission-task-worker.js', 'lib/application-session-domain.js', 'lib/discovery-package-binding.js', 'lib/job-card-freshness-worker.js',
   'lib/application-package-worker.js', 'lib/application-package-render-sandbox.js', 'lib/job-agent-object-storage.js',
   'lib/data-encryption-keyring.js', 'lib/tenant-campaign-store.js', 'lib/applicant-vault-store.js', 'lib/job-agent-consent-store.js', 'lib/job-agent-pilot-access.js', 'lib/job-agent-entitlement.js', 'lib/job-agent-spend-ledger.js',
@@ -32,6 +33,12 @@ for (const route of [
 ]) assert.match(files[route], /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/, `${route} must reject legacy bearer sessions`);
 assert.match(files['concierge.js'], /return \{ 'X-1stStep-Client': 'job-agent' \};/);
 assert.doesNotMatch(files['concierge.js'].match(/function apiAuthorizationHeaders\(\)[\s\S]*?\n\}/)?.[0] || '', /Bearer|tierToken|subscription/);
+assert.match(files['lib/job-agent-discord-relay.js'], /JOB_AGENT_DISCORD_ALERTS_APPROVED/);
+assert.match(files['lib/job-agent-discord-relay.js'], /url\.hostname !== 'discord\.com'/);
+assert.match(files['lib/job-agent-discord-relay.js'], /payload\.containsCandidateValues === false/);
+assert.match(files['lib/job-agent-discord-relay.js'], /allowed_mentions: \{ parse: \[\] \}/);
+assert.match(files['api/job-agent-discord-relay.js'], /AbortSignal\.timeout\(5_000\)/);
+assert.doesNotMatch(files['api/job-agent-discord-relay.js'], /error\?\.message|configuration\.webhookUrl[^,)]*console/);
 assert.match(files['api/application-audit.js'], /authenticateApiRequest/);
 assert.match(files['api/application-audit.js'], /isAdminSubject/);
 assert.match(files['api/application-audit.js'], /containsCandidateFieldValues: false/);

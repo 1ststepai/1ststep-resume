@@ -62,6 +62,8 @@ const expectedStatic = [
   'client/opportunity-paths.js',
   'client/subscriber-ui-model.js',
   'client/persistent-campaign.js',
+  'client/admin-cost-dashboard.js',
+  'client/admin-system-alerts.js',
   'client/prohibited-secret.js',
   '1ststep-logo.png',
   '1ststep-ai-icon.png',
@@ -130,7 +132,8 @@ for (const requiredFunction of [
 ]) {
   assert(functionNames.has(requiredFunction), `Expected serverless API function missing: api/${requiredFunction}`);
 }
-assert.equal(functionNames.size, 41, `Unexpected API function count: ${functionNames.size}`);
+assert(functionNames.has('job-agent-discord-relay.func'), 'Expected serverless API function missing: api/job-agent-discord-relay.func');
+assert.equal(functionNames.size, 42, `Unexpected API function count: ${functionNames.size}`);
 
 const outputConfig = JSON.parse(await readFile(path.join(outputRoot, 'config.json'), 'utf8'));
 const routeText = JSON.stringify(outputConfig.routes || []);

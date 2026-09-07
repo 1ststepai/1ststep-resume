@@ -49,6 +49,9 @@
     "api/job-agent-operations.js": {
       "maxDuration": 15
     },
+    "api/job-agent-discord-relay.js": {
+      "maxDuration": 10
+    },
     "api/job-agent-email-events.js": {
       "maxDuration": 10
     },
