@@ -8,6 +8,12 @@ import { sendVerifiedSubscriptionSession } from './subscription.js';
 
 export const maxDuration = 15;
 
+export function clerkSubscriptionRequest(req) {
+  // IncomingMessage.headers is a prototype getter, not an enumerable property.
+  // An object spread alone silently loses the origin at the second auth check.
+  return { ...req, headers: req.headers, query: { ...req.query, client: 'job-agent' } };
+}
+
 export default async function handler(req, res) {
   applyApiHeaders(req, res);
   if (req.method === 'OPTIONS') {
@@ -43,7 +49,7 @@ export default async function handler(req, res) {
       return res.status(503).json({ error: 'Account storage is temporarily unavailable.', code: 'POSTGRES_IDENTITY_WRITE_FAILED' });
     }
     return sendVerifiedSubscriptionSession(
-      { ...req, query: { ...req.query, client: 'job-agent' } }, res, identity.subject,
+      clerkSubscriptionRequest(req), res, identity.subject,
       { signedIn: true, identityProvider: 'clerk', email: identity.subject },
     );
   }

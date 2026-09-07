@@ -366,16 +366,16 @@ if (html) {
 section('Free-to-Pro conversion smoke');
 
 if (html) {
-  if (/\$24\.99/.test(html)) pass('Job Hunt Pass price appears in upgrade/paywall copy');
-  else fail('Job Hunt Pass price $24.99 is missing from upgrade/paywall copy');
+  if (!/\$24\.99/.test(html) && !/buy\.stripe\.com\/5kQ4gA7OFgH14u89fhfIs00/.test(html)) pass('Retired Job Hunt Pass sale is absent from app copy');
+  else fail('Retired Job Hunt Pass pricing or checkout remains in app copy');
 
-  if (/Upgrade to Job Hunt Pass/.test(html) || /Start Job Hunt Pass/.test(html)) pass('Single-plan Job Hunt Pass upgrade CTA copy exists');
-  else fail('Job Hunt Pass upgrade CTA copy is missing');
+  if (/\$39/.test(html) && /month when (?:paid access opens|launched)/.test(html) && /controlled beta/i.test(html)) pass('Job Agent future price and controlled beta copy exist');
+  else fail('Job Agent future price or controlled beta copy is missing');
 }
 
 if (js) {
   [
-    'FREE_TO_PRO_PRICE',
+    'JOB_AGENT_FUTURE_PRICE',
     'PRO_TIER_ALIASES',
     'getPlanState',
     'guardProFeature',

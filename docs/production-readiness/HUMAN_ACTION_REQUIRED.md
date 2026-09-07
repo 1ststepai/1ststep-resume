@@ -4,10 +4,12 @@ This file is an operator checklist, not an authorization record. Checking a box 
 
 ## Current verified boundary
 
-- Latest runtime candidate: commit `39d28c9c607187c1debe99ab120838b8edb53b57`; runtime SHA-256 `3e8fd271c838153dc899c151dcbdd68a2fccf40e44ccf78b0b2f99ac62c86443`.
-- Protected Preview: `dpl_AiGJMf7zBkHJbwv6CjFtZvNj8STf` (Ready; exact candidate, fail-closed sign-in UX, live route behavior, bounded representative discovery canary, capacity result, and content-free request logs verified).
+- Persistent isolated database: a dedicated Neon Free staging project now has the exact canonical migration, 20/20 RLS and forced-RLS tables, zero client-role table privileges, and a 19/19 live adversarial pgTAP result. A separate-branch snapshot restore recovered one synthetic row and cleanup returned the project to one branch, zero snapshots, and zero fixture rows. Preview-only configuration is branch scoped and Sensitive; Production was not accessed or changed. Remaining database work is the signed-user application-to-database check and a separately reviewed Production authoritative-store migration plan.
+
+- Latest combined implementation candidate: commit `48454f976d8aeee2550cdbbbce334dd3eddc72a1` on `codex/finish-staged-candidate-20260907`. It includes the animated homepage, supervised application candidate, reconciliation recovery fix, and fail-closed release safeguards. Documentation-only or release-evidence commits may follow it; resolve the exact review head with `git rev-parse HEAD`.
+- Latest retained protected Preview: `dpl_AiGJMf7zBkHJbwv6CjFtZvNj8STf` (Ready; verified for an earlier candidate, not the combined candidate). A new exact Preview still requires separate deployment authorization.
 - Protected Preview capacity: 10/10 liveness responses were HTTP 200 at concurrency 2; p50 110 ms, p95/max 160 ms, no bodies read, no bypass secret, and no writes. The discovery canary returned 3/3 HTTP 200 and completed all eight representative source attempts across four providers from the 37-source catalog. This is not a Production-capacity, full-catalog-per-run, signed-user-fairness, queue-throughput, or plan-quota claim.
-- Production configuration names: a value-blind audit found 47 observed names, 24 of 126 required names present, and 102 required names absent. Durable-runtime names are complete, but private storage, controlled beta, audit archive, operator alerting, signed launch evidence, support ownership, document rendering, assisted Greenhouse, and final submission remain materially incomplete by name alone. No value was read, and name presence does not prove a valid or working configuration.
+- Production configuration names: a fresh value-blind audit on 2026-09-07 found 73 observed names, 29 of 126 required names present, and 97 required names absent. Durable-runtime names are complete. Consent has four of five names, Needs You delivery has two of five, cost controls have 14 of 24, and assisted Greenhouse has one of eight. Private storage, scheduling, controlled beta, audit archive, operator alerting, signed launch evidence, support ownership, document rendering, and final submission remain materially incomplete by name alone. No value was read, and name presence does not prove a valid or working configuration. Re-run with `npm run security:vercel-environment-names`.
 - Isolated-data preflight: canonical digest valid; current operator environment has no Supabase CLI or local container runtime and no nonproduction target attestation. A separate authenticated read-only Supabase inventory found two healthy active projects, both assigned to another product, with zero development branches and zero eligible 1stStep.ai target. The sole visible organization is on the Free Plan; current Supabase billing documentation grants two Free projects across organizations where the account is an Owner or Administrator, so the free allocation is already occupied. No schema or data was inspected and no resource was created.
 - Hosted isolated-test path: the manual-only GitHub Actions workflow in `.github/workflows/isolated-database-verification.yml` passed on run `34094509097` at source commit `420c53843c01f7f1e97990efb6bb4d96133fc162`. It verified the canonical migration, all 19 pgTAP tenant-isolation assertions, 20/20 RLS and forced-RLS tables, a logical backup restored into a separate disposable container, matching synthetic fixture counts, and cleanup. It used read-only repository permission, no Production secret, and no Production connection. This does not verify persistent staging, managed backups, or PITR.
 - Current Production/rollback reference: `dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM` (Ready; read-only guard reverified 2026-09-02T02:49:55Z; protected routes deny unsigned access, but all four concierge assets remain intentionally not candidate-parity).
@@ -25,6 +27,7 @@ Choose exactly one:
 - [ ] Supply a separately isolated non-production Supabase/Postgres project through the protected environment, without placing credentials in chat or source.
 - [x] Implement a manual-only GitHub-hosted disposable Supabase workflow that requires no local Docker installation and no Production credentials.
 - [x] Push the exact reviewed commit and run the hosted workflow; run `34094509097` passed and its content-free artifact is retained with the release evidence.
+- [x] Provision a dedicated Neon Free non-Production project, apply the canonical migration, pass the live 19-case tenant-isolation suite, and complete a separate-branch snapshot restore with full synthetic-data cleanup.
 
 Then separately authorize only this scope:
 
@@ -71,11 +74,11 @@ Current read-only Vercel evidence found zero configured drains and one visible d
 
 ## Decision 5: remote review and CI
 
-- [ ] Explicitly authorize `git push -u origin codex/application-concierge-pilot`.
+- [x] Push the isolated combined candidate to `origin/codex/finish-staged-candidate-20260907` without enabling a Vercel branch deployment.
 - [ ] Explicitly authorize opening a review request after the push.
 - [ ] Require the Production Readiness Gate check and human review; do not merge automatically.
 
-The branch remains local until this authorization is given.
+The branch is remote and `git.deploymentEnabled` remains false for it. Automated draft-PR creation was refused because the current GitHub CLI identity is not a repository collaborator; no review request was created.
 
 ## Decision 6: controlled Production release
 

@@ -101,6 +101,29 @@ const rendered = await updateFinishedApplicationPackageResult({
 assert.equal(rendered.result.qa.visualPageInspection, true);
 assert.equal(await updateFinishedApplicationPackageResult({ ...config, subject: 'other@example.test', runId: created.run.id, result: rendered.result }), null);
 
+const openAiCreated = await createJobAgentRun({ ...config, mission: packageInput, taskType: 'application_package', idempotencyKey: 'package_openai_compact_0001', now: new Date('2026-08-29T16:00:03.000Z') });
+const openAiClaimed = await claimJobAgentRun({ redis, runId: openAiCreated.run.id, dataEncryptionKey: config.dataEncryptionKey, now: new Date('2026-08-29T16:00:03.000Z') });
+let openAiCalls = 0;
+const openAiFinished = await executeClaimedApplicationPackageRun({
+  claimed: openAiClaimed, redis, dataEncryptionKey: config.dataEncryptionKey, objectStorage: { ready: false },
+  env: { AI_DOCUMENT_PROVIDER: 'openai-compatible', OPENAI_API_KEY: 'synthetic-test-key', AI_DOCUMENT_MODEL: 'gpt-5.6-luna', AI_OPENAI_REASONING_EFFORT: 'invalid-global-setting' },
+  fetchImpl: async (url, options) => {
+    openAiCalls += 1;
+    const body = JSON.parse(options.body);
+    assert.equal(url, 'https://api.openai.com/v1/responses');
+    assert.equal(body.reasoning.effort, 'none');
+    assert.equal(body.max_output_tokens, 3000);
+    assert.equal(body.text.format.strict, true);
+    return { ok: true, json: async () => ({ status: 'completed', output_text: responsePayload }) };
+  },
+  now: new Date('2026-08-29T16:00:04.000Z'),
+});
+assert.equal(openAiCalls, 1);
+assert.equal(openAiFinished.status, 'Finished');
+assert.equal(openAiFinished.result.documentMode, 'text-only');
+assert.equal(openAiFinished.result.transmission, 'none');
+assert.deepEqual(openAiFinished.result.artifacts, []);
+
 const revisionMission = {
   ...packageInput,
   revision: {

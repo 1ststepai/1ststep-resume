@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "persistent-neon-staging-verification",
+  "contentFree": true,
+  "containsCandidateValues": false,
+  "productionAccessed": false,
+  "recordedAt": "2026-09-07T12:33:00.000Z",
+  "sourceCommit": "e53f010ffe0ef51fcd10b2cfba1b5fdb96f655f9",
+  "provider": {
+    "name": "Neon",
+    "plan": "Free",
+    "region": "aws-us-east-1",
+    "postgresVersion": "17.11",
+    "historyRetentionSeconds": 21600,
+    "branchLogicalSizeLimitBytes": 536870912,
+    "encryptedAtRest": true,
+    "tlsRequired": true
+  },
+  "migration": {
+    "canonicalFile": "supabase/migrations/20260901195545_job_agent_canonical_baseline.sql",
+    "sha256": "3c61cb457d58180353ba19aa3669408c80f8f7bb349856d02d549ed1acf5c17a",
+    "applied": true
+  },
+  "isolation": {
+    "jobAgentTables": 20,
+    "rlsEnabledTables": 20,
+    "forcedRlsTables": 20,
+    "policyTables": 20,
+    "forAllPolicies": 0,
+    "publicPrivilegedTables": 0,
+    "anonymousPrivilegedTables": 0,
+    "authenticatedPrivilegedTables": 0,
+    "pgtapPlanned": 19,
+    "pgtapPassed": 19
+  },
+  "recovery": {
+    "mode": "manual-snapshot-to-separate-branch",
+    "sourceFixtureRows": 1,
+    "restoredFixtureRows": 1,
+    "restoreBranchReady": true,
+    "restoreComputeStartMilliseconds": 1692,
+    "mainFixtureRowsAfterCleanup": 0,
+    "restoreBranchDeleted": true,
+    "snapshotDeleted": true,
+    "remainingBranches": 1,
+    "remainingSnapshots": 0
+  },
+  "preview": {
+    "deploymentId": "dpl_2umCdCdRqhPWm7rf7Wp1vcThk8Kb",
+    "target": "preview",
+    "postgresEnvironmentScopedToReleaseBranch": true,
+    "databaseUrlSensitive": true,
+    "productionEnvironmentModified": false,
+    "publicRoutesHealthy": true,
+    "serverlessBootErrorsObserved": 0,
+    "readinessFailClosed": true,
+    "applicationTenantDatabaseProbeHealthy": true,
+    "probeContentFree": true,
+    "probeReadOnly": true
+  },
+  "remainingUnknowns": {
+    "signedUserApplicationDatabaseWriteVerified": false,
+    "productionAuthoritativeStoreMigrated": false,
+    "privateObjectStorageVerified": false,
+    "productionRecoveryVerified": false
+  }
+}

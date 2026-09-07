@@ -24,10 +24,20 @@ test('Needs You remembers an exact answer, restores attribution, and forgets it 
     if (route.request().method() === 'PATCH') { patch = route.request().postDataJSON(); session = {...resolveApplicationAnswer(session,vault,patch),version:2}; }
     await route.fulfill({json:{session,sessions:[session],submissionsEnabled:false}});
   });
-  await page.goto(baseUrl,{waitUntil:'networkidle'});
+  await page.goto(baseUrl,{waitUntil:'domcontentloaded'});
   await page.locator('#resumeApplication').click();
+  await expect(page.locator('#answerMemoryForm')).toContainText('Continue with this answer');
+  await expect(page.locator('#answerMemoryForm')).not.toContainText('Remember for similar applications');
+  await page.screenshot({path:`${process.env.TEMP || '/tmp'}/needs-you-answer-step.png`});
+  await page.setViewportSize({width:390,height:844});
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({path:`${process.env.TEMP || '/tmp'}/needs-you-answer-step-mobile.png`});
   await page.locator('#answerMemoryText').fill('I handled equipment warranty claims and vendor terms at Example Company.');
   await page.locator('#answerMemoryForm button[type="submit"]').click();
+  await expect(page.locator('#answerMemoryPanel')).toContainText('Should 1stStep remember this answer?');
+  expect(vault.facts).toHaveLength(0);
+  expect(patch).toBeUndefined();
+  await page.locator('[data-answer-memory-scope="candidate"]').click();
   await expect(page.locator('#applicationSuggestions')).toContainText('Supplied by remembered fact, version 1');
   expect(patch.action).toBe('resolve-remembered-answer');
   expect(JSON.stringify(patch)).not.toContain('equipment warranty');
@@ -638,13 +648,15 @@ test('signed account state replaces stale browser workflow data and leaves no du
   await page.locator('#openJobs').click();
   await page.locator('[data-job-tab="Preparing"]').click();
   await expect(page.locator('#jobCards')).toContainText('Account Employer');
-  await expect(page.locator('[data-job-package-generate="account-job"]')).toHaveText('Check package');
+  await expect(page.locator('[data-job-package-generate="account-job"]')).toHaveText('Continue preparation');
   expect(packageRestoreRequests).toBe(1);
   expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('1ststep_resume') || 'null'))).toMatchObject({ source: 'secure-vault', fileName: 'master-resume.txt' });
   await page.evaluate(() => sessionStorage.removeItem('1ststep_resume'));
   await page.locator('[data-job-package-generate="account-job"]').click();
   await expect.poll(() => packageRestoreRequests).toBe(2);
   await expect(page.locator('body')).not.toContainText('Wrong Local Employer');
+  await page.locator('#closeJobs').click();
+  await page.locator('#agentProgress > summary').click();
   await page.locator('#dailyGoalInput').fill('20');
   await page.locator('#dailyGoalForm').evaluate(form => form.requestSubmit());
   await expect.poll(() => savedAccountState?.workspace?.dailyGoal?.target).toBe(20);
@@ -697,14 +709,17 @@ test('a signed-in user gives one-time scoped authorization before any agent run 
   await page.locator('[data-launch-choice="salary"][data-value="0"]').click();
   await page.locator('#startJobSearch').click();
   await expect(page.locator('#jobAgentConsentOverlay')).toHaveClass(/open/);
-  await expect(page.locator('#jobAgentConsentChecks input[type="checkbox"]')).toHaveCount(4);
+  await expect(page.locator('#jobAgentConsentChecks input[type="checkbox"]')).toHaveCount(1);
   await expect(page.locator('#jobAgentConsentOverlay input[type="date"]')).toHaveCount(0);
   await expect(page.locator('#jobAgentConsentTitle')).toHaveText(policyBundle.disclosure.heading);
-  await expect(page.locator('#jobAgentConsentChecks label').nth(3)).toHaveText(policyBundle.disclosure.attestations[3].statement);
+  await expect(page.locator('#jobAgentConsentIntroduction')).toHaveText(policyBundle.disclosure.introduction);
+  for (const attestation of policyBundle.disclosure.attestations) {
+    await expect(page.locator('#jobAgentConsentChecks label')).toContainText(attestation.statement);
+  }
   await expect(page.locator('#jobAgentConsentChecks a[href="/terms"]')).toHaveText('Terms');
   await expect(page.locator('#grantJobAgentConsent')).toBeEnabled();
   expect(runStarts).toBe(0);
-  for (const checkbox of await page.locator('#jobAgentConsentChecks input[type="checkbox"]').all()) await checkbox.check();
+  await page.locator('#jobAgentConsentChecks input[type="checkbox"]').check();
   await page.locator('#grantJobAgentConsent').click();
   await expect(page.locator('#jobAgentConsentOverlay')).not.toHaveClass(/open/);
   await expect.poll(() => runStarts).toBe(1);
@@ -803,7 +818,7 @@ test('a signed-out launch stops at the dedicated no-charge Job Agent access scre
   await page.locator('#startJobSearch').click();
   await expect(page.locator('#agentAccessOverlay')).toHaveClass(/open/);
   await expect(page.locator('#agentAccessOverlay')).toContainText('No new charge is created from this screen');
-  await expect(page.locator('#agentAccessOverlay')).toContainText('Dedicated pricing is being measured');
+  await expect(page.locator('#agentAccessOverlay')).toContainText('Billing is not active yet; nothing is charged');
   expect(startedSearches).toEqual([]);
 });
 
@@ -861,7 +876,7 @@ test('subscriber work is reduced to simple job cards and one consolidated Needs 
   await expect(page.locator('#needsYouOverlay')).toHaveClass(/open/);
   await expect(page.locator('#needsYouList .needs-you-item')).toHaveCount(1);
   await expect(page.locator('#needsYouList')).toContainText('Complete the challenge directly on the employer page');
-  await expect(page.locator('#needsYouList')).toContainText('Your saved application will resume after this step');
+  await expect(page.locator('#needsYouList')).toContainText('Your progress is saved. Return here after this step to continue.');
   await page.locator('#closeNeedsYou').click();
   await page.locator('#openJobs').click();
   await page.locator('[data-job-tab="Needs You"]').click();
@@ -947,9 +962,8 @@ test('ambiguous employer question is completed on the verified employer page wit
   await page.locator('#resumeApplication').click();
   await expect(page.locator('#applicationActionTitle')).toHaveText('Answer this employer question');
   await expect(page.locator('#applicationActionSummary')).toContainText('will not infer, capture, or silently reuse this answer');
-  await expect(page.locator('#openEmployerPage')).toBeVisible();
-  await expect(page.locator('#openEmployerPage')).toHaveAttribute('href', 'https://careers.example.com/REQ-QUESTION-1');
-  await expect(page.locator('#resolveApplication')).toHaveText('I answered this on the employer site');
+  await expect(page.getByRole('link', { name: '1. Open employer application' })).toHaveAttribute('href', 'https://careers.example.com/REQ-QUESTION-1');
+  await expect(page.locator('#resolveApplication')).toHaveText('2. I answered it — continue');
   await page.locator('#resolveApplication').click();
   expect(patchBody).toEqual({ action: 'confirm-external-step', sessionId: 'application-ambiguous-fixture', actionId: 'action-ambiguous-1', confirmed: true, version: 3 });
   expect(JSON.stringify(patchBody)).not.toMatch(/answer|value|employerQuestion|candidate/i);
@@ -1198,6 +1212,8 @@ test('resumable browser handoff shows only a safe read-only field-structure prev
   });
   await page.goto(`${baseUrl}?uiFixture=durable-application`, { waitUntil: 'networkidle' });
   await page.locator('#resumeApplication').click();
+  await expect(page.locator('#applicationBrowserHandoff')).toBeHidden();
+  await page.getByRole('button', { name: 'Use cloud browser instead' }).click();
   await expect(page.locator('#applicationBrowserHandoff')).toBeVisible();
   await expect(page.locator('#browserHandoffMode')).toHaveText('Not started');
   await page.locator('#startBrowserHandoff').click();
@@ -1249,6 +1265,8 @@ test('approved remote provider renders only its exact isolated stream origin in 
   });
   await page.goto(`${baseUrl}?uiFixture=durable-application`, { waitUntil: 'networkidle' });
   await page.locator('#resumeApplication').click();
+  await expect(page.locator('#applicationBrowserHandoff')).toBeHidden();
+  await page.getByRole('button', { name: 'Use cloud browser instead' }).click();
   await page.locator('#startBrowserHandoff').click();
   await expect(page.locator('#browserHandoffMode')).toHaveText('Interactive secure stream');
   const frame = page.locator('#browserStreamFrame');
@@ -1334,6 +1352,7 @@ test('Learning Center renders only persisted confirmed rules and remains usable 
     }),
   }));
   await page.goto(`${baseUrl}?uiFixture=subscriber`, { waitUntil: 'networkidle' });
+  await page.locator('#agentProgress > summary').click();
   await page.locator('#learningCenter summary').click();
 
   await expect(page.locator('#learningStatus')).toHaveText('Learning active');
@@ -1356,6 +1375,7 @@ test('mobile persisted retry state supports keyboard Pause and Play again withou
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await expect(page.locator('#runStateSummary')).toContainText('Waiting to retry');
   await expect(page.locator('#runStateTiming')).toContainText('next run');
+  await page.locator('#agentProgress > summary').click();
   const pause = page.locator('#pauseRun');
   await pause.focus();
   await expect(pause).toBeFocused();

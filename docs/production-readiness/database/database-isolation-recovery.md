@@ -2,6 +2,18 @@
 
 ## Outcome
 
+### Persistent staging update — 2026-09-07
+
+A dedicated Neon Free staging project now exists in `aws-us-east-1`. The exact canonical migration was applied to PostgreSQL 17.11. Live inspection verified all 20 Job Agent tables have RLS and forced RLS, operation-specific policies cover all 20 tables, no `FOR ALL` policy exists, and `PUBLIC`, anonymous, and authenticated roles have no table privileges. The adversarial pgTAP suite passed 19/19.
+
+A synthetic one-row recovery fixture was captured in a manual snapshot, deleted from main, restored into a separate branch, read back successfully, and then removed with the restore branch and snapshot. The project returned to one main branch, zero snapshots, and zero synthetic rows. The restore compute became ready in 1,692 ms. No Production database or data was accessed.
+
+The Neon pooled connection is configured as Sensitive on the release branch's Vercel Preview only. Exact Preview `dpl_2umCdCdRqhPWm7rf7Wp1vcThk8Kb` ran the application's read-only transaction-scoped database probe and returned `tenantDatabase: healthy`; durable rate limiting passed, seven direct-source checks completed, and submission remained disabled. No serverless error was recorded. A signed-user identity write was not exercised, private object storage is still unverified, and Production still uses its existing authoritative runtime. Therefore the application-to-Neon read boundary, persistent staging isolation, and managed restore are verified, while Production storage and recovery remain Critical.
+
+Content-free retained evidence: `database/neon-staging-verification-20260907.json`.
+
+The historical entry audit below is retained to show what changed.
+
 The repository now has a deterministic migration inventory, a database-surface map, a role-aware adversarial pgTAP suite, and release-gate enforcement. This is implementation and static test evidence only. It is not staging or production verification.
 
 No isolated Supabase environment could be proven. Supabase CLI 2.116.0 is available and created the canonical timestamped baseline, but Docker and `psql` are unavailable; there is no linked-project evidence or masked non-production project reference. No database was connected, migrated, queried, restored, or modified.

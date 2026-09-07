@@ -10,10 +10,11 @@
     "test:answer-memory": "node scripts/application-answer-memory-test.mjs",
     "build:web": "node build-public-web.mjs",
     "build": "npm run build:web",
-    "smoke": "node scripts/smoke-test.cjs",
+    "smoke": "node scripts/admin-cost-dashboard-test.mjs && node scripts/job-agent-discord-relay-test.mjs && node scripts/smoke-test.cjs",
     "benchmark:ai-routing": "node scripts/ai-routing-shadow-benchmark.mjs",
     "test:homepage": "node scripts/homepage-motion-test.mjs",
-    "test:web-release": "npm run test:homepage && node scripts/applicant-vault-error-test.mjs && npm run test:resilience && npm run test:continuous-improvement && npm run test:concierge && npm run smoke && npm run test:deployment-output",
+    "test:web-release": "npm run test:homepage && node scripts/applicant-vault-error-test.mjs && npm run test:application-candidate && npm run test:resilience && npm run test:continuous-improvement && npm run test:concierge && npm run smoke && npm run test:deployment-output",
+    "test:application-candidate": "node scripts/application-control-center-test.mjs && node scripts/application-execution-route-test.mjs && node scripts/application-package-response-test.mjs && node scripts/application-preparation-test.mjs && node scripts/application-volume-copy-check.mjs && node scripts/background-package-check-test.mjs && node scripts/clerk-login-client-test.mjs && node scripts/clerk-request-origin-test.mjs && node scripts/draft-review-test.mjs && node scripts/transient-extension-resume-test.mjs",
     "test:production-readiness": "node scripts/production-readiness-audit-test.mjs && node scripts/vercel-environment-name-audit-test.mjs",
     "test:database-evidence": "npm run db:reconcile:check && node scripts/database-evidence-inventory-test.mjs && node scripts/database-evidence-inventory.mjs check && node scripts/isolated-data-readiness-preflight-test.mjs && node scripts/job-agent-database-runtime-evidence-test.mjs && node scripts/job-agent-recovery-evidence-test.mjs",
     "test:capacity-probe": "node scripts/staging-capacity-probe-test.mjs && node scripts/staging-capacity-probe-vercel-cli-test.mjs && node scripts/job-agent-signed-capacity-evidence-test.mjs",
@@ -54,7 +55,8 @@
     "security:launch-report": "node scripts/production-launch-manifest-report.mjs",
     "security:environment-shape": "node scripts/production-environment-shape-report.mjs",
     "security:environment-shape:summary": "node scripts/production-environment-shape-report.mjs --summary",
-    "security:vercel-environment-names": "node scripts/vercel-environment-name-audit.mjs",
+    "security:vercel-environment-names": "vercel env ls production --format json | node scripts/vercel-environment-name-audit.mjs --environment production",
+    "security:vercel-environment-names:stdin": "node scripts/vercel-environment-name-audit.mjs",
     "test:environment-shape": "node scripts/production-environment-shape-report-test.mjs",
     "security:live-boundary": "node scripts/verify-live-job-agent-boundary.mjs",
     "security:asset-parity": "node scripts/verify-live-job-agent-asset-parity.mjs",
@@ -81,6 +83,7 @@
     "@upstash/ratelimit": "2.0.8",
     "@upstash/redis": "1.38.3",
     "@vercel/blob": "2.8.0",
+    "@vercel/functions": "3.9.5",
     "@vercel/sandbox": "3.2.1",
     "docx": "9.7.1",
     "jszip": "3.10.1",
@@ -93,5 +96,8 @@
   "devDependencies": {
     "@playwright/test": "1.62.1",
     "supabase": "2.116.0"
+  },
+  "overrides": {
+    "qs": "6.16.0"
   }
 }

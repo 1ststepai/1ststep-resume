@@ -629,6 +629,9 @@
   #stp-cro .stp-trust-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   #stp-cro .stp-ba-grid,
   #stp-cro .stp-pricing-grid { grid-template-columns: 1fr 1fr; }
+  #stp-job-agent-plan .stp-price small { display: block; font-size: 16px; font-weight: 500; line-height: 1.5; letter-spacing: normal; margin-top: 8px; }
+  #stp-job-agent-plan .stp-copy { font-size: 16px; font-weight: 400; line-height: 1.6; }
+  #stp-job-agent-plan .stp-btn { margin: 6px 8px 6px 0; }
   #stp-cro .stp-ba-card {
     border-radius: 8px;
     padding: 26px;
@@ -1276,7 +1279,7 @@
               <li>Scores your resume against the actual job description.</li>
               <li>Tailors bullets around your real experience and role requirements.</li>
               <li>Saves each job-specific resume, cover letter, and application record.</li>
-              <li>Includes tracker and Chrome extension tools for repeated applying.</li>
+              <li>Includes application tracking and extension-assisted Greenhouse testing when enabled.</li>
             </ul>
           </article>
           <article class="stp-compare-card">
@@ -1345,7 +1348,7 @@
     <section id="stp-pricing" class="stp-section">
       <div class="stp-wrap">
         <p class="stp-kicker">Pricing</p>
-        <h2>Start free. Upgrade when your job hunt gets serious.</h2>
+        <h2>Start free. Request Job Agent beta access when you need more help.</h2>
         <div class="stp-pricing-grid">
           <article class="stp-price-card">
             <h3>Free Account</h3>
@@ -1362,21 +1365,24 @@
             <a class="stp-btn stp-btn-secondary" href="https://app.1ststep.ai">Start Free</a>
           </article>
 
-          <article class="stp-price-card popular">
-            <div class="stp-popular">Most Popular</div>
-            <h3>Job Hunt Pass</h3>
-            <p class="stp-copy">For active applicants who want the full job-search workspace.</p>
-            <div class="stp-price">$24.99<small>/month</small></div>
+          <article class="stp-price-card popular" id="stp-job-agent-plan">
+            <div class="stp-popular">Controlled Beta</div>
+            <h3>AI Job Agent</h3>
+            <p class="stp-copy">Invite-paced access for active applicants who want help moving from matched jobs to prepared applications.</p>
+            <div class="stp-price">$39<small>/month when paid access opens</small></div>
             <ul class="stp-checks two">
               <li><span class="stp-check"></span>Unlimited resume tailoring</li>
               <li><span class="stp-check"></span>Career Positioning Brief</li>
               <li><span class="stp-check"></span>Unlimited cover letters</li>
               <li><span class="stp-check"></span>Full resume vault and version history</li>
               <li><span class="stp-check"></span>Application tracker and follow-up workflow</li>
-              <li><span class="stp-check"></span>Chrome extension workflow</li>
-              <li><span class="stp-check"></span>Cancel anytime</li>
+              <li><span class="stp-check"></span>Extension-assisted Greenhouse testing when enabled</li>
+              <li><span class="stp-check"></span>No charge during approved beta access</li>
             </ul>
-            <a class="stp-btn stp-btn-primary" href="https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00">Start Job Hunt Pass</a>
+            <a class="stp-btn stp-btn-primary" href="mailto:evan@1ststep.ai?subject=Job%20Agent%20beta%20request">Request a beta spot</a>
+            <p class="stp-copy">Free access for the first 10 approved beta testers. No card required, no automatic billing, and no automatic switch to a paid subscription. Email Evan to request an invitation; sending a request does not reserve a spot.</p>
+            <p class="stp-copy">You review the materials and submit applications yourself. Job Agent checkout is not available yet. Any later subscription requires your separate agreement. Existing plans and customer access are unchanged.</p>
+            <a class="stp-btn stp-btn-secondary" href="https://app.1ststep.ai/concierge">Already invited? Open Job Agent</a>
           </article>
         </div>
       </div>
@@ -1397,7 +1403,7 @@
           </details>
           <details>
             <summary>Do I need a credit card to start?</summary>
-            <p>No. The free account includes 3 tailored resumes so you can test 1stStep.ai before upgrading.</p>
+            <p>No. The free account includes 3 tailored resumes so you can test 1stStep.ai. Job Agent beta access also does not require a card.</p>
           </details>
           <details>
             <summary>Is my resume information private?</summary>

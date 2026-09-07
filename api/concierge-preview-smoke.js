@@ -2,6 +2,7 @@ import { applyApiHeaders } from '../lib/api-security.js';
 import { enforceDurableRateLimit, sendRateLimitResult } from '../lib/durable-rate-limit.js';
 import { DEFAULT_PUBLIC_ATS_SOURCES } from '../lib/public-ats-catalog.js';
 import { discoverPublicJobs } from '../lib/public-ats-discovery.js';
+import { probePostgresTenantStore } from '../lib/postgres-tenant-store.js';
 
 export const maxDuration = 30;
 export const SMOKE_DISCOVERY_RUNTIME = Object.freeze({
@@ -28,17 +29,21 @@ export default async function handler(req, res) {
   if (!limit.ok) return sendRateLimitResult(res, limit, 'Preview verification limit reached.');
 
   const startedAt = Date.now();
-  const discovery = await discoverPublicJobs({
-    mission: { role: 'procurement', workModes: ['Remote', 'Hybrid'], employmentTypes: ['Full-time', 'Contract'], location: 'Newark, NJ' },
-    sources: PREVIEW_SMOKE_SOURCES,
-    limit: 5,
-    runtime: SMOKE_DISCOVERY_RUNTIME,
-  });
+  const [discovery, tenantDatabase] = await Promise.all([
+    discoverPublicJobs({
+      mission: { role: 'procurement', workModes: ['Remote', 'Hybrid'], employmentTypes: ['Full-time', 'Contract'], location: 'Newark, NJ' },
+      sources: PREVIEW_SMOKE_SOURCES,
+      limit: 5,
+      runtime: SMOKE_DISCOVERY_RUNTIME,
+    }),
+    probePostgresTenantStore(),
+  ]);
   const sourcesChecked = discovery.sourceSummary.filter(source => source.status === 'ok' || source.status === 'partial').length;
   const ok = sourcesChecked > 0;
   return res.status(ok ? 200 : 503).json({
     ok,
     durableRateLimit: 'passed',
+    tenantDatabase: tenantDatabase.status,
     catalogSources: DEFAULT_PUBLIC_ATS_SOURCES.length,
     sourceAttempts: discovery.sourceSummary.length,
     sourcesChecked,

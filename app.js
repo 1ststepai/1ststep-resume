@@ -62,7 +62,7 @@ function collapseLetterSpacing(text) {
     let _analyticsDisabled = false;
     const _analyticsQueue = [];
     const _trackedActivationEvents = new Set();
-    const FREE_TO_PRO_PRICE = '$24.99/month';
+    const JOB_AGENT_FUTURE_PRICE = '$39/month when paid access opens';
     const APP_GA_ID = 'G-RYPRPJDLVE';
     const PRO_TIER_ALIASES = new Set(['essential', 'complete', 'pro']);
     function authenticatedJsonHeaders() {
@@ -74,39 +74,39 @@ function collapseLetterSpacing(text) {
     const PRO_FEATURE_COPY = {
       coverLetter: {
         headline: 'Create unlimited cover letters',
-        body: 'Free includes 1 cover letter. Upgrade to Job Hunt Pass for unlimited cover letters that match each tailored resume and role.',
+        body: 'Free includes 1 cover letter. Paid checkout is paused; request Job Agent beta access for current availability.',
       },
       positioningBrief: {
         headline: 'Career Positioning Brief included',
-        body: 'Your free account includes positioning analysis. Job Hunt Pass unlocks unlimited tailoring, full vault access, and extension workflows.',
+        body: 'Your free account includes positioning analysis. Job Agent access is currently limited to approved beta testers.',
       },
       saveJobLimit: {
         headline: 'Keep tracking every application',
-        body: 'Free includes 3 saved jobs. Upgrade to Job Hunt Pass for unlimited tracking, version history, and follow-up planning.',
+        body: 'Free includes 3 saved jobs. Paid checkout is paused; request Job Agent beta access for current availability.',
       },
       tailors: {
         headline: 'Keep tailoring resumes',
-        body: 'You have used your 3 free tailored resumes. Upgrade to Job Hunt Pass for unlimited resume tailoring.',
+        body: 'You have used your 3 free tailored resumes. Paid checkout is paused while Job Agent automation is completed.',
       },
       vault: {
         headline: 'Unlock full version history',
-        body: 'Upgrade to Job Hunt Pass to keep every tailored resume, cover letter, and job version organized.',
+        body: 'Full version history is limited to existing subscribers and approved Job Agent beta testers.',
       },
       bulkApply: {
         headline: 'Unlock Bulk Apply',
-        body: 'Upgrade to Job Hunt Pass to tailor multiple roles faster with bulk apply and extension workflows.',
+        body: 'Bulk Apply is limited to existing subscribers and approved beta testers while the workflow is completed.',
       },
       linkedin: {
         headline: 'Unlock LinkedIn workflows',
-        body: 'Upgrade to Job Hunt Pass to use LinkedIn import, optimization, and extension-assisted job capture.',
+        body: 'LinkedIn workflows are limited to existing subscribers and approved beta testers.',
       },
       advancedAts: {
         headline: 'Unlock advanced role match scoring',
-        body: 'Upgrade to Job Hunt Pass for deeper ATS scoring, matched requirements, gaps, and improvement proof.',
+        body: 'Advanced matching is limited to existing subscribers and approved beta testers.',
       },
       general: {
-        headline: 'Upgrade to Job Hunt Pass',
-        body: 'Unlock unlimited tailoring, unlimited cover letters, full vault access, full tracking, and the Chrome extension workflow.',
+        headline: 'Request Job Agent beta access',
+        body: 'Paid checkout is paused while extension-assisted applications are completed and verified. Existing subscribers keep their access.',
       },
     };
 
@@ -2930,7 +2930,7 @@ ${resume.slice(0, 3000)}
       lockIcon.textContent = remaining > 0 ? ' 1 free' : ' Upgrade';
       lockIcon.title = remaining > 0
         ? 'Free includes 1 cover letter'
-        : 'Upgrade to Job Hunt Pass for unlimited cover letters';
+        : 'View Job Agent beta access for expanded cover letter tools';
     }
 
     // -- LLM-07: Universal prose output sanitizer -----------------------------
@@ -3918,8 +3918,8 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
         <div class="error-box" style="text-align:center;padding:32px 24px">
           <div style="font-size:2rem;margin-bottom:8px">Locked</div>
           <strong style="font-size:1.1rem">You've used your ${getLimit('tailors')} free tailors this month</strong>
-          <p style="margin:10px 0 20px;opacity:0.85">Most users land interviews within the first week.<br>Unlock unlimited tailoring - cancel anytime.</p>
-          <button class="btn-run" style="width:auto;padding:10px 28px;font-size:0.95rem" id="limitErrorPassBtn">Upgrade to Job Hunt Pass -></button>
+          <p style="margin:10px 0 20px;opacity:0.85">Your free monthly limit has been reached.<br>Paid checkout is paused while Job Agent remains in controlled beta.</p>
+          <button class="btn-run" style="width:auto;padding:10px 28px;font-size:0.95rem" id="limitErrorPassBtn">View beta access -></button>
         </div>`;
           document.getElementById('limitErrorPassBtn')?.addEventListener('click', openUpgradeModal);
           setTimeout(() => openUpgradeModal(), 400);
@@ -3927,9 +3927,9 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
           document.getElementById('resumeOutput').innerHTML = `
         <div class="error-box" style="text-align:center;padding:32px 24px">
           <div style="font-size:2rem;margin-bottom:8px">Locked</div>
-          <strong style="font-size:1.1rem">Job Hunt Pass required</strong>
-          <p style="margin:10px 0 20px;opacity:0.85">This feature requires Job Hunt Pass.</p>
-          <button class="btn-run" style="width:auto;padding:10px 28px;font-size:0.95rem" id="tierErrorPassBtn">Upgrade to Job Hunt Pass -></button>
+          <strong style="font-size:1.1rem">Controlled access required</strong>
+          <p style="margin:10px 0 20px;opacity:0.85">This feature is limited to existing subscribers and approved beta testers.</p>
+          <button class="btn-run" style="width:auto;padding:10px 28px;font-size:0.95rem" id="tierErrorPassBtn">View beta access -></button>
         </div>`;
           document.getElementById('tierErrorPassBtn')?.addEventListener('click', openUpgradeModal);
           setTimeout(() => openUpgradeModal(), 400);
@@ -4371,29 +4371,28 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
 
     // -- Monthly Usage Limits ---------------------------------------------------
     // Free: 5 searches / 3 tailors / 0 cover letters / 3 saved jobs.
-    // Pro $24.99/mo: unlimited core job-search workflow.
+    // Existing paid aliases retain their access; new paid checkout is intentionally paused.
     const LIMITS = {
       free:      { searches: 5, tailors: 3, coverLetters: 1, savedJobs: 3, vaultVisible: 3 },
       essential: { searches: 999, tailors: 999, coverLetters: 999, savedJobs: 999, vaultVisible: 999 },
       complete:  { searches: 999, tailors: 999, coverLetters: 999, savedJobs: 999, vaultVisible: 999 },
       pro:       { searches: 999, tailors: 999, coverLetters: 999, savedJobs: 999, vaultVisible: 999 },
     };
-    // Job Hunt Pass - monthly Stripe subscription
-    const STRIPE_PASS_URL = 'https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00';
-    // Stripe payment links (legacy tier keys kept for backwards compatibility; all route to Job Hunt Pass).
+    // Current access page. Legacy tier keys remain for backwards-compatible entitlement rendering.
+    const CURRENT_ACCESS_URL = '/pricing#job-agent-pricing';
     const STRIPE_LINKS = {
       essential: {
-        monthly: STRIPE_PASS_URL,
-        annual: STRIPE_PASS_URL,
+        monthly: CURRENT_ACCESS_URL,
+        annual: CURRENT_ACCESS_URL,
       },
       complete: {
-        monthly: STRIPE_PASS_URL,
-        annual: STRIPE_PASS_URL,
+        monthly: CURRENT_ACCESS_URL,
+        annual: CURRENT_ACCESS_URL,
       },
     };
-    const STRIPE_ESSENTIAL = STRIPE_PASS_URL; // fallback
-    const STRIPE_COMPLETE = STRIPE_PASS_URL;  // fallback
-    const UPGRADE_URL = STRIPE_PASS_URL;
+    const STRIPE_ESSENTIAL = CURRENT_ACCESS_URL; // legacy variable name
+    const STRIPE_COMPLETE = CURRENT_ACCESS_URL;  // legacy variable name
+    const UPGRADE_URL = CURRENT_ACCESS_URL;
 
     function isProTier(tier = currentTier) {
       return PRO_TIER_ALIASES.has(tier);
@@ -4407,7 +4406,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
         tier: currentTier,
         plan: isProTier() ? 'pro' : 'free',
         isPro: isProTier(),
-        priceMonthly: FREE_TO_PRO_PRICE,
+        priceMonthly: JOB_AGENT_FUTURE_PRICE,
         usage: { ...usage, savedJobs },
         limits,
         remainingTailors: Math.max((limits.tailors || 0) - (usage.tailors || 0), 0),
@@ -4456,7 +4455,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       const headline = document.getElementById('paywallHeadline');
       const sub = document.getElementById('paywallSubheadline');
       if (headline) headline.textContent = copy.headline;
-      if (sub) sub.textContent = `${copy.body} Job Hunt Pass is ${FREE_TO_PRO_PRICE}.`;
+      if (sub) sub.textContent = `${copy.body} Planned paid access is ${JOB_AGENT_FUTURE_PRICE}.`;
       document.getElementById('upgradeModal').style.display = 'flex';
     }
     function closeUpgradeModal() { document.getElementById('upgradeModal').style.display = 'none'; }
@@ -4465,7 +4464,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       const unlock = document.getElementById('paywallUnlockBtn');
       if (unlock) {
         unlock.href = UPGRADE_URL;
-        unlock.textContent = `Start Job Hunt Pass - ${FREE_TO_PRO_PRICE}`;
+        unlock.textContent = 'View Job Agent beta access';
       }
     }
 
@@ -4545,9 +4544,9 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       document.getElementById('jobList').innerHTML = `
     <div class="no-jobs-box" style="text-align:left">
       <p style="margin-bottom:6px"><strong>You've used all ${limit} searches for this month.</strong></p>
-      <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Upgrade to Job Hunt Pass for unlimited resume tailoring, unlimited cover letters, and full tracking, or search directly on job boards in the meantime.</p>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Paid checkout is paused while Job Agent is in controlled beta. Existing subscribers retain access, and approved testers can use enabled beta tools.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-        <button onclick="openUpgradeModal()" style="padding:8px 16px;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;border:none;cursor:pointer">Upgrade to Job Hunt Pass</button>
+        <button onclick="openUpgradeModal()" style="padding:8px 16px;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;border:none;cursor:pointer">View beta access</button>
       </div>
       <div class="quick-links" style="justify-content:flex-start">
         <a class="quick-link-btn" href="#" onclick="openJobBoard('indeed'); return false">Search Indeed</a>
@@ -5694,7 +5693,7 @@ ${desc}`;
       );
       if (isDupe) return;
       if (!canSaveTrackedJob()) {
-        showToast('Free includes 3 saved jobs. Upgrade to Job Hunt Pass to keep tracking every application.', 'warning');
+        showToast('Free includes 3 saved jobs. View Job Agent beta access for expanded tracking.', 'warning');
         openUpgradeModal('saveJobLimit');
         return;
       }
@@ -5761,7 +5760,7 @@ ${desc}`;
       const job = jobs.find(j => j.id === jobId);
       if (!job) return;
       if (!canSaveTrackedJob(jobId)) {
-        showToast('Free includes 3 saved jobs. Upgrade to Job Hunt Pass to save and track more roles.', 'warning');
+        showToast('Free includes 3 saved jobs. View Job Agent beta access to save and track more roles.', 'warning');
         openUpgradeModal('saveJobLimit');
         return;
       }
@@ -5872,7 +5871,7 @@ ${desc}`;
       const job = jobs.find(j => j.id === pendingApplyJobId);
       if (!job) return;
       if (!canSaveTrackedJob(pendingApplyJobId)) {
-        showToast('Free includes 3 saved jobs. Upgrade to Job Hunt Pass to save and track more roles.', 'warning');
+        showToast('Free includes 3 saved jobs. View Job Agent beta access to save and track more roles.', 'warning');
         openUpgradeModal('saveJobLimit');
         return;
       }
@@ -6421,8 +6420,8 @@ ${desc}`;
           </div>
           <div class="vault-lock-overlay">
             <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Unlock your full Job Tracker</div>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.4">All your tailored resumes are saved.<br>Upgrade to track every application.</div>
-            <button id="vaultLockCta" style="padding:9px 20px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Upgrade to Job Hunt Pass</button>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.4">All your tailored resumes are saved.<br>Expanded tracking is currently available through controlled access.</div>
+            <button id="vaultLockCta" style="padding:9px 20px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">View beta access</button>
           </div>
         </div>`;
       }
@@ -6941,7 +6940,7 @@ ${desc}`;
               <div class="pscard-label">Free</div>
               <div class="pscard-desc">3 resume tailors/month - 1 cover letter - vault preview</div>
             </div>
-            <button class="pscard-cta" id="pricingCardCta">Upgrade to Job Hunt Pass</button>
+            <button class="pscard-cta" id="pricingCardCta">View Job Agent beta access</button>
           </div>`;
         document.getElementById('pricingCardCta')?.addEventListener('click', () => {
           _pingTracker('pricing_cta_click');
@@ -6984,7 +6983,7 @@ ${desc}`;
 
     // -- Mobile Bottom Nav ---------------------------------------------------------
     // Free-to-Pro v1 pricing card override. Keeps legacy subscription tiers working
-    // while presenting one paid plan: Pro at $24.99/month.
+    // while preserving existing paid access and presenting controlled-beta access to new users.
     renderPricingCard = function () {
       const card = document.getElementById('pricingStatusCard');
       if (!card) return;
@@ -6996,7 +6995,7 @@ ${desc}`;
               <div class="pscard-label">Free</div>
             <div class="pscard-desc">3 resume tailors/month - 1 cover letter - vault preview</div>
             </div>
-            <button class="pscard-cta" id="pricingCardCta">Upgrade to Job Hunt Pass</button>
+            <button class="pscard-cta" id="pricingCardCta">View Job Agent beta access</button>
           </div>`;
         document.getElementById('pricingCardCta')?.addEventListener('click', () => {
           _pingTracker('pricing_cta_click');
@@ -7216,8 +7215,8 @@ Rules:
           showToast('Monthly limit reached - upgrade to continue', 'warning');
           setTimeout(() => openUpgradeModal(), 800);
         } else if (err.code === 'TIER_REQUIRED' || err.code === 'COMPLETE_REQUIRED' || err.status === 403) {
-          document.getElementById('liEmpty').textContent = 'This feature requires Job Hunt Pass.';
-          showToast('Upgrade to use LinkedIn optimization', 'warning');
+          document.getElementById('liEmpty').textContent = 'This feature requires controlled access.';
+          showToast('View Job Agent beta access to use LinkedIn optimization', 'warning');
           setTimeout(() => openUpgradeModal(), 400);
         } else {
           document.getElementById('liEmpty').textContent = 'Something went wrong - please try again.';
@@ -7423,7 +7422,7 @@ ${job.jd.slice(0, 1000)}
           console.error(`Bulk job ${job.title} failed:`, err);
           // If a tier or rate error fires mid-batch, abort the rest and prompt upgrade
           if (err.code === 'TIER_REQUIRED' || err.code === 'COMPLETE_REQUIRED' || err.status === 403) {
-            showToast('Upgrade to Job Hunt Pass to use Bulk Apply', 'warning');
+            showToast('Bulk Apply is limited to existing subscribers and approved beta testers.', 'warning');
             setTimeout(() => openUpgradeModal('bulkApply'), 400);
             break; // stop processing remaining jobs
           }

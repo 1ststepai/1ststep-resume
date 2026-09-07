@@ -30,3 +30,4 @@ assert.throws(() => validateApplicationSessionMutationBody({ ...finalApprovalRen
 assert.throws(() => validateApplicationSessionMutationBody({ ...finalApprovalRenewal, scopeHash: 'a'.repeat(64) }), /saved session version/);
 
 console.log('Application-session API value-input rejection tests passed.');
+import './applicant-vault-error-test.mjs';

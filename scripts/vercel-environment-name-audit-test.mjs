@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { auditVercelEnvironmentNames } from '../lib/vercel-environment-name-audit.js';
+
+const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+assert.match(packageJson.scripts['security:vercel-environment-names'], /vercel env ls production --format json \| node scripts\/vercel-environment-name-audit\.mjs --environment production/);
+assert.equal(packageJson.scripts['security:vercel-environment-names:stdin'], 'node scripts/vercel-environment-name-audit.mjs');
 
 const payload = {
   envs: [
