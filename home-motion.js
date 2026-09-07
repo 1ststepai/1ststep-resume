@@ -93,7 +93,8 @@
     }
     var scenes = Array.prototype.slice.call(document.querySelectorAll('[data-motion-scene]'));
     var manualPause = false;
-    var motionOptIn = false;
+    // Product motion starts on. The footer control remains available to pause it.
+    var motionOptIn = true;
     var demoPaused = false;
     var visibleScenes = new Set();
     var timer = null;
@@ -192,7 +193,7 @@
         syncMotion();
       });
     });
-    motionQuery.addEventListener('change', function () { motionOptIn = false; syncMotion(); });
+    motionQuery.addEventListener('change', syncMotion);
     document.addEventListener('visibilitychange', syncMotion);
     window.addEventListener('pagehide', function () { window.clearTimeout(timer); window.clearTimeout(journeyTimer); journeyTimer = null; });
     window.addEventListener('pageshow', syncMotion);
