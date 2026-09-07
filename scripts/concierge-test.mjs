@@ -75,8 +75,9 @@ assert.match(conciergeJs, /async function hydrateAccountWorkflow\(\) \{[\s\S]*in
 assert.match(conciergeJs, /function accountWorkflowIsAuthoritative\(\)[\s\S]*sessionCapabilities\.authentication === 'opaque-session' && hasJobAgentAccess\(\)/);
 assert.match(conciergeJs, /workspace:\s*\{[\s\S]*mission: missionState\.mission/);
 assert.doesNotMatch(conciergeJs, /localStorage\.setItem\((?:MISSION_KEY|DESK_KEY|CAMPAIGN_KEY|DAILY_GOAL_KEY|JOB_AGENT_RUN_KEY|'1ststep_resume')/, 'durable Job Agent workflow or resume content must not be written to localStorage');
-assert.match(conciergeHtml, /Your job search, handled\./);
-assert.match(conciergeHtml, /Your agent keeps moving and only asks when you’re needed/);
+assert.match(conciergeHtml, /A more thoughtful/);
+assert.match(conciergeHtml, /your next role\./);
+assert.match(conciergeHtml, /Your experience\. Your priorities\. A job search built around you\./);
 assert.match(conciergeHtml, /id="openGuidedLaunch"/);
 assert.match(conciergeHtml, /id="guidedLaunchOverlay"[^>]*role="dialog"[^>]*aria-modal="true"/);
 for (const stage of ['goal', 'resume', 'path', 'work', 'employment', 'salary', 'review']) assert.match(conciergeHtml, new RegExp(`data-guided-stage="${stage}"`));
