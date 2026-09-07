@@ -1,18 +1,18 @@
 import assert from 'node:assert/strict';
-import vm from 'node:vm';
-import { readFile } from 'node:fs/promises';
-const source = await readFile(new URL('../login.js', import.meta.url),'utf8');
+import { initializeLoginPage } from '../login.js';
 async function run({signedIn=true, enabled=true, failure=false, mode=''}={}) {
   const calls=[], cache=new Map(), scripts=[];
   const elements = Object.fromEntries(['loginStatus','retryLogin','clerkSignIn'].map(id=>[id,{hidden:true,textContent:'',addEventListener(type,fn){this[type]=fn;}}]));
   const result={calls,cache,scripts,elements};
   const clerk={session:signedIn?{getToken:async(options)=> {assert.equal(options.skipCache,true);return 'fixture.session.token';}}:null,load:async()=>{},signOut:async()=>{result.signedOut=true;},redirectToSignIn:async(options)=>{assert.equal(options.signInForceRedirectUrl,'https://app.1ststep.ai/login.html');result.signIn=true;},redirectToSignUp:async()=>{result.signUp=true;}};
-  await vm.runInNewContext(`(async()=>{${source}\n})()`,{
-    document:{getElementById:id=>elements[id],createElement:()=>({dataset:{}}),head:{appendChild(script){scripts.push(script.src);script.onload();}}},
-    window:{Clerk:clerk},URLSearchParams,AbortSignal,
-    location:{origin:'https://app.1ststep.ai',search:mode?`?mode=${mode}`:'?redirect=https://evil.example',replace:url=>{result.redirect=url;},reload:()=>{result.reloaded=true;}},
-    localStorage:{setItem:(k,v)=>cache.set(k,v)},
-    fetch:async(url,options)=>{
+  await initializeLoginPage({
+    documentRef:{getElementById:id=>elements[id],createElement:()=>({dataset:{}}),head:{appendChild(script){scripts.push(script.src);script.onload();}}},
+    windowRef:{Clerk:clerk},
+    locationRef:{origin:'https://app.1ststep.ai',search:mode?`?mode=${mode}`:'?redirect=https://evil.example',replace:url=>{result.redirect=url;},reload:()=>{result.reloaded=true;}},
+    storage:{setItem:(k,v)=>cache.set(k,v)},
+    timeout:()=>undefined,
+    now:()=>0,
+    fetchImpl:async(url,options)=>{
       calls.push({url,options});
       if(url==='/api/app-config')return{ok:true,json:async()=>({authentication:{clerk:{enabled,publishableKey:'pk_live_fixture'}}})};
       return{ok:!failure,json:async()=>failure?{error:'Subscription temporarily unavailable'}:{signedIn:true,email:'verified@example.test',tier:'complete',status:'active'}};
