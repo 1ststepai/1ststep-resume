@@ -70,85 +70,74 @@
       Array.prototype.forEach.call(revealables, function (el) { observer.observe(el); });
     }
 
-    // ── Agent run demonstration ──────────────────────────────────────────────
-    // Synthetic, clearly-labelled fixture data. It never depicts an application as
-    // submitted without the receipt-verified step being reached first.
-    var steps = Array.prototype.slice.call(document.querySelectorAll('#runSteps .step'));
-    if (steps.length) {
-      if (reduceMotion) {
-        steps.forEach(function (step) { step.classList.add('is-done'); });
-        steps[steps.length - 1].classList.add('is-active');
-      } else {
-        var index = 0;
-        var advance = function () {
-          steps.forEach(function (step, i) {
-            step.classList.toggle('is-active', i === index);
-            step.classList.toggle('is-done', i < index);
-          });
-          index = (index + 1) % (steps.length + 1);
-          if (index === steps.length) {
-            // Hold the completed state briefly before restarting.
-            window.setTimeout(function () { index = 0; advance(); }, 2600);
-            steps.forEach(function (step) { step.classList.add('is-done'); step.classList.remove('is-active'); });
-            return;
-          }
-          window.setTimeout(advance, 1700);
-        };
-        // Only animate while the card is on screen, so a background tab stays idle.
-        var card = document.getElementById('runSteps');
-        var started = false;
-        if ('IntersectionObserver' in window) {
-          var runObserver = new IntersectionObserver(function (entries) {
-            entries.forEach(function (entry) {
-              if (entry.isIntersecting && !started) { started = true; advance(); runObserver.disconnect(); }
-            });
-          }, { threshold: 0.25 });
-          runObserver.observe(card);
-        } else {
-          advance();
-        }
+    // Marketing-only motion: no requests, application state, or user data.
+    var motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var motionButton = document.getElementById('motionToggle');
+    var scenes = Array.prototype.slice.call(document.querySelectorAll('[data-motion-scene]'));
+    var manualPause = false;
+    var visibleScenes = new Set();
+    var timer = null;
+    var demo = document.getElementById('runSteps');
+    var demoIndex = 0;
+    var frames = [
+      ['A role worth a closer look.', 'Your experience comes first', 'Only facts you have confirmed.', 'Match found · example only'],
+      ['Made for this opportunity.', 'Résumé and cover letter prepared', 'Ready for you to read and edit.', 'Documents prepared · not sent'],
+      ['Your call. Always.', 'Your application is ready to review', 'Check the answers and attachments first.', 'Waiting for your review · not sent']
+    ];
+    function showFrame() {
+      if (!demo) return;
+      var frame = frames[demoIndex];
+      demo.dataset.demoStep = String(demoIndex);
+      ['demoHeadline', 'demoDocument', 'demoDetail', 'demoStatus'].forEach(function (id, i) {
+        document.getElementById(id).textContent = frame[i];
+      });
+      demo.querySelectorAll('.demo-progress li').forEach(function (item, i) {
+        item.classList.toggle('is-current', i === demoIndex);
+      });
+    }
+    function syncMotion() {
+      window.clearTimeout(timer);
+      timer = null;
+      var paused = manualPause || motionQuery.matches || document.hidden;
+      scenes.forEach(function (scene) {
+        scene.classList.toggle('motion-running', !paused && visibleScenes.has(scene));
+      });
+      if (motionButton) {
+        motionButton.textContent = motionQuery.matches ? 'Reduced motion on' : manualPause ? 'Play animations' : 'Pause animations';
+        motionButton.disabled = motionQuery.matches;
+        motionButton.setAttribute('aria-pressed', String(manualPause || motionQuery.matches));
+      }
+      if (!paused && demo && visibleScenes.has(demo.closest('[data-motion-scene]'))) {
+        timer = window.setTimeout(function () {
+          demoIndex = (demoIndex + 1) % frames.length;
+          showFrame();
+          syncMotion();
+        }, 3600);
       }
     }
-
-    // ── Receipt progression ──────────────────────────────────────
-    // The same synthetic application moving Package ready → Awaiting you → Receipt
-    // verified. Mirrors the run card: never shows the verified state before the
-    // approval step has been reached.
-    var receiptRows = Array.prototype.slice.call(document.querySelectorAll('#receiptFlow .panel-row'));
-    if (receiptRows.length) {
-      if (reduceMotion) {
-        receiptRows.forEach(function (row) { row.classList.add('is-done'); });
-        receiptRows[receiptRows.length - 1].classList.add('is-active');
-      } else {
-        var rIndex = 0;
-        var rAdvance = function () {
-          receiptRows.forEach(function (row, i) {
-            row.classList.toggle('is-active', i === rIndex);
-            row.classList.toggle('is-done', i < rIndex);
-          });
-          rIndex = (rIndex + 1) % (receiptRows.length + 1);
-          if (rIndex === receiptRows.length) {
-            receiptRows.forEach(function (row) { row.classList.add('is-done'); row.classList.remove('is-active'); });
-            receiptRows[receiptRows.length - 1].classList.add('is-active');
-            window.setTimeout(function () { rIndex = 0; rAdvance(); }, 2600);
-            return;
-          }
-          window.setTimeout(rAdvance, 1700);
-        };
-        var receiptCard = document.getElementById('receiptFlow');
-        var rStarted = false;
-        if ('IntersectionObserver' in window) {
-          var receiptObserver = new IntersectionObserver(function (entries) {
-            entries.forEach(function (entry) {
-              if (entry.isIntersecting && !rStarted) { rStarted = true; rAdvance(); receiptObserver.disconnect(); }
-            });
-          }, { threshold: 0.25 });
-          receiptObserver.observe(receiptCard);
-        } else {
-          rAdvance();
-        }
-      }
+    if ('IntersectionObserver' in window) {
+      var sceneObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) visibleScenes.add(entry.target);
+          else visibleScenes.delete(entry.target);
+        });
+        syncMotion();
+      }, { threshold: 0.15 });
+      scenes.forEach(function (scene) { sceneObserver.observe(scene); });
+    } else {
+      // Static fallback avoids uncontrolled motion in older browsers.
+      manualPause = true;
     }
+    if (motionButton) motionButton.addEventListener('click', function () {
+      manualPause = !manualPause;
+      syncMotion();
+    });
+    motionQuery.addEventListener('change', syncMotion);
+    document.addEventListener('visibilitychange', syncMotion);
+    window.addEventListener('pagehide', function () { window.clearTimeout(timer); });
+    window.addEventListener('pageshow', syncMotion);
+    showFrame();
+    syncMotion();
 
     // ── Testimonials ─────────────────────────────────────────────────────────
     // Rendered ONLY from verified, attributable quotes. `window.STEP_TESTIMONIALS`
