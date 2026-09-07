@@ -124,7 +124,7 @@
       });
       [motionButton, featureMotionButton, journeyMotionButton].forEach(function (button) {
         if (!button) return;
-        button.textContent = manualPause || preferencePaused ? 'Play animations' : 'Pause animations';
+        button.textContent = preferencePaused ? 'Enable motion' : manualPause ? 'Resume motion' : 'Pause motion';
         button.setAttribute('aria-pressed', String(manualPause || preferencePaused));
       });
       if (motionExplanation) motionExplanation.textContent = preferencePaused

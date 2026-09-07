@@ -512,6 +512,9 @@ section { padding: clamp(62px, 8vw, 104px) 0; }
 @media(max-width: 600px) { .outcome-stage { padding: 20px 12px; } .journey-card { padding: 20px 12px; min-height: 380px; } .journey-foot { flex-direction: column; align-items: flex-start; } .journey-nav { gap: 5px; } .journey-nav button { padding: 9px 12px; font-size: 11px; } .offer-envelope { width: 235px; } .conversation-bubble { right: -5px; } }
 @media(prefers-reduced-motion: reduce) { html:not(.motion-opt-in) .journey-card,html:not(.motion-opt-in) .tour-pointer { animation: none; } }
 
+.footer-motion { border: 0; background: transparent; color: #475569; font: inherit; font-size: 12px; cursor: pointer; min-height: 44px; padding: 8px 12px; text-decoration: underline; }
+.footer-motion:focus-visible { outline: 2px solid #4338ca; outline-offset: 3px; }
+
 /* ── Reveal ────────────────────────────────────────────────────────────────── */
 .js .reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.62s var(--ease), transform 0.62s var(--ease); }
 .js .reveal.is-in { opacity: 1; transform: none; }
