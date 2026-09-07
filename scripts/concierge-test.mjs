@@ -62,6 +62,12 @@ assert.match(conciergeHtml, /mammoth\.browser\.min\.js" integrity="sha384-[A-Za-
 assert.match(conciergeHtml, /pdf\.min\.js" integrity="sha384-[A-Za-z0-9+/=]+" crossorigin="anonymous"/);
 assert.match(conciergeHtml, /<progress id="dailyGoalBar" max="100" value="0"/);
 assert.match(conciergeHtml, /<progress id="progressBar" max="100" value="0"/);
+assert.match(conciergeHtml, /data-desk-tab="costs"[^>]*>Live costs</);
+assert.match(conciergeHtml, /id="costSummaryGrid"/);
+assert.match(conciergeHtml, /id="costCategoryRows"/);
+assert.match(conciergeHtml, /A configured budget limits spending\. It does not activate employer browsing, submission, storage, or email\./);
+assert.match(conciergeJs, /buildAdminCostDashboard\(operationalMetrics\)/);
+assert.match(conciergeJs, /User-count telemetry is not connected/);
 const claudeApi = await readFile(new URL('../api/claude.js', import.meta.url), 'utf8');
 const genericAiApi = await readFile(new URL('../api/ai.js', import.meta.url), 'utf8');
 const stateApi = await readFile(new URL('../api/concierge-state.js', import.meta.url), 'utf8');

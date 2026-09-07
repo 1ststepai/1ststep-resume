@@ -10,7 +10,7 @@
     "test:answer-memory": "node scripts/application-answer-memory-test.mjs",
     "build:web": "node build-public-web.mjs",
     "build": "npm run build:web",
-    "smoke": "node scripts/smoke-test.cjs",
+    "smoke": "node scripts/admin-cost-dashboard-test.mjs && node scripts/smoke-test.cjs",
     "benchmark:ai-routing": "node scripts/ai-routing-shadow-benchmark.mjs",
     "test:homepage": "node scripts/homepage-motion-test.mjs",
     "test:web-release": "npm run test:homepage && node scripts/applicant-vault-error-test.mjs && npm run test:resilience && npm run test:continuous-improvement && npm run test:concierge && npm run smoke && npm run test:deployment-output",
