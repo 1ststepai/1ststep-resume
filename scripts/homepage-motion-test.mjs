@@ -16,7 +16,7 @@ const scene = element();
 const items = [element(), element(), element()];
 const buttons = [element(), element(), element()];
 buttons.forEach((button, i) => { button.dataset.previewStep = String(i); });
-const ids = Object.fromEntries(['runSteps','motionToggle','demoHeadline','demoDocument','demoDetail','demoStatus'].map(id => [id, element()]));
+const ids = Object.fromEntries(['runSteps','motionToggle','featureMotionToggle','motionExplanation','demoHeadline','demoDocument','demoDetail','demoStatus'].map(id => [id, element()]));
 ids.runSteps.closest = () => scene;
 ids.runSteps.querySelectorAll = selector => selector === '[data-preview-step]' ? buttons : items;
 const query = { matches: false, addEventListener(name, fn) { this.change = fn; } };
@@ -24,7 +24,7 @@ const timers = new Map();
 const events = {};
 let nextTimer = 0;
 let intersection;
-const document = { readyState: 'complete', hidden: false,
+const document = { readyState: 'complete', hidden: false, documentElement: element(),
   getElementById: id => ids[id] || null,
   querySelectorAll: selector => selector === '[data-motion-scene]' ? [scene] : [],
   addEventListener(name, fn) { events[name] = fn; }
@@ -55,7 +55,14 @@ assert.equal(timers.size, 1);
 query.matches = true;
 query.change();
 assert.equal(timers.size, 0, 'Live reduced-motion preference must stop');
-assert.equal(ids.motionToggle.disabled, true);
+assert.equal(ids.motionToggle.textContent, 'Play animations');
+assert.match(ids.motionExplanation.textContent, /device prefers less motion/);
+ids.featureMotionToggle.events.click();
+assert.equal(timers.size, 1, 'Explicit play opts into motion in this page session');
+assert.equal(document.documentElement.classList.contains('motion-opt-in'), true);
+ids.featureMotionToggle.events.click();
+assert.equal(timers.size, 0, 'Opted-in motion can be paused');
+ids.motionToggle.events.click();
 query.matches = false;
 query.change();
 intersection([{ target: scene, isIntersecting: false }]);
@@ -63,7 +70,9 @@ assert.equal(timers.size, 0, 'Scrolling away must stop');
 buttons[2].events.click();
 assert.equal(ids.runSteps.dataset.demoStep, '2');
 assert.equal(buttons[2].attributes['aria-pressed'], 'true');
-assert.equal(ids.motionToggle.attributes['aria-pressed'], 'true', 'Choosing a step pauses autoplay');
+assert.equal(ids.motionToggle.attributes['aria-pressed'], 'false', 'Choosing a step must not pause unrelated illustrations');
+intersection([{ target: scene, isIntersecting: true }]);
+assert.equal(scene.classList.contains('motion-running'), true);
 assert.equal(timers.size, 0);
 assert(statSync(new URL('../home-momentum.jpg', import.meta.url)).size < 200_000, 'Hero asset stays under 200 KB');
 assert.match(readFileSync(new URL('../build-public-web.mjs', import.meta.url), 'utf8'), /'home-momentum.jpg'/);

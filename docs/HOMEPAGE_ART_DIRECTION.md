@@ -12,8 +12,10 @@ Use case: stylized-concept. Asset type: original decorative backdrop for 1stStep
 
 - CSS motion uses transforms or translation; no continuous blur calculation or tracking library.
 - A shared pause control stops decorative motion and the example timer.
-- Clicking Match, Prepare or Review chooses that example and pauses autoplay.
+- Clicking Match, Prepare or Review pauses only the hero sequence, not other illustrations.
 - Offscreen scenes and hidden tabs stop. Reduced-motion preferences apply at load and when changed.
+- Reduced motion defaults to static; a visible Play animations control allows an explicit in-memory opt-in for this page session. Changing the device preference clears that override. Both hero and feature controls can pause all motion.
+- The job reel and career-path strip loop through duplicate, accessibility-hidden groups. The résumé has a typing cursor, page movement and completion badge; the extension card demonstrates arrival. All are illustrative, not live user activity.
 - Real links and all preview text remain HTML, not rasterized UI.
 - Run `npm run test:homepage` and `npm run smoke`. Use browser checks for layout and motion; static checks alone do not prove visual quality.
 

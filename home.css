@@ -425,6 +425,48 @@ section { padding: clamp(62px, 8vw, 104px) 0; }
 @media (max-width: 700px) { .hero { padding-top: 35px; } .hero h1 { font-size: clamp(44px,10vw,66px); } .hero .lede { font-size: 17px; } .hero-points { display: none; } .demo-stage { padding: 25px 0 0; } .momentum-art { width: calc(100% + 40px); max-width: none; left: -20px; } .demo-content { display: block; padding: 18px; } .demo-content h2 { font-size: 24px; min-height: 58px; margin-bottom: 12px; } .demo-document { min-height: 0; margin-top: 12px; padding: 12px; } .demo-safety { font-size: 11px; } .demo-controls { font-size: 10px; } .studio-extension { padding: 26px; } .extension-visual { margin-top: 15px; } }
 @media (prefers-reduced-motion: reduce) { .floating-note,.demo-job::after { animation: none; } .demo-document { transition: none; } }
 
+/* Readable, visible product motion, with the same shared pause lifecycle. */
+.feature-motion-controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; margin-top: 22px; }
+.feature-motion-controls p { font-size: 12px; color: #475569; }
+.feature-motion-controls button { cursor: pointer; min-height: 44px; padding: 8px 16px; border: 1px solid #c7d2fe; border-radius: 9px; background: white; color: #4338ca; font: inherit; font-size: 13px; font-weight: 600; }
+.feature-motion-controls button:focus-visible { outline: 3px solid #4338ca; outline-offset: 3px; }
+.job-reel { animation: job-reel-scroll 12s linear infinite; animation-play-state: paused; }
+.job-reel-group { display: flow-root; }
+.job-reel .mini-job { animation: none; height: 80px; box-sizing: border-box; }
+.resume-visual { height: 260px; }
+.edit-text { display: block; flex: 0 1 auto; border-right: 2px solid #6366f1; width: 0; animation: resume-typing 6s steps(24,end) infinite; animation-play-state: paused; }
+.resume-paper { animation: paper-turn 6s ease-in-out infinite; animation-play-state: paused; }
+.resume-done { position: absolute; top: 12px; right: 8px; color: #3730a3; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 18px; padding: 7px 12px; font-size: 11px; animation: resume-complete 6s ease-in-out infinite; animation-play-state: paused; }
+.extension-popover { animation: capture-arrival 6s ease-in-out infinite; animation-play-state: paused; }
+.demo-content h2 { min-height: 36px; }
+.demo-document { transition: background .4s,border-color .4s,transform .55s; }
+[data-demo-step="1"] .demo-document { transform: translateY(-7px) rotate(-2deg); }
+[data-demo-step="2"] .demo-document { transform: translateY(0) rotate(1deg); }
+.opportunity-stream { overflow: hidden; margin: 28px -85px 0; mask-image: linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent); }
+.opportunity-track { display: flex; width: max-content; animation: opportunity-scroll 24s linear infinite; animation-play-state: paused; }
+.opportunity-group { display: flex; gap: 16px; padding-right: 16px; }
+.opportunity-group > span { flex-shrink: 0; min-width: 205px; display: block; background: #ffffffd9; border: 1px solid #e0e7ff; border-radius: 12px; padding: 13px 20px; font-size: 13px; font-weight: 650; color: #3730a3; }
+.opportunity-group b { display: block; color: #475569; margin-top: 3px; font-size: 11px; font-weight: 400; }
+.motion-running .job-reel,.motion-running .resume-paper,.motion-running .resume-done,.motion-running .opportunity-track { animation-play-state: running; }
+@keyframes job-reel-scroll { to { transform: translateY(-50%); } }
+@keyframes opportunity-scroll { to { transform: translateX(-50%); } }
+@keyframes resume-typing { 0%,8% { width: 0; } 52%,85% { width: 25ch; } 100% { width: 0; } }
+@keyframes paper-turn { 0%,15%,100% { transform: translateY(12px) rotate(-6deg); } 55%,85% { transform: translateY(-9px) rotate(1deg); } }
+@keyframes resume-complete { 0%,48%,100% { opacity: 0; transform: translateY(12px); } 60%,85% { opacity: 1; transform: translateY(0); } }
+@keyframes capture-arrival { 0%,100% { transform: translateY(24px); opacity: .35; } 25%,80% { transform: translateY(-7px); opacity: 1; } }
+@media (max-width: 700px) { .opportunity-stream { margin-inline: 0; } .demo-content h2 { min-height: 58px; } }
+@media (prefers-reduced-motion: reduce) {
+  html:not(.motion-opt-in) .job-reel,html:not(.motion-opt-in) .resume-paper,html:not(.motion-opt-in) .resume-done,html:not(.motion-opt-in) .opportunity-track { animation: none; }
+  html:not(.motion-opt-in) .edit-text { animation: none; width: auto; border: 0; }
+  html:not(.motion-opt-in) .extension-popover { animation: none; }
+  html:not(.motion-opt-in) .demo-document { transition: none; transform: none; }
+  .motion-opt-in .edit-text { animation: resume-typing 6s steps(24,end) infinite paused; }
+  .motion-opt-in .floating-note { animation: note-float 8s ease-in-out infinite paused; }
+  .motion-opt-in .extension-popover { animation: capture-arrival 6s ease-in-out infinite paused; }
+  .motion-opt-in .demo-job::after { animation: match-scan 7.2s ease-in-out infinite paused; }
+  .motion-opt-in .motion-running .edit-text,.motion-opt-in .motion-running .floating-note,.motion-opt-in .motion-running .extension-popover,.motion-opt-in .motion-running [data-demo-step="0"] .demo-job::after { animation-play-state: running; }
+}
+
 /* ── Reveal ────────────────────────────────────────────────────────────────── */
 .js .reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.62s var(--ease), transform 0.62s var(--ease); }
 .js .reveal.is-in { opacity: 1; transform: none; }

@@ -73,8 +73,12 @@
     // Marketing-only motion: no requests, application state, or user data.
     var motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     var motionButton = document.getElementById('motionToggle');
+    var featureMotionButton = document.getElementById('featureMotionToggle');
+    var motionExplanation = document.getElementById('motionExplanation');
     var scenes = Array.prototype.slice.call(document.querySelectorAll('[data-motion-scene]'));
     var manualPause = false;
+    var motionOptIn = false;
+    var demoPaused = false;
     var visibleScenes = new Set();
     var timer = null;
     var demo = document.getElementById('runSteps');
@@ -101,16 +105,21 @@
     function syncMotion() {
       window.clearTimeout(timer);
       timer = null;
-      var paused = manualPause || motionQuery.matches || document.hidden;
+      var preferencePaused = motionQuery.matches && !motionOptIn;
+      var paused = manualPause || preferencePaused || document.hidden;
+      document.documentElement.classList.toggle('motion-opt-in', motionOptIn);
       scenes.forEach(function (scene) {
         scene.classList.toggle('motion-running', !paused && visibleScenes.has(scene));
       });
-      if (motionButton) {
-        motionButton.textContent = motionQuery.matches ? 'Reduced motion on' : manualPause ? 'Play animations' : 'Pause animations';
-        motionButton.disabled = motionQuery.matches;
-        motionButton.setAttribute('aria-pressed', String(manualPause || motionQuery.matches));
-      }
-      if (!paused && demo && visibleScenes.has(demo.closest('[data-motion-scene]'))) {
+      [motionButton, featureMotionButton].forEach(function (button) {
+        if (!button) return;
+        button.textContent = manualPause || preferencePaused ? 'Play animations' : 'Pause animations';
+        button.setAttribute('aria-pressed', String(manualPause || preferencePaused));
+      });
+      if (motionExplanation) motionExplanation.textContent = preferencePaused
+        ? 'Your device prefers less motion. Play the examples if you would like to see them move.'
+        : 'Animated examples. Fictional jobs, no applications sent.';
+      if (!paused && !demoPaused && demo && visibleScenes.has(demo.closest('[data-motion-scene]'))) {
         timer = window.setTimeout(function () {
           demoIndex = (demoIndex + 1) % frames.length;
           showFrame();
@@ -131,19 +140,26 @@
       // Static fallback avoids uncontrolled motion in older browsers.
       manualPause = true;
     }
-    if (motionButton) motionButton.addEventListener('click', function () {
-      manualPause = !manualPause;
+    function toggleMotion() {
+      if (motionQuery.matches && !motionOptIn) {
+        motionOptIn = true;
+        manualPause = false;
+      } else manualPause = !manualPause;
+      if (!manualPause) demoPaused = false;
       syncMotion();
+    }
+    [motionButton, featureMotionButton].forEach(function (button) {
+      if (button) button.addEventListener('click', toggleMotion);
     });
     if (demo) demo.querySelectorAll('[data-preview-step]').forEach(function (button) {
       button.addEventListener('click', function () {
         demoIndex = Number(button.dataset.previewStep);
-        manualPause = true; // Reading a selected example should never race a timer.
+        demoPaused = true; // Freeze this selection, not the other product illustrations.
         showFrame();
         syncMotion();
       });
     });
-    motionQuery.addEventListener('change', syncMotion);
+    motionQuery.addEventListener('change', function () { motionOptIn = false; syncMotion(); });
     document.addEventListener('visibilitychange', syncMotion);
     window.addEventListener('pagehide', function () { window.clearTimeout(timer); });
     window.addEventListener('pageshow', syncMotion);
