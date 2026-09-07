@@ -94,6 +94,9 @@
       demo.querySelectorAll('.demo-progress li').forEach(function (item, i) {
         item.classList.toggle('is-current', i === demoIndex);
       });
+      demo.querySelectorAll('[data-preview-step]').forEach(function (button, i) {
+        button.setAttribute('aria-pressed', String(i === demoIndex));
+      });
     }
     function syncMotion() {
       window.clearTimeout(timer);
@@ -131,6 +134,14 @@
     if (motionButton) motionButton.addEventListener('click', function () {
       manualPause = !manualPause;
       syncMotion();
+    });
+    if (demo) demo.querySelectorAll('[data-preview-step]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        demoIndex = Number(button.dataset.previewStep);
+        manualPause = true; // Reading a selected example should never race a timer.
+        showFrame();
+        syncMotion();
+      });
     });
     motionQuery.addEventListener('change', syncMotion);
     document.addEventListener('visibilitychange', syncMotion);

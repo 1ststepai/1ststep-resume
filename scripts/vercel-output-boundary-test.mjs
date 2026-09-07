@@ -47,6 +47,7 @@ const expectedStatic = [
   'privacy.html',
   'style.css',
   'home.css',
+  'home-momentum.jpg',
   'persistent-concierge.css',
   'product-choice.css',
   'app.js',

@@ -22,6 +22,7 @@ const publicAssets = [
   'extension-section.html',
   'style.css',
   'home.css',
+  'home-momentum.jpg',
   'persistent-concierge.css',
   'product-choice.css',
   'app.js',
