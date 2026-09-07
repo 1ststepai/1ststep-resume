@@ -20,3 +20,9 @@ Use case: stylized-concept. Asset type: original decorative backdrop for 1stStep
 - Run `npm run test:homepage` and `npm run smoke`. Use browser checks for layout and motion; static checks alone do not prove visual quality.
 
 No authentication, billing, onboarding, submission or policy configuration was changed.
+
+## Outcome-led revision
+
+The homepage now includes a four-chapter animated journey: start, prepare, interview preparation, and the goal of a suitable offer. The two outcome chapters explicitly say Your goal; they are not employer receipts, testimonials, guarantees, or claims of completed applications. No invented application count is shown.
+
+The narrative runs only while visible and follows the shared motion controls. Selecting a chapter stops only that narrative. Keyboard-accessible controls expose every chapter even when reduced motion is enabled. Secondary feature, comparison and security copy is consolidated into expandable details; pricing and submission boundaries remain available.

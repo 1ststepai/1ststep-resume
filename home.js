@@ -75,6 +75,17 @@
     var motionButton = document.getElementById('motionToggle');
     var featureMotionButton = document.getElementById('featureMotionToggle');
     var motionExplanation = document.getElementById('motionExplanation');
+    var journeyMotionButton = document.getElementById('journeyMotionToggle');
+    var journey = document.getElementById('outcomeJourney');
+    var journeyIndex = 0;
+    var journeyPaused = false;
+    var journeyTimer = null;
+    function showJourney() {
+      if (!journey) return;
+      journey.dataset.chapter = String(journeyIndex);
+      journey.querySelectorAll('.journey-card').forEach(function (card, i) { card.hidden = i !== journeyIndex; });
+      journey.querySelectorAll('[data-chapter-button]').forEach(function (button, i) { button.setAttribute('aria-pressed', String(i === journeyIndex)); });
+    }
     var scenes = Array.prototype.slice.call(document.querySelectorAll('[data-motion-scene]'));
     var manualPause = false;
     var motionOptIn = false;
@@ -111,7 +122,7 @@
       scenes.forEach(function (scene) {
         scene.classList.toggle('motion-running', !paused && visibleScenes.has(scene));
       });
-      [motionButton, featureMotionButton].forEach(function (button) {
+      [motionButton, featureMotionButton, journeyMotionButton].forEach(function (button) {
         if (!button) return;
         button.textContent = manualPause || preferencePaused ? 'Play animations' : 'Pause animations';
         button.setAttribute('aria-pressed', String(manualPause || preferencePaused));
@@ -120,6 +131,14 @@
         ? 'Your device prefers less motion. Select Play animations to watch the product tour.'
         : '';
       if (motionExplanation) motionExplanation.hidden = !preferencePaused;
+      if (!paused && !journeyPaused && journey && visibleScenes.has(journey)) {
+        if (journeyTimer === null) journeyTimer = window.setTimeout(function () {
+          journeyTimer = null;
+          journeyIndex = (journeyIndex + 1) % 4;
+          showJourney();
+          syncMotion();
+        }, 3800);
+      } else { window.clearTimeout(journeyTimer); journeyTimer = null; }
       if (!paused && !demoPaused && demo && visibleScenes.has(demo.closest('[data-motion-scene]'))) {
         timer = window.setTimeout(function () {
           demoIndex = (demoIndex + 1) % frames.length;
@@ -146,11 +165,19 @@
         motionOptIn = true;
         manualPause = false;
       } else manualPause = !manualPause;
-      if (!manualPause) demoPaused = false;
+      if (!manualPause) { demoPaused = false; journeyPaused = false; }
       syncMotion();
     }
-    [motionButton, featureMotionButton].forEach(function (button) {
+    [motionButton, featureMotionButton, journeyMotionButton].forEach(function (button) {
       if (button) button.addEventListener('click', toggleMotion);
+    });
+    if (journey) journey.querySelectorAll('[data-chapter-button]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        journeyIndex = Number(button.dataset.chapterButton);
+        journeyPaused = true;
+        showJourney();
+        syncMotion();
+      });
     });
     if (demo) demo.querySelectorAll('[data-preview-step]').forEach(function (button) {
       button.addEventListener('click', function () {
@@ -162,7 +189,7 @@
     });
     motionQuery.addEventListener('change', function () { motionOptIn = false; syncMotion(); });
     document.addEventListener('visibilitychange', syncMotion);
-    window.addEventListener('pagehide', function () { window.clearTimeout(timer); });
+    window.addEventListener('pagehide', function () { window.clearTimeout(timer); window.clearTimeout(journeyTimer); journeyTimer = null; });
     window.addEventListener('pageshow', syncMotion);
     showFrame();
     syncMotion();

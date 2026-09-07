@@ -57,7 +57,7 @@
     <div class="hero-copy">
       <p class="pill"><span class="pill-tag">Beta</span> Controlled production beta — invite paced</p>
       <h1>Your next role.<br><span class="hero-accent">One step closer.</span></h1>
-      <p class="lede">Meet your Job Agent. Find suitable roles, prepare a résumé for each one, and keep your next step in one simple place.</p>
+      <p class="lede">Your agent handles job-search prep. You focus on your next move.</p>
       <div class="hero-cta">
         <a class="btn btn-primary btn-lg" href="/concierge">Get started free</a>
         <a class="btn btn-quiet btn-lg" href="#how">See how it works</a>
@@ -95,24 +95,41 @@
   </div>
 </section>
 
-<!-- ── Sources ────────────────────────────────────────────────────────────── -->
-<section class="strip">
+<section class="outcome-section" id="how" aria-labelledby="outcomeTitle">
   <div class="wrap">
-    <p class="strip-label">Roles come straight from the source</p>
-    <ul class="strip-list">
-      <li>Company career pages</li>
-      <li>Greenhouse</li>
-      <li>Lever</li>
-      <li>Ashby</li>
-    </ul>
-    <p class="strip-note">Every listing is re-checked with the employer before any work starts, so you are not applying to a job that closed last week.</p>
+    <div class="outcome-heading"><p class="eyebrow">THE NEXT CHAPTER IS YOURS</p><h2 id="outcomeTitle">Less busywork.<br>More room for what’s next.</h2></div>
+    <div class="outcome-stage" id="outcomeJourney" data-motion-scene data-chapter="0">
+      <div class="outcome-art" aria-hidden="true"></div>
+      <article class="journey-card">
+        <p class="eyebrow">01 / START</p><h3>One small step.</h3>
+        <div class="journey-graphic start-graphic" aria-hidden="true"><div class="journey-orb">1st</div><div class="start-chip">Start my agent <span>↗</span></div><svg class="tour-pointer" viewBox="0 0 32 40"><path d="M3 2v30l8-7 6 12 6-3-6-12 11-2z" fill="#172033" stroke="white" stroke-width="2"/></svg></div>
+        <p>Add your résumé. Tell us what you want.</p>
+      </article>
+      <article class="journey-card" hidden>
+        <p class="eyebrow">02 / PREPARE</p><h3>The busywork gets lighter.</h3>
+        <div class="journey-graphic package-graphic" aria-hidden="true"><div class="package-sheet">YOUR EXPERIENCE<i></i><i></i><i></i></div><div class="package-sheet">YOUR NEXT ROLE<i></i><i></i><i></i></div><div class="ready-chip">✓ Ready for your review</div></div>
+        <p>Suitable roles. Tailored documents. You approve what’s next.</p>
+      </article>
+      <article class="journey-card" hidden>
+        <p class="eyebrow">03 / YOUR GOAL</p><h3>“Let’s meet.”</h3>
+        <div class="journey-graphic interview-graphic" aria-hidden="true"><div class="calendar-art"><span>YOUR NEXT CONVERSATION</span><svg viewBox="0 0 100 80"><rect x="10" y="12" width="80" height="60" rx="8" fill="#eef2ff"/><path d="M10 30h80M30 6v15M70 6v15" stroke="#6366f1" stroke-width="5"/><path d="m34 49 11 11 24-24" fill="none" stroke="#4338ca" stroke-width="6"/></svg><b>Interview preparation</b></div><div class="conversation-bubble">Tell your story with confidence.</div></div>
+        <p>Make room to prepare for the conversations that matter.</p>
+      </article>
+      <article class="journey-card" hidden>
+        <p class="eyebrow">04 / YOUR GOAL</p><h3>A next chapter worth saying yes to.</h3>
+        <div class="journey-graphic offer-graphic" aria-hidden="true"><div class="offer-envelope"><span>YOUR NEXT CHAPTER</span><strong>The right role.<br>On your terms.</strong><div class="offer-seal">✓</div></div></div>
+        <p>The goal is an offer you want—not just more applications.</p>
+      </article>
+      <div class="journey-nav" aria-label="Explore the job-search journey"><button type="button" data-chapter-button="0" aria-pressed="true">Start</button><button type="button" data-chapter-button="1" aria-pressed="false">Prepare</button><button type="button" data-chapter-button="2" aria-pressed="false">Interviews</button><button type="button" data-chapter-button="3" aria-pressed="false">Your next role</button></div>
+    </div>
+    <div class="journey-foot"><span>Your path, not a promise. Employers decide interviews and offers.</span><button id="journeyMotionToggle" type="button" aria-pressed="false">Pause animations</button></div>
   </div>
 </section>
 
 <!-- ── Two paths ──────────────────────────────────────────────────────────── -->
 <section class="product-studio" aria-labelledby="studioTitle">
   <div class="wrap">
-    <div class="section-head reveal"><p class="eyebrow">LESS TAB-HOPPING. MORE MOMENTUM.</p><h2 id="studioTitle">A little help at every step.</h2><p class="section-sub">Your search, your documents, your decisions. Finally working together.</p><div class="feature-motion-controls"><p id="motionExplanation"></p><button type="button" id="featureMotionToggle" aria-pressed="false">Pause animations</button></div></div>
+    <div class="section-head reveal"><p class="eyebrow">LESS TAB-HOPPING. MORE MOMENTUM.</p><h2 id="studioTitle">A little help at every step.</h2><p class="section-sub"></p><div class="feature-motion-controls"><p id="motionExplanation"></p><button type="button" id="featureMotionToggle" aria-pressed="false">Pause animations</button></div></div>
     <div class="studio-grid">
       <article class="studio-card reveal" data-motion-scene>
         <p class="eyebrow">01 / PREPARE</p><h3>Your experience.<br>A stronger first impression.</h3><p>A role-specific résumé and cover letter, built from what you have actually done.</p>
@@ -139,17 +156,13 @@
     <div class="section-head reveal">
       <p class="eyebrow">Two ways to use it</p>
       <h2>One job tonight, or the whole search.</h2>
-      <p class="section-sub">Both work from the same confirmed facts about you, so nothing is typed twice. Start with either and switch whenever.</p>
+      <p class="section-sub">Choose how you want to start.</p>
     </div>
     <div class="paths">
       <article class="path reveal">
         <h3>Résumé Builder</h3>
         <p class="path-lede">For a role you have already found.</p>
-        <ul class="path-list">
-          <li><span class="k">You do:</span> paste the job description</li>
-          <li><span class="k">You get:</span> a tailored, ATS-safe résumé and cover letter</li>
-          <li><span class="k">Takes:</span> a few minutes per role</li>
-        </ul>
+
         <p class="path-note">Nothing is sent anywhere. What it writes stays in your workspace until you download or copy it.</p>
         <div class="path-foot">
           <a class="btn btn-quiet btn-block" href="/app/resume">Build my résumé</a>
@@ -161,11 +174,7 @@
         <span class="path-tag">Recommended</span>
         <h3>Job Agent</h3>
         <p class="path-lede">For a search you want moving without you sitting on it.</p>
-        <ul class="path-list">
-          <li><span class="k">You do:</span> set your criteria once</li>
-          <li><span class="k">You get:</span> open roles found, checked, and written up for you</li>
-          <li><span class="k">Also:</span> interview practice before the real thing</li>
-        </ul>
+
         <p class="path-note"><b>$39/month when it opens.</b> Free during the invite-paced beta — nothing is charged yet. It prepares by default: sending your details or submitting an application always needs a separate yes from you.</p>
         <div class="path-foot">
           <a class="btn btn-quiet btn-block" href="mailto:evan@1ststep.ai?subject=Job%20Agent%20beta%20request" data-beta-request>Request a beta spot</a>
@@ -177,161 +186,12 @@
   </div>
 </section>
 
-<!-- ── How it works ───────────────────────────────────────────────────────── -->
-<section id="how" class="band">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <p class="eyebrow">How it works</p>
-      <h2>Three steps, then it runs.</h2>
-      <p class="section-sub">The same three steps you will see the moment you start. Nothing else is needed before it can begin.</p>
-    </div>
-    <ol class="steps-grid">
-      <li class="stepcard reveal">
-        <span class="stepcard-n">1</span>
-        <h3>Say what you want</h3>
-        <p>Titles, locations, salary floor, and anything you will not take. Roles below your bar never get shown to you at all.</p>
-      </li>
-      <li class="stepcard reveal" data-delay="1">
-        <span class="stepcard-n">2</span>
-        <h3>Confirm your facts</h3>
-        <p>Upload a résumé or answer a few questions. Each fact is stored with where it came from, and none of it is used on an application until you say it is right.</p>
-      </li>
-      <li class="stepcard reveal" data-delay="2">
-        <span class="stepcard-n">3</span>
-        <h3>Let it work</h3>
-        <p>It finds roles and writes the materials. It comes back to you for a missing answer, a code, an ID check, a conflict, or a final yes.</p>
-      </li>
-    </ol>
-  </div>
-</section>
-
-<!-- ── Inside a run ───────────────────────────────────────────────────────── -->
-<section id="inside">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <p class="eyebrow">What it actually does</p>
-      <h2>The parts other tools skip.</h2>
-      <p class="section-sub">From finding a role to knowing what needs your attention.</p>
-    </div>
-
-    <div class="story reveal">
-      <div>
-        <h3>It checks the job is still open</h3>
-        <p>A listing is re-checked with the employer before any work happens. If the job closed or changed, it stops and tells you instead of writing a résumé against a posting that is gone.</p>
-      </div>
-      <div class="story-media">
-        <div class="panel-row"><span>Senior Operations Analyst</span><span class="tag tag-mint">Verified</span></div>
-        <div class="panel-row"><span>Requisition REQ-4821 · direct employer</span><span class="tag tag-cyan">Re-checked</span></div>
-        <div class="panel-row"><span>Four of your confirmed facts matched</span><span class="tag tag-muted">Fit</span></div>
-      </div>
-    </div>
-
-    <div class="story reveal is-flipped">
-      <div>
-        <h3>Everything that needs you lands in one list</h3>
-        <p>Missing answers, security codes, ID checks and conflicts collect in a single queue instead of scattering across fifteen tabs. Sensitive values stay hidden.</p>
-      </div>
-      <div class="story-media">
-        <div class="panel-row"><span>Years managing vendor contracts?</span><span class="tag tag-amber">Needs you</span></div>
-        <div class="panel-row"><span>Code from the employer's site</span><span class="tag tag-amber">You only</span></div>
-        <div class="panel-row"><span>•••• •••• •••• 4821</span><span class="tag tag-muted">Hidden</span></div>
-      </div>
-    </div>
-
-    <div class="story reveal">
-      <div>
-        <h3>"Submitted" means the employer said so</h3>
-        <p>An application only counts once the employer confirms they got it. Written, ready, and waiting on you are tracked separately — so the number you are looking at means something.</p>
-      </div>
-      <div class="story-media" id="receiptFlow">
-        <div class="panel-row" data-tone="ready"><span>Package ready</span><span class="tag tag-cyan">Not submitted</span></div>
-        <div class="panel-row" data-tone="needs"><span>Waiting on your approval</span><span class="tag tag-amber">Paused</span></div>
-        <div class="panel-row" data-tone="receipt"><span>Employer confirmed receipt</span><span class="tag tag-mint">Submitted</span></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── What you get ───────────────────────────────────────────────────────── -->
-<section class="band">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <p class="eyebrow">What you get</p>
-      <h2>Built for a search that lasts months.</h2>
-    </div>
-    <div class="how">
-      <div class="how-card reveal"><h3>Jobs that are actually open</h3><p>Company career pages plus Greenhouse-, Lever- and Ashby-hosted roles, re-checked before anything is written.</p></div>
-      <div class="how-card reveal" data-delay="1"><h3>A résumé per role</h3><p>Plain, human-sounding, ATS-safe, built from facts you confirmed. No invented jobs and no filler.</p></div>
-      <div class="how-card reveal" data-delay="2"><h3>One list of what needs you</h3><p>Every blocked step in one place, sensitive values hidden, anything secure handed back to you.</p></div>
-      <div class="how-card reveal"><h3>Every version kept</h3><p>See exactly what you sent to whom, and start the next one from it.</p></div>
-      <div class="how-card reveal" data-delay="1"><h3>Honest tracking</h3><p>Status reflects what the employer confirmed. Attempts and confirmations are never blended into one number.</p></div>
-      <div class="how-card reveal" data-delay="2"><h3>Pick up anywhere</h3><p>Sign in from another browser and your facts, runs and documents are still there, encrypted at rest.</p></div>
-    </div>
-  </div>
-</section>
-
-<!-- ── Compare ────────────────────────────────────────────────────────────── -->
-<section id="compare">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <p class="eyebrow">Choosing</p>
-      <h2>Which one fits right now?</h2>
-    </div>
-    <div class="table-scroll reveal">
-      <table class="cmp">
-        <caption class="sr-only">Comparison of the Résumé Builder and the Job Agent</caption>
-        <thead>
-          <tr><th scope="col">&nbsp;</th><th scope="col">Résumé Builder</th><th scope="col">Job Agent</th></tr>
-        </thead>
-        <tbody>
-          <tr><th scope="row">Finds the jobs</th><td>No</td><td>Yes, from the employer's own source</td></tr>
-          <tr><th scope="row">Writes your documents</th><td>Yes, one role at a time</td><td>Yes, for every role it finds</td></tr>
-          <tr><th scope="row">Keeps going while you are away</th><td>No</td><td>Yes, it runs on its own schedule</td></tr>
-          <tr><th scope="row">Interview practice</th><td>No</td><td>Included</td></tr>
-          <tr><th scope="row">Your effort per role</th><td>A few minutes</td><td>Only when it asks</td></tr>
-          <tr><th scope="row">You approve before anything is sent</th><td>You send it yourself</td><td>Yes, every time</td></tr>
-          <tr><th scope="row">Best when</th><td>You have one role in mind</td><td>You want steady progress</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<!-- ── Testimonials / principles ──────────────────────────────────────────── -->
-<section id="testimonials" class="band">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <p class="eyebrow">What we promise</p>
-      <h2>What we hold ourselves to.</h2>
-      <p class="section-sub">A thoughtful job search starts with honesty, accuracy, and your control.</p>
-    </div>
-    <div class="quotes" id="quotesGrid" hidden></div>
-    <div class="how" id="principles">
-      <div class="how-card reveal"><h3>We do not overstate status</h3><p>An application is reported as submitted only when the employer confirms receipt. Everything else is labelled for what it is.</p></div>
-      <div class="how-card reveal" data-delay="1"><h3>We do not make things up about you</h3><p>Citizenship, clearance, criminal history, disability, veteran status and referrals are never guessed. Those questions come to you.</p></div>
-      <div class="how-card reveal" data-delay="2"><h3>We do not hold your logins</h3><p>Passwords, one-time codes and CAPTCHA answers are never kept as reusable facts. Those steps are always yours.</p></div>
-    </div>
-  </div>
-</section>
-
-<!-- ── Security ───────────────────────────────────────────────────────────── -->
-<section id="security">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <p class="eyebrow">Security and control</p>
-      <h2>In plain language.</h2>
-    </div>
-    <div class="how">
-      <div class="how-card reveal"><h3>Facts are confirmed before reuse</h3><p>Anything pulled off your résumé starts unconfirmed. It is not used on an application until you say it is right.</p></div>
-      <div class="how-card reveal" data-delay="1"><h3>Sensitive values stay hidden</h3><p>Where a value has to be shown, it is masked on screen.</p></div>
-      <div class="how-card reveal" data-delay="2"><h3>No logins kept</h3><p>Employer passwords, one-time codes and CAPTCHA answers are not stored as ordinary profile facts.</p></div>
-      <div class="how-card reveal"><h3>Sending needs a yes</h3><p>Sending your details to an employer needs a separate confirmation at the moment it happens.</p></div>
-      <div class="how-card reveal" data-delay="1"><h3>Pause, edit, revoke, delete</h3><p>Stop a run, fix a fact, withdraw permission, or ask for deletion at any point.</p></div>
-      <div class="how-card reveal" data-delay="2"><h3>Admin tools are not public</h3><p>Operator and evidence controls are restricted to administrators and are not visible to ordinary users.</p></div>
-    </div>
-    <p class="fineprint reveal">We do not claim any security certification or compliance attestation that has not been independently verified.</p>
-  </div>
-</section>
+<section class="compact-details"><div class="wrap wrap-narrow">
+  <h2>A few things worth knowing.</h2>
+  <details id="inside"><summary>How the agent helps</summary><p>It checks roles, prepares documents from your confirmed experience, and puts missing answers in one place. You submit applications during the beta.</p></details>
+  <details id="compare"><summary>Job Agent or Résumé Builder?</summary><p>Use the Job Agent for your search, or the Résumé Builder when you already have a role in mind. Both keep you in control.</p></details>
+  <details id="security"><summary>Your information and your control</summary><p>No invented experience. Passwords and security codes are not reusable facts. You can correct your information and withdraw permission. Nothing is sent without your approval.</p><a href="/privacy">Read our privacy policy</a></details>
+</div></section>
 
 <!-- ── FAQ ────────────────────────────────────────────────────────────────── -->
 <section id="faq" class="band">
@@ -359,7 +219,7 @@
   <div class="wrap">
     <div class="close-inner reveal">
       <h2>Start with one job, or hand over the search.</h2>
-      <p>Setup takes about two minutes. Free during the beta, and you can change paths later without re-entering anything.</p>
+      <p>Start with your résumé. Keep control of every next step.</p>
       <div class="hero-cta center">
         <a class="btn btn-primary btn-lg" href="/concierge">Get started free</a>
         <a class="btn btn-quiet btn-lg" href="#compare">Compare the two</a>
