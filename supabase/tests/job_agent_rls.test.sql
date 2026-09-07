@@ -108,6 +108,7 @@ values
   ('22222222-2222-2222-2222-222222222222', repeat('b', 40), repeat('2', 64), 'Fixture B', 'Role B', 'https://example.test/b', 'Verified');
 
 set local role job_agent_backend;
+set local search_path = public, extensions;
 select set_config('app.tenant_id', repeat('a', 40), true);
 
 select results_eq(
