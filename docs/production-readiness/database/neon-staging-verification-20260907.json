@@ -46,14 +46,17 @@
     "remainingSnapshots": 0
   },
   "preview": {
-    "deploymentId": "dpl_BMysV6M445F2wGkmA24KVnB6M2eh",
+    "deploymentId": "dpl_2umCdCdRqhPWm7rf7Wp1vcThk8Kb",
     "target": "preview",
     "postgresEnvironmentScopedToReleaseBranch": true,
     "databaseUrlSensitive": true,
     "productionEnvironmentModified": false,
     "publicRoutesHealthy": true,
     "serverlessBootErrorsObserved": 0,
-    "readinessFailClosed": true
+    "readinessFailClosed": true,
+    "applicationTenantDatabaseProbeHealthy": true,
+    "probeContentFree": true,
+    "probeReadOnly": true
   },
   "remainingUnknowns": {
     "signedUserApplicationDatabaseWriteVerified": false,

@@ -8,7 +8,7 @@ A dedicated Neon Free staging project now exists in `aws-us-east-1`. The exact c
 
 A synthetic one-row recovery fixture was captured in a manual snapshot, deleted from main, restored into a separate branch, read back successfully, and then removed with the restore branch and snapshot. The project returned to one main branch, zero snapshots, and zero synthetic rows. The restore compute became ready in 1,692 ms. No Production database or data was accessed.
 
-The Neon pooled connection is configured as Sensitive on the release branch's Vercel Preview only. The fresh Preview boots without serverless errors and remains fail-closed on global readiness. A signed-user application-to-database write was not exercised, private object storage is still unverified, and Production still uses its existing authoritative runtime. Therefore persistent staging isolation and managed restore are verified, while Production storage and recovery remain Critical.
+The Neon pooled connection is configured as Sensitive on the release branch's Vercel Preview only. Exact Preview `dpl_2umCdCdRqhPWm7rf7Wp1vcThk8Kb` ran the application's read-only transaction-scoped database probe and returned `tenantDatabase: healthy`; durable rate limiting passed, seven direct-source checks completed, and submission remained disabled. No serverless error was recorded. A signed-user identity write was not exercised, private object storage is still unverified, and Production still uses its existing authoritative runtime. Therefore the application-to-Neon read boundary, persistent staging isolation, and managed restore are verified, while Production storage and recovery remain Critical.
 
 Content-free retained evidence: `database/neon-staging-verification-20260907.json`.
 
