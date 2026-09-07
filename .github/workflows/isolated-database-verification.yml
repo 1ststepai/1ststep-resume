@@ -38,6 +38,7 @@ jobs:
         id: target
         run: |
           node scripts/isolated-database-ci-authorization-test.mjs
+          node scripts/isolated-database-ci-readiness-test.mjs
           node scripts/isolated-database-ci-authorization.mjs
         env:
           JOB_AGENT_ISOLATED_TARGET_KIND: ${{ inputs.target }}

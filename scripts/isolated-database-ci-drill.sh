@@ -37,13 +37,15 @@ docker exec "${source_container}" pg_dump -U postgres -d postgres --format=custo
 docker cp "${source_container}:/tmp/1ststep-job-agent-ci.dump" "${dump_path}" >/dev/null
 
 docker run --detach --name "${restore_container}" --env POSTGRES_PASSWORD=postgres "${source_image}" >/dev/null
+# The image starts a socket-only temporary server while initializing extensions.
+# Wait for TCP so migrations cannot race that bootstrap server or its shutdown.
 for _ in $(seq 1 60); do
-  if docker exec "${restore_container}" pg_isready -U postgres -d postgres >/dev/null 2>&1; then
+  if docker exec "${restore_container}" pg_isready -h 127.0.0.1 -U postgres -d postgres >/dev/null 2>&1; then
     break
   fi
   sleep 1
 done
-docker exec "${restore_container}" pg_isready -U postgres -d postgres >/dev/null
+docker exec "${restore_container}" pg_isready -h 127.0.0.1 -U postgres -d postgres >/dev/null
 
 docker exec -i "${restore_container}" psql -v ON_ERROR_STOP=1 -U postgres -d postgres < "${migration_path}" >/dev/null
 docker cp "${dump_path}" "${restore_container}:/tmp/1ststep-job-agent-ci.dump" >/dev/null
