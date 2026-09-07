@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { readFileSync, statSync } from 'node:fs';
 import vm from 'node:vm';
 
-const source = readFileSync(new URL('../home.js', import.meta.url), 'utf8');
+const source = readFileSync(new URL('../home-motion.js', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const css = readFileSync(new URL('../home.css', import.meta.url), 'utf8');
+const css = readFileSync(new URL('../home-motion.css', import.meta.url), 'utf8');
 function element() {
   const values = new Set();
   return { dataset: {}, textContent: '', events: {}, attributes: {}, inert: false, style: { values: {}, setProperty(name, value) { this.values[name] = value; } }, classList: {
