@@ -1,7 +1,8 @@
 {
   "git": {
     "deploymentEnabled": {
-      "release/login-pricing-reconciled-20260906": false
+      "release/login-pricing-reconciled-20260906": false,
+      "codex/finish-staged-candidate-20260907": false
     }
   },
   "outputDirectory": ".public-web",

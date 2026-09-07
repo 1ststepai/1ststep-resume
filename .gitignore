@@ -57,3 +57,4 @@ COMMIT_MSG.txt
 logo-preview-*.png
 output/
 .playwright-cli/
+.vercel/

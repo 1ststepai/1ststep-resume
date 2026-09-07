@@ -1,7 +1,7 @@
 # Proposed terms revision — review pending
 
 The exact proposed document is `terms-proposed-2026-09-06.html` in this directory.
-SHA-256: `f396b6ea048c9cbb22b62d2be1354786d3626e0453f5aeb848b0ab4ce6656cde`.
+SHA-256: `146f80a5777a181b51be143c267ee89f9d7be2479cb0621a81f03f6b63afe016`.
 This is a preserved copy of the staged candidate, not a statement of counsel approval.
 It is excluded from the public build. The runnable candidate retains the existing
 digest-pinned `terms.html`; the original checkout's staged revision remains intact.

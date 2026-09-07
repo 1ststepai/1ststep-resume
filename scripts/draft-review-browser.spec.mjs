@@ -33,7 +33,9 @@ test('Needs You translates legacy codes and opens the matching saved draft from 
   await page.locator('#openNeedsYou').click();
   await expect(page.locator('#needsYouList')).toContainText('Compare the draft with your original resume');
   await expect(page.locator('#needsYouList')).not.toContainText('UNMAPPED_OUTPUT_CLAIM');
-  await page.locator('#needsYouList').getByRole('button', { name: 'Review resume draft' }).click();
+  const reviewDraft = page.locator('#needsYouList').getByRole('button', { name: 'Review resume draft' });
+  if (!(await reviewDraft.isVisible())) await page.locator('#needsYouList details > summary').click();
+  await reviewDraft.click();
   await expect(page.locator('#packageReviewOverlay')).toBeVisible();
   await expect(page.locator('#packageResumeText')).toHaveValue(resume);
   await expect(page.locator('#needsYouOverlay')).toBeHidden();
