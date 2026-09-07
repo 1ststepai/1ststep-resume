@@ -55,6 +55,8 @@ import { authoritativeReceiptCount, canonicalConversation, directSourceCoverage,
 import {
   CAMPAIGN_TEMPLATES, addCampaign, campaignMetrics, createCampaignStore, operatingContractText, updateCampaignStatus, updatePersistentCampaign,
 } from './client/persistent-campaign.js';
+import { buildAdminCostDashboard } from './client/admin-cost-dashboard.js';
+import { buildAdminSystemAlertDashboard } from './client/admin-system-alerts.js';
 
 const MISSION_KEY = '1ststep_concierge_mission_v1';
 const DESK_KEY = '1ststep_concierge_desk_v2';
@@ -949,6 +951,8 @@ async function hydrateOperationalMetrics() {
     const data = await response.json().catch(() => ({}));
     operationalMetrics = response.ok && data.contentFree === true ? data : { unavailable: true };
   } catch { operationalMetrics = { unavailable: true }; }
+  renderLiveCosts();
+  renderSystemAlerts();
 }
 
 function hasJobAgentAccess() { return sessionCapabilities.jobAgentAccess === true; }
@@ -3387,7 +3391,49 @@ function renderAudit() {
   const localAudit = deskState.auditEvents.length ? [...deskState.auditEvents].reverse().map(event => `<div class="desk-row"><div><strong>${escapeHtml(event.type)}</strong><small>${escapeHtml(event.at)} · ${escapeHtml(event.entityId)} · ${escapeHtml(JSON.stringify(event.details))}</small></div></div>`).join('') : empty('No local audit events yet.');
   $('auditList').innerHTML = `${launchEvidence}${runtimeEvidence}${ownershipEvidence}${workerMetrics}${queueEvidence}${costEvidence}${costCaps}${metrics}${localAudit}`;
 }
-function renderDesk() { renderTruthForm(); renderReadiness(); renderRoles(); renderApprovals(); renderDemo(); renderAudit(); }
+function formatMoneyFromCents(value) {
+  if (value == null) return 'Unknown';
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(value) / 100);
+}
+function renderLiveCosts() {
+  const dashboard = buildAdminCostDashboard(operationalMetrics);
+  if (!dashboard.available) {
+    $('costSummaryGrid').innerHTML = '<div class="cost-empty">Live cost evidence is unavailable. Refresh after the protected ledger is reachable.</div>';
+    $('costEvidenceNote').textContent = 'No cost is shown as zero when evidence is unavailable.';
+    $('costCategoryRows').innerHTML = '<tr><td colspan="5">Cost evidence unavailable</td></tr>';
+    $('costLedgerDate').textContent = 'Date unavailable';
+    return;
+  }
+  const cards = [
+    ['Recorded today', formatMoneyFromCents(dashboard.settledCents), 'Settled ledger amount'],
+    ['Reserved now', formatMoneyFromCents(dashboard.reservedCents), 'Pending maximum exposure'],
+    ['Remaining today', formatMoneyFromCents(dashboard.remainingCents), 'Under the global daily limit'],
+    ['Active users', 'Unknown', 'User-count telemetry is not connected'],
+    ['Average per user', 'Unknown', 'Requires verified active-user evidence'],
+  ];
+  $('costSummaryGrid').innerHTML = cards.map(([label, value, detail]) => `<article class="cost-summary-card"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></article>`).join('');
+  $('costEvidenceNote').innerHTML = `<strong>Evidence status</strong><span>${escapeHtml(dashboard.evidenceStatus)}</span>`;
+  $('costLedgerDate').textContent = dashboard.ledgerDate ? `UTC day ${dashboard.ledgerDate}` : 'Date unavailable';
+  $('costCategoryRows').innerHTML = dashboard.categories.map(category => `<tr><td><strong>${escapeHtml(category.label)}</strong><small>${escapeHtml(category.key)}</small></td><td>${escapeHtml(formatMoneyFromCents(category.settledCents))}</td><td>${escapeHtml(formatMoneyFromCents(category.reservedCents))}</td><td>${category.dailyCapCents == null ? 'Not configured' : escapeHtml(formatMoneyFromCents(category.dailyCapCents))}<small>${category.maximumRequestCents == null ? 'No request limit' : `${escapeHtml(formatMoneyFromCents(category.maximumRequestCents))} max/request`}</small></td><td><span class="cost-status ${category.guarded ? 'guarded' : 'off'}">${category.guarded ? 'Guarded' : 'No budget'}</span></td></tr>`).join('');
+}
+function metricValue(value) { return value == null ? 'Unknown' : String(value); }
+function renderSystemAlerts() {
+  const dashboard = buildAdminSystemAlertDashboard(operationalMetrics);
+  if (!dashboard.available) {
+    $('alertStatusGrid').innerHTML = '<div class="cost-empty">System alert evidence is unavailable.</div>';
+    return;
+  }
+  const destinationState = dashboard.discordReady ? 'Connected' : 'Not connected';
+  const cards = [
+    ['Discord destination', destinationState, dashboard.destination, dashboard.discordReady ? 'healthy' : 'warning'],
+    ['Delivery outbox', dashboard.outboxReady ? 'Ready' : 'Not ready', `Queue: ${dashboard.queueStatus.replaceAll('-', ' ')}`, dashboard.outboxReady ? 'healthy' : 'warning'],
+    ['Pending alerts', metricValue(dashboard.pending), 'Waiting for delivery', dashboard.pending === 0 ? 'healthy' : 'warning'],
+    ['Overdue alerts', metricValue(dashboard.overdue), 'Needs operator attention', dashboard.overdue === 0 ? 'healthy' : 'critical'],
+    ['Failed alerts', metricValue(dashboard.failed), 'Retry limit reached', dashboard.failed === 0 ? 'healthy' : 'critical'],
+  ];
+  $('alertStatusGrid').innerHTML = cards.map(([label, value, detail, state]) => `<article class="alert-status-card ${state}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></article>`).join('');
+}
+function renderDesk() { renderTruthForm(); renderReadiness(); renderRoles(); renderApprovals(); renderDemo(); renderLiveCosts(); renderSystemAlerts(); renderAudit(); }
 function campaignListHtml(values) {
   return values?.length ? values.map(value => `<li>${escapeHtml(value)}</li>`).join('') : '<li class="contract-empty">Not configured</li>';
 }
@@ -4089,6 +4135,20 @@ document.querySelectorAll('[role="dialog"]').forEach(dialog => {
   dialogFocusObserver.observe(dialog, { attributes: true, attributeFilter: ['class', 'hidden', 'style'] });
 });
 document.querySelectorAll('[data-desk-tab]').forEach(node => node.addEventListener('click', () => switchTab(node.dataset.deskTab)));
+$('refreshLiveCosts').addEventListener('click', async () => {
+  $('refreshLiveCosts').disabled = true;
+  $('refreshLiveCosts').textContent = 'Refreshing...';
+  await hydrateOperationalMetrics();
+  $('refreshLiveCosts').disabled = false;
+  $('refreshLiveCosts').textContent = 'Refresh costs';
+});
+$('refreshSystemAlerts').addEventListener('click', async () => {
+  $('refreshSystemAlerts').disabled = true;
+  $('refreshSystemAlerts').textContent = 'Refreshing...';
+  await hydrateOperationalMetrics();
+  $('refreshSystemAlerts').disabled = false;
+  $('refreshSystemAlerts').textContent = 'Refresh alerts';
+});
 $('questionChoices').addEventListener('click', event => {
   const button = event.target?.closest?.('[data-question-answer],[data-question-template]');
   if (!button) return;
