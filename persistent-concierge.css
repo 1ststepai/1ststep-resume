@@ -486,82 +486,82 @@ button, .resume-upload-label, .question-secondary, .search-link,
 .attention-actions button,.attention-actions a,.simple-job-card button,.needs-you-item button{min-height:48px;font-size:16px}
 @media(max-width:600px){.attention-now,.application-review-details{padding:18px}.attention-now button{width:100%}.simple-job-card footer{flex-wrap:wrap;gap:12px}.simple-job-card footer strong{max-width:100%;overflow-wrap:anywhere}}
 
-/* Studio direction: editorial warmth, one action color, quiet supporting surfaces. */
+/* Studio direction: 1stStep indigo, editorial typography, quiet supporting surfaces. */
 :root{
-  --agent-ink:#202e2b;--agent-body:#52615c;--agent-primary:#245b4a;
-  --agent-link:#245b4a;--agent-surface:#fffefa;--agent-soft:#f4f3ed;
-  --agent-tint:#eaf1eb;--agent-border:#dedfd6;--agent-control-border:#b9c5bd;
-  --agent-success:#245b4a;--agent-caution:#815318;
+  --agent-ink:#172033;--agent-body:#475569;--agent-primary:#4338ca;
+  --agent-link:#4338ca;--agent-surface:#ffffff;--agent-soft:#f8fafc;
+  --agent-tint:#eef2ff;--agent-border:#e2e8f0;--agent-control-border:#cbd5e1;
+  --agent-success:#166534;--agent-caution:#815318;
 }
-body:has(.agent-app){background:#f4f3ed;color:#202e2b;font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-.agent-app .agent-header{max-width:1280px;height:88px;padding:0 40px;border-bottom:1px solid #dcded5;background:transparent;box-shadow:none}
-.agent-header .agent-logo{letter-spacing:-1.4px;color:#202e2b;font-size:27px}
-.agent-header .agent-logo span{color:#245b4a}
+body:has(.agent-app){background:#f8fafc;color:#172033;font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.agent-app .agent-header{max-width:1280px;height:88px;padding:0 40px;border-bottom:1px solid #e2e8f0;background:transparent;box-shadow:none}
+.agent-header .agent-logo{letter-spacing:-1.4px;color:#172033;font-size:27px}
+.agent-header .agent-logo span{color:#4338ca}
 .agent-header nav{gap:4px}
-.agent-header nav button{border:0;border-radius:7px;color:#52615c;font-size:14px;min-height:44px;padding:10px 14px;background:transparent}
-.agent-header nav button:hover{background:#e6ebe2;color:#202e2b}
-.agent-header nav .access-control{background:#245b4a;color:#fff;padding:10px 22px;margin-left:12px}
+.agent-header nav button{border:0;border-radius:7px;color:#475569;font-size:14px;min-height:44px;padding:10px 14px;background:transparent}
+.agent-header nav button:hover{background:#eef2ff;color:#172033}
+.agent-header nav .access-control{background:#4338ca;color:#fff;padding:10px 22px;margin-left:12px}
 .agent-main{max-width:1160px;margin:0 auto;padding:0 36px 48px}
 .agent-main .agent-launch{max-width:940px;margin:0 auto;padding:88px 0 56px;text-align:center;border:0;background:transparent;box-shadow:none}
-.agent-launch .studio-eyebrow{font-size:11px;font-weight:750;letter-spacing:.2em;color:#245b4a;margin:0 0 24px}
-.agent-launch #agentTitle{font-family:Georgia,'Times New Roman',serif;font-size:clamp(40px,5.4vw,70px);font-weight:400;letter-spacing:-.045em;line-height:1.08;color:#202e2b;margin:0 auto 24px;max-width:900px}
-.agent-launch #agentTitle em{color:#245b4a;font-weight:400}
-.agent-launch .studio-intro{font-size:17px;line-height:1.75;color:#52615c;max-width:620px;margin:0 auto 28px}
-.agent-launch .guided-launch-cta{border-radius:8px;background:#245b4a;color:#fff;box-shadow:0 4px 0 #193f34;min-height:64px;padding:16px 32px;transition:background .18s ease;transform:none}
-.guided-launch-cta:hover{background:#193f34;transform:none}
+.agent-launch .studio-eyebrow{font-size:11px;font-weight:750;letter-spacing:.2em;color:#4338ca;margin:0 0 24px}
+.agent-launch #agentTitle{font-family:Georgia,'Times New Roman',serif;font-size:clamp(40px,5.4vw,70px);font-weight:400;letter-spacing:-.045em;line-height:1.08;color:#172033;margin:0 auto 24px;max-width:900px}
+.agent-launch #agentTitle em{color:#4338ca;font-weight:400}
+.agent-launch .studio-intro{font-size:17px;line-height:1.75;color:#475569;max-width:620px;margin:0 auto 28px}
+.agent-launch .guided-launch-cta{border-radius:8px;background:#4338ca;color:#fff;box-shadow:0 4px 0 #3730a3;min-height:64px;padding:16px 32px;transition:background .18s ease;transform:none}
+.guided-launch-cta:hover{background:#3730a3;transform:none}
 .guided-launch-cta span{font-size:17px;letter-spacing:0;font-weight:650}
-.guided-launch-cta small{font-size:12px;color:#e2eee6;opacity:1}
-.agent-launch .launch-benefits{margin:46px auto 24px;gap:26px;border-top:1px solid #dcded5;padding-top:24px;max-width:760px}
-.agent-launch .launch-benefits span{font-size:13px;color:#52615c;font-weight:500;background:none;padding:0}
+.guided-launch-cta small{font-size:12px;color:#eef2ff;opacity:1}
+.agent-launch .launch-benefits{margin:46px auto 24px;gap:26px;border-top:1px solid #e2e8f0;padding-top:24px;max-width:760px}
+.agent-launch .launch-benefits span{font-size:13px;color:#475569;font-weight:500;background:none;padding:0}
 .agent-launch .launch-benefits span::before{content:none}
-.agent-launch .agent-promise{font-size:13px;line-height:1.7;color:#52615c;max-width:650px;margin:0 auto}
-.agent-main>.agent-promise{font-size:13px;color:#52615c;text-align:center}
-.agent-main>.agent-promise a{color:#245b4a;text-underline-offset:4px}
-.agent-conversation{border:1px solid #dcded5;border-radius:14px;background:#fffefa;box-shadow:0 12px 36px #263d3010}
-.agent-conversation>header{background:#fffefa;border-bottom:1px solid #e3e5dc;padding:24px 28px}
-.agent-conversation .messages{background:#fffefa;padding:28px;gap:20px}
-.agent-conversation .assistant{background:#f1f3ed;border:0;border-radius:4px 14px 14px 14px;color:#202e2b}
-.agent-conversation .user{background:#245b4a;color:#fff;border-radius:14px 4px 14px 14px}
-.agent-conversation .composer{background:#fffefa;border-top:1px solid #e3e5dc;padding:16px 22px}
-.agent-conversation .composer input{border:1px solid #b9c5bd;border-radius:8px;background:#fffefa;color:#202e2b;min-height:48px}
-.agent-conversation .send,.attention-now button{background:#245b4a;border-radius:8px;color:#fff;min-height:48px}
-.attention-now{border-left:4px solid #245b4a;background:#fffefa;box-shadow:none;border-radius:10px;padding:24px 28px}
-.attention-now h2{font-weight:600;letter-spacing:-.03em;color:#202e2b}
-.jobs-shell,.needs-sheet,.attention-shell,.vault-shell,.guided-launch-shell{background:#fffefa;color:#202e2b;box-shadow:0 24px 80px #182d3020}
-.jobs-head,.needs-sheet>header,.attention-head,.vault-head{background:#fffefa;border-bottom:1px solid #dedfd6}
-.jobs-head h2,.needs-sheet h2,.attention-head h2,.vault-head h2{font-size:32px;letter-spacing:-.035em;font-weight:600;color:#202e2b}
-.jobs-body,.needs-sheet-body,.attention-body{background:#f4f3ed}
-.simple-job-card{border:1px solid #dedfd6;border-radius:12px;background:#fffefa;box-shadow:none;padding:24px}
-.simple-job-card h4{font-size:21px;letter-spacing:-.025em;color:#202e2b;line-height:1.3}
-.simple-job-card header p{color:#52615c;font-size:14px;margin-bottom:8px}
-.simple-job-meta{font-size:14px;color:#52615c;gap:12px}
-.simple-job-card footer{border-top:1px solid #dedfd6;padding-top:18px;gap:16px}
-.simple-job-card footer strong{font-size:14px;line-height:1.6;font-weight:450;color:#52615c}
-.simple-job-card .job-primary-action,.needs-you-item button{background:#245b4a;color:#fff;border:0;border-radius:8px;min-height:48px;padding:12px 18px}
-.needs-you-item{background:#fffefa;border:1px solid #dedfd6;border-radius:12px;padding:24px;box-shadow:none}
-.needs-you-item strong{font-size:19px;color:#202e2b}
-.needs-you-item small{font-size:16px;line-height:1.6;color:#52615c}
-.needs-you-item em{font-size:13px;color:#52615c;font-style:normal}
-.attention-card,.attention-job,.application-review-details{background:#fffefa;border-color:#dedfd6;border-radius:12px;box-shadow:none}
-.approval-safety-note{border-left:3px solid #245b4a;background:#eaf1eb;padding:14px 16px;font-size:16px;font-weight:650;color:#245b4a;line-height:1.5}
+.agent-launch .agent-promise{font-size:13px;line-height:1.7;color:#475569;max-width:650px;margin:0 auto}
+.agent-main>.agent-promise{font-size:13px;color:#475569;text-align:center}
+.agent-main>.agent-promise a{color:#4338ca;text-underline-offset:4px}
+.agent-conversation{border:1px solid #e2e8f0;border-radius:14px;background:#ffffff;box-shadow:0 12px 36px #1e293b10}
+.agent-conversation>header{background:#ffffff;border-bottom:1px solid #e2e8f0;padding:24px 28px}
+.agent-conversation .messages{background:#ffffff;padding:28px;gap:20px}
+.agent-conversation .assistant{background:#f1f5f9;border:0;border-radius:4px 14px 14px 14px;color:#172033}
+.agent-conversation .user{background:#4338ca;color:#fff;border-radius:14px 4px 14px 14px}
+.agent-conversation .composer{background:#ffffff;border-top:1px solid #e2e8f0;padding:16px 22px}
+.agent-conversation .composer input{border:1px solid #cbd5e1;border-radius:8px;background:#ffffff;color:#172033;min-height:48px}
+.agent-conversation .send,.attention-now button{background:#4338ca;border-radius:8px;color:#fff;min-height:48px}
+.attention-now{border-left:4px solid #4338ca;background:#ffffff;box-shadow:none;border-radius:10px;padding:24px 28px}
+.attention-now h2{font-weight:600;letter-spacing:-.03em;color:#172033}
+.jobs-shell,.needs-sheet,.attention-shell,.vault-shell,.guided-launch-shell{background:#ffffff;color:#172033;box-shadow:0 24px 80px #1e293b20}
+.jobs-head,.needs-sheet>header,.attention-head,.vault-head{background:#ffffff;border-bottom:1px solid #e2e8f0}
+.jobs-head h2,.needs-sheet h2,.attention-head h2,.vault-head h2{font-size:32px;letter-spacing:-.035em;font-weight:600;color:#172033}
+.jobs-body,.needs-sheet-body,.attention-body{background:#f8fafc}
+.simple-job-card{border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;box-shadow:none;padding:24px}
+.simple-job-card h4{font-size:21px;letter-spacing:-.025em;color:#172033;line-height:1.3}
+.simple-job-card header p{color:#475569;font-size:14px;margin-bottom:8px}
+.simple-job-meta{font-size:14px;color:#475569;gap:12px}
+.simple-job-card footer{border-top:1px solid #e2e8f0;padding-top:18px;gap:16px}
+.simple-job-card footer strong{font-size:14px;line-height:1.6;font-weight:450;color:#475569}
+.simple-job-card .job-primary-action,.needs-you-item button{background:#4338ca;color:#fff;border:0;border-radius:8px;min-height:48px;padding:12px 18px}
+.needs-you-item{background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:24px;box-shadow:none}
+.needs-you-item strong{font-size:19px;color:#172033}
+.needs-you-item small{font-size:16px;line-height:1.6;color:#475569}
+.needs-you-item em{font-size:13px;color:#475569;font-style:normal}
+.attention-card,.attention-job,.application-review-details{background:#ffffff;border-color:#e2e8f0;border-radius:12px;box-shadow:none}
+.approval-safety-note{border-left:3px solid #4338ca;background:#eef2ff;padding:14px 16px;font-size:16px;font-weight:650;color:#4338ca;line-height:1.5}
 .application-review-details{margin:16px 24px 24px}
-.guided-launch-overlay{background:#f4f3ed}
+.guided-launch-overlay{background:#f8fafc}
 .guided-launch-shell{box-shadow:none}
-.guided-launch-stage h2,.guided-launch-stage .launch-step-head h2{font-family:Georgia,'Times New Roman',serif;font-weight:400;letter-spacing:-.035em;color:#202e2b;font-size:clamp(30px,4vw,44px)}
-.guided-answer-grid button,.guided-launch-stage .resume-choice,.guided-launch-stage .opportunity-path{box-shadow:none;border-radius:10px;border-color:#c9d1c8;background:#fffefa;transform:none}
-.guided-answer-grid button:hover,.guided-answer-grid button.selected,.guided-launch-stage .opportunity-path.selected{background:#eaf1eb;border-color:#245b4a;box-shadow:0 0 0 1px #245b4a;transform:none}
+.guided-launch-stage h2,.guided-launch-stage .launch-step-head h2{font-family:Georgia,'Times New Roman',serif;font-weight:400;letter-spacing:-.035em;color:#172033;font-size:clamp(30px,4vw,44px)}
+.guided-answer-grid button,.guided-launch-stage .resume-choice,.guided-launch-stage .opportunity-path{box-shadow:none;border-radius:10px;border-color:#cbd5e1;background:#ffffff;transform:none}
+.guided-answer-grid button:hover,.guided-answer-grid button.selected,.guided-launch-stage .opportunity-path.selected{background:#eef2ff;border-color:#4338ca;box-shadow:0 0 0 1px #4338ca;transform:none}
 .guided-answer-grid button strong{font-size:17px;font-weight:600}
-.guided-answer-grid button small{font-size:14px;color:#52615c;line-height:1.5}
-.guided-launch-footer button,.guided-review .agent-launch-button{background:#245b4a;border-radius:8px;box-shadow:none;font-size:16px}
-.guided-launch-progress progress{accent-color:#245b4a}
-.agent-app :where(button,a,input,textarea,select,summary):focus-visible{outline:3px solid #245b4a!important;outline-offset:4px}
+.guided-answer-grid button small{font-size:14px;color:#475569;line-height:1.5}
+.guided-launch-footer button,.guided-review .agent-launch-button{background:#4338ca;border-radius:8px;box-shadow:none;font-size:16px}
+.guided-launch-progress progress{accent-color:#4338ca}
+.agent-app :where(button,a,input,textarea,select,summary):focus-visible{outline:3px solid #4338ca!important;outline-offset:4px}
 @media(max-width:900px){.agent-app .agent-header{padding:16px 24px;height:auto;gap:16px;flex-wrap:wrap}.agent-header nav{flex-wrap:wrap}.agent-header nav button{padding:8px 10px}.agent-main{padding:0 24px 32px}.agent-main .agent-launch{padding-top:60px}}
 @media(max-width:600px){.agent-app .agent-header{padding:18px 20px}.agent-header nav{width:100%;justify-content:flex-start;gap:4px;border:0;padding:0;background:transparent}.agent-header nav button{font-size:13px;min-height:44px}.agent-header nav .access-control{margin-left:0}.agent-main{padding:0 20px 28px}.agent-main .agent-launch{padding:42px 0 32px}.agent-launch .studio-intro{font-size:16px}.agent-launch .studio-intro br{display:none}.agent-launch .launch-benefits{display:grid;gap:12px;margin-top:34px;text-align:left;padding:20px 0}.agent-launch .agent-promise{text-align:left}.agent-launch .guided-launch-cta{width:100%}.guided-answer-grid{grid-template-columns:1fr}.guided-answer-grid button{min-height:100px}.application-review-details{margin:12px}.agent-conversation .messages{padding:16px}.agent-conversation>header{padding:20px}.simple-job-card{padding:20px}.attention-now{padding:20px}}
 @media(prefers-reduced-motion:reduce){.agent-app *, .guided-launch-overlay *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
-.agent-app .agent-launch .studio-eyebrow{font-size:12px!important;color:#245b4a!important}
-.agent-app .agent-launch .agent-promise,.agent-app .agent-main>.agent-promise{font-size:14px!important;color:#52615c!important;line-height:1.7}
-.guided-launch-footer p{font-size:13px;color:#52615c;line-height:1.6}
-.guided-launch-logo,.guided-launch-logo span{color:#245b4a}
-.guided-launch-progress span{font-size:13px;color:#52615c}
-.guided-launch-progress progress::-webkit-progress-value{background:#245b4a}
-.guided-launch-progress progress::-moz-progress-bar{background:#245b4a}
+.agent-app .agent-launch .studio-eyebrow{font-size:12px!important;color:#4338ca!important}
+.agent-app .agent-launch .agent-promise,.agent-app .agent-main>.agent-promise{font-size:14px!important;color:#475569!important;line-height:1.7}
+.guided-launch-footer p{font-size:13px;color:#475569;line-height:1.6}
+.guided-launch-logo,.guided-launch-logo span{color:#4338ca}
+.guided-launch-progress span{font-size:13px;color:#475569}
+.guided-launch-progress progress::-webkit-progress-value{background:#4338ca}
+.guided-launch-progress progress::-moz-progress-bar{background:#4338ca}
