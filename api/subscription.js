@@ -183,7 +183,7 @@ async function sendSubscriptionRestoreCode(email, code) {
       subject: 'Your 1stStep.ai access code',
       html: `
         <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#0f172a">
-          <h2 style="margin:0 0 12px">Verify your Job Hunt Pass access</h2>
+          <h2 style="margin:0 0 12px">Verify your 1stStep Complete access</h2>
           <p style="margin:0 0 16px;color:#475569">Enter this one-time code in 1stStep.ai to restore your subscription access.</p>
           <div style="font-size:28px;font-weight:800;letter-spacing:0.18em;background:#f1f5f9;border-radius:12px;padding:16px 20px;text-align:center">${code}</div>
           <p style="margin:16px 0 0;color:#64748b;font-size:13px">This code expires in 10 minutes. If you did not request it, you can ignore this email.</p>

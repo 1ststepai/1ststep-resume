@@ -366,11 +366,14 @@ if (html) {
 section('Free-to-Pro conversion smoke');
 
 if (html) {
-  if (!/\$24\.99/.test(html) && !/buy\.stripe\.com\/5kQ4gA7OFgH14u89fhfIs00/.test(html)) pass('Retired Job Hunt Pass sale is absent from app copy');
+  if (!/\$24\.99|Job Hunt Pass/.test(html) && !/buy\.stripe\.com\/5kQ4gA7OFgH14u89fhfIs00/.test(html)) pass('Retired Job Hunt Pass sale is absent from app copy');
   else fail('Retired Job Hunt Pass pricing or checkout remains in app copy');
 
-  if (/\$39/.test(html) && /month when (?:paid access opens|launched)/.test(html) && /controlled beta/i.test(html)) pass('Job Agent future price and controlled beta copy exist');
-  else fail('Job Agent future price or controlled beta copy is missing');
+  if (/1stStep Complete/.test(html) && /\$39/.test(html) && /month when paid access opens/.test(html)) pass('Unified 1stStep Complete name and future price exist');
+  else fail('Unified 1stStep Complete name or future price is missing');
+
+  if (/Resume tailoring and cover letters/.test(html) && /Job discovery and application preparation/.test(html)) pass('One app offer includes both resume tools and Job Agent preparation');
+  else fail('Unified membership inclusions are missing from the app offer');
 }
 
 if (js) {
