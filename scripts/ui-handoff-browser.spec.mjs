@@ -5,9 +5,9 @@ const base = 'http://127.0.0.1:4175';
 
 test('subscriber workspace uses light surfaces and opens Needs You', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto(`${base}/concierge?uiFixture=subscriber`);
+  await page.goto(`${base}/concierge?uiFixture=subscriber`, { waitUntil: 'networkidle' });
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe('light');
-  await expect(page.locator('.daily-dashboard')).toBeVisible();
+  await expect(page.locator('.attention-now')).toBeVisible();
   await page.screenshot({ path: join(tmpdir(), '1ststep-ui-handoff-desktop.png') });
   await page.locator('#openNeedsYou').click();
   await expect(page.locator('.needs-sheet')).toBeVisible();
@@ -43,6 +43,52 @@ for (const width of [375, 390, 720]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
 }
+
+test('mobile first visit keeps the account action in the header and footer in flow', async ({ page }) => {
+  await page.route('**/api/**', route => route.fulfill({ status: 401, contentType: 'application/json', body: '{}' }));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${base}/concierge`);
+
+  await expect(page.locator('#openAgentAccess')).toBeVisible();
+  await expect(page.locator('#openVault')).toBeVisible();
+  await expect(page.locator('#openJobs')).toBeHidden();
+  const layout = await page.evaluate(() => {
+    const header = document.querySelector('.agent-header');
+    const nav = header.querySelector('nav');
+    const access = document.querySelector('#openAgentAccess');
+    const footer = document.querySelector('.agent-footer');
+    const headerBox = header.getBoundingClientRect();
+    const accessBox = access.getBoundingClientRect();
+    return {
+      bodyPaddingBottom: getComputedStyle(document.body).paddingBottom,
+      headerPosition: getComputedStyle(header).position,
+      navPosition: getComputedStyle(nav).position,
+      footerPosition: getComputedStyle(footer).position,
+      accessInsideHeader: accessBox.top >= headerBox.top && accessBox.bottom <= headerBox.bottom,
+      noHorizontalOverflow: document.documentElement.scrollWidth <= innerWidth,
+    };
+  });
+  expect(layout).toEqual({
+    bodyPaddingBottom: '0px',
+    headerPosition: 'relative',
+    navPosition: 'static',
+    footerPosition: 'static',
+    accessInsideHeader: true,
+    noHorizontalOverflow: true,
+  });
+  await page.screenshot({ path: join(tmpdir(), '1ststep-mobile-shell-layout.png'), fullPage: true });
+});
+
+test('mobile subscriber workspace keeps navigation and theme control in flow', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${base}/concierge?uiFixture=subscriber`, { waitUntil: 'networkidle' });
+  await expect(page.locator('#openAgentAccess')).toBeHidden();
+  await expect(page.locator('#openJobs')).toBeVisible();
+  expect(await page.locator('.agent-header nav').evaluate(el => getComputedStyle(el).position)).toBe('static');
+  expect(await page.locator('body').evaluate(el => getComputedStyle(el).paddingBottom)).toBe('0px');
+  await expect(page.locator('.agent-header nav button:visible')).toHaveCount(6);
+  await page.screenshot({ path: join(tmpdir(), '1ststep-mobile-workspace-navigation.png'), fullPage: true });
+});
 
 test('reduced motion keeps workspace progress visible without animation', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
