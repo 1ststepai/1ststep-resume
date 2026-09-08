@@ -16,7 +16,7 @@ try {
   const zip = await JSZip.loadAsync(await readFile(first.outputPath));
   const names = Object.keys(zip.files).filter(name => !zip.files[name].dir).sort();
   assert.deepEqual(names, [
-    'RELEASE-INTEGRITY.json', 'auth-bridge.js', 'background.js', 'content.js',
+    'RELEASE-INTEGRITY.json', 'auth-bridge.js', 'background.js', 'content.js', 'generic-capture.js',
     'icons/icon-128.png', 'icons/icon-16.png', 'icons/icon-48.png', 'manifest.json',
     'popup.html', 'popup.js', 'sidepanel.html', 'sidepanel.js',
   ].sort());
@@ -24,7 +24,7 @@ try {
   assert.equal(names.some(name => /screenshot|store_listing|testing_guide|hook|result/i.test(name)), false);
 
   const releaseManifest = JSON.parse(await zip.file('RELEASE-INTEGRITY.json').async('string'));
-  assert.equal(releaseManifest.files.length, 11);
+  assert.equal(releaseManifest.files.length, 12);
   assert.equal(releaseManifest.excludesLegacyModules, true);
   assert.equal(releaseManifest.containsCandidateValues, false);
   assert.equal(releaseManifest.capability, 'supervised-greenhouse-no-submit');
@@ -43,8 +43,9 @@ try {
   assert.deepEqual(manifest.host_permissions.sort(), ['https://*.greenhouse.io/*', 'https://app.1ststep.ai/*'].sort());
   assert.equal(manifest.permissions.includes('debugger'), false);
   assert.equal(manifest.permissions.includes('<all_urls>'), false);
+  assert.equal(manifest.permissions.includes('scripting'), true);
 } finally {
   await rm(directory, { recursive: true, force: true });
 }
 
-console.log('Reproducible Greenhouse-only controlled extension release boundary tests passed.');
+console.log('Reproducible user-triggered capture and supervised Greenhouse release boundary tests passed.');

@@ -28,9 +28,90 @@ function extractText(selector) {
   return el ? (el.innerText || el.textContent || '').trim() : null;
 }
 
+function textFromHtml(value) {
+  const holder = document.createElement('div');
+  holder.innerHTML = String(value || '');
+  return (holder.innerText || holder.textContent || '').replace(/\u00a0/g, ' ').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+function findGreenhouseJob(value, depth = 0) {
+  if (!value || typeof value !== 'object' || depth > 8) return null;
+  if (String(value.post_type || '').toLowerCase() === 'job_post' && value.title && value.content) return value;
+  for (const child of Object.values(value)) {
+    const found = findGreenhouseJob(child, depth + 1);
+    if (found) return found;
+  }
+  return null;
+}
+
+let cachedEmbeddedGreenhouseJob = null;
+
+function parseEmbeddedGreenhouseSource(source) {
+  source = String(source || '');
+  if (source.length > 2_000_000) return null;
+  const marker = source.match(/window\.__remixContext\s*=\s*/);
+  if (!marker) return null;
+  try {
+    const context = JSON.parse(source.slice(marker.index + marker[0].length).trim().replace(/;\s*$/, ''));
+    const job = findGreenhouseJob(context);
+    if (!job) return null;
+    return {
+      jobTitle: String(job.title || '').trim().slice(0, 300),
+      company: String(job.company_name || '').trim().slice(0, 300),
+      jobDescription: textFromHtml(job.content).slice(0, 50000),
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+function extractEmbeddedGreenhouseJob() {
+  if (cachedEmbeddedGreenhouseJob) return cachedEmbeddedGreenhouseJob;
+  for (const script of document.querySelectorAll('script:not([src])')) {
+    const parsed = parseEmbeddedGreenhouseSource(script.textContent || '');
+    if (parsed) return (cachedEmbeddedGreenhouseJob = parsed);
+  }
+  return null;
+}
+
+// Current Greenhouse pages remove their Remix data script during hydration. Capture
+// the inert JSON assignment when the parser inserts it; never execute page code.
+const greenhouseDataObserver = new MutationObserver(records => {
+  if (cachedEmbeddedGreenhouseJob) return;
+  for (const record of records) {
+    for (const node of record.addedNodes) {
+      if (node.nodeType !== Node.ELEMENT_NODE) continue;
+      const scripts = node.matches?.('script:not([src])') ? [node] : [...(node.querySelectorAll?.('script:not([src])') || [])];
+      for (const script of scripts) {
+        const parsed = parseEmbeddedGreenhouseSource(script.textContent || '');
+        if (parsed) {
+          cachedEmbeddedGreenhouseJob = parsed;
+          greenhouseDataObserver.disconnect();
+          return;
+        }
+      }
+    }
+  }
+});
+greenhouseDataObserver.observe(document, { childList: true, subtree: true });
+
+function isApplicationHeavy(element, text) {
+  const markers = [
+    /apply for this job/i, /first name/i, /last name/i, /resume\s*\/\s*cv/i,
+    /submit application/i, /demographic questions/i, /veteran status/i, /disability status/i,
+  ].filter(pattern => pattern.test(text)).length;
+  const controls = element.querySelectorAll?.('input, select, textarea, button').length || 0;
+  return markers >= 4 && controls >= 3;
+}
+
 function extractJobDescription() {
-  const text = extractText(SEL.jobDescriptionSelector);
-  return text && text.length > 100 ? text : null;
+  const embedded = extractEmbeddedGreenhouseJob();
+  if (embedded?.jobDescription?.length > 100) return embedded.jobDescription;
+  const candidates = [...document.querySelectorAll(SEL.jobDescriptionSelector)]
+    .map(element => ({ element, text: (element.innerText || element.textContent || '').trim() }))
+    .filter(candidate => candidate.text.length > 100 && !isApplicationHeavy(candidate.element, candidate.text))
+    .sort((left, right) => right.text.length - left.text.length);
+  return candidates[0]?.text || null;
 }
 
 // Parse page <title> when DOM selectors miss the job title.
@@ -74,8 +155,9 @@ function pollForJob() {
   // Skip if nothing changed
   if (detectedJob && jd === detectedJob.jobDescription && location.href === detectedJob.applyUrl) return;
 
-  const rawTitle   = extractText(SEL.jobTitleSelector);
-  const rawCompany = extractText(SEL.companySelector);
+  const embedded = extractEmbeddedGreenhouseJob();
+  const rawTitle   = embedded?.jobTitle || extractText(SEL.jobTitleSelector);
+  const rawCompany = embedded?.company || extractText(SEL.companySelector);
   const titleFallback   = extractTitleFallback()   || extractFromJdLines(jd, 0);
   const companyFallback = extractCompanyFallback() || extractFromJdLines(jd, 1);
   const jobTitle   = (rawTitle   && rawTitle.length   > 2 ? rawTitle   : titleFallback)   || 'Unknown Role';
@@ -141,8 +223,13 @@ function injectTailorButton(job) {
 
 // ─── INIT ─────────────────────────────────────────────────────
 
-// Detect once on page load
-pollForJob();
+// Detect once the visible DOM is ready. The early observer above has already cached
+// Greenhouse's job payload even when hydration removed the source script.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', pollForJob, { once: true });
+} else {
+  pollForJob();
+}
 
 // Re-detect on URL change — covers LinkedIn/Indeed SPA navigation
 let lastUrl = location.href;

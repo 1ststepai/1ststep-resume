@@ -11,6 +11,7 @@ const RELEASE_FILES = Object.freeze([
   'manifest.json',
   'background.js',
   'content.js',
+  'generic-capture.js',
   'auth-bridge.js',
   'popup.html',
   'popup.js',
@@ -85,7 +86,7 @@ export async function buildControlledExtension({ outputDirectory = join(ROOT, 'd
   const archiveDigest = sha256(archive);
   if (archiveDigest !== CONTROLLED_GREENHOUSE_EXTENSION_SHA256) throw new Error(`Controlled extension release artifact changed (${archiveDigest}); review it and update the pinned digest intentionally.`);
   await mkdir(outputDirectory, { recursive: true });
-  const outputPath = join(outputDirectory, `1ststep-job-agent-greenhouse-v${manifest.version}.zip`);
+  const outputPath = join(outputDirectory, `1ststep-job-agent-extension-v${manifest.version}.zip`);
   await writeFile(outputPath, archive, { mode: 0o600 });
   return {
     outputPath,

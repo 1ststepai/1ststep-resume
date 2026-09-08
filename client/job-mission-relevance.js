@@ -47,6 +47,7 @@ export function jobTitleMatchesMission(job, mission = {}) {
 
 export function restoredJobCardIsRelevant(role, mission = {}) {
   const status = text(role?.status) || 'Found';
+  if (role?.sourceType === 'user-captured') return true;
   if (status !== 'Found') return true;
   return jobTitleMatchesMission(role, mission);
 }

@@ -12,6 +12,25 @@ async function jobAgentApi(path, options = {}) {
   return data;
 }
 
+function compactJobAgentCapabilities(value = {}) {
+  return {
+    jobAgentAccess: value.jobAgentAccess === true,
+    tier: typeof value.tier === 'string' ? value.tier.slice(0, 32) : 'guest',
+    expiresAt: typeof value.expiresAt === 'string' ? value.expiresAt.slice(0, 64) : null,
+  };
+}
+
+async function syncJobAgentStatus() {
+  try {
+    const data = await jobAgentApi('/api/session-capabilities?client=job-agent', { method: 'GET' });
+    await chrome.runtime.sendMessage({ action: 'SYNC_JOB_AGENT_STATUS', capabilities: compactJobAgentCapabilities(data?.capabilities || data) });
+  } catch (error) {
+    if (error?.status === 401) {
+      await chrome.runtime.sendMessage({ action: 'SYNC_JOB_AGENT_STATUS', capabilities: compactJobAgentCapabilities() }).catch(() => null);
+    }
+  }
+}
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.action !== 'JOB_AGENT_APP_BRIDGE') return false;
   (async () => {
@@ -42,7 +61,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 // once the correct entry was already gone -- at which point it delivered a
 // different job's data to the page.
 
-const CAPTURE_TTL_MS = 2 * 60 * 1000;
+const CAPTURE_TTL_MS = 15 * 60 * 1000;
 
 function captureIdFromUrl() {
   return new URLSearchParams(window.location.search).get('jobCaptureId') || '';
@@ -117,3 +136,4 @@ window.addEventListener('message', event => {
 });
 
 deliverPendingJob();
+syncJobAgentStatus();

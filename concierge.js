@@ -113,6 +113,40 @@ let activeJobTab = 'Matches';
 let pendingConsequence = null;
 let pendingConsentContinuation = null;
 let lastDialogTrigger = null;
+let accountWorkflowHydrated = false;
+let pendingJobAgentCapture = null;
+const processedJobCaptureIds = new Set();
+
+function jobCaptureIdFromUrl() {
+  return new URLSearchParams(window.location.search).get('jobCaptureId') || '';
+}
+
+function normalizedCapturedJob(input) {
+  const value = input && typeof input === 'object' ? input : {};
+  let applyUrl = String(value.applyUrl || '').trim().slice(0, 4000);
+  try { if (!/^https?:$/.test(new URL(applyUrl).protocol)) applyUrl = ''; } catch (_) { applyUrl = ''; }
+  return {
+    jobTitle: String(value.jobTitle || '').trim().slice(0, 300),
+    company: String(value.company || '').trim().slice(0, 300),
+    jobDescription: String(value.jobDescription || '').trim().slice(0, 50000),
+    applyUrl,
+    site: String(value.site || '').trim().slice(0, 60),
+  };
+}
+
+window.addEventListener('message', event => {
+  if (event.source !== window || event.origin !== window.location.origin) return;
+  if (!event.data || event.data.type !== '1STSTEP_JOB_CAPTURE') return;
+  const captureId = typeof event.data.captureId === 'string' ? event.data.captureId : '';
+  if (!captureId || captureId !== jobCaptureIdFromUrl()) return;
+  const jobData = normalizedCapturedJob(event.data.jobData);
+  if (!jobData.jobDescription) return;
+  // Keep the raw posting in memory. The extension remains its short-lived
+  // source of truth until Resume Builder explicitly receives and acknowledges
+  // it, avoiding a second clear-text browser-storage copy in Job Agent.
+  pendingJobAgentCapture = { captureId, jobData };
+  if (accountWorkflowHydrated) consumeJobAgentCapture();
+});
 const LOCAL_APPLICATION_UI_FIXTURE = ['127.0.0.1', 'localhost'].includes(window.location.hostname)
   && new URLSearchParams(window.location.search).get('uiFixture') === 'durable-application';
 const LOCAL_SUBSCRIBER_UI_FIXTURE = ['127.0.0.1', 'localhost'].includes(window.location.hostname)
@@ -322,7 +356,7 @@ function durableCampaignSnapshot() {
   const durableRoleSource = deskState.roles.length ? visibleSubscriberRoles(deskState.roles) : (syncedSubscriberView.jobCards || []);
   const jobCards = durableRoleSource.slice(0, 100).map(role => ({
     id: role.id, employer: role.employer, title: role.title, status: subscriberUiStatus(role),
-    requisitionId: role.requisitionId || '', sourceUrl: role.sourceUrl || '', sourceProvider: role.sourceProvider || '',
+    requisitionId: role.requisitionId || '', sourceUrl: role.sourceUrl || '', sourceProvider: role.sourceProvider || '', sourceType: role.sourceType || '',
     discoveryRunId: role.discoveryRunId || '', applyPathActive: role.applyPathActive === true,
     packageRunId: role.packageRunId || '', packageRunStatus: role.packageRunStatus || '',
     fitScore: role.fitScore == null ? null : Number(role.fitScore), remoteEligibility: role.remoteEligibility || '',
@@ -1951,6 +1985,55 @@ function safeAction(action) {
   catch (error) { showDeskMessage(error.message, true); return false; }
 }
 
+function consumeJobAgentCapture() {
+  const capture = pendingJobAgentCapture;
+  const captureId = String(capture?.captureId || '');
+  const job = normalizedCapturedJob(capture?.jobData);
+  if (!captureId || processedJobCaptureIds.has(captureId) || !job.jobDescription) return;
+  processedJobCaptureIds.add(captureId);
+
+  const resumeUrl = `/app/resume?jobCaptureId=${encodeURIComponent(captureId)}&mode=tailor`;
+  const resumeLink = `<a href="${escapeHtml(resumeUrl)}">Use this job in the Resume Builder</a>`;
+  if (!hasJobAgentAccess()) {
+    addMessage('assistant', `<strong>Your job page is captured.</strong><br>${resumeLink}. Job Agent review requires current Job Agent access; no application was started.`);
+    showToast('Job captured for the Resume Builder');
+    return;
+  }
+  if (!job.jobTitle || !job.company || !job.applyUrl.startsWith('https://')) {
+    addMessage('assistant', `<strong>I captured the description, but the page did not expose enough identity to add it safely to Job Agent.</strong><br>${resumeLink}, where you can confirm the missing title or company. Nothing was invented or submitted.`);
+    showToast('Review the captured job details');
+    return;
+  }
+
+  const roleId = `captured_${captureId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80)}`;
+  if (!deskState.roles.some(role => role.id === roleId)) {
+    const result = addRole(deskState, {
+      id: roleId,
+      employer: job.company,
+      title: job.jobTitle,
+      directEmployerUrl: job.applyUrl,
+      sourceUrl: job.applyUrl,
+      sourceType: 'user-captured',
+      applyPathActive: false,
+      jobDescription: job.jobDescription,
+      sourceProvider: job.site || 'user-selected page',
+      sourceEvidence: 'User-triggered extension capture. Employer ownership, requisition identity, and active Apply path still require verification.',
+      remoteEligibility: 'Not verified from captured page',
+      geographyEligibility: 'Not verified from captured page',
+      salaryDisclosure: 'Not verified from captured page',
+      postedDate: 'Not verified from captured page',
+      travel: 'Not verified from captured page',
+      schedule: 'Not verified from captured page',
+    });
+    deskState = result.state;
+    saveAll();
+  }
+  renderAll();
+  addMessage('assistant', `<strong>Captured ${escapeHtml(job.jobTitle)} at ${escapeHtml(job.company)} for review.</strong><br>I marked the source and Apply path as unverified. Nothing will be prepared or submitted until the listing is verified. ${resumeLink}.`);
+  openJobs('Matches');
+  showToast('Captured job added for supervised review');
+}
+
 // Indeterminate "still working" affordance for long-running scans.
 // No percentage and no ETA: a feed scan has no measurable completion ratio,
 // so a numeric bar would be invented progress.
@@ -2491,6 +2574,7 @@ function primaryJobAction(role, applicationSession, status) {
   if (status === 'Rejected/Closed') return '<span class="job-action-unavailable">Employer role closed</span>';
   if (role.status === 'Package Ready') return `<button class="job-primary-action" type="button" data-job-application-start="${escapeHtml(role.id)}">Continue application</button>`;
   if (role.packageDraft) return `<button class="job-primary-action" type="button" data-job-package-review="${escapeHtml(role.id)}">Review resume draft</button>`;
+  if (role.sourceType === 'user-captured') return `<button class="job-primary-action" type="button" data-job-captured-resume="${escapeHtml(role.id)}">Use in Resume Builder</button>`;
   if (['Verified', 'Verified - Package Preparation'].includes(role.status) || (role.status === 'Found' && role.discoveryRunId && role.applyPathActive === true)) {
     const retry = preparationRetryAllowed({ status: role.packageRunStatus, lastErrorCode: role.packageRunErrorCode });
     return `<button class="job-primary-action" type="button" data-job-package-generate="${escapeHtml(role.id)}" data-package-retry="${retry}">${retry ? 'Try preparation again' : role.packageRunId ? 'Continue preparation' : 'Prepare application'}</button>`;
@@ -2518,7 +2602,7 @@ function renderSubscriberJobs() {
     : activeJobTab === 'Follow-ups' ? 'User-scheduled reminders that are due. The agent never contacts an employer automatically.'
       : activeJobTab === 'Closed' ? 'Roles closed by the direct employer source or outcomes you confirmed.'
     : activeJobTab === 'Needs You' ? 'Secure decisions and employer-site steps that only you can complete.'
-      : 'Direct-employer opportunities only. Prepared is never counted as submitted.';
+      : 'Captured jobs stay unverified until the direct-employer listing and active Apply path are checked. Prepared is never submitted.';
   if (activeJobTab === 'Needs You') {
     $('jobCards').innerHTML = actions.length ? actions.map(item => {
       const role = deskState.roles.find(entry => entry.id === item.roleId);
@@ -3774,6 +3858,15 @@ $('jobCards').addEventListener('click', async event => {
   const reviewId = event.target?.dataset?.jobPackageReview;
   const startApplicationId = event.target?.dataset?.jobApplicationStart;
   const reviewApplicationId = event.target?.dataset?.jobApplicationReview;
+  const capturedResumeId = event.target?.dataset?.jobCapturedResume;
+  if (capturedResumeId) {
+    const role = deskState.roles.find(item => item.id === capturedResumeId);
+    if (!role?.jobDescription) { showToast('The captured description is no longer available in this tab'); return; }
+    const captureId = capturedResumeId.startsWith('captured_') ? capturedResumeId.slice('captured_'.length) : '';
+    if (!captureId) { showToast('Capture reference unavailable; capture the job again from its page'); return; }
+    window.location.href = `/app/resume?jobCaptureId=${encodeURIComponent(captureId)}&mode=tailor`;
+    return;
+  }
   if (reviewApplicationId) { openDurableApplicationWorkspace(reviewApplicationId); return; }
   if (startApplicationId) {
     event.target.disabled = true;
@@ -4613,6 +4706,10 @@ setInterval(renderRunState, 15000);
 loadPublicAppConfig();
 loadSessionCapabilities().then(async () => {
   await hydrateAccountWorkflow();
+  accountWorkflowHydrated = true;
+  const captureId = jobCaptureIdFromUrl();
+  if (captureId) window.postMessage({ type: '1STSTEP_JOB_CAPTURE_REQUEST', version: '1', captureId }, window.location.origin);
+  consumeJobAgentCapture();
 });
 
 // ── Interview practice ───────────────────────────────────────────────────────

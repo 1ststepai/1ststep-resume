@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const paths = ['content.js', 'background.js', 'auth-bridge.js', 'popup.js', 'popup.html', 'manifest.json'];
+const paths = ['content.js', 'generic-capture.js', 'background.js', 'auth-bridge.js', 'popup.js', 'popup.html', 'manifest.json'];
 const files = Object.fromEntries(await Promise.all(paths.map(async path => [path, await readFile(new URL(`../1ststep-extension/${path}`, import.meta.url), 'utf8')])));
 const combined = Object.values(files).join('\n');
 const manifest = JSON.parse(files['manifest.json']);
@@ -11,6 +11,9 @@ for (const requiredBlock of ['social security', 'captcha', 'signature', 'disabil
   assert.ok(files['content.js'].toLowerCase().includes(requiredBlock), `autofill must block ${requiredBlock}`);
 }
 assert.match(files['content.js'], /PREPARE_GREENHOUSE_HANDOFF/);
+assert.match(files['content.js'], /MutationObserver/);
+assert.match(files['content.js'], /source\.length > 2_000_000/,
+  'Greenhouse embedded data parsing must remain bounded');
 assert.match(files['content.js'], /GET_GREENHOUSE_DOCUMENT/);
 assert.match(files['content.js'], /COMPLETE_GREENHOUSE_HANDOFF/);
 assert.match(files['content.js'], /crypto\.subtle\.digest\('SHA-256'/);
@@ -23,7 +26,21 @@ assert.doesNotMatch(files['auth-bridge.js'], /localStorage|storage\.sync/);
 assert.match(files['auth-bridge.js'], /credentials: 'include'/);
 assert.match(files['auth-bridge.js'], /\/api\/extension-application-handoff/);
 assert.match(files['auth-bridge.js'], /\['prepare', 'document', 'complete'\]/);
+assert.match(files['auth-bridge.js'], /SYNC_JOB_AGENT_STATUS/);
+assert.match(files['background.js'], /JOB_AGENT_STATUS_CACHE_TTL_MS = 5 \* 60 \* 1000/);
+assert.match(files['background.js'], /sender\?\.url[\s\S]*APP_URL/,
+  'only a 1stStep app page may update the short-lived capability cache');
+assert.doesNotMatch(files['background.js'], /jobAgentStatusCache[\s\S]{0,300}(?:email|subject|resume|document)/i,
+  'the capability cache must not retain identity or application content');
 assert.doesNotMatch(files['background.js'], /chrome\.storage\.(?:local|session)\.set\([^\n]*(?:document|contentBase64|resumeDocument)/);
+assert.match(files['popup.js'], /chrome\.scripting\.executeScript/,
+  'generic capture must run only after the user opens the popup on the active tab');
+assert.match(files['popup.js'], /files: \['generic-capture\.js'\]/);
+assert.match(files['generic-capture.js'], /application\/ld\+json/);
+assert.match(files['generic-capture.js'], /jobDescription\.length < 120/,
+  'generic capture must reject pages without a meaningful visible description');
+assert.doesNotMatch(files['generic-capture.js'], /fetch\(|XMLHttpRequest|chrome\.storage/,
+  'generic capture must only inspect the selected page and return data to the popup');
 // -- Job capture destination (regression guard) -----------------------------
 // /app serves the Job Agent since 2026-09-04. Captured jobs must open the
 // legacy workspace at /app/resume, because that is where the
@@ -32,6 +49,7 @@ assert.doesNotMatch(files['background.js'], /chrome\.storage\.(?:local|session)\
 // silently instead of failing loudly. These three assertions pin the whole
 // chain: background opens the route -> auth-bridge posts -> app.js receives.
 const appJs = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+const conciergeJs = await readFile(new URL('../concierge.js', import.meta.url), 'utf8');
 assert.match(files['background.js'], /\$\{APP_URL\}\/app\/resume\?jobCaptureId=/,
   'job capture must open /app/resume');
 assert.doesNotMatch(files['background.js'], /\$\{APP_URL\}\/app\?jobCaptureId=/,
@@ -40,8 +58,20 @@ assert.match(files['auth-bridge.js'], /type: '1STSTEP_JOB_CAPTURE'/,
   'auth-bridge must still post the capture contract message');
 assert.match(appJs, /event\.data\.type !== '1STSTEP_JOB_CAPTURE'/,
   'app.js must still listen for the capture contract message');
+assert.match(files['background.js'], /\$\{APP_URL\}\/concierge\?jobCaptureId=\$\{jobCaptureId\}&mode=\$\{mode\}/,
+  'Job Agent review must open the concierge receiver with the exact capture id');
+assert.match(conciergeJs, /event\.data\.type !== '1STSTEP_JOB_CAPTURE'/,
+  'concierge must receive explicitly selected Job Agent captures');
+assert.match(conciergeJs, /event\.source !== window \|\| event\.origin !== window\.location\.origin/,
+  'concierge capture acknowledgements must be same-document and same-origin');
+assert.match(conciergeJs, /sourceType: 'user-captured'/,
+  'captured jobs must remain visibly distinct from verified employer listings');
+assert.match(conciergeJs, /applyPathActive: false/,
+  'a generic capture must never claim that the employer Apply path was verified');
 
 assert.deepEqual(manifest.host_permissions.sort(), ['https://*.greenhouse.io/*', 'https://app.1ststep.ai/*'].sort());
+assert.equal(manifest.permissions.includes('scripting'), true);
+assert.equal(manifest.host_permissions.includes('<all_urls>'), false);
 assert.equal(manifest.content_scripts[0].all_frames, false);
 assert.equal('web_accessible_resources' in manifest, false);
 assert.equal(manifest.description.toLowerCase().includes('greenhouse'), true);
