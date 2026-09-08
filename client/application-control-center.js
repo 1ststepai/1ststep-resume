@@ -119,7 +119,7 @@ export function canonicalApplicationRecords({ sessions = [], roles = [] } = {}) 
   return [...byKey.values()].sort((left, right) => new Date(right.updatedAt || 0) - new Date(left.updatedAt || 0));
 }
 
-function cell(value) { return text(value, 900).replace(/\|/g, '\\|').replace(/\r?\n/g, ' '); }
+function cell(value) { return text(value, 900).replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\r?\n/g, ' '); }
 
 export function applicationLedgerMarkdown(input = {}, generatedAt = new Date()) {
   const rows = canonicalApplicationRecords(input);

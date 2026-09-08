@@ -78,7 +78,12 @@ const $ = id => document.getElementById(id);
 const list = value => String(value || '').split(/[\n,]/).map(item => item.trim()).filter(Boolean);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const escapeXmlData = value => String(value ?? '').replace(/[&<>]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[character]);
-let missionState = loadWorkflowJson(MISSION_KEY, { mission: {}, messages: [] });
+// Candidate mission details can include compensation and location preferences.
+// Keep signed-out setup in memory; authenticated state is persisted by the
+// encrypted account workflow rather than clear-text browser storage.
+let missionState = { mission: {}, messages: [] };
+localStorage.removeItem(MISSION_KEY);
+sessionStorage.removeItem(MISSION_KEY);
 let deskState = createDeskState(loadWorkflowJson(DESK_KEY, {}));
 let campaignStore = createCampaignStore(loadWorkflowJson(CAMPAIGN_KEY, {}));
 let dailyGoal = loadWorkflowJson(DAILY_GOAL_KEY, { target: 10, updatedAt: null });
@@ -280,7 +285,7 @@ function saveAll() {
     scheduleCampaignSync();
     return;
   }
-  sessionStorage.setItem(MISSION_KEY, JSON.stringify(missionState));
+  sessionStorage.removeItem(MISSION_KEY);
   sessionStorage.setItem(DESK_KEY, JSON.stringify(deskState));
   sessionStorage.setItem(CAMPAIGN_KEY, JSON.stringify(campaignStore));
   sessionStorage.setItem(DAILY_GOAL_KEY, JSON.stringify(dailyGoal));

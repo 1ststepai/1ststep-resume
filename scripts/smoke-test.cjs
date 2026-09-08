@@ -721,11 +721,56 @@ const A11Y_FILES = [
 // Remove <script>/<style> ELEMENTS and comments, keeping the markup around them.
 // Splitting on the first <script> skipped ~99% of app.html, so most of the
 // authenticated workspace was never accessibility-checked.
+function stripRawTextElements(src, tagName) {
+  const source = String(src);
+  const lower = source.toLowerCase();
+  const opening = `<${tagName}`;
+  const closing = `</${tagName}`;
+  let cursor = 0;
+  let output = '';
+  while (cursor < source.length) {
+    const start = lower.indexOf(opening, cursor);
+    if (start < 0) return output + source.slice(cursor);
+    const openingBoundary = lower[start + opening.length];
+    if (openingBoundary && !/[\s/>]/.test(openingBoundary)) {
+      output += source.slice(cursor, start + opening.length);
+      cursor = start + opening.length;
+      continue;
+    }
+    const openEnd = lower.indexOf('>', start + opening.length);
+    if (openEnd < 0) return output + source.slice(cursor, start);
+    let closeStart = lower.indexOf(closing, openEnd + 1);
+    while (closeStart >= 0) {
+      const closingBoundary = lower[closeStart + closing.length];
+      if (!closingBoundary || /[\s>]/.test(closingBoundary)) break;
+      closeStart = lower.indexOf(closing, closeStart + closing.length);
+    }
+    if (closeStart < 0) return output + source.slice(cursor, start);
+    const closeEnd = lower.indexOf('>', closeStart + closing.length);
+    if (closeEnd < 0) return output + source.slice(cursor, start);
+    output += `${source.slice(cursor, start)} `;
+    cursor = closeEnd + 1;
+  }
+  return output;
+}
+
+function stripHtmlComments(src) {
+  const source = String(src);
+  let cursor = 0;
+  let output = '';
+  while (cursor < source.length) {
+    const start = source.indexOf('<!--', cursor);
+    if (start < 0) return output + source.slice(cursor);
+    const end = source.indexOf('-->', start + 4);
+    if (end < 0) return output + source.slice(cursor, start);
+    output += `${source.slice(cursor, start)} `;
+    cursor = end + 3;
+  }
+  return output;
+}
+
 function stripScriptAndStyle(src) {
-  return String(src)
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, ' ')
-    .replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, ' ')
-    .replace(/<!--[\s\S]*?-->/g, ' ');
+  return stripHtmlComments(stripRawTextElements(stripRawTextElements(src, 'script'), 'style'));
 }
 
 function escRe(text) {

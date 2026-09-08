@@ -40,6 +40,8 @@ const report = applicationLedgerMarkdown({ sessions: [session, laterReceipt] }, 
 assert.match(report, /Receipt Verified/);
 assert.doesNotMatch(report, /Y••|Work authorization/);
 assert.equal((report.match(/\| Example Co \|/g) || []).length, 1);
+const escapedReport = applicationLedgerMarkdown({ roles: [{ employer: 'Back\\slash | Pipe', title: 'Buyer', requisitionId: 'REQ-2' }] });
+assert.match(escapedReport, /Back\\\\slash \\| Pipe/);
 
 const scoped = createApplicationSession({
   packageRunId: 'package_12345678', packageQaVerified: true, documentVersion: 'package_v1', employer: 'Example Co', title: 'Buyer', requisitionId: 'REQ-1',
