@@ -490,8 +490,11 @@ else fail('Pricing resume CTAs do not consistently open the resume builder direc
 if (/get\('start'\) === 'resume-builder'/.test(js)) pass('App honors the resume-builder entry route');
 else fail('App does not honor the resume-builder entry route');
 
-if (/_rbValidateCurrentStep\(\)/.test(resumeBuilder) && /Enter your full name before continuing/.test(resumeBuilder) && /Add at least one skill before continuing/.test(resumeBuilder)) pass('Resume builder blocks incomplete steps');
-else fail('Resume builder incomplete-step gates are missing');
+if (!/_rbValidateCurrentStep\(\)/.test(resumeBuilder) && /Everything on this step is optional/.test(resumeBuilder) && /_rbPruneEmptyEntries\(\)/.test(resumeBuilder)) pass('Resume builder keeps every step optional without counting empty rows');
+else fail('Resume builder still has a blocking step or does not discard empty placeholder rows');
+
+if (/Review Your Draft/.test(resumeBuilder) && /Nothing here blocks you from continuing/.test(resumeBuilder) && /Optional details not added yet/.test(resumeBuilder)) pass('Incomplete resume content is presented truthfully as a usable draft');
+else fail('Resume builder does not clearly label incomplete content as a draft');
 
 if (/resumeContactValidationMessage/.test(conciergeJs) && /Add your email address before continuing/.test(conciergeJs)) pass('Job Agent contact setup requires an email');
 else fail('Job Agent contact setup email validation is missing');

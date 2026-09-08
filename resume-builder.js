@@ -109,7 +109,7 @@ const _wb = {   // wizard "black box" — all state lives here
 
 const STEP_LABELS = ['Profile', 'Experience', 'Education', 'Skills', 'Review'];
 // Short labels for the step bar on narrow screens
-const STEP_SHORT  = ['Info', 'Exp', 'Edu', 'Skills', 'Done'];
+const STEP_SHORT  = ['Info', 'Exp', 'Edu', 'Skills', 'Draft'];
 
 function _uid() { return '_' + Math.random().toString(36).slice(2, 9); }
 
@@ -261,7 +261,10 @@ function _rbRenderContent() {
   const el = document.getElementById('rbContent');
   if (!el) return;
   const steps = [null, _rbStep1, _rbStep2, _rbStep3, _rbStep4, _rbStep5];
-  el.innerHTML = steps[_wb.step]?.() || '';
+  const optionalNote = _wb.step < _wb.total
+    ? `<p style="margin:0 0 12px;padding:8px 10px;border-radius:8px;background:rgba(99,102,241,.08);color:#94A3B8;font-size:11.5px;line-height:1.45">Everything on this step is optional. Add what you know, or choose Next to continue.</p>`
+    : '';
+  el.innerHTML = optionalNote + (steps[_wb.step]?.() || '');
   steps[_wb.step + '_init']?.(); // optional post-render hook
 }
 
@@ -284,10 +287,10 @@ function _rbRenderFooter() {
     <span style="font-size:12px;color:#475569">Step ${_wb.step} of ${_wb.total}</span>
 
     ${isLast
-      ? `<button onclick="_rbExport()" style="
+      ? `<button onclick="_rbUseInTailor()" style="
             padding:9px 22px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;
             background:linear-gradient(135deg,#6366F1,#4F46E5);color:#fff;border:none;
-          ">Finish & Use Resume →</button>`
+          ">Use This Draft →</button>`
       : `<button onclick="_rbNext()" style="
             padding:9px 22px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;
             background:linear-gradient(135deg,#6366F1,#4F46E5);color:#fff;border:none;
@@ -298,57 +301,31 @@ function _rbRenderFooter() {
 
 function _rbBack() {
   _rbSaveCurrentStep();
+  _rbPruneEmptyEntries();
   if (_wb.step > 1) { _wb.step--; _rbRender(); }
 }
 
 function _rbNext() {
   _rbSaveCurrentStep();
-  if (!_rbValidateCurrentStep()) return;
+  _rbPruneEmptyEntries();
   if (_wb.step < _wb.total) { _wb.step++; _rbRender(); }
 }
 
-function _rbValidationError(message, fieldId = '') {
-  document.getElementById('rbValidationMessage')?.remove();
-  const content = document.getElementById('rbContent');
-  if (!content) return false;
-  const alert = document.createElement('div');
-  alert.id = 'rbValidationMessage';
-  alert.setAttribute('role', 'alert');
-  alert.style.cssText = 'margin:0 0 14px;padding:11px 13px;border:1px solid rgba(248,113,113,.45);border-radius:9px;background:rgba(127,29,29,.28);color:#FCA5A5;font-size:12px;line-height:1.45';
-  alert.textContent = message;
-  content.prepend(alert);
-  const field = fieldId ? document.getElementById(fieldId) : null;
-  if (field) {
-    field.setAttribute('aria-invalid', 'true');
-    field.focus();
-  }
-  return false;
+function _rbPruneEmptyEntries() {
+  const r = _wbResume();
+  r.experience = r.experience
+    .map(exp => ({ ...exp, bullets: (exp.bullets || []).filter(Boolean) }))
+    .filter(exp => exp.company || exp.title || exp.dates || exp.location || exp.bullets.length);
+  r.education = r.education.filter(edu => edu.school || edu.degree || edu.field || edu.dates || edu.location || edu.gpa || edu.honors);
 }
 
-function _rbValidateCurrentStep() {
-  const r = _wbResume();
-  document.getElementById('rbValidationMessage')?.remove();
-  document.querySelectorAll('#rbContent [aria-invalid="true"]').forEach(field => field.removeAttribute('aria-invalid'));
-
-  if (_wb.step === 1) {
-    if (!r.name) return _rbValidationError('Enter your full name before continuing.', 'rb_name');
-    if (!r.email) return _rbValidationError('Enter your email address before continuing.', 'rb_email');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email)) return _rbValidationError('Enter a valid email address before continuing.', 'rb_email');
-  }
-  if (_wb.step === 2) {
-    const hasExperience = r.experience.some(exp => exp.company || exp.title || exp.dates || exp.bullets?.some(Boolean));
-    if (!hasExperience) return _rbValidationError('Add at least a job title, employer, date, or accomplishment before continuing.', r.experience[0] ? `exp_title_${r.experience[0].id}` : '');
-    r.experience = r.experience.filter(exp => exp.company || exp.title || exp.dates || exp.bullets?.some(Boolean));
-  }
-  if (_wb.step === 3) {
-    const hasEducation = r.education.some(edu => edu.school || edu.degree || edu.field || edu.dates);
-    if (!hasEducation) return _rbValidationError('Add at least a school, degree, field of study, or date before continuing.', r.education[0] ? `edu_school_${r.education[0].id}` : '');
-    r.education = r.education.filter(edu => edu.school || edu.degree || edu.field || edu.dates);
-  }
-  if (_wb.step === 4 && !r.skills.length) {
-    return _rbValidationError('Add at least one skill before continuing.', 'sk_technical');
-  }
-  return true;
+function _rbDraftGaps(r) {
+  const gaps = [];
+  if (!r.name && !r.email && !r.phone) gaps.push('Name or contact details');
+  if (!r.experience.length) gaps.push('Experience or accomplishments');
+  if (!r.education.length) gaps.push('Education (optional if it does not apply)');
+  if (!r.skills.length) gaps.push('Skills');
+  return gaps;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -794,17 +771,25 @@ function _skillTagSection(label, id, tags, placeholder) {
 
 // ── Step 5: Review & Export ──────────────────────────────────────────────────
 function _rbStep5() {
+  _rbPruneEmptyEntries();
   const r = _wbResume();
+  const gaps = _rbDraftGaps(r);
   return `
-    <h3 style="margin:0 0 4px;font-size:15px;font-weight:700;color:#F1F5F9">Review & Export</h3>
+    <h3 style="margin:0 0 4px;font-size:15px;font-weight:700;color:#F1F5F9">Review Your Draft</h3>
     <p style="margin:0 0 16px;font-size:13px;color:#64748B">
-      Your resume is ready. Choose what to do with it:
+      You can use this draft now or add more detail later. Nothing here blocks you from continuing.
     </p>
+
+    <div style="margin:0 0 14px;padding:11px 13px;border-radius:9px;background:${gaps.length ? 'rgba(245,158,11,.08)' : 'rgba(52,211,153,.08)'};border:1px solid ${gaps.length ? 'rgba(245,158,11,.25)' : 'rgba(52,211,153,.25)'};color:${gaps.length ? '#FCD34D' : '#6EE7B7'};font-size:12px;line-height:1.5">
+      ${gaps.length
+        ? `<strong>Optional details not added yet:</strong> ${gaps.map(_esc).join(' · ')}`
+        : '<strong>Core details added.</strong> Review them before tailoring for a specific job.'}
+    </div>
 
     <!-- Quick summary -->
     <div style="background:#1E293B;border-radius:10px;padding:14px 16px;margin-bottom:16px;
                 border:1px solid rgba(255,255,255,0.07)">
-      <div style="font-size:16px;font-weight:700;color:#F1F5F9">${_esc(r.name) || '(Name not set)'}</div>
+      <div style="font-size:16px;font-weight:700;color:#F1F5F9">${_esc(r.name) || 'Resume draft'}</div>
       <div style="font-size:13px;color:#818CF8;margin-bottom:10px">${_esc(r.title) || ''}</div>
       <div style="display:flex;gap:16px;flex-wrap:wrap">
         ${[r.email, r.phone, r.location].filter(Boolean).map(v =>
@@ -821,7 +806,7 @@ function _rbStep5() {
     <!-- Action buttons -->
     <div style="display:grid;grid-template-columns:${_m2col()};gap:10px">
       ${_actionCard('📄', 'Use with Resume Tailor',
-        'Load this resume into the AI tailoring engine to match job descriptions.',
+        'Continue to the workspace now. You can add or paste more resume detail there.',
         '_rbUseInTailor()')}
       ${_actionCard('🎨', 'Open in Template',
         'Preview as a formatted, printable PDF using your existing resume templates.',
@@ -934,8 +919,9 @@ function _rbSaveCurrentStep() {
 
 function _rbUseInTailor() {
   _rbSaveCurrentStep();
+  _rbPruneEmptyEntries();
   const text = resumeToPlainText(_wbResume());
-  if (typeof saveResume === 'function') {
+  if (text.trim() && typeof saveResume === 'function') {
     saveResume({ source: 'builder', text, builderData: _wbResume() });
     // Also populate the resumeText textarea so the tailor panel shows it immediately
     const ta = document.getElementById('resumeText');
@@ -953,10 +939,11 @@ function _rbUseInTailor() {
   const hasJD = !!(document.getElementById('jobText')?.value.trim());
 
   if (typeof showToast === 'function') {
-    showToast(
+    if (!text.trim()) showToast('No details added yet. Upload, paste, or reopen the builder whenever you are ready.', 'info');
+    else showToast(
       hasJD
-        ? "Resume built. You're ready to tailor it to this job."
-        : 'Resume built. Paste a job description to tailor it.',
+        ? "Resume draft loaded. You can tailor it to this job now."
+        : 'Resume draft loaded. Paste a job description when you are ready.',
       'success'
     );
   }
