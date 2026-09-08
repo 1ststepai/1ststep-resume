@@ -41,13 +41,22 @@ function createExtension({ pendingJobs = {} } = {}) {
     async set(values) { Object.assign(store, structuredClone(values)); },
   };
 
+  const storageSession = {
+    async get(keys) {
+      const out = {};
+      for (const key of [].concat(keys)) if (key in store) out[key] = structuredClone(store[key]);
+      return out;
+    },
+    async set(values) { Object.assign(store, structuredClone(values)); },
+  };
+
   const chromeApi = {
     runtime: {
       onMessage: { addListener(fn) { messageListener = fn; } },
       onInstalled: { addListener() {} },
       lastError: null,
     },
-    storage: { local: storageLocal, session: { async get() { return {}; }, async set() {} } },
+    storage: { local: storageLocal, session: storageSession },
     tabs: { async query() { return []; }, async create() {}, async update() {}, sendMessage() {} },
     action: { async setBadgeText() {}, async setBadgeBackgroundColor() {} },
   };
@@ -113,7 +122,36 @@ function attachBridge(ext, { search = '', senderUrl = `${ORIGIN}/funnel` } = {})
   return { send, posted, captures, windowStub };
 }
 
-const job = id => ({ jobData: { jobTitle: `Role ${id}`, company: `Co ${id}` }, mode: 'tailor', createdAt: Date.now() });
+const job = id => ({ jobData: { jobTitle: `Role ${id}`, company: `Co ${id}`, jobDescription: `Description ${id}` }, mode: 'tailor', createdAt: Date.now() });
+
+// A signed-in app page publishes only a short-lived capability flag. The popup
+// can then expose the Job Agent after the user returns to a job board and the
+// app tab is no longer open. No account identity or application content is
+// cached in the extension.
+{
+  const ext = createExtension();
+  const sync = await ext.sendToBackground({
+    action: 'SYNC_JOB_AGENT_STATUS',
+    capabilities: { jobAgentAccess: true, tier: 'complete', email: 'must-not-be-cached@example.test' },
+  });
+  assert.equal(sync.success, true);
+  assert.deepEqual(JSON.parse(JSON.stringify(ext.store.jobAgentStatusCache.capabilities)), {
+    jobAgentAccess: true, tier: 'complete', expiresAt: null,
+  });
+  const status = await ext.sendToBackground({ action: 'GET_JOB_AGENT_STATUS' }, { url: 'chrome-extension://fixture/popup.html' });
+  assert.equal(status.success, true);
+  assert.equal(status.source, 'session-cache');
+  assert.equal(status.data.jobAgentAccess, true);
+}
+
+{
+  const ext = createExtension();
+  const rejected = await ext.sendToBackground({
+    action: 'SYNC_JOB_AGENT_STATUS', capabilities: { jobAgentAccess: true, tier: 'owner' },
+  }, { url: 'https://evil.example/' });
+  assert.equal(rejected.success, false);
+  assert.equal(ext.store.jobAgentStatusCache, undefined);
+}
 
 // ===========================================================================
 // A. Bridge delivery and acknowledged consumption
@@ -211,7 +249,7 @@ const job = id => ({ jobData: { jobTitle: `Role ${id}`, company: `Co ${id}` }, m
 // A7. An expired capture is not delivered.
 {
   const stale = job(1);
-  stale.createdAt = Date.now() - (3 * 60 * 1000);
+  stale.createdAt = Date.now() - (16 * 60 * 1000);
   const ext = createExtension({ pendingJobs: { 'cap-1': stale } });
   const page = attachBridge(ext, { search: '?jobCaptureId=cap-1' });
   await settle();
@@ -360,12 +398,12 @@ function runReceiver(source, { from, to, balanced = false, search }) {
   const deliver = data => {
     for (const handler of listeners) handler({ data, origin: ORIGIN, source: windowStub });
   };
-  return { deliver, applied, acks };
+  return { deliver, applied, acks, sessionData };
 }
 
 const FUNNEL_REGION = {
   from: "const CAPTURE_ID = new URLSearchParams(location.search).get('jobCaptureId')",
-  to: '// Visible states for the capture.',
+  to: '</script>',
 };
 const APP_REGION = {
   from: "    window.addEventListener('message', (event) => {",
@@ -375,10 +413,10 @@ const APP_REGION = {
 // C1. funnel: the same capture delivered twice applies once, acknowledges twice.
 {
   const r = runReceiver(funnelSource, { ...FUNNEL_REGION, search: '?jobCaptureId=cap-1' });
-  const payload = { type: '1STSTEP_JOB_CAPTURE', captureId: 'cap-1', jobData: { jobTitle: 'Role 1' } };
+  const payload = { type: '1STSTEP_JOB_CAPTURE', captureId: 'cap-1', jobData: { jobTitle: 'Role 1', jobDescription: 'Real role description' } };
   r.deliver(payload);
   r.deliver(payload);
-  assert.equal(r.applied.length, 1, `funnel must apply the capture once, applied ${r.applied.length}`);
+  assert.equal(JSON.parse(r.sessionData.get('1ststep_pending_capture')).jobData.jobTitle, 'Role 1', 'legacy funnel must persist the capture for Resume Builder');
   assert.equal(r.acks.length, 2, `funnel must acknowledge both deliveries, acked ${r.acks.length}`);
   assert.deepEqual(r.acks, ['cap-1', 'cap-1']);
 }
@@ -428,20 +466,20 @@ const APP_REGION = {
   const has = needle => assert.ok(funnelSource.includes(needle), `funnel.html must contain: ${needle}`);
   has("'Job saved'");
   has('We couldn’t load that job.');
-  has("'Try again'");
+  has('Return to the job post and click 1stStep again');
   has('1STSTEP_JOB_CAPTURE_REQUEST');
   assert.ok(!funnelSource.includes('chrome.storage'), 'the page must never read extension storage directly');
 
   const listener = funnelSource.slice(funnelSource.indexOf("e.data.type !== '1STSTEP_JOB_CAPTURE'"));
-  const ackAt = listener.indexOf('acknowledgeCapture(captureId)');
-  const saveAt = listener.indexOf('applyJobCapture(jobData, resumeText, true)');
+  const saveAt = listener.indexOf('applyJobCapture(e.data.jobData)');
+  const ackAt = listener.indexOf('acknowledgeCapture(captureId)', saveAt);
   assert.ok(saveAt !== -1 && ackAt !== -1 && saveAt < ackAt,
     'the page must save the capture before acknowledging it');
 
   const captureBlock = funnelSource.slice(funnelSource.indexOf('function showJobSaved'),
-                                          funnelSource.indexOf('function startCaptureTimeout'));
+                                          funnelSource.indexOf('function requestCapture'));
   const visible = [...captureBlock.matchAll(/textContent = '([^']*)'/g)].map(m => m[1]);
-  assert.ok(visible.length >= 3, `expected the capture states to set visible text, found ${visible.length}`);
+  assert.ok(visible.length >= 4, `expected the capture states to set visible text, found ${visible.length}`);
   for (const copy of visible) {
     for (const term of ['captureId', 'storage', 'extension', 'bridge', 'chrome', 'API', 'JSON']) {
       assert.ok(!copy.toLowerCase().includes(term.toLowerCase()),

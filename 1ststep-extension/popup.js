@@ -5,7 +5,7 @@
 const APP_URL = 'https://app.1ststep.ai';
 
 // Keep in sync with background.js MODES
-const MODES = { TAILOR: 'tailor', COVER_LETTER: 'coverLetter' };
+const MODES = { TAILOR: 'tailor', COVER_LETTER: 'coverLetter', JOB_AGENT: 'jobAgent' };
 
 const statusBadge    = document.getElementById('statusBadge');
 const loadingState   = document.getElementById('loadingState');
@@ -26,7 +26,7 @@ const openAppLink    = document.getElementById('openAppLink');
 async function checkAuth() {
   return new Promise(resolve => chrome.runtime.sendMessage({ action: 'GET_JOB_AGENT_STATUS' }, response => {
     const capabilities = response?.data?.capabilities || response?.data || {};
-    resolve({ isAuthenticated: response?.success === true && capabilities.jobAgentAccess === true, tier: capabilities.tier || 'controlled-beta' });
+    resolve({ jobAgentAccess: response?.success === true && capabilities.jobAgentAccess === true, tier: capabilities.tier || 'guest' });
   }));
 }
 
@@ -36,13 +36,9 @@ async function init() {
   try {
     const auth = await checkAuth();
 
-    if (!auth.isAuthenticated) {
-      showUnauthState();
-      return;
-    }
-
-    statusBadge.textContent = 'Agent Connected';
-    statusBadge.classList.add('authenticated');
+    unauthState.style.display = 'none';
+    statusBadge.textContent = auth.jobAgentAccess ? 'Agent Connected' : 'Resume Tools';
+    statusBadge.classList.toggle('authenticated', auth.jobAgentAccess);
 
     const job = await getCurrentJob();
     if (job) {
@@ -64,8 +60,8 @@ function showUnauthState() {
   loadingState.style.display = 'none';
   unauthState.style.display  = 'block';
   jobState.style.display     = 'none';
-  statusBadge.textContent    = 'Sign In';
-  openAppLink.addEventListener('click', () => chrome.tabs.create({ url: `${APP_URL}/app` }));
+  statusBadge.textContent    = 'Resume Tools';
+  openAppLink.addEventListener('click', () => chrome.tabs.create({ url: `${APP_URL}/app/resume` }));
 }
 
 function showEmptyState(auth) {
@@ -79,13 +75,13 @@ function showEmptyState(auth) {
   if (manualOpenBtn) {
     manualOpenBtn.onclick = () => {
       const jd = document.getElementById('manualJdInput')?.value?.trim();
-      if (!jd) { manualOpenBtn.textContent = 'Paste a description first'; setTimeout(() => { manualOpenBtn.textContent = 'Open in 1stStep.ai'; }, 2000); return; }
+      if (!jd) { manualOpenBtn.textContent = 'Paste a description first'; setTimeout(() => { manualOpenBtn.textContent = 'Use in Resume Builder'; }, 2000); return; }
       openInApp({ jobTitle: '', company: '', jobDescription: jd, applyUrl: '', site: 'manual' }, manualOpenBtn);
     };
   }
 
   // Auto-fill still works without a detected job
-  if (autofillEmptyBtn && auth) {
+  if (autofillEmptyBtn && auth?.jobAgentAccess) {
     autofillEmptyBtn.onclick = () => autofillPage(auth, autofillEmptyBtn);
   } else if (autofillEmptyBtn) {
     autofillEmptyBtn.style.display = 'none';
@@ -145,7 +141,13 @@ function showJobCard(job, auth) {
   if (jobTitleInput) jobTitleInput.oninput = () => { jobTitleEl.textContent = jobTitleInput.value.trim() || 'Unknown Role'; };
   if (companyInput)  companyInput.oninput  = () => { companyEl.textContent  = companyInput.value.trim(); };
 
-  if (autofillBtn) autofillBtn.onclick = () => autofillPage(auth, autofillBtn);
+  const greenhousePage = /(^|\.)greenhouse\.io$/i.test(new URL(job.applyUrl || 'https://invalid.local').hostname);
+  if (autofillBtn && auth?.jobAgentAccess && greenhousePage) {
+    autofillBtn.style.display = 'inline';
+    autofillBtn.onclick = () => autofillPage(auth, autofillBtn);
+  } else if (autofillBtn) {
+    autofillBtn.style.display = 'none';
+  }
 
   // The authoritative tracker lives in the account-backed application workflow.
   renderTrackerStatus(job);
@@ -156,7 +158,7 @@ function showJobCard(job, auth) {
     return { ...job, jobTitle: title, company };
   }
 
-  function validateAndOpen(btn) {
+  function validateAndOpen(btn, mode = MODES.TAILOR) {
     const title = jobTitleInput?.value.trim() || job.jobTitle || '';
     if (!title || title === 'Unknown Role') {
       if (jobInfoForm) jobInfoForm.style.display = 'block';
@@ -168,7 +170,7 @@ function showJobCard(job, auth) {
       return;
     }
     if (jobTitleInput) jobTitleInput.classList.remove('required-error');
-    openInApp(buildJob(), btn);
+    openInApp(buildJob(), btn, mode);
   }
 
   tailorBtn.onclick = () => validateAndOpen(tailorBtn);
@@ -185,6 +187,14 @@ function showJobCard(job, auth) {
       if (jobTitleInput) jobTitleInput.classList.remove('required-error');
       openInApp(buildJob(), coverLetterBtn, MODES.COVER_LETTER);
     };
+  }
+
+  const jobAgentBtn = document.getElementById('jobAgentBtn');
+  if (jobAgentBtn && auth?.jobAgentAccess) {
+    jobAgentBtn.style.display = 'block';
+    jobAgentBtn.onclick = () => validateAndOpen(jobAgentBtn, MODES.JOB_AGENT);
+  } else if (jobAgentBtn) {
+    jobAgentBtn.style.display = 'none';
   }
 
 }
@@ -221,17 +231,19 @@ async function getCurrentJob() {
           else resolve(r?.job || null);
         });
       });
-      if (result) return result;
+      if (result?.jobDescription) return result;
+
+      // The user clicked the extension for this tab, so activeTab grants a
+      // one-time, page-scoped read. No always-on access to arbitrary sites.
+      const injected = await chrome.scripting.executeScript({
+        target: { tabId: tab.id, allFrames: false },
+        files: ['generic-capture.js'],
+      });
+      const captured = injected?.[0]?.result || null;
+      if (captured?.jobDescription) return captured;
     }
   } catch (_) {}
-
-  // 2. Fall back to background cache (e.g. tab without content script).
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage({ action: 'GET_CURRENT_JOB' }, (response) => {
-      if (chrome.runtime.lastError) { resolve(null); return; }
-      resolve(response?.job || null);
-    });
-  });
+  return null;
 }
 
 // ─── OPEN IN APP ─────────────────────────────────────────────

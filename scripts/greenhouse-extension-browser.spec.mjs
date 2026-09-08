@@ -6,6 +6,38 @@ import { createHash } from 'node:crypto';
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const contentScript = path.join(root, '1ststep-extension', 'content.js');
 
+test('Greenhouse adapter extracts embedded job data and excludes application questions', async ({ page }) => {
+  const remix = { state: { loaderData: { jobRoute: { jobPost: {
+    post_type: 'job_post', title: 'Account Director, Health Systems', company_name: 'Zocdoc',
+    content: `<p><strong>Your Impact</strong></p><p>${'Build health-system partnerships with executive stakeholders. '.repeat(8)}</p>`,
+  } } } } };
+  await page.route('https://job-boards.greenhouse.io/**', route => route.fulfill({
+    status: 200, contentType: 'text/html', body: `<html><head><title>Job Application</title></head><body>
+      <main class="job-post"><h2>Apply for this job</h2><form>
+        <label>First Name<input></label><label>Last Name<input></label><label>Resume/CV<input type="file"></label>
+        <h3>Demographic Questions</h3><label>Veteran Status<select></select></label><button>Submit application</button>
+      </form></main><script id="remix-data">window.__remixContext = ${JSON.stringify(remix)};</script>
+      <script>document.getElementById('remix-data').remove();</script></body></html>`,
+  }));
+  await page.addInitScript(() => {
+    const listeners = [];
+    window.chrome = { runtime: {
+      id: 'fixture-extension', lastError: null,
+      onMessage: { addListener(listener) { listeners.push(listener); } },
+      sendMessage() { return Promise.resolve({ success: true }); },
+    } };
+    window.__sendExtensionMessage = message => new Promise(resolve => listeners[listeners.length - 1](message, {}, resolve));
+  });
+  await page.addInitScript({ path: contentScript });
+  await page.goto('https://job-boards.greenhouse.io/zocdoc/jobs/8074626');
+  const result = await page.evaluate(() => window.__sendExtensionMessage({ action: 'DETECT_JOB_NOW' }));
+  expect(result.success).toBe(true);
+  expect(result.job).toMatchObject({ jobTitle: 'Account Director, Health Systems', company: 'Zocdoc' });
+  expect(result.job.jobDescription).toContain('Build health-system partnerships');
+  expect(result.job.jobDescription).not.toContain('Demographic Questions');
+  expect(result.job.jobDescription).not.toContain('Submit application');
+});
+
 test('controlled Greenhouse adapter fills only server-authorized ordinary fields and never submits', async ({ page }) => {
   const resumeBytes = Buffer.from('%PDF-1.4\n% synthetic resume fixture\n%%EOF\n');
   const resumeDocument = {

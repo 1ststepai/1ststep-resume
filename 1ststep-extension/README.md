@@ -1,6 +1,15 @@
-# 1stStep Job Agent extension — controlled beta
+# 1stStep job capture and Job Agent extension — controlled beta
 
-This package is the supervised Greenhouse execution surface for the account-backed Job Agent. It does not keep a second profile, résumé, tracker, auth token, password, OTP, CAPTCHA answer, or employer answer in Chrome storage.
+This package has two explicit user flows: capture the visible job page into the Resume Builder or Job Agent, and supervised Greenhouse filling for an approved Job Agent application. It does not keep a second profile, résumé, tracker, auth token, password, OTP, CAPTCHA answer, or employer answer in Chrome storage.
+
+## Job capture flow
+
+1. Open a job posting and click the extension.
+2. The extension uses the temporary `activeTab` grant to inspect that page only. It prefers JobPosting structured data, then visible job-description containers. It does not request permanent access to every website.
+3. Review or correct the title and company, then choose Resume Builder, cover letter, or Job Agent review. Manual paste remains available when a page cannot be read.
+4. A unique capture is kept locally for up to 15 minutes and removed only after the matching 1stStep page confirms it was saved.
+
+Capture works on ordinary HTTP(S) pages whose job details are available in the top-level rendered document. It cannot bypass sign-in walls, read browser-internal pages, or guarantee extraction from PDFs, cross-origin iframe-only pages, or closed shadow roots.
 
 ## User flow
 
@@ -24,8 +33,9 @@ Load `1ststep-extension` as an unpacked extension only in a synthetic or explici
 
 ## Current boundary
 
+- Job capture: user-triggered on the currently selected ordinary HTTP(S) page; no automatic background browsing and no permanent all-sites host permission.
 - Supported execution adapter: Greenhouse standard hosted boards only.
 - Résumé upload: automatic only for the exact approved `resume_pdf` artifact and a single unambiguous Greenhouse résumé control. Bytes are never written to Chrome storage and completion reports only `resumeDocument`.
 - Final submit: never performed by the extension.
 - Receipt: must be independently captured and verified by the server workflow.
-- Ashby, Lever, SmartRecruiters, iCIMS, and cloud browsers remain later adapters. The Workday adapter was retired on 2026-09-04.
+- Automated form filling on Ashby, Lever, SmartRecruiters, iCIMS, and Workday is not supported. Capturing their visible job text does not authorize form filling or submission.

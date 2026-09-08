@@ -767,7 +767,7 @@ function collapseLetterSpacing(text) {
         const raw = sessionStorage.getItem('1ststep_pending_capture');
         if (raw) {
           const { jobData: jd, ts } = JSON.parse(raw);
-          if (jd && Date.now() - ts < 5 * 60 * 1000) {
+          if (jd && Date.now() - ts < 15 * 60 * 1000) {
             sessionStorage.removeItem('1ststep_pending_capture');
             window._extensionDetected = true;
             const jt = document.getElementById('jobText');
@@ -2761,7 +2761,7 @@ ${resume.slice(0, 3000)}
     });
 
     window.addEventListener('message', (event) => {
-      if (event.origin !== window.location.origin) return;
+      if (event.source !== window || event.origin !== window.location.origin) return;
       if (!event.data || event.data.type !== '1STSTEP_JOB_CAPTURE') return;
       const { jobData, resumeText, mode, captureId } = event.data;
       if (!jobData) return;
@@ -2840,11 +2840,13 @@ ${resume.slice(0, 3000)}
         document.getElementById('tierComplete')?.click();
       }
 
-      // -- Auto-tailor if resume is already loaded ---------------------------
+      // Capturing a page never spends a tailoring credit or generates content.
+      // The user reviews the imported job and explicitly starts generation.
       const hasResumeNow = !!(fileContent || document.getElementById('resumeText')?.value.trim());
       const hasJobNow    = !!(document.getElementById('jobText')?.value.trim());
       if (hasResumeNow && hasJobNow) {
-        _startAutoTailorCountdown(jobData);
+        showJobCaptureConfirm(jobData);
+        showToast('Job captured. Review it, then click Tailor My Resume when ready.', 'info');
       } else {
         // No resume - show the capture confirm so they can upload
         showJobCaptureConfirm(jobData);
@@ -2853,49 +2855,6 @@ ${resume.slice(0, 3000)}
       }
       updateWhatsNextGuide();
     });
-
-    // -- Auto-tailor countdown (extension flow) --------------------------------
-    let _autoTailorTimer = null;
-    function _startAutoTailorCountdown(jobData) {
-      // Cancel any existing countdown
-      if (_autoTailorTimer) { clearTimeout(_autoTailorTimer); _autoTailorTimer = null; }
-
-      const title   = jobData?.jobTitle || 'this role';
-      const company = jobData?.company  ? ` at ${jobData.company}` : '';
-
-      // Show countdown toast with cancel
-      const toastEl = document.getElementById('toast');
-      let secs = 3;
-      const renderCountdown = () => {
-        if (!toastEl) return;
-        toastEl.innerHTML = `
-          <span>Tailoring your resume for <strong>${title}${company}</strong> in ${secs}s...</span>
-          <button onclick="window._cancelAutoTailor()" style="margin-left:12px;background:rgba(255,255,255,0.15);border:none;color:inherit;padding:3px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">Cancel</button>`;
-        toastEl.className = 'toast toast-info visible';
-      };
-
-      window._cancelAutoTailor = () => {
-        if (_autoTailorTimer) { clearTimeout(_autoTailorTimer); _autoTailorTimer = null; }
-        if (toastEl) { toastEl.className = 'toast'; toastEl.innerHTML = ''; }
-        showJobCaptureConfirm(jobData);
-        showToast('Auto-tailor cancelled - click Tailor My Resume when ready.', 'info');
-        delete window._cancelAutoTailor;
-      };
-
-      renderCountdown();
-      const tick = () => {
-        secs--;
-        if (secs > 0) { renderCountdown(); _autoTailorTimer = setTimeout(tick, 1000); }
-        else {
-          if (toastEl) { toastEl.className = 'toast'; toastEl.innerHTML = ''; }
-          delete window._cancelAutoTailor;
-          _autoTailorTimer = null;
-          showToast('Tailoring your resume now...', 'success');
-          runTailoring();
-        }
-      };
-      _autoTailorTimer = setTimeout(tick, 1000);
-    }
 
     // -- Tier ------------------------------------------------------------------
     // setTier() controls the OUTPUT MODE only (what to generate this session).
