@@ -75,8 +75,8 @@
       /* ── Typography ──────────────────────────────────────────── */
       --text: #E4E7F0;
       --text2: #8892B0;
-      --muted: #50577A;
-      --label: #50577A;
+      --muted: #8892B0;
+      --label: #8892B0;
 
       /* ── Status colors ───────────────────────────────────────── */
       --green: #10B981;
@@ -131,8 +131,8 @@
       --border2: rgba(0, 0, 0, 0.14);
       --text: #1A1E2E;
       --text2: #4B5563;
-      --muted: #9CA3AF;
-      --label: #9CA3AF;
+      --muted: #667085;
+      --label: #667085;
       --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.08);
       --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0,0,0,0.04);
       --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0,0,0,0.05);
@@ -144,6 +144,9 @@
       --amber-light: rgba(251, 191, 36, 0.1);
       --blue-light: rgba(99, 102, 241, 0.1);
     }
+
+    [data-theme="light"] .hero-ai-badge { color: #3730A3; }
+    [data-theme="light"] .run-section p span { color: #08734D !important; }
 
     /* Theme toggle button */
     #themeToggle {

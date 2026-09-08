@@ -54,6 +54,10 @@ html[data-theme="dark"] .outcome-stage{background:#171b38;border-color:#30395b}
 html[data-theme="dark"] .outcome-art{opacity:.42;filter:saturate(.82) brightness(.72)}
 html[data-theme="dark"] .journey-card{background:rgba(15,20,37,.94);border-color:#343e61}
 html[data-theme="dark"] .foot{background:#080b17}
+html[data-theme="dark"] .product-studio{background:var(--bg-soft)}
+html[data-theme="dark"] .conversation-bubble{color:#172033}
+html[data-theme="dark"] :is(.journey-card>p,.journey-foot span,.compact-details details p,#motionToggle){color:var(--body)}
+html[data-theme="dark"] .skip{background:#4f46e5;color:#fff}
 
 html[data-theme="dark"] body[data-page="concierge"]{
   --agent-surface:#11172a;--agent-soft:#0b1020;--agent-ink:#f8fafc;--agent-body:#cbd5e1;--agent-muted:#a8b3c7;
@@ -69,6 +73,10 @@ html[data-theme="dark"] body[data-page="concierge"] :is(input,textarea,select,.c
 html[data-theme="dark"] body[data-page="concierge"] :is(.quick button,.search-link,.resume-action,.resume-path button,.resume-upload-label,.desk-actions button,.desk-tab,.close-desk,.question-choice,.question-secondary,.wizard-buttons button,.agent-configuration header button,.agent-conversation>header button,.needs-sheet header button,.confirmation-dialog button,.consent-actions button,.interview-actions button,.path-scan,.choice-row button,.job-tabs button,.simple-job-card footer button){background:var(--agent-surface);color:var(--agent-body);border-color:var(--agent-control-border)}
 html[data-theme="dark"] body[data-page="concierge"] :is(.cost-table td,.cost-table td strong,.alert-status-card strong,.alert-coverage-grid strong){color:var(--agent-ink)}
 html[data-theme="dark"] body[data-page="concierge"] :is(.cost-table td small,.alert-status-card span,.alert-status-card small,.alert-coverage-grid span){color:var(--agent-body)}
+html[data-theme="dark"] body[data-page="concierge"] :is(.agent-logo,#agentTitle,.agent-launch h1){color:var(--agent-ink)!important}
+html[data-theme="dark"] body[data-page="concierge"] :is(.agent-logo span,.studio-eyebrow,.agent-launch h1 em,.agent-promise a){color:var(--agent-link)!important}
+html[data-theme="dark"] body[data-page="concierge"] :is(.agent-header nav button,.agent-header .site-theme-toggle,.launch-benefits span,.agent-promise){color:var(--agent-body)!important}
+html[data-theme="dark"] body[data-page="concierge"] .agent-header .site-theme-toggle{background:var(--agent-surface)!important;border-color:var(--agent-control-border)!important}
 
 html[data-theme="light"] body[data-page="pricing"],html[data-theme="light"] body[data-page="legal"]{
   --dark:#f8fafc;--dark2:#fff;--dark3:#f1f5f9;--border:#d8e0ec;--text:#0f172a;--muted:#52627a;--blue:#4f46e5;
@@ -76,6 +84,10 @@ html[data-theme="light"] body[data-page="pricing"],html[data-theme="light"] body
 }
 html[data-theme="light"] body[data-page="pricing"] .plan-card.featured{background:linear-gradient(160deg,#eef2ff 0%,#fff 70%)}
 html[data-theme="light"] body[data-page="pricing"] .save-badge{color:#08734d;background:#e8f7f0;border-color:#a7dfc7}
+html[data-theme="light"] body[data-page="pricing"] :is(.hero-badge,.compare-note a,.faq-item p a){color:#3730a3}
+html[data-theme="light"] body[data-page="pricing"] :is(.annual-note,.plan-features .check){color:#08734d}
+html[data-theme="light"] body[data-page="pricing"] .plan-features .dash{color:#64748b}
+html[data-theme="dark"] body[data-page="pricing"] .logo{color:#a5b4fc}
 html[data-theme="dark"] body[data-page="login"]{background:radial-gradient(ellipse at 50% 0,#20264b,transparent 62%),#080b17;color:#f8fafc}
 html[data-theme="dark"] body[data-page="login"] :is(.brand,h1){color:#f8fafc}
 html[data-theme="dark"] body[data-page="login"] :is(.intro,#loginStatus,nav a){color:#b9c5d7}
