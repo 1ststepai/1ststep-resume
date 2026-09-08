@@ -23,11 +23,11 @@ for (const width of [390, 1440]) {
     await card.scrollIntoViewIfNeeded();
     await expect(card).toBeVisible();
     await expect(card).toContainText('$39/month when paid access opens.');
-    await expect(card).toContainText('first 10 approved beta testers');
+    await expect(card).toContainText('first 10 approved early-access users');
     await expect(card).toContainText('no automatic switch to a paid plan');
-    await expect(card).toContainText('submit applications yourself');
-    await expect(card).toContainText('checkout is not available yet');
-    await expect(card.locator('a[href^="mailto:"]')).toHaveAttribute('href', 'mailto:evan@1ststep.ai?subject=Job%20Agent%20beta%20request');
+    await expect(card).toContainText('remain in control of employer-facing actions');
+    await expect(card).toContainText('Paid checkout is not available yet');
+    await expect(card.locator('a[href^="mailto:"]')).toHaveAttribute('href', 'mailto:sales@1ststep.ai?subject=1stStep%20Complete%20early%20access');
     await expect(card.locator('a[href*="stripe.com"]')).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     expect(errors).toEqual([]);

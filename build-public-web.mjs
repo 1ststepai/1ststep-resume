@@ -21,6 +21,8 @@ const publicAssets = [
   'demo-video-section.html',
   'extension-section.html',
   'style.css',
+  'site-theme.css',
+  'site-theme.js',
   'home-motion.css',
   'home-momentum.jpg',
   'persistent-concierge.css',

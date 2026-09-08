@@ -89,6 +89,7 @@ assert.equal(journeyCards[0].attributes['aria-hidden'], 'true');
 assert.equal(journeyCards[1].attributes['aria-hidden'], 'false');
 assert(statSync(new URL('../home-momentum.jpg', import.meta.url)).size < 200_000, 'Hero asset stays under 200 KB');
 assert.match(readFileSync(new URL('../build-public-web.mjs', import.meta.url), 'utf8'), /'home-momentum.jpg'/);
+assert.match(readFileSync(new URL('../build-public-web.mjs', import.meta.url), 'utf8'), /'site-theme\.js'/);
 assert.match(html, /class="demo-label">Product tour<\/span>/);
 assert.doesNotMatch(html, /controlled production beta|invite.paced|Request a beta spot/i);
 assert.match(html, /Request early access/);
@@ -103,8 +104,21 @@ assert.doesNotMatch(html, /40 (?:jobs|applications)|guaranteed interviews/i);
 assert.doesNotMatch(html, /illustrative|fictional|made-up|example only|sample preview/i);
 assert.match(html, /Nothing will be sent until you approve this application\./);
 assert.match(html, /data-chrome-web-store-url/);
-assert.match(html, /mailto:evan@1ststep.ai/);
+assert.match(html, /mailto:sales@1ststep.ai/);
+for (const publicFile of [
+  'index.html',
+  'pricing.html',
+  'app.html',
+  'terms.html',
+  'privacy.html',
+  'resume-tailor-landing/ghl-custom-code.html',
+  'resume-tailor-landing/ghl-cro-custom-code.html',
+]) {
+  const source = readFileSync(new URL(`../${publicFile}`, import.meta.url), 'utf8');
+  assert.doesNotMatch(source, /(?:mailto:|Email\s+)evan@1ststep\.ai/i, `${publicFile} must not expose the owner inbox`);
+}
 assert.match(css, /prefers-reduced-motion: reduce/);
+assert.match(html, /data-theme-toggle/);
 assert.match(css, /\.journey-track\s*\{[^}]*transition:\s*transform/);
 assert.match(css, /translate3d\(calc\(var\(--journey-index/);
 assert.match(css, /\.job-reel\s*\{[^}]*job-reel-scroll 7\.2s/);

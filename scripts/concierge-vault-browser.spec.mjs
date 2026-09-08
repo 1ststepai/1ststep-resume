@@ -420,7 +420,7 @@ test('admin-only evidence shows content-free background worker health', async ({
   await expect(page.locator('#openDesk')).toBeVisible();
   await page.locator('#openDesk').click();
   await page.locator('[data-desk-tab="audit"]').click();
-  await expect(page.locator('#deskTitle')).toHaveText('Admin evidence');
+  await expect(page.locator('#deskTitle')).toHaveText('Admin control center');
   await expect(page.locator('#auditList')).toContainText('Background worker · healthy');
   await expect(page.locator('#auditList')).toContainText('schedule enqueued: 1');
   await expect(page.locator('#auditList')).toContainText('Operational queues · aggregate only');
@@ -656,10 +656,8 @@ test('signed account state replaces stale browser workflow data and leaves no du
   await expect.poll(() => packageRestoreRequests).toBe(2);
   await expect(page.locator('body')).not.toContainText('Wrong Local Employer');
   await page.locator('#closeJobs').click();
-  await page.locator('#agentProgress > summary').click();
-  await page.locator('#dailyGoalInput').fill('20');
-  await page.locator('#dailyGoalForm').evaluate(form => form.requestSubmit());
-  await expect.poll(() => savedAccountState?.workspace?.dailyGoal?.target).toBe(20);
+  await expect(page.locator('#dailyGoalForm')).toHaveCount(0);
+  await expect(page.locator('#agentProgress')).not.toContainText(/daily target|application target/i);
   expect(savedAccountState.subscriberView.jobCards.map(job => job.employer)).toEqual(['Account Employer']);
   expect(savedAccountState.subscriberView.jobCards[0]).toMatchObject({
     requisitionId: 'REQ-ACCOUNT-1', discoveryRunId: 'run_account_restore_001', packageRunId: 'package_account_restore_001', sourceProvider: 'greenhouse',

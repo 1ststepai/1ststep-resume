@@ -12,10 +12,10 @@ for (const width of [390, 1440]) {
     await expect(card).toBeVisible();
     await expect(card).toContainText(`$${JOB_AGENT_PRICE.monthlyCents / 100}`);
     await expect(card).toContainText('/month when paid access opens');
-    await expect(card).toContainText('first 10 approved beta testers');
+    await expect(card).toContainText('first 10 approved early users');
     await expect(card).toContainText('no automatic billing');
-    await expect(card).toContainText('submit applications yourself');
-    await expect(card.locator('a[href^="mailto:"]')).toHaveAttribute('href', 'mailto:evan@1ststep.ai?subject=Job%20Agent%20beta%20request');
+    await expect(card).toContainText('remain in control of employer-facing actions');
+    await expect(card.locator('a[href^="mailto:"]')).toHaveAttribute('href', 'mailto:sales@1ststep.ai?subject=1stStep%20Complete%20early%20access');
     await expect(card.locator('a[href*="stripe.com"]')).toHaveCount(0);
     await expect(page.locator('a[href="https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00"]')).toHaveCount(0);
     await expect(page.locator('text=$24.99')).toHaveCount(0);

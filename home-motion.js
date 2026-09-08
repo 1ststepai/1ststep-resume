@@ -93,8 +93,9 @@
     }
     var scenes = Array.prototype.slice.call(document.querySelectorAll('[data-motion-scene]'));
     var manualPause = false;
-    // Product motion starts on. The footer control remains available to pause it.
-    var motionOptIn = true;
+    // Product motion starts on unless the visitor has asked their device to reduce motion.
+    // They may opt in from the footer, and everyone may pause it at any time.
+    var motionOptIn = !motionQuery.matches;
     var demoPaused = false;
     var visibleScenes = new Set();
     var timer = null;
@@ -134,7 +135,7 @@
         button.setAttribute('aria-pressed', String(manualPause || preferencePaused));
       });
       if (motionExplanation) motionExplanation.textContent = preferencePaused
-        ? 'Your device prefers less motion. Select Play animations to watch the product tour.'
+        ? 'Your device prefers less motion. Select Enable motion to watch the product tour.'
         : '';
       if (motionExplanation) motionExplanation.hidden = !preferencePaused;
       if (!paused && !journeyPaused && journey && visibleScenes.has(journey)) {
@@ -153,6 +154,11 @@
         }, 3600);
       }
     }
+    scenes.forEach(function (scene) {
+      if (!scene.getBoundingClientRect) return;
+      var rect = scene.getBoundingClientRect();
+      if (rect.bottom > 0 && rect.top < window.innerHeight) visibleScenes.add(scene);
+    });
     if ('IntersectionObserver' in window) {
       var sceneObserver = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
@@ -160,7 +166,7 @@
           else visibleScenes.delete(entry.target);
         });
         syncMotion();
-      }, { threshold: 0.15 });
+      }, { rootMargin: '80px 0px', threshold: 0.01 });
       scenes.forEach(function (scene) { sceneObserver.observe(scene); });
     } else {
       // Static fallback avoids uncontrolled motion in older browsers.

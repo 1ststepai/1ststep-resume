@@ -30,6 +30,14 @@ async function setup(page, { second = false, withCover = true, needsYou = false 
 
 test('Needs You translates legacy codes and opens the matching saved draft from both queues', async ({ page }) => {
   const errors = await setup(page, { needsYou: true });
+  await expect(page.locator('#attentionNow')).toBeVisible();
+  await expect(page.locator('#attentionNowTitle')).toContainText(/application.*need/i);
+  await expect(page.locator('#attentionNow')).not.toContainText('UNMAPPED_OUTPUT_CLAIM');
+  await expect(page.locator('#agentConversation')).toBeHidden();
+  await expect(page.locator('#reviewAttentionNow')).toContainText(/review|resume/i);
+  await page.locator('#reviewAttentionNow').click();
+  await expect(page.locator('#packageReviewOverlay')).toBeVisible();
+  await page.locator('#closePackageReview').click();
   await page.locator('#openNeedsYou').click();
   await expect(page.locator('#needsYouList')).toContainText('Compare the draft with your original resume');
   await expect(page.locator('#needsYouList')).not.toContainText('UNMAPPED_OUTPUT_CLAIM');

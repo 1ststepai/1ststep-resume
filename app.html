@@ -45,7 +45,7 @@
         "name": "1stStep.ai",
         "url": "https://app.1ststep.ai/",
         "logo": "https://1ststep.ai/og-image.png",
-        "email": "evan@1ststep.ai"
+        "email": "support@1ststep.ai"
       },
       {
         "@type": "WebSite",
@@ -61,17 +61,17 @@
         "@id": "https://app.1ststep.ai/#app",
         "name": "1stStep.ai",
         "url": "https://app.1ststep.ai/",
-    "description": "AI-powered resume tailoring and job-search platform. Start free with 3 resume tailors, a Career Positioning Brief, 1 cover letter, and vault preview. Job Agent is available through a controlled beta while extension-assisted applications are completed and verified.",
+    "description": "AI-powered resume tailoring and job-search platform. Start free, then use one 1stStep Complete membership for resume tailoring, cover letters, tracking, the Chrome extension workflow, and Job Agent.",
     "applicationCategory": "BusinessApplication",
     "operatingSystem": "Web",
     "offers": [
       {
         "@type": "Offer",
-        "name": "AI Job Agent controlled beta",
+        "name": "1stStep Complete early access",
         "price": "0",
         "priceCurrency": "USD",
         "billingDuration": "P1M",
-        "description": "Invite-paced testing of verified job discovery and application preparation; no paid checkout during the controlled beta"
+        "description": "Invite-paced early access to verified job discovery and application preparation; no paid checkout is currently available"
       },
       {
         "@type": "Offer",
@@ -554,7 +554,7 @@
           <div id="postResultPassCard" style="display:none;margin:8px 16px 0;padding:12px 16px;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.18);border-radius:10px">
             <div style="font-size:13px;font-weight:600;color:var(--text)">Applying to more jobs?</div>
             <div style="font-size:12px;color:var(--text2);margin:4px 0 10px;line-height:1.45">Paid checkout is paused while Job Agent automation is completed.</div>
-            <button id="postResultPassBtn" style="padding:8px 16px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border:none;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer">View beta access</button>
+            <button id="postResultPassBtn" style="padding:8px 16px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border:none;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer">View 1stStep Complete</button>
           </div>
 
           <div class="results-topbar">
@@ -1106,7 +1106,7 @@
                 up to 5 job descriptions, we'll generate a custom resume for each.</p>
             </div>
             <span id="bulkTierBadge"
-              style="display:none;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;white-space:nowrap">Job Hunt Pass</span>
+              style="display:none;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;white-space:nowrap">1stStep Complete</span>
           </div>
 
           <!-- Upgrade gate for free users -->
@@ -1118,10 +1118,10 @@
               style="font-size:13px;color:var(--muted);margin:0 0 20px;max-width:320px;margin-left:auto;margin-right:auto">
               Bulk Apply is currently limited to existing subscribers and approved beta testers.</p>
             <button id="bulkUpgradeBtn"
-              style="padding:10px 24px;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span> View beta access</button>
+              style="padding:10px 24px;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span> View 1stStep Complete</button>
           </div>
 
-          <!-- Main bulk apply UI (Job Hunt Pass users) -->
+          <!-- Main bulk apply UI (1stStep Complete members) -->
           <div id="bulkApplyMain">
             <!-- No-resume notice for bulk apply -->
             <div id="bulkNoResumeNotice" style="display:none;padding:12px 14px;background:rgba(99,102,241,0.07);border:1.5px dashed rgba(99,102,241,0.3);border-radius:9px;margin-bottom:12px">
@@ -1210,7 +1210,7 @@
         Watch tutorials
       </a>
       <span style="color:var(--border)">-</span>
-      <a href="mailto:evan@1ststep.ai?subject=Bug Report / Feedback&body=Hi, I found an issue with 1stStep.ai:%0A%0A"
+      <a href="mailto:support@1ststep.ai?subject=Bug Report / Feedback&body=Hi, I found an issue with 1stStep.ai:%0A%0A"
         style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);text-decoration:none;transition:color 0.15s"
         onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1261,42 +1261,42 @@
     </div>
   </div>
 
-  <!-- -- Job Hunt Pass Modal ------------------------------------------------ -->
+  <!-- -- Unified 1stStep Complete membership modal ------------------------- -->
   <div class="modal-overlay" id="upgradeModal" role="dialog" aria-modal="true" aria-labelledby="paywallHeadline" style="display:none">
     <div class="modal" style="max-width:440px;width:100%;padding:32px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <h2 style="font-size:19px;font-weight:800;margin:0;color:var(--text)" id="paywallHeadline">Request Job Agent beta access</h2>
+        <h2 style="font-size:19px;font-weight:800;margin:0;color:var(--text)" id="paywallHeadline">Get everything in one membership</h2>
         <button id="upgradeModalCloseBtn" aria-label="Close upgrade modal" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
       </div>
-      <p style="color:var(--text2);font-size:13px;margin:0 0 20px;line-height:1.5" id="paywallSubheadline">Paid checkout is paused while the application workflow is completed. Existing subscribers keep their access; new users can request controlled-beta access.</p>
+      <p style="color:var(--text2);font-size:13px;margin:0 0 20px;line-height:1.5" id="paywallSubheadline">1stStep Complete includes the resume builder, cover letters, tracker, extension workflow, and Job Agent. Paid checkout is not open yet.</p>
 
       <!-- Pass offer card -->
       <div style="border:2px solid var(--brand);border-radius:14px;padding:20px;background:rgba(99,102,241,0.04);margin-bottom:14px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
           <div>
-            <div style="font-size:11px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">AI Job Agent</div>
+            <div style="font-size:11px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">1stStep Complete</div>
             <div style="display:flex;align-items:baseline;gap:3px">
-              <span style="font-size:30px;font-weight:800;color:var(--text)">$39</span><span style="font-size:13px;color:var(--text2)">/month when launched</span>
+              <span style="font-size:30px;font-weight:800;color:var(--text)">$39</span><span style="font-size:13px;color:var(--text2)">/month when paid access opens</span>
             </div>
-            <div style="font-size:11.5px;color:var(--text2);margin-top:3px">Free during approved beta access - no card</div>
+            <div style="font-size:11.5px;color:var(--text2);margin-top:3px">One membership for every 1stStep tool</div>
           </div>
           <div style="background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;font-size:10px;font-weight:700;padding:4px 10px;border-radius:100px;letter-spacing:0.04em;white-space:nowrap;margin-top:2px">MONTHLY</div>
         </div>
         <ul style="list-style:none;padding:0;margin:0 0 16px;display:flex;flex-direction:column;gap:7px">
-          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);display:inline-flex;font-size:13px;font-weight:700"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span> Unlimited tailored resumes</li>
-          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);display:inline-flex;font-size:13px;font-weight:700"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span> Unlimited cover letters</li>
+          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);display:inline-flex;font-size:13px;font-weight:700"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span> Resume tailoring and cover letters</li>
+          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);display:inline-flex;font-size:13px;font-weight:700"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span> Job discovery and application preparation</li>
           <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);display:inline-flex;font-size:13px;font-weight:700"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span> Full application tracker</li>
           <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);display:inline-flex;font-size:13px;font-weight:700"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span> Full resume vault and version history</li>
-          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);display:inline-flex;font-size:13px;font-weight:700"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span> Extension-assisted Greenhouse testing as enabled</li>
+          <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);display:inline-flex;font-size:13px;font-weight:700"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span> Chrome extension workflow</li>
           <li style="font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="color:var(--brand);display:inline-flex;font-size:13px;font-weight:700"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span> Match score for every job</li>
         </ul>
         <a id="paywallUnlockBtn" href="/pricing#job-agent-pricing"
           style="display:block;text-align:center;padding:13px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none">
-          View Job Agent beta access
+          View 1stStep Complete
         </a>
       </div>
 
-      <p style="text-align:center;font-size:11.5px;color:var(--muted);margin:10px 0 4px">No paid Job Agent checkout is available today.</p>
+      <p style="text-align:center;font-size:11.5px;color:var(--muted);margin:10px 0 4px">No paid checkout is available today. Existing subscriptions keep working.</p>
       <button id="paywallDismissBtn" style="width:100%;padding:8px;background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer">Not now</button>
       <div style="text-align:center;margin-top:6px">
         <button id="upgradeVerifyBtn" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:2px">Already subscribed? Click to verify access</button>
@@ -1550,7 +1550,7 @@
         style="width:100%;padding:13px;background:linear-gradient(135deg,#4338CA,#6366F1);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity 0.15s">
         Unlock Access ->
       </button>
-      <p style="font-size:11px;color:var(--muted);margin:14px 0 0">Need help? <a href="mailto:evan@1ststep.ai"
+      <p style="font-size:11px;color:var(--muted);margin:14px 0 0">Need help? <a href="mailto:support@1ststep.ai"
           style="color:var(--brand);text-decoration:none">Contact support</a>.</p>
     </div>
   </div>
@@ -1621,29 +1621,29 @@
             style="margin-top:auto;display:block;text-align:center;padding:10px;background:var(--blue);color:white;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none">
             Start Free</a>
         </div>
-        <!-- Job Agent controlled beta -->
+        <!-- Unified 1stStep Complete membership -->
         <div
           style="border:2px solid #6366F1;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:8px;position:relative">
           <div
             style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#4338CA,#6366F1);color:white;font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;white-space:nowrap;letter-spacing:0.04em">
-            CONTROLLED BETA</div>
-          <div style="font-size:11px;font-weight:700;color:#818CF8;letter-spacing:0.06em;text-transform:uppercase">AI Job Agent</div>
-          <div><span style="font-size:26px;font-weight:800;color:var(--text)">$39</span><span style="font-size:12px;color:var(--muted)">/month when launched</span></div>
+            EARLY ACCESS</div>
+          <div style="font-size:11px;font-weight:700;color:#818CF8;letter-spacing:0.06em;text-transform:uppercase">1stStep Complete</div>
+          <div><span style="font-size:26px;font-weight:800;color:var(--text)">$39</span><span style="font-size:12px;color:var(--muted)">/month when paid access opens</span></div>
           <ul
             style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:5px">
-            <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> <strong style="color:var(--text)">Unlimited</strong> resume tailoring</li>
-            <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> <strong style="color:var(--text)">Unlimited</strong> cover letters</li>
+            <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Resume tailoring and cover letters</li>
+            <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Job Agent discovery and preparation</li>
             <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Application tracker</li>
             <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Full resume vault</li>
             <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Career Positioning Brief</li>
-            <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Extension-assisted testing as enabled</li>
+            <li><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Chrome extension workflow</li>
           </ul>
           <a href="/pricing#job-agent-pricing"
             style="margin-top:auto;display:block;text-align:center;padding:10px;background:linear-gradient(135deg,#4338CA,#6366F1);color:white;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none">
-            Request beta access</a>
+            View 1stStep Complete</a>
         </div>
       </div>
-      <p style="font-size:11px;color:var(--muted);margin:0 0 12px">No charge during approved beta access. Any future subscription requires separate agreement.</p>
+      <p style="font-size:11px;color:var(--muted);margin:0 0 12px">Early access is free for approved users. The future paid membership requires separate agreement.</p>
       <button id="paywallVerifyLinkBtn"
         style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:2px">
         Already subscribed? Verify access
@@ -2125,7 +2125,7 @@
       style="width:100%;display:flex;align-items:center;gap:14px;padding:13px 24px;background:none;border:none;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;text-align:left;transition:background 0.1s"
       class="hover-surface2">
       <span style="font-size:20px;width:28px;text-align:center"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 12h20"/></svg></span></span>
-      <span>Bulk Apply <span style="font-size:11px;font-weight:500;color:var(--muted)">- Job Hunt Pass</span></span>
+      <span>Bulk Apply <span style="font-size:11px;font-weight:500;color:var(--muted)">- 1stStep Complete</span></span>
     </button>
     <div style="height:1px;background:var(--border);margin:8px 24px"></div>
     <button id="mobileSheetAccount"

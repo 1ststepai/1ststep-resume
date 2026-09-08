@@ -1,0 +1,122 @@
+/* Shared appearance control and page-level theme tokens. */
+.site-theme-toggle {
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:76px;min-height:44px;padding:0 12px;
+  border:1px solid var(--line-strong,#cbd5e1);border-radius:999px;background:var(--surface,#fff);color:var(--ink,#0f172a);
+  font:650 13px/1 Inter,system-ui,sans-serif;cursor:pointer;box-shadow:0 6px 18px rgba(15,23,42,.08);
+  transition:background-color .2s ease,border-color .2s ease,color .2s ease,box-shadow .2s ease;
+}
+.site-theme-toggle:hover{box-shadow:0 9px 24px rgba(67,56,202,.18)}
+.site-theme-toggle svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.site-theme-toggle--floating{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));z-index:150}
+
+html[data-theme="dark"] {
+  --bg:#080b17;--bg-soft:#0f1425;--surface:#151b2e;--line:#29324b;--line-strong:#3a4664;
+  --ink:#f8fafc;--body:#cbd5e1;--muted:#a8b3c7;--primary:#a5b4fc;--primary-fill:#6366f1;--primary-tint:#25284a;
+  --cyan:#67d5ef;--mint:#6ee7b7;--amber:#fbbf77;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 16px 34px -18px rgba(0,0,0,.72);
+  --shadow-lg:0 1px 2px rgba(0,0,0,.35),0 26px 62px -24px rgba(0,0,0,.82);
+}
+html[data-theme="dark"] body{background:var(--bg);color:var(--body)}
+html[data-theme="dark"] .nav{background:rgba(8,11,23,.88)}
+html[data-theme="dark"] :is(.nav,.foot) .brand{padding:6px 10px;border-radius:10px;background:#fff}
+html[data-theme="dark"] .hero-accent{background:linear-gradient(105deg,#a5b4fc 5%,#c4b5fd 52%,#f0abfc 100%);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+html[data-theme="dark"] .hero{background:radial-gradient(circle at 78% 18%,rgba(99,102,241,.22),transparent 32%),linear-gradient(180deg,#0e1325 0%,var(--bg) 68%)}
+html[data-theme="dark"] .band,html[data-theme="dark"] .strip,html[data-theme="dark"] .outcome-section{background:var(--bg-soft)}
+html[data-theme="dark"] .demo-orbit{border-color:#30395b}
+html[data-theme="dark"] .demo-orbit::after{border-color:#252d48}
+html[data-theme="dark"] .demo-window{background:rgba(15,20,37,.96);border-color:#343e61;color:var(--ink);box-shadow:0 28px 70px -30px rgba(0,0,0,.92),0 0 0 1px rgba(165,180,252,.06)}
+html[data-theme="dark"] .demo-toolbar{border-color:#29324b;color:var(--body)}
+html[data-theme="dark"] .demo-dots{color:#697493}
+html[data-theme="dark"] .demo-label{background:#25284a;color:#c7d2fe}
+html[data-theme="dark"] .demo-content h2{color:var(--ink)}
+html[data-theme="dark"] .demo-job{background:#151b2e;border-color:#343e61}
+html[data-theme="dark"] .demo-company span:not(.demo-monogram),html[data-theme="dark"] .demo-document div span{color:var(--body)}
+html[data-theme="dark"] .demo-monogram{background:#25284a;color:#c7d2fe}
+html[data-theme="dark"] .demo-chips span{background:#202840;color:#dbe4f3}
+html[data-theme="dark"] .demo-fit{background:#0b1020}
+html[data-theme="dark"] .demo-fit p{color:var(--body)}
+html[data-theme="dark"] .demo-fit strong{color:var(--ink)}
+html[data-theme="dark"] .demo-check{color:#a5b4fc}
+html[data-theme="dark"] .demo-document,html[data-theme="dark"] [data-demo-step="1"] .demo-document{background:#11172a;border-color:#343e61}
+html[data-theme="dark"] .demo-document strong{color:var(--ink)}
+html[data-theme="dark"] .paper-icon{background:repeating-linear-gradient(#11172a 0 7px,#343e61 7px 8px);border-color:#818cf8}
+html[data-theme="dark"] .demo-status{background:#25284a;color:#c7d2fe}
+html[data-theme="dark"] .demo-safety,html[data-theme="dark"] .demo-progress,html[data-theme="dark"] .demo-controls{color:var(--muted)}
+html[data-theme="dark"] .demo-progress li{border-color:#343e61;color:var(--muted)}
+html[data-theme="dark"] .demo-progress .is-current{border-color:#818cf8;color:#c7d2fe}
+html[data-theme="dark"] .demo-controls button{background:#151b2e;border-color:#3a4664;color:#c7d2fe}
+html[data-theme="dark"] .studio-card{background:linear-gradient(155deg,#151b2e 42%,#20234a);border-color:var(--line);box-shadow:var(--shadow)}
+html[data-theme="dark"] .studio-card>p:not(.eyebrow),html[data-theme="dark"] .studio-extension>div>p:not(.eyebrow){color:var(--body)}
+html[data-theme="dark"] .studio-extension{background:#27215f}
+html[data-theme="dark"] .mini-job,html[data-theme="dark"] .extension-popover,html[data-theme="dark"] .floating-note{background:#fff;color:#172033}
+html[data-theme="dark"] .resume-paper,html[data-theme="dark"] .browser-preview,html[data-theme="dark"] .edit-prompt{color:#172033}
+html[data-theme="dark"] .outcome-stage{background:#171b38;border-color:#30395b}
+html[data-theme="dark"] .outcome-art{opacity:.42;filter:saturate(.82) brightness(.72)}
+html[data-theme="dark"] .journey-card{background:rgba(15,20,37,.94);border-color:#343e61}
+html[data-theme="dark"] .foot{background:#080b17}
+html[data-theme="dark"] .product-studio{background:var(--bg-soft)}
+html[data-theme="dark"] .conversation-bubble{color:#172033}
+html[data-theme="dark"] :is(.journey-card>p,.journey-foot span,.compact-details details p,#motionToggle){color:var(--body)}
+html[data-theme="dark"] .skip{background:#4f46e5;color:#fff}
+
+html[data-theme="dark"] body[data-page="concierge"]{
+  --agent-surface:#11172a;--agent-soft:#0b1020;--agent-ink:#f8fafc;--agent-body:#cbd5e1;--agent-muted:#a8b3c7;
+  --agent-border:#29324b;--agent-control-border:#3a4664;--agent-primary:#6366f1;--agent-link:#a5b4fc;--agent-tint:#25284a;
+  --agent-success:#6ee7b7;--agent-caution:#fbbf77;--agent-danger:#fca5a5;
+  background:radial-gradient(circle at 70% -20%,#222a57 0,transparent 36%),#080b17;
+}
+html[data-theme="dark"] body[data-page="concierge"] .agent-header,
+html[data-theme="dark"] body[data-page="concierge"] :is(.launch-step,.daily-dashboard,.agent-configuration,.agent-conversation,.simple-job-card,.needs-you-item,.configuration-grid article,.attention-now,.alert-status-card,.alert-coverage-grid article){background:var(--agent-surface);border-color:var(--agent-border);color:var(--agent-ink)}
+html[data-theme="dark"] body[data-page="concierge"] :is(.agent-conversation>header,.composer,.rail,.mission,.chat,.desk-shell,.resume-shell,.question-card,.campaign-wizard,.jobs-shell,.needs-sheet,.confirmation-dialog,.consent-dialog,.agent-access-shell,.agent-access-form,.interview-shell){background:var(--agent-surface);border-color:var(--agent-border);color:var(--agent-ink)}
+html[data-theme="dark"] body[data-page="concierge"] :is(.resume-path,.desk-row,.configuration-grid article,.interview-question,.interview-coaching,.confirmation-dialog dl div,.consent-dialog fieldset label,.assistant){background:var(--agent-soft);border-color:var(--agent-border);color:var(--agent-ink)}
+html[data-theme="dark"] body[data-page="concierge"] :is(input,textarea,select,.composer input){background:#0b1020;color:var(--agent-ink);border-color:var(--agent-control-border)}
+html[data-theme="dark"] body[data-page="concierge"] :is(.quick button,.search-link,.resume-action,.resume-path button,.resume-upload-label,.desk-actions button,.desk-tab,.close-desk,.question-choice,.question-secondary,.wizard-buttons button,.agent-configuration header button,.agent-conversation>header button,.needs-sheet header button,.confirmation-dialog button,.consent-actions button,.interview-actions button,.path-scan,.choice-row button,.job-tabs button,.simple-job-card footer button){background:var(--agent-surface);color:var(--agent-body);border-color:var(--agent-control-border)}
+html[data-theme="dark"] body[data-page="concierge"] :is(.cost-table td,.cost-table td strong,.alert-status-card strong,.alert-coverage-grid strong){color:var(--agent-ink)}
+html[data-theme="dark"] body[data-page="concierge"] :is(.cost-table td small,.alert-status-card span,.alert-status-card small,.alert-coverage-grid span){color:var(--agent-body)}
+html[data-theme="dark"] body[data-page="concierge"] :is(.agent-logo,#agentTitle,.agent-launch h1){color:var(--agent-ink)!important}
+html[data-theme="dark"] body[data-page="concierge"] :is(.agent-logo span,.studio-eyebrow,.agent-launch h1 em,.agent-promise a){color:var(--agent-link)!important}
+html[data-theme="dark"] body[data-page="concierge"] :is(.agent-header nav button,.agent-header .site-theme-toggle,.launch-benefits span,.agent-promise){color:var(--agent-body)!important}
+html[data-theme="dark"] body[data-page="concierge"] .agent-header .site-theme-toggle{background:var(--agent-surface)!important;border-color:var(--agent-control-border)!important}
+html[data-theme="dark"] body[data-page="concierge"] :is(.application-shell,.application-head,.attention-card,.attention-job,.application-review-details,.jobs-head,.needs-sheet>header,.vault-shell,.vault-head,.guided-launch-shell,.package-review-shell,.package-review-head,.package-review-footer){background:var(--agent-surface)!important;border-color:var(--agent-border)!important;color:var(--agent-ink)!important}
+html[data-theme="dark"] body[data-page="concierge"] :is(.attention-body,.jobs-body,.needs-sheet-body,.vault-body,.resume-body,.package-review-body){background:var(--agent-soft)!important;color:var(--agent-ink)!important}
+html[data-theme="dark"] body[data-page="concierge"] :is(.attention-now h2,.application-head h2,.attention-card h3,.attention-job strong,.attention-job h3,.jobs-head h2,.jobs-section-head h3,.needs-sheet h2,.needs-you-item strong,.vault-head h2,.resume-head h2,.package-review-head h2){color:var(--agent-ink)!important}
+html[data-theme="dark"] body[data-page="concierge"] .simple-job-card h4{color:var(--agent-ink)!important}
+html[data-theme="dark"] body[data-page="concierge"] :is(.application-head p,.jobs-head p,.jobs-section-head p,.needs-sheet header p,.needs-you-item small,.simple-job-meta,.simple-job-card header p,.simple-job-card footer strong,.vault-head p,.resume-head p,.resume-footer small,.package-review-head p,.desk-empty){color:var(--agent-body)!important}
+html[data-theme="dark"] body[data-page="concierge"] :is(.application-head .simulated-label,.jobs-head>div>span,.needs-sheet header span,.vault-head .eyebrow,.resume-head .eyebrow){color:#c7d2fe!important}
+html[data-theme="dark"] body[data-page="concierge"] :is(.approval-safety-note,.application-review-details .workspace-row){background:var(--agent-tint)!important;border-color:var(--agent-control-border)!important;color:#e0e7ff!important}
+html[data-theme="dark"] body[data-page="concierge"] .application-review-details .workspace-row small{color:#cbd5e1!important}
+html[data-theme="dark"] body[data-page="concierge"] :is(input,textarea)::placeholder{color:#b9c5d7!important;opacity:1}
+html[data-theme="dark"] body[data-page="concierge"] :is(.send,.resume-primary,.desk-submit,.wizard-buttons .save,.interview-primary,.question-primary,.attention-actions .primary,.job-primary-action,.needs-you-item button){background:#4f46e5!important;border-color:#4f46e5!important;color:#fff!important}
+html[data-theme="dark"] body[data-page="concierge"] .agent-access-form button{background:#4338ca!important;color:#fff!important}
+html[data-theme="dark"] body[data-page="concierge"] .agent-authorization-control .danger{background:#3b151c!important;border-color:#be6470!important;color:#fecdd3!important}
+html[data-theme="dark"] body[data-page="concierge"] .access-measurement{background:#2b2415!important;border-color:#735f2b!important}
+html[data-theme="dark"] body[data-page="concierge"] .access-measurement :is(strong,span){color:#fde68a!important}
+html[data-theme="dark"] body[data-page="concierge"] .guided-launch-stage h2{color:var(--agent-ink)!important}
+html[data-theme="dark"] body[data-page="concierge"] .guided-launch-footer p{color:var(--agent-body)!important}
+html[data-theme="dark"] body[data-page="concierge"] #packageReviewOverlay :is(.package-more summary,.package-not-sent){color:#cbd5e1!important}
+
+html[data-theme="light"] body[data-page="concierge"] :is(.jobs-head h2,.jobs-section-head h3,.simple-job-card h4){color:#172033!important}
+html[data-theme="light"] body[data-page="concierge"] .jobs-head>div>span{color:#3730a3!important;font-size:12px}
+html[data-theme="light"] body[data-page="concierge"] :is(.jobs-head p,.jobs-section-head p,.simple-job-meta,.simple-job-meta span,.jobs-empty){color:#475569!important}
+html[data-theme="light"] body[data-page="concierge"] .jobs-head p{font-size:14px}
+html[data-theme="light"] body[data-page="concierge"] .jobs-section-head h3{font-size:18px}
+html[data-theme="light"] body[data-page="concierge"] .jobs-section-head p{font-size:14px}
+html[data-theme="light"] body[data-page="concierge"] .simple-job-meta{font-size:13px}
+
+html[data-theme="light"] body[data-page="pricing"],html[data-theme="light"] body[data-page="legal"]{
+  --dark:#f8fafc;--dark2:#fff;--dark3:#f1f5f9;--border:#d8e0ec;--text:#0f172a;--muted:#52627a;--blue:#4f46e5;
+  background:#f8fafc;color:#0f172a;
+}
+html[data-theme="light"] body[data-page="pricing"] .plan-card.featured{background:linear-gradient(160deg,#eef2ff 0%,#fff 70%)}
+html[data-theme="light"] body[data-page="pricing"] .save-badge{color:#08734d;background:#e8f7f0;border-color:#a7dfc7}
+html[data-theme="light"] body[data-page="pricing"] :is(.hero-badge,.compare-note a,.faq-item p a){color:#3730a3}
+html[data-theme="light"] body[data-page="pricing"] :is(.annual-note,.plan-features .check){color:#08734d}
+html[data-theme="light"] body[data-page="pricing"] .plan-features .dash{color:#64748b}
+html[data-theme="dark"] body[data-page="pricing"] .logo{color:#a5b4fc}
+html[data-theme="dark"] body[data-page="login"]{background:radial-gradient(ellipse at 50% 0,#20264b,transparent 62%),#080b17;color:#f8fafc}
+html[data-theme="dark"] body[data-page="login"] :is(.brand,h1){color:#f8fafc}
+html[data-theme="dark"] body[data-page="login"] :is(.intro,#loginStatus,nav a){color:#b9c5d7}
+html[data-theme="dark"] body[data-page="admin"]{background:#080b17}
+
+@media(max-width:900px){.nav-inner>.site-theme-toggle{margin-left:auto}.nav-inner>.site-theme-toggle+ .nav-toggle{margin-left:0}.site-theme-toggle span{display:none}.site-theme-toggle{min-width:44px;padding:0 11px}}
+@media(prefers-reduced-motion:reduce){.site-theme-toggle{transition:none}}
