@@ -653,3 +653,9 @@ section { padding: clamp(62px, 8vw, 104px) 0; }
   .hero .pill { font-size: 0.78rem; }
   .hero-payoff { font-size: 0.9rem; }
 }
+
+@media (min-width: 701px) {
+  /* The centred hero list packs items tightly; give the tick its own room. */
+  .hero-points li { padding-left: 21px; }
+  .hero-points li::before { left: 1px; top: 0.42em; width: 9px; height: 5px; }
+}
