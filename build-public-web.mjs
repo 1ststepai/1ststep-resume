@@ -51,6 +51,7 @@ const publicAssets = [
   'sitemap.xml',
   'robots.txt',
   '1ststep-logo.png',
+  'og-1ststep-ai.png',
   '1ststep-ai-icon.png',
   '1ststep_facebook_banner.jpg',
   '1ststep-app-image-ad.PNG',

@@ -100,8 +100,10 @@ assert.equal((html.match(/Start My Job Agent — Free/g) || []).length, 5, 'Ever
 assert.match(html, /href="#how">See How It Works<\/a>/);
 assert.match(html, /<link rel="canonical" href="https:\/\/app\.1ststep\.ai\/">/);
 assert.match(html, /<meta name="robots" content="index,follow,max-image-preview:large">/);
-assert.match(html, /<meta property="og:image" content="https:\/\/app\.1ststep\.ai\/home-momentum\.jpg">/);
-assert.doesNotMatch(html, /og-1ststep-ai\.png/);
+assert.match(html, /<meta property="og:image" content="https:\/\/app\.1ststep\.ai\/og-1ststep-ai\.png">/);
+assert.match(html, /<meta property="og:image:width" content="1200">/);
+assert.match(html, /<meta property="og:image:height" content="630">/);
+assert.match(html, /<meta name="twitter:image" content="https:\/\/app\.1ststep\.ai\/og-1ststep-ai\.png">/);
 const structuredDataMatch = html.match(/<script type="application\/ld\+json">\s*([\s\S]*?)\s*<\/script>/);
 assert(structuredDataMatch, 'Homepage must include JSON-LD');
 const structuredData = JSON.parse(structuredDataMatch[1]);
