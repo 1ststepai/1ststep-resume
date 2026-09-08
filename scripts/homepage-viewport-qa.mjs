@@ -7,10 +7,14 @@ const BASE = process.argv[2] || 'http://localhost:4321';
 const OUT = process.argv[3] || 'artifacts/homepage-qa';
 
 const VIEWPORTS = [
-  { name: 'desktop-1440', width: 1440, height: 900 },
-  { name: 'tablet-1024', width: 1024, height: 1366 },
+  { name: 'mobile-320', width: 320, height: 780 },
+  { name: 'mobile-375', width: 375, height: 812 },
   { name: 'mobile-390', width: 390, height: 844 },
-  { name: 'mobile-360', width: 360, height: 780 },
+  { name: 'tablet-768', width: 768, height: 1024 },
+  { name: 'laptop-1024', width: 1024, height: 768 },
+  { name: 'desktop-1280', width: 1280, height: 800 },
+  { name: 'desktop-1440', width: 1440, height: 900 },
+  { name: 'desktop-large-1728', width: 1728, height: 1000 },
 ];
 
 let failures = 0;

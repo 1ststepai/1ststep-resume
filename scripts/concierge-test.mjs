@@ -123,6 +123,8 @@ assert.doesNotMatch(conciergeHtml, /id="dailyGoalForm"|daily application target|
 assert.match(conciergeHtml, /Real progress, without a quota/);
 assert.match(conciergeHtml, /Prepared drafts stay separate from employer-confirmed submissions/);
 assert.match(conciergeHtml, /id="openAgentAccess"[^>]*>Sign in</);
+assert.match(conciergeHtml, /supported Greenhouse pages on desktop Chrome/,
+  'Extension copy must not imply unsupported browser or ATS coverage');
 assert.match(conciergeJs, /loadPublicAppConfig\(\)/);
 assert.match(conciergeJs, /restoreAccessAvailable === false/);
 assert.match(conciergeJs, /Secure sign-in is not configured for this environment\. No code was sent\./);

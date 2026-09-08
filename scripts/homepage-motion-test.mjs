@@ -104,6 +104,10 @@ assert.match(html, /<meta property="og:image" content="https:\/\/app\.1ststep\.a
 assert.match(html, /<meta property="og:image:width" content="1200">/);
 assert.match(html, /<meta property="og:image:height" content="630">/);
 assert.match(html, /<meta name="twitter:image" content="https:\/\/app\.1ststep\.ai\/og-1ststep-ai\.png">/);
+assert.match(html, /supported Greenhouse application pages/,
+  'Homepage extension copy must state the currently verified compatibility boundary');
+assert.match(html, /You review every field, and it never submits/,
+  'Homepage extension copy must preserve supervised submission control');
 const structuredDataMatch = html.match(/<script type="application\/ld\+json">\s*([\s\S]*?)\s*<\/script>/);
 assert(structuredDataMatch, 'Homepage must include JSON-LD');
 const structuredData = JSON.parse(structuredDataMatch[1]);

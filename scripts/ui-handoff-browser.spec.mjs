@@ -1,13 +1,14 @@
 import { test, expect } from '@playwright/test';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-const base = 'http://127.0.0.1:4175';
+const base = (process.env.CONCIERGE_TEST_URL || 'http://127.0.0.1:4175/concierge').replace(/\/concierge\/?$/, '');
 
-test('subscriber workspace uses light surfaces and opens Needs You', async ({ page }) => {
+test('subscriber workspace surfaces the next action and opens Needs You', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(`${base}/concierge?uiFixture=subscriber`);
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe('light');
-  await expect(page.locator('.daily-dashboard')).toBeVisible();
+  await expect(page.locator('#attentionNow')).toBeVisible();
+  await expect(page.locator('#attentionNowSummary')).not.toBeEmpty();
   await page.screenshot({ path: join(tmpdir(), '1ststep-ui-handoff-desktop.png') });
   await page.locator('#openNeedsYou').click();
   await expect(page.locator('.needs-sheet')).toBeVisible();
@@ -40,6 +41,19 @@ for (const width of [375, 390, 720]) {
       expect(box.width).toBeGreaterThanOrEqual(44);
       expect(await button.evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(10.5);
     }
+    const layout = await page.locator('.agent-header nav').evaluate(nav => {
+      const navBox = nav.getBoundingClientRect();
+      const buttons = [...nav.querySelectorAll('button')]
+        .filter(button => getComputedStyle(button).display !== 'none')
+        .map(button => button.getBoundingClientRect());
+      const overlaps = buttons.some((a, index) => buttons.slice(index + 1).some(b =>
+        a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top));
+      const contained = buttons.every(box => box.left >= navBox.left && box.right <= navBox.right && box.top >= navBox.top && box.bottom <= navBox.bottom);
+      return { overlaps, contained, background: getComputedStyle(nav).backgroundColor };
+    });
+    expect(layout.overlaps).toBe(false);
+    expect(layout.contained).toBe(true);
+    expect(layout.background).not.toBe('rgba(0, 0, 0, 0)');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
 }
