@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const base = 'http://127.0.0.1:4175';
+const base = process.env.BROWSER_TEST_ORIGIN || 'http://127.0.0.1:4175';
 
 // Escape-to-close and the Tab focus trap previously covered only 3 of the 14
 // dialogs. From the other 11 a keyboard user could Tab out into the page hidden

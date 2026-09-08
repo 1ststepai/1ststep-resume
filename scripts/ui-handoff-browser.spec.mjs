@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-const base = 'http://127.0.0.1:4175';
+const base = process.env.BROWSER_TEST_ORIGIN || 'http://127.0.0.1:4175';
 
 test('subscriber workspace uses light surfaces and opens Needs You', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
