@@ -2823,8 +2823,7 @@ ${resume.slice(0, 3000)}
         company: jobData.company,
         url:     jobData.applyUrl,
         site:    jobData.site,
-        location: jobData.location || '',
-        salary: jobData.salaryText || ''
+        location: jobData.location || ''
       };
 
       switchMode('resume');
@@ -3782,7 +3781,6 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
           jobTitle: _srcJob?.title || window._capturedJob?.title || kwData?.job_title || gapData?.job_title || '',
           company: _srcJob?.company?.display_name || window._capturedJob?.company || kwData?.company || gapData?.company || '',
           location: _srcJob?.location?.display_name || window._capturedJob?.location || '',
-          salary: _srcJob?.salary_estimate || window._capturedJob?.salary || '',
           jobUrl: _srcJob?.redirect_url || window._capturedJob?.url || '',
           resume: atsClean,
           coverLetter: coverLetter || '',
