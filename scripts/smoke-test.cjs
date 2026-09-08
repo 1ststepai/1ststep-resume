@@ -40,6 +40,12 @@ const ghlDefault = fs.existsSync(path.join(ROOT, 'resume-tailor-landing', 'ghl-c
   ? fs.readFileSync(path.join(ROOT, 'resume-tailor-landing', 'ghl-custom-code.html'), 'utf8') : '';
 const pricing = fs.existsSync(path.join(ROOT, 'pricing.html'))
   ? fs.readFileSync(path.join(ROOT, 'pricing.html'), 'utf8') : '';
+const conciergeHtml = fs.existsSync(path.join(ROOT, 'concierge.html'))
+  ? fs.readFileSync(path.join(ROOT, 'concierge.html'), 'utf8') : '';
+const conciergeJs = fs.existsSync(path.join(ROOT, 'concierge.js'))
+  ? fs.readFileSync(path.join(ROOT, 'concierge.js'), 'utf8') : '';
+const resumeBuilder = fs.existsSync(path.join(ROOT, 'resume-builder.js'))
+  ? fs.readFileSync(path.join(ROOT, 'resume-builder.js'), 'utf8') : '';
 const terms = fs.existsSync(path.join(ROOT, 'terms.html'))
   ? fs.readFileSync(path.join(ROOT, 'terms.html'), 'utf8') : '';
 const apiSubscription = fs.existsSync(path.join(ROOT, 'api', 'subscription.js'))
@@ -472,6 +478,26 @@ if (js) {
   if (/firststep_attribution/.test(source) && /fs_vid/.test(source)) pass(name + ' persists attribution and app handoff visitor ID');
   else fail(name + ' is missing attribution handoff');
 });
+
+section('User feedback regression coverage');
+
+if ((pricing.match(/href=["']\/app\?start=resume-builder["']/g) || []).length >= 2) pass('Pricing resume CTAs open the resume builder directly');
+else fail('Pricing resume CTAs do not consistently open the resume builder directly');
+
+if (/get\('start'\) === 'resume-builder'/.test(js)) pass('App honors the resume-builder entry route');
+else fail('App does not honor the resume-builder entry route');
+
+if (/_rbValidateCurrentStep\(\)/.test(resumeBuilder) && /Enter your full name before continuing/.test(resumeBuilder) && /Add at least one skill before continuing/.test(resumeBuilder)) pass('Resume builder blocks incomplete steps');
+else fail('Resume builder incomplete-step gates are missing');
+
+if (/resumeContactValidationMessage/.test(conciergeJs) && /Add your email address before continuing/.test(conciergeJs)) pass('Job Agent contact setup requires an email');
+else fail('Job Agent contact setup email validation is missing');
+
+if (/No resume file handy/.test(conciergeHtml) && !/No resume on this phone/.test(conciergeHtml)) pass('Job Agent resume copy is device-neutral');
+else fail('Job Agent resume copy still assumes a phone');
+
+if (/body\.resume-builder-open[\s\S]*chat-widget-container/.test(css) && /classList\.add\('resume-builder-open'\)/.test(resumeBuilder)) pass('Resume builder suppresses overlapping chat chrome');
+else fail('Resume builder chat-overlap protection is missing');
 
 section('Live copy, link, and icon polish smoke');
 
