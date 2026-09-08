@@ -58,6 +58,16 @@ assert.match(files['auth-bridge.js'], /type: '1STSTEP_JOB_CAPTURE'/,
   'auth-bridge must still post the capture contract message');
 assert.match(appJs, /event\.data\.type !== '1STSTEP_JOB_CAPTURE'/,
   'app.js must still listen for the capture contract message');
+assert.match(appJs, /Nothing is generated until you click Tailor My Resume/,
+  'Resume Builder must tell the user that capture does not start AI generation');
+assert.doesNotMatch(appJs, /function showJobCaptureConfirm[\s\S]{0,1800}runTailoring\(/,
+  'showing a captured job must never spend a credit or start tailoring');
+assert.match(appJs, /jobTitle: _srcJob\?\.title \|\| window\._capturedJob\?\.title \|\| kwData\?\.job_title/,
+  'tracker history must prefer the verified captured role over a generic model label');
+assert.match(appJs, /const tailoredMatchPct = calcMatchScore\(atsClean, jobDesc\)/,
+  'saved match scores must be deterministically calculated from the generated resume');
+assert.doesNotMatch(appJs, /matchPct: gapData\?\.match_score_after_estimate - clientMatchPct/,
+  'tracker match score must not be a subtraction of unrelated percentages');
 assert.match(files['background.js'], /\$\{APP_URL\}\/concierge\?jobCaptureId=\$\{jobCaptureId\}&mode=\$\{mode\}/,
   'Job Agent review must open the concierge receiver with the exact capture id');
 assert.match(conciergeJs, /event\.data\.type !== '1STSTEP_JOB_CAPTURE'/,
