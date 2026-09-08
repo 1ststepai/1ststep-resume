@@ -7,3 +7,23 @@
 html[data-theme=dark] .carousel-shell{background:rgba(15,20,37,.78)}html[data-theme=dark] .listing-carousel:before{background:linear-gradient(90deg,var(--bg-soft),transparent)}html[data-theme=dark] .listing-carousel:after{background:linear-gradient(270deg,var(--bg-soft),transparent)}html[data-theme=dark] .carousel-card{background:var(--surface);border-color:var(--line)}
 @media(max-width:760px){.hero-copy{align-items:flex-start;text-align:left}.verification-note{justify-content:flex-start}.carousel-shell{margin-top:3.5rem}.carousel-heading{padding-inline:18px}.carousel-card{width:205px;min-height:78px;padding:.7rem .8rem}.carousel-logo{width:43px;height:43px}.carousel-logo img{width:27px;height:27px}.toggle-label{display:none}.listing-carousel:before,.listing-carousel:after{width:26px}}
 @media(prefers-reduced-motion:reduce){.carousel-track{animation:none}.listing-carousel{overflow-x:auto;scroll-snap-type:x proximity}.carousel-card{scroll-snap-align:start}.carousel-toggle{display:none}}
+
+/* Every listing surface follows the shared light/dark theme tokens. */
+.listings-section{background:var(--bg);color:var(--ink)}
+.section-intro h2,.listing-card h3,.cta-card h2{color:var(--ink)}
+.section-intro>p,.listing-card .card-body>p:last-child,.cta-card p:last-child{color:var(--body)}
+.listing-card,.cta-card{border-color:var(--line);background:var(--surface)}
+.logo-box,.card-link span{border-color:var(--line);background:var(--bg-soft)}
+.listing-kind{color:var(--muted)}
+.listing-status{border-color:var(--line);color:var(--body)}
+.card-link{border-color:var(--line);color:var(--ink)}
+html[data-theme=dark]{color-scheme:dark}
+html[data-theme=dark] .listings-section{background:var(--bg)}
+html[data-theme=dark] .listing-card,html[data-theme=dark] .cta-card{border-color:var(--line);background:var(--surface);box-shadow:var(--shadow)}
+html[data-theme=dark] .logo-box,html[data-theme=dark] .card-link span{border-color:var(--line);background:var(--bg-soft)}
+html[data-theme=dark] .section-intro h2,html[data-theme=dark] .listing-card h3,html[data-theme=dark] .cta-card h2{color:var(--ink)}
+html[data-theme=dark] .section-intro>p,html[data-theme=dark] .listing-card .card-body>p:last-child,html[data-theme=dark] .cta-card p:last-child{color:var(--body)}
+html[data-theme=dark] .listing-kind{color:var(--muted)}
+html[data-theme=dark] .listing-status{border-color:var(--line);color:var(--body)}
+html[data-theme=dark] .card-link{border-color:var(--line);color:var(--ink)}
+html[data-theme=dark] .carousel-logo:not(.dark-logo){border-color:var(--line);background:var(--bg-soft)}
