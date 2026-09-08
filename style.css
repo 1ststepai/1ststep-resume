@@ -2411,6 +2411,16 @@
       #mobileQuickBar.visible { display: flex; }
     }
 
+    /* Keep third-party chat chrome away from resume-builder fields and actions. */
+    body.resume-builder-open #chat-widget-container,
+    body.resume-builder-open chat-widget,
+    body.resume-builder-open [id*="leadconnector"],
+    body.resume-builder-open [class*="chat-widget"],
+    body.resume-builder-open iframe[src*="leadconnector"],
+    body.resume-builder-open iframe[src*="widgets.leadconnectorhq"] {
+      display: none !important;
+    }
+
     /* ── Chrome Extension Promo (mobile only) ──────────────── */
     .mobile-ext-promo {
       display: none;
