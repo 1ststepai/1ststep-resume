@@ -108,6 +108,7 @@ for (const [viewportName, viewport] of viewports) {
           await page.addInitScript(value => localStorage.setItem('1ststep_theme', value), theme);
           await page.goto(origin + route, { waitUntil: 'networkidle' });
           await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+          await expect(page.locator('#accessCheckCover')).toHaveCount(0);
           const failures = await auditContrast(page);
           expect(failures, `${routeName} ${viewportName} ${theme} contrast failures:\n${JSON.stringify(failures, null, 2)}`).toEqual([]);
         }
