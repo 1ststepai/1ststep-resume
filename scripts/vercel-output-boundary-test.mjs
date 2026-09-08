@@ -98,6 +98,7 @@ const expectedStatic = [
   'client/admin-system-alerts.js',
   'client/prohibited-secret.js',
   '1ststep-logo.png',
+  'og-1ststep-ai.png',
   '1ststep-ai-icon.png',
   'robots.txt',
 ];
