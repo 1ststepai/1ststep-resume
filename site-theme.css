@@ -97,7 +97,7 @@ html[data-theme="dark"] body[data-page="concierge"] #packageReviewOverlay :is(.p
 
 html[data-theme="light"] body[data-page="concierge"] :is(.jobs-head h2,.jobs-section-head h3,.simple-job-card h4){color:#172033!important}
 html[data-theme="light"] body[data-page="concierge"] .jobs-head>div>span{color:#3730a3!important;font-size:12px}
-html[data-theme="light"] body[data-page="concierge"] :is(.jobs-head p,.jobs-section-head p,.simple-job-meta,.simple-job-meta span){color:#475569!important}
+html[data-theme="light"] body[data-page="concierge"] :is(.jobs-head p,.jobs-section-head p,.simple-job-meta,.simple-job-meta span,.jobs-empty){color:#475569!important}
 html[data-theme="light"] body[data-page="concierge"] .jobs-head p{font-size:14px}
 html[data-theme="light"] body[data-page="concierge"] .jobs-section-head h3{font-size:18px}
 html[data-theme="light"] body[data-page="concierge"] .jobs-section-head p{font-size:14px}

@@ -134,6 +134,13 @@ for (const theme of themes) for (const width of [375, 1440]) {
       await expect(page.locator(panel)).toHaveClass(/open/);
       const failures = await page.evaluate(AUDIT);
       allFailures.push(...failures.map(failure => ({ ...failure, where: `${panel} ${failure.where}` })));
+      if (panel === '#jobsOverlay') {
+        await page.locator('#jobsOverlay .job-card-grid').first().evaluate(element => {
+          element.innerHTML = '<div class="jobs-empty">No matching jobs yet. Unavailable jobs are excluded.</div>';
+        });
+        const emptyFailures = await page.evaluate(AUDIT);
+        allFailures.push(...emptyFailures.map(failure => ({ ...failure, where: `#jobsOverlay empty ${failure.where}` })));
+      }
       await page.locator(panel).evaluate(element => element.classList.remove('open'));
     }
 
