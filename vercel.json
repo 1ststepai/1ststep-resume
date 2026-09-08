@@ -114,6 +114,13 @@
       "maxDuration": 5
     }
   },
+  "redirects": [
+    {
+      "source": "/app.html",
+      "destination": "/app/resume",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/jobs/details",
@@ -129,7 +136,7 @@
     },
     {
       "source": "/app/resume",
-      "destination": "/app.html"
+      "destination": "/concierge.html"
     },
     {
       "source": "/funnel",

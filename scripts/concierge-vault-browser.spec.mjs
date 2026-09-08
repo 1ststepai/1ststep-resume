@@ -139,23 +139,19 @@ test('newly reviewed resume survives late sign-in hydration and reaches consent 
   await expect(page.locator('#resumeEditor')).toHaveValue('');
 });
 
-test('resume workspace loads executable assets and its Job Agent chooser reaches concierge', async ({ page }) => {
-  const assetFailures = [];
+test('resume route opens the signed-account Job Agent editor instead of the legacy workspace', async ({ page }) => {
   const pageErrors = [];
-  page.on('response', response => {
-    const path = new URL(response.url()).pathname;
-    if (response.status() >= 400 && ['/style.css', '/product-choice.css', '/app.js', '/resume-builder.js'].includes(path)) {
-      assetFailures.push(`${response.status()} ${path}`);
-    }
-  });
   page.on('pageerror', error => pageErrors.push(error.message));
+  await page.route('**/api/**', route => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+  await page.route('**/api/app-config', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ authentication: { clerk: { enabled: false }, restoreAccessAvailable: false } }) }));
+  await page.route('**/api/session-capabilities', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ jobAgentAccess: true, tier: 'complete', sessionAuthentication: 'opaque-session' }) }));
+  await routeEncryptedResumeVault(page);
   const resumeWorkspaceUrl = new URL('/app/resume', baseUrl).toString();
   await page.goto(resumeWorkspaceUrl, { waitUntil: 'networkidle' });
-  await expect(page).toHaveTitle(/Resume Workspace/);
-  await expect(page.locator('#welcomeOverlay')).toHaveClass(/visible/);
-  await page.locator('#welcomeAgentProductBtn').click();
-  await expect(page).toHaveURL(/\/concierge$/);
-  expect(assetFailures).toEqual([]);
+  await expect(page).toHaveTitle(/Job Agent/);
+  await expect(page.locator('#resumeOverlay')).toHaveClass(/open/);
+  await expect(page.locator('#resumeEditor')).toHaveValue(/Candidate reviewed resume/);
+  await expect(page.locator('#welcomeOverlay')).toHaveCount(0);
   expect(pageErrors).toEqual([]);
 });
 

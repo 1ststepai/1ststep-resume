@@ -1200,7 +1200,8 @@ async function loadPublicAppConfig() {
 
 function openAgentAccess() {
   if (publicAppConfig.authentication.clerkAvailable && !hasApiSession()) {
-    location.assign('/login.html');
+    const returnTo = location.pathname === '/app/resume' ? '/app/resume' : '/app';
+    location.assign(`/login.html?returnTo=${encodeURIComponent(returnTo)}`);
     return;
   }
   agentRestoreChallenge = '';
@@ -1228,6 +1229,26 @@ function openAgentAccess() {
 }
 
 function closeAgentAccess() { $('agentAccessOverlay').classList.remove('open'); }
+
+function isResumeWorkspaceRoute(locationRef = location) {
+  return locationRef.pathname === '/app/resume'
+    || new URLSearchParams(locationRef.search).get('view') === 'resume';
+}
+
+function openRequestedAccountWorkspace() {
+  if (!isResumeWorkspaceRoute()) return;
+  const query = new URLSearchParams(location.search);
+  const captureId = String(query.get('jobCaptureId') || '');
+  if (/^[a-f0-9-]{36}$/i.test(captureId)) {
+    location.replace(`/funnel?${query.toString()}`);
+    return;
+  }
+  if (!hasApiSession() || !hasJobAgentAccess()) {
+    openAgentAccess();
+    return;
+  }
+  openResumeSetup();
+}
 
 function consentControlAvailable() { return sessionCapabilities.jobAgentConsent !== null || sessionCapabilities.jobAgentConsentPolicyConfigured !== null; }
 function activeJobAgentConsent() { return sessionCapabilities.jobAgentConsent?.active === true; }
@@ -4610,9 +4631,11 @@ $('checkAgentStatus').addEventListener('click', () => checkSimpleAgentStatus());
 $('statusShowJobs').addEventListener('click', () => $('openJobs').click());
 // Refresh the displayed age without issuing background requests or inventing activity.
 setInterval(renderRunState, 15000);
-loadPublicAppConfig();
+const publicAppConfigReady = loadPublicAppConfig();
 loadSessionCapabilities().then(async () => {
+  await publicAppConfigReady;
   await hydrateAccountWorkflow();
+  openRequestedAccountWorkspace();
 });
 
 // ── Interview practice ───────────────────────────────────────────────────────

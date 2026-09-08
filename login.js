@@ -10,7 +10,9 @@ export async function initializeLoginPage({
   const status = documentRef.getElementById('loginStatus');
   const retry = documentRef.getElementById('retryLogin');
   const mode = new URLSearchParams(locationRef.search).get('mode');
-  const callback = `${locationRef.origin}/login.html`;
+  const requestedReturnTo = new URLSearchParams(locationRef.search).get('returnTo') || '';
+  const returnTo = safeAppReturnPath(requestedReturnTo);
+  const callback = `${locationRef.origin}/login.html${returnTo === '/app' ? '' : `?returnTo=${encodeURIComponent(returnTo)}`}`;
   let exchanging = false;
 
   function loadScript(src, publishableKey) {
@@ -44,7 +46,7 @@ export async function initializeLoginPage({
       storage.setItem('1ststep_sub_cache', JSON.stringify({
         ts: now(), jobAgentSession: true,
       }));
-      locationRef.replace('/app');
+      locationRef.replace(returnTo);
     } catch (error) {
       exchanging = false;
       status.textContent = error.message || 'Sign-in is temporarily unavailable.';
@@ -83,6 +85,15 @@ export async function initializeLoginPage({
     status.textContent = error.message || 'Secure sign-in is temporarily unavailable.';
     retry.hidden = false;
   }
+}
+
+export function safeAppReturnPath(value) {
+  if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//')) return '/app';
+  let parsed;
+  try { parsed = new URL(value, 'https://app.1ststep.ai'); } catch { return '/app'; }
+  if (parsed.origin !== 'https://app.1ststep.ai') return '/app';
+  if (!['/app', '/app/resume', '/concierge'].includes(parsed.pathname)) return '/app';
+  return `${parsed.pathname}${parsed.search}${parsed.hash}`;
 }
 
 if (typeof document !== 'undefined') await initializeLoginPage();

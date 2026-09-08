@@ -14,19 +14,19 @@ test('subscriber workspace uses light surfaces and opens Needs You', async ({ pa
   await page.screenshot({ path: join(tmpdir(), '1ststep-ui-handoff-needs-you.png') });
 });
 
-test('resume chooser hides unavailable capability, stacks on mobile, and opens builder', async ({ page }) => {
+test('resume route uses the mobile Job Agent editor instead of the legacy chooser', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.route('**/api/**', route => route.fulfill({ status: 401, contentType: 'application/json', body: '{}' }));
+  await page.route('**/api/**', route => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+  await page.route('**/api/app-config', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ authentication: { clerk: { enabled: false }, restoreAccessAvailable: false } }) }));
+  await page.route('**/api/session-capabilities', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ jobAgentAccess: true, tier: 'complete', sessionAuthentication: 'opaque-session' }) }));
+  await page.route('**/api/applicant-vault', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ version: 0, vault: null }) }));
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto(`${base}/app/resume`);
-  await expect(page.locator('#welcomeResumeProductBtn')).toBeVisible();
-  await expect(page.locator('#welcomeExtensionProductBtn')).toBeHidden();
-  const columns = await page.locator('#productChoiceGrid').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length);
-  expect(columns).toBe(1);
-  await page.locator('#welcomeResumeProductBtn').click();
-  await page.locator('#welcomeBuildBtn').click();
-  await expect(page.locator('#resumeBuilderModal')).toBeVisible();
+  await expect(page.locator('#resumeOverlay')).toHaveClass(/open/);
+  await expect(page.locator('#resumeEditor')).toBeVisible();
+  await expect(page.locator('#welcomeOverlay')).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect(errors).toEqual([]);
 });
 
@@ -49,7 +49,7 @@ test('reduced motion keeps workspace progress visible without animation', async 
   await page.goto(`${base}/app/resume`);
   const result = await page.evaluate(() => {
     const el = document.createElement('div');
-    el.className = 'skeleton';
+    el.className = 'agent-working-track';
     document.body.append(el);
     const value = getComputedStyle(el).animationName;
     el.remove();

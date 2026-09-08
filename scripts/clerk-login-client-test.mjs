@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import { initializeLoginPage } from '../login.js';
-async function run({signedIn=true, enabled=true, failure=false, mode=''}={}) {
+async function run({signedIn=true, enabled=true, failure=false, mode='', returnTo=''}={}) {
   const calls=[], cache=new Map(), scripts=[];
   const elements = Object.fromEntries(['loginStatus','retryLogin','clerkSignIn'].map(id=>[id,{hidden:true,textContent:'',addEventListener(type,fn){this[type]=fn;}}]));
   const result={calls,cache,scripts,elements};
-  const clerk={session:signedIn?{getToken:async(options)=> {assert.equal(options.skipCache,true);return 'fixture.session.token';}}:null,load:async()=>{},signOut:async()=>{result.signedOut=true;},redirectToSignIn:async(options)=>{assert.equal(options.signInForceRedirectUrl,'https://app.1ststep.ai/login.html');result.signIn=true;},redirectToSignUp:async()=>{result.signUp=true;}};
+  const clerk={session:signedIn?{getToken:async(options)=> {assert.equal(options.skipCache,true);return 'fixture.session.token';}}:null,load:async()=>{},signOut:async()=>{result.signedOut=true;},redirectToSignIn:async(options)=>{result.signIn=true;result.signInOptions=options;},redirectToSignUp:async(options)=>{result.signUp=true;result.signUpOptions=options;}};
   await initializeLoginPage({
     documentRef:{getElementById:id=>elements[id],createElement:()=>({dataset:{}}),head:{appendChild(script){scripts.push(script.src);script.onload();}}},
     windowRef:{Clerk:clerk},
-    locationRef:{origin:'https://app.1ststep.ai',search:mode?`?mode=${mode}`:'?redirect=https://evil.example',replace:url=>{result.redirect=url;},reload:()=>{result.reloaded=true;}},
+    locationRef:{origin:'https://app.1ststep.ai',search:new URLSearchParams({...mode&&{mode},...returnTo&&{returnTo},...(!mode&&!returnTo)&&{redirect:'https://evil.example'}}).toString().replace(/^/,'?'),replace:url=>{result.redirect=url;},reload:()=>{result.reloaded=true;}},
     storage:{setItem:(k,v)=>cache.set(k,v)},
     timeout:()=>undefined,
     now:()=>0,
@@ -27,6 +27,13 @@ assert.equal(success.calls[1].options.credentials,'same-origin');
 assert.equal(success.cache.size,1);
 assert.equal([...success.cache.values()][0].includes('fixture.session.token'),false);
 assert.deepEqual(JSON.parse([...success.cache.values()][0]), { ts: 0, jobAgentSession: true });
+const resumeReturn = await run({returnTo:'/app/resume'});
+assert.equal(resumeReturn.redirect, '/app/resume');
+const resumeSignIn = await run({signedIn:false,returnTo:'/app/resume'});
+assert.equal(resumeSignIn.signIn,true);
+assert.equal(resumeSignIn.signInOptions.signInForceRedirectUrl,'https://app.1ststep.ai/login.html?returnTo=%2Fapp%2Fresume');
+assert.equal((await run({returnTo:'//evil.example'})).redirect,'/app');
+assert.equal((await run({returnTo:'/admin'})).redirect,'/app');
 const failed=await run({failure:true});
 assert.equal(failed.redirect,undefined);
 assert.equal(failed.cache.size,0);
@@ -37,6 +44,7 @@ assert.equal((await run({signedIn:false})).signIn,true);
 assert.equal((await run({signedIn:false,mode:'sign-up'})).signUp,true);
 const logout=await run({mode:'sign-out'});
 assert.equal(logout.signedOut,true);
+assert.equal(logout.redirect,'/app');
 assert.equal(logout.calls.some(call=>call.url.includes('clerk-exchange')),false);
 const failedLogout=await run({mode:'sign-out',failure:true});
 failedLogout.elements.retryLogin.click();

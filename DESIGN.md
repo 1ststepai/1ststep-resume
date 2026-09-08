@@ -1,8 +1,7 @@
 # 1stStep.ai — Design System
 
 Scope: the marketing homepage (`index.html`, `home-motion.css`, `home-motion.js`), served at `/`.
-The authenticated workspace (`app.html`, `app.js`, `style.css`), served at `/app/resume` since 2026-09-04 (previously `/app`), keeps
-its own established styling and is **not** governed by this document.
+The retired legacy workspace (`app.html`, `app.js`, `style.css`) remains in the release artifact temporarily for migration and extension compatibility, but it is no longer served as the public `/app/resume` experience. `/app/resume` now opens the Job Agent's signed-account resume editor.
 
 ## Voice
 
@@ -150,7 +149,7 @@ workspace DOM IDs.
 
 `/` serves `index.html` (the marketing homepage) directly from the filesystem and
 **never redirects** — not for returning users, not for deep links, not for anyone.
-`/app` rewrites to `/concierge.html` (the Job Agent) as of 2026-09-04. The legacy workspace `app.html` is served at `/app/resume` as a temporary compatibility surface while its callers and authenticated flows are mapped.
+`/app` and `/app/resume` rewrite to `/concierge.html` (the Job Agent). The resume route opens the canonical encrypted applicant-vault editor after signed-session hydration. Direct `/app.html` requests redirect to `/app/resume`; extension capture query strings continue through the supervised `/funnel` flow.
 
 **Changed 2026-08-31:** the forward guard in `home-motion.js` was removed entirely. Deep
 links now address the workspace directly instead of bouncing through `/`:

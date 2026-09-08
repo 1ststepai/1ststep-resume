@@ -7,6 +7,8 @@
     "node": "24.x"
   },
   "scripts": {
+    "test:resume-workspace-consolidation": "node scripts/resume-workspace-consolidation-test.mjs",
+    "test:resume-workspace-consolidation:browser": "playwright test scripts/resume-workspace-consolidation-browser.spec.mjs",
     "test:answer-memory": "node scripts/application-answer-memory-test.mjs",
     "build:web": "node build-public-web.mjs",
     "build": "npm run build:web",

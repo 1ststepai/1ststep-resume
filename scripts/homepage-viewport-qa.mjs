@@ -174,14 +174,14 @@ for (const viewport of VIEWPORTS) {
 }
 
 
-// ── The resume workspace itself still loads at /app/resume ──────────────────
+// The resume route now belongs to the signed-account Job Agent.
 {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await context.newPage();
   const response = await page.goto(`${BASE}/app/resume`, { waitUntil: 'domcontentloaded' });
-  note(response.status() < 400, `/app/resume · workspace responded ${response.status()}`);
-  note(await page.locator('#welcomeOverlay').count() === 1, '/app/resume · three-step onboarding overlay present');
-  note(await page.locator('#fileInput').count() === 1, '/app/resume · workspace DOM intact (#fileInput)');
+  note(response.status() < 400, `/app/resume · account workspace responded ${response.status()}`);
+  note(await page.locator('#welcomeOverlay').count() === 0, '/app/resume · legacy product chooser is absent');
+  note((await page.locator('#resumeOverlay').count() === 1) || /\/login\.html/.test(page.url()), '/app/resume · canonical resume editor or secure sign-in is present');
   await page.screenshot({ path: `${OUT}/app-workspace.png` });
   await context.close();
 }

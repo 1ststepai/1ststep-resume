@@ -87,46 +87,36 @@ Production currently holds only an Anthropic key, so Anthropic is the active pro
 
 ---
 
-## P1-PIVOT-1 - /app/resume still exposes the entire legacy app
+## P1-PIVOT-1 - /app/resume still exposes the entire legacy app — RESOLVED 2026-09-08
 
-**Status: RECORDED - NOT STARTED. Unfinished pivot work.**
+**Status: RESOLVED.**
 
-`/app` now serves the Job Agent (`concierge.html`). The legacy workspace was kept
-reachable at `/app/resume` so nothing was deleted mid-pivot. That route serves
-`app.html`, which loads the whole of `app.js` - not a resume-only slice.
+`/app` and `/app/resume` now serve the Job Agent (`concierge.html`). The canonical
+resume editor restores the encrypted master resume only after signed-session and
+applicant-vault hydration. Direct `/app.html` requests redirect to `/app/resume`.
+The legacy files remain temporarily as migration assets and are no longer a public route.
 
-**Consequence.** Legacy job search is still live and reachable. `app.js:5310`
-fetches `/api/jobs`, `vercel.json` still declares the `api/jobs.js` function and
-its two rewrites, and the JSearch/RapidAPI provider path remains wired up. The
-resume capability is not isolated from legacy search; they ship as one document.
+**Residual cleanup.** `app.html`, `app.js`, and `/api/jobs` remain in the source
+tree as migration assets, but no supported public route serves the legacy
+document. They must not be described as deleted until a separate dependency
+audit proves the extension, tests, and build tooling no longer need them.
 
-**Do not describe legacy search as retired or `api/jobs.js` as deleted while this
-route is active.** `docs/ROADMAP.md` previously made that claim and was corrected
-on 2026-09-04.
-
-**Required to close, in order**
-
-- Map every caller and authenticated flow that depends on `app.html` / `app.js`.
-  Known today: extension job capture, extension "Open app", `smoke-test.cjs`
-  required DOM IDs, `database-evidence-inventory-test.mjs`, both release
-  preflights, `build-public-web.mjs`, `vercel-output-boundary-test.mjs`.
-- Decide whether resume generation becomes a Job Agent capability inside
-  `concierge.html`, or a genuinely resume-only surface that does not carry the
-  search UI or `/api/jobs` calls.
-- Only then remove `api/jobs.js`, its `vercel.json` function entry and rewrites,
-  and its `scripts/security-regression-test.mjs` expectations - together, as one
-  change.
+The Chrome extension cover-letter capture is preserved: a valid
+`/app/resume?jobCaptureId=...` request is forwarded to `/funnel` with its query
+intact. This prevents the retired legacy workspace from reappearing while the
+existing supervised extension handoff remains available.
 
 ---
 
 ## P1-PIVOT-2 - Extension job capture deep-links into /app
 
-**Status: OPEN. Handoff hardened 2026-09-04; durable migration NOT started.**
+**Status: OPEN. Handoff hardened 2026-09-04; route migration completed
+2026-09-08; durable migration NOT started.**
 
 Two rounds of compatibility work have landed. The capture is no longer lost or
-mis-delivered, but it is still delivered to the legacy resume app rather than
-the Job Agent, and durability still depends on a two-minute in-browser
-expiry rather than a durable tenant-scoped record.
+mis-delivered, and the public route now forwards it to the supervised funnel
+instead of the legacy resume app. Durability still depends on a two-minute
+in-browser expiry rather than a durable tenant-scoped record.
 
 Round 2 (approved) replaced fire-and-forget delivery with an acknowledged
 handoff:
@@ -147,10 +137,11 @@ handoff:
 is mutation-tested against delete-before-ack, the wildcard fallback, and
 wrong-capture acknowledgement.
 
-**Still open for the durable migration:** captures land in the legacy app, not
-`concierge.js`; there is no tenant-scoped canonical identity or server-side
-idempotency key; and a capture still cannot survive a closed tab. This item
-closes when the handoff is durable, deduplicated, and owned by the Job Agent.
+**Still open for the durable migration:** cover-letter captures are forwarded
+to the supervised funnel rather than the legacy app, but there is no
+tenant-scoped canonical identity or server-side idempotency key, and a capture
+still cannot survive a closed tab. This item closes when the handoff is durable,
+deduplicated, and owned by the Job Agent.
 
 _Original finding, retained:_
 
