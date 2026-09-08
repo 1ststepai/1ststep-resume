@@ -1,0 +1,137 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e2]:
+    - banner [ref=f2e3]:
+      - link "1stStep .ai" [ref=f2e4] [cursor=pointer]:
+        - /url: /concierge
+        - text: 1stStep
+        - generic [ref=f2e5]: .ai
+      - navigation "Job Agent" [ref=f2e6]:
+        - button "My Jobs" [ref=f2e7] [cursor=pointer]
+        - button "Needs You 1" [ref=f2e8] [cursor=pointer]:
+          - text: Needs You
+          - generic [ref=f2e9]: "1"
+        - button "Saved Info" [ref=f2e10] [cursor=pointer]
+        - button "Agent Status" [ref=f2e11] [cursor=pointer]
+        - button "Interview Prep" [ref=f2e12] [cursor=pointer]
+    - main [ref=f2e13]:
+      - region [ref=f2e14]:
+        - heading "Your job search, handled." [level=1] [ref=f2e15]
+        - paragraph [ref=f2e16]: Add your resume. Choose your jobs. We handle the search.
+        - button "Start my Job Agent About two minutes · mostly taps" [ref=f2e17] [cursor=pointer]:
+          - generic [ref=f2e18]: Start my Job Agent
+          - generic [ref=f2e19]: About two minutes · mostly taps
+        - paragraph [ref=f2e20]: Finds jobs and prepares applications. Submission still needs you.
+      - group [ref=f2e24]:
+        - generic "Activity & daily target" [ref=f2e25] [cursor=pointer]
+        - text: +
+      - group [ref=f2e26]:
+        - generic "My job preferences" [ref=f2e27] [cursor=pointer]
+      - region "Job Agent conversation" [ref=f2e28]:
+        - generic [ref=f2e29]:
+          - generic [ref=f2e30]:
+            - strong [ref=f2e31]: Your job-search agent
+            - status [ref=f2e32]: Needs you
+            - paragraph [ref=f2e33]: Open Needs You to review the step blocking progress.
+            - generic [ref=f2e34]: No worker activity confirmed yet
+            - generic [ref=f2e35]:
+              - button "Check status" [ref=f2e36] [cursor=pointer]
+              - button "View my jobs" [ref=f2e37] [cursor=pointer]
+          - button "1 item needs you" [ref=f2e38] [cursor=pointer]
+        - generic [ref=f2e40]:
+          - text: I’ll guide the search one useful step at a time and keep routine setup short.
+          - strong [ref=f2e41]: Let’s create your master resume first.
+          - text: Tell me your career story naturally, answer a short verified-facts interview, or upload an existing PDF, DOCX, or TXT file.
+          - generic [ref=f2e42]:
+            - button "Tell me who I am" [ref=f2e43] [cursor=pointer]
+            - button "Guided questions" [ref=f2e44] [cursor=pointer]
+            - button "Upload resume" [ref=f2e45] [cursor=pointer]
+        - generic [ref=f2e46]:
+          - textbox "Job-search request" [ref=f2e47]:
+            - /placeholder: Tell your agent what to change or ask what is next
+          - button "Send" [ref=f2e48] [cursor=pointer]
+      - text: +
+      - paragraph [ref=f2e49]:
+        - link "Get the Chrome extension" [ref=f2e50] [cursor=pointer]:
+          - /url: https://chromewebstore.google.com/detail/1ststepai-%E2%80%93-tailor-your-r/gnbjcmennlcbkmakameknfcnioohnjkp
+        - text: · Optional, for desktop Chrome. Installing does not start or submit applications.
+  - text: ✓ ✓ ✓
+  - status
+  - dialog [ref=f2e51]:
+    - generic [ref=f2e52]:
+      - banner [ref=f2e53]:
+        - generic [ref=f2e54]:
+          - generic [ref=f2e55]: Controlled beta · nothing is being submitted
+          - heading "One thing needs you" [level=2] [ref=f2e56]
+          - paragraph [ref=f2e57]: Harbor Supply Co. · Strategic Sourcing Manager
+        - button "Not now" [active] [ref=f2e58] [cursor=pointer]
+      - generic [ref=f2e59]:
+        - generic [ref=f2e60]:
+          - heading "Continue in your browser" [level=3] [ref=f2e61]
+          - paragraph [ref=f2e62]: This site does not have a supported extension adapter yet. Open it in your browser and use your reviewed materials to complete it yourself. No automated filling or submission is started.
+          - link "Open employer page manually" [ref=f2e63] [cursor=pointer]:
+            - /url: https://careers.example.com/jobs/REQ-DEMO-204
+          - button "Use cloud browser instead" [disabled] [ref=f2e64]
+          - paragraph [ref=f2e65]: Cloud execution is not configured. No paid browser session will be started.
+        - generic [ref=f2e66]:
+          - generic [ref=f2e67]: Needs You
+          - heading "Share these application details?" [level=3] [ref=f2e68]
+          - paragraph [ref=f2e69]: Approve only the masked verified fields shown and the exact package resume-demo-v3 for Harbor Supply Co.. This permission expires after 15 minutes and does not approve final submission.
+          - generic [ref=f2e75]:
+            - strong [ref=f2e76]: Verified employer domain
+            - generic [ref=f2e77]: careers.example.com
+          - generic [ref=f2e78]:
+            - strong [ref=f2e79]: Waiting for You
+            - text: Approval before sharing. No employer action has run.
+          - generic [ref=f2e80]:
+            - strong [ref=f2e81]: Nothing has been submitted.
+            - generic [ref=f2e82]: Your password, passkey, OTP, and CAPTCHA answers stay on the employer website. Your agent never stores or displays them.
+          - generic [ref=f2e83]:
+            - generic [ref=f2e84]: Credentials stay on the employer site
+            - generic [ref=f2e85]: Automation pauses during sign-in
+            - generic [ref=f2e86]: Your application step remains saved
+          - region [ref=f2e87]:
+            - generic [ref=f2e88]:
+              - generic [ref=f2e89]:
+                - paragraph [ref=f2e90]: Exact application packet
+                - heading "Review everything in one place" [level=3] [ref=f2e91]
+                - paragraph [ref=f2e92]: Harbor Supply Co. · Strategic Sourcing Manager · REQ-DEMO-204
+              - generic [ref=f2e93]: Package Ready
+            - generic [ref=f2e94]:
+              - generic [ref=f2e95]:
+                - generic [ref=f2e96]: Location
+                - strong [ref=f2e97]: Not verified
+              - generic [ref=f2e98]:
+                - generic [ref=f2e99]: Compensation
+                - strong [ref=f2e100]: Not disclosed
+              - generic [ref=f2e101]:
+                - generic [ref=f2e102]: Travel
+                - strong [ref=f2e103]: No listing disclosure found
+            - alert [ref=f2e104]:
+              - strong [ref=f2e105]: Check before continuing
+              - list [ref=f2e106]:
+                - listitem [ref=f2e107]: Resume evidence links are unavailable for this saved session. Review the package before sharing it.
+            - group [ref=f2e108]:
+              - generic "What will be shared" [ref=f2e109] [cursor=pointer]
+              - generic [ref=f2e110]:
+                - generic [ref=f2e111]:
+                  - strong [ref=f2e112]: Resume/package
+                  - generic [ref=f2e113]: resume-demo-v3
+                - generic [ref=f2e114]:
+                  - strong [ref=f2e115]: Resume evidence
+                  - generic [ref=f2e116]: Source links need review
+                - generic [ref=f2e117]:
+                  - strong [ref=f2e118]: Personal data
+                  - generic [ref=f2e119]: 1 masked, verified answer
+                - generic [ref=f2e120]:
+                  - strong [ref=f2e121]: Start date
+                  - generic [ref=f2e122]: Verified answer •••• · candidate confirmation
+            - generic [ref=f2e123]:
+              - paragraph [ref=f2e124]: Your approval applies only to this employer, package, and set of answers.
+              - button "Download application report" [ref=f2e125] [cursor=pointer]
+          - button "Approve sharing" [ref=f2e127] [cursor=pointer]
+        - complementary "Application summary" [ref=f2e128]:
+          - generic [ref=f2e129]: Application
+          - strong [ref=f2e130]: Harbor Supply Co.
+          - heading "Strategic Sourcing Manager" [level=3] [ref=f2e131]
+          - paragraph [ref=f2e132]: "Current step: Approval before sharing"
+          - generic [ref=f2e133]: Package resume-demo-v3 · exact version preserved

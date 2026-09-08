@@ -35,6 +35,11 @@ function collapseLetterSpacing(text) {
 }
 
 import { buildSearchLinks, classifyConciergeMessage, conciergeStateGuidance, jobAgentStatus, missionGaps, parseMission } from './client/concierge-router.js';
+import { preparationCandidates, automaticPreparationAuthorized, preparationFailureCode, preparationRetryAllowed } from './client/application-preparation.js';
+import { createDraftAutosave, createRevisionWriter, draftReviewGuidance } from './client/draft-review.js';
+import { localApplicationRoute } from './client/application-execution-route.js';
+import { applicationControlCenterModel, applicationLedgerMarkdown } from './client/application-control-center.js';
+const executionPreferences = new Map();
 import {
   ACTION_TYPES, APPLICATION_WORKFLOW_STEPS, DEMO_STAGES, ONBOARDING_REQUIRED_FIELDS, READINESS_FIELDS, REDACTED_WORKFLOW_REPLAY, addActionItem, addRole, advanceManagedApplicationSession, advanceSalesDemo, approveBatch,
   buildCareerStoryDraft, buildReadinessDraftFromSources, buildVerifiedResumeDraft, confirmReadinessDraft, confirmReusableFact, createApprovalBatch, createDeskState, createSalesDemo, deleteReusableFact, discardReadinessDraft,
@@ -125,7 +130,7 @@ if (LOCAL_SUBSCRIBER_UI_FIXTURE) {
   missionState = { mission: { role: 'Procurement Manager', roleFamily: 'procurement', workModes: ['Remote'], employmentTypes: ['Full-time'], salaryMin: 100000, location: 'United States', target: 10 }, messages: [], discovery: { status: 'complete', matches: 5 }, runState: 'Preparing' };
   deskState = createDeskState({
     roles: [
-      { id: 'fixture-found', employer: 'Northwind Logistics', title: 'Procurement Manager', requisitionId: 'NW-102', directEmployerUrl: 'https://careers.example.com/NW-102', status: 'Found', fitScore: 91, remoteEligibility: 'Remote · United States', salaryMin: 110000, salaryMax: 135000, createdAt: fixtureNow },
+      { id: 'fixture-found', employer: 'Northwind Logistics', title: 'Procurement Manager', requisitionId: 'NW-102', directEmployerUrl: 'https://careers.example.com/NW-102', discoveryRunId: 'run-fixture-discovery', sourceType: 'direct-employer', applyPathActive: true, jobDescription: 'Synthetic procurement responsibilities and verified requirements. '.repeat(8), status: 'Found', fitScore: 91, remoteEligibility: 'Remote · United States', salaryMin: 110000, salaryMax: 135000, createdAt: fixtureNow },
       { id: 'fixture-stale-off-mission', employer: 'Archived Example', title: 'Legal Operations Analyst II', requisitionId: 'OLD-099', directEmployerUrl: 'https://careers.example.com/OLD-099', status: 'Found', fitScore: 95, remoteEligibility: 'Remote · United States', salaryMin: 120000, createdAt: fixtureNow },
       { id: 'fixture-verified', employer: 'Harbor Supply Co.', title: 'Strategic Sourcing Manager', requisitionId: 'HS-204', directEmployerUrl: 'https://careers.example.com/HS-204', status: 'Verified', fitScore: 88, remoteEligibility: 'Remote · New Jersey eligible', salaryMin: 105000, createdAt: fixtureNow },
       { id: 'fixture-ready', employer: 'Summit Manufacturing', title: 'Vendor Operations Lead', requisitionId: 'SM-310', directEmployerUrl: 'https://careers.example.com/SM-310', status: 'Package Ready', fitScore: 84, remoteEligibility: 'Hybrid · Newark, NJ', salaryMin: 100000, createdAt: fixtureNow },
@@ -598,8 +603,7 @@ function applyDurablePackageRun(run) {
     });
   }
   if (run.status === 'Waiting for You' && !deskState.actionQueue.some(item => item.roleId === roleId && item.status === 'open' && /package/i.test(item.summary || ''))) {
-    const issues = (run.result?.qa?.issues || []).slice(0, 4).join(', ');
-    deskState = addActionItem(deskState, { roleId, type: 'NEW_QUESTION', summary: `Review the generated package${issues ? `: ${issues}` : ''}. No document was transmitted.` }).state;
+    deskState = addActionItem(deskState, { roleId, type: 'NEW_QUESTION', summary: 'Review your application package. Compare the draft with your original resume and correct any unsupported details.' }).state;
   }
   saveAll(); renderAll();
 }
@@ -610,9 +614,11 @@ async function refreshDurablePackage(runId, announce = false) {
     const data = await response.json().catch(() => ({}));
     if (!response.ok || !data.run) throw new Error(data.error || 'Package status is unavailable.');
     applyDurablePackageRun(data.run);
-    if (announce) addMessage('assistant', data.run.result?.resumeText
-      ? '<strong>Your role-specific package is ready for review.</strong><br>Private DOCX/PDF files were generated and their text order, hashes, and page count were checked. Isolated visual-render evidence remains required before Package Ready.'
-      : '<strong>Your package is still safely queued.</strong><br>You can close this page; work will resume from its saved progress.');
+    if (announce) addMessage('assistant', data.run.status === 'Failed'
+      ? `<strong>Application preparation stopped.</strong><br>Support code: ${escapeHtml(preparationFailureCode(data.run))}. Your saved resume and role are intact.`
+      : data.run.result?.resumeText
+        ? `<strong>Your private draft is ready for review.</strong><br>${data.run.result.artifacts?.length ? 'Document files are available; visual review is still required.' : 'Resume and cover-letter text are available. No DOCX/PDF files were produced.'}`
+        : '<strong>Preparation is pending.</strong><br>Progress is saved. Check again for the next recorded result.');
     return data.run;
   } catch (error) {
     if (announce) addMessage('assistant', `<strong>Package status is temporarily unavailable.</strong><br>${escapeHtml(error.message)} Your saved role and master resume remain intact.`);
@@ -620,12 +626,15 @@ async function refreshDurablePackage(runId, announce = false) {
   }
 }
 
-async function generateDurablePackage(roleId) {
+async function generateDurablePackage(roleId, { automatic = false, retryRequested = false } = {}) {
   const role = deskState.roles.find(item => item.id === roleId);
   if (!role) throw new Error('Role not found.');
   if (!hasJobAgentAccess() || !hasApiSession()) throw new Error('Restore Job Agent access before preparing a durable package.');
   if (role.packageRunId && !role.packageDraft) {
     const current = await refreshDurablePackage(role.packageRunId, false);
+    if (current?.status === 'Failed' && (automatic || !retryRequested || !preparationRetryAllowed(current))) {
+      throw new Error(`Preparation stopped: ${preparationFailureCode(current)}. The failed step needs correction before another provider attempt.`);
+    }
     if (current?.status !== 'Failed') {
       if (current) addMessage('assistant', '<strong>Your package progress is up to date.</strong><br>I’ll keep the draft private and show it here when generation or review is ready.');
       return current;
@@ -636,12 +645,15 @@ async function generateDurablePackage(roleId) {
     const retryData = await retryResponse.json().catch(() => ({}));
     if (!retryResponse.ok) throw new Error(retryData.error || 'The failed package could not be retried.');
     applyDurablePackageRun(retryData.run);
+    if (retryData.run?.status === 'Failed') throw new Error(`Preparation stopped: ${preparationFailureCode(retryData.run)}.`);
+    if (retryData.run?.result?.resumeText) openPackageReview(deskState.roles.find(item => item.id === roleId));
     return retryData.run;
   }
   if (!role.jobDescription || role.jobDescription.length < 200) throw new Error('A verified employer job description is required.');
   const resumeText = savedResumeText();
   if (resumeText.length < 200) throw new Error('Save a candidate-reviewed master resume first.');
-  if (localStorage.getItem(PACKAGE_AI_CONSENT_KEY) !== 'approved') {
+  if (!automaticPreparationAuthorized(sessionCapabilities.jobAgentConsent) && localStorage.getItem(PACKAGE_AI_CONSENT_KEY) !== 'approved') {
+    if (automatic) return null;
     const approved = window.confirm('Prepare this application package? Your reviewed resume and this verified employer job description will be encrypted in your durable run and sent to 1stStep’s configured AI provider. Nothing is sent to the employer, and no application is submitted.');
     if (!approved) return null;
     localStorage.setItem(PACKAGE_AI_CONSENT_KEY, 'approved');
@@ -655,7 +667,7 @@ async function generateDurablePackage(roleId) {
       roleId: role.id, discoveryRunId: role.discoveryRunId, employer: role.employer, title: role.title, requisitionId: role.requisitionId,
       directEmployerUrl: role.directEmployerUrl, applyPathActive: role.applyPathActive === true,
       jobDescription: role.jobDescription, resumeText, includeCoverLetter: true,
-    }, runNow: true }),
+    }, runNow: !automatic, background: automatic }),
   }, 55000);
   const data = await response.json().catch(() => ({}));
   if (!response.ok && response.status !== 202) {
@@ -674,9 +686,36 @@ async function generateDurablePackage(roleId) {
     throw new Error(data.error || 'The package could not be started.');
   }
   applyDurablePackageRun(data.run);
+  if (data.run?.status === 'Failed') throw new Error(`Preparation stopped: ${preparationFailureCode(data.run)}.`);
   if (!data.run?.result) setTimeout(() => refreshDurablePackage(data.run.id, true), 5000);
-  else openPackageReview(deskState.roles.find(item => item.id === roleId));
+  else if (!automatic) openPackageReview(deskState.roles.find(item => item.id === roleId));
   return data.run;
+}
+
+let preparingMatches = false;
+async function prepareDiscoveredApplications() {
+  if (preparingMatches || !hasApiSession() || !automaticPreparationAuthorized(sessionCapabilities.jobAgentConsent)
+    || missionState.runState === 'Paused') return;
+  const candidates = preparationCandidates(deskState.roles, { discoveryRunId: durableRun?.id, limit: dailyGoal.target });
+  if (!candidates.length) return;
+  if (savedResumeText().length < 200) {
+    addMessage('assistant', '<strong>Your matches are saved. I need your reviewed master resume to prepare applications.</strong><br>Open Saved Info or upload your resume; you do not need to repeat the search.');
+    return;
+  }
+  preparingMatches = true;
+  addMessage('assistant', '<strong>I’m preparing private application drafts for your matching roles.</strong><br>I’ll use your reviewed resume, recheck each employer posting, and preserve unanswered requirements for review. Nothing is sent to employers.');
+  try {
+    for (const candidate of candidates) {
+      if (missionState.runState === 'Paused' || !hasApiSession()) break;
+      try {
+        const run = await generateDurablePackage(candidate.id, { automatic: true });
+        if (!run || !['Searching', 'Preparing', 'Finished', 'Waiting for You'].includes(run.status)) break;
+      } catch (error) {
+        addMessage('assistant', `<strong>Application preparation needs attention.</strong><br>${escapeHtml(error.message)} Your matches and existing drafts remain saved.`);
+        break;
+      }
+    }
+  } finally { preparingMatches = false; renderAll(); }
 }
 
 async function renderDurablePackage(roleId) {
@@ -692,20 +731,106 @@ async function renderDurablePackage(roleId) {
   return data.run;
 }
 
-function openPackageReview(role) {
+let packageAutosave = null;
+let packageReviewReturnFocus = null;
+let packageReviewTab = 'resume';
+
+function packageReviewDocuments() {
+  return { resumeText: $('packageResumeText').value, coverLetterText: $('packageCoverText').value };
+}
+
+function setPackageReviewSaveState(state) {
+  const labels = { pending: 'Saving soon…', saving: 'Saving…', saved: 'Saved', error: 'Couldn’t save. Keep this page open.' };
+  $('packageSaveStatus').textContent = labels[state];
+  $('packageSaveStatus').dataset.state = state;
+  if (state === 'saving') $('packageArtifactActions').replaceChildren();
+  $('savePackageReview').hidden = state !== 'error';
+}
+
+function updatePackageReviewGuidance(role) {
+  const draft = role.packageDraft;
+  $('packageReviewStatus').textContent = draft.artifacts?.length
+    ? 'Your DOCX/PDF files are available below. Review the text and file layout before using them.'
+    : 'Your draft text is ready to review. Downloadable document files are not ready yet.';
+  $('packageReviewGuidance').replaceChildren(...draftReviewGuidance(draft).map(text => {
+    const item = document.createElement('li'); item.textContent = text; return item;
+  }));
+}
+
+function setPackageReviewTab(tab, focus = false) {
+  packageReviewTab = tab === 'cover' && !$('packageCoverTab').hidden ? 'cover' : 'resume';
+  for (const name of ['resume', 'cover']) {
+    const selected = name === packageReviewTab;
+    const button = $(name === 'resume' ? 'packageResumeTab' : 'packageCoverTab');
+    button.setAttribute('aria-selected', String(selected)); button.tabIndex = selected ? 0 : -1;
+    $(name === 'resume' ? 'packageResumeWrap' : 'packageCoverWrap').hidden = !selected;
+    if (selected && focus) button.focus();
+  }
+  $('copyPackageText').textContent = packageReviewTab === 'resume' ? 'Copy resume' : 'Copy cover letter';
+  $('packageReviewTitle').textContent = packageReviewTab === 'resume' ? 'Check your resume' : 'Check your cover letter';
+  const drafts = deskState.roles.filter(item => item.packageDraft?.resumeText);
+  const position = drafts.findIndex(item => item.id === activePackageRoleId);
+  $('packageReviewPosition').textContent = `Job ${position + 1} of ${drafts.length}`;
+  $('nextPackageReview').textContent = packageReviewTab === 'resume' && !$('packageCoverTab').hidden
+    ? 'Review cover letter' : position < drafts.length - 1 ? 'Review next job' : 'Save and return to jobs';
+}
+
+async function openPackageReview(role) {
   if (!role?.packageDraft) return;
+  if (packageAutosave && !(await packageAutosave.flush())) return;
+  packageAutosave?.dispose();
+  if (!$('packageReviewOverlay').classList.contains('open')) packageReviewReturnFocus = document.activeElement;
+  closeJobs();
   activePackageRoleId = role.id;
-  $('packageReviewTitle').textContent = `${role.employer} — ${role.title}`;
-  $('packageReviewStatus').textContent = role.packageDraft.atsIssues?.length
-    ? `Needs your review: ${role.packageDraft.atsIssues.join(', ')}`
-    : role.packageDraft.artifacts?.length
-      ? 'DOCX/PDF text order, integrity, and page count passed. Isolated visual-render evidence is still required before Package Ready.'
-      : 'ATS text checks passed. Generate fresh DOCX/PDF files after any edit; visual-render evidence is still required.';
+  $('packageReviewJob').textContent = `${role.employer} · ${role.title}`;
+  $('packageMoreOptions').open = false;
+  updatePackageReviewGuidance(role);
   $('packageResumeText').value = role.packageDraft.resumeText || '';
   $('packageCoverText').value = role.packageDraft.coverLetterText || '';
-  $('packageCoverWrap').hidden = !role.packageDraft.coverLetterText;
+  $('packageCoverTab').hidden = !role.packageDraft.coverLetterText;
+  $('packageCopyStatus').textContent = '';
+  setPackageReviewTab('resume');
+  setPackageReviewSaveState('saved');
+  const writeRevision = createRevisionWriter({
+    getRole: () => deskState.roles.find(item => item.id === role.id),
+    submit: (base, snapshot) => reviseDurablePackage(base, snapshot.resumeText, snapshot.coverLetterText),
+    readRun: async id => {
+      const response = await fetchWithTimeout(`/api/application-packages?id=${encodeURIComponent(id)}`, { headers: apiAuthorizationHeaders() }, REQUEST_TIMEOUTS.persistence);
+      if (!response.ok) throw new Error('Saved revision is unavailable.');
+      return (await response.json()).run;
+    },
+    apply: applyDurablePackageRun,
+  });
+  packageAutosave = createDraftAutosave({
+    initial: packageReviewDocuments(), read: packageReviewDocuments, onState: setPackageReviewSaveState,
+    save: async snapshot => {
+      const resumeText = sanitizeResumeText(snapshot.resumeText);
+      const coverLetterText = sanitizeResumeText(snapshot.coverLetterText);
+      if (resumeText.length < 500) {
+        $('packageReviewStatus').textContent = 'Your resume needs more detail before it can be saved. Keep at least 500 characters.';
+        throw new Error('Resume is too short.');
+      }
+      await writeRevision({ resumeText, coverLetterText });
+      const updatedRole = deskState.roles.find(item => item.id === role.id);
+      updatePackageReviewGuidance(updatedRole);
+      // Files belong to the previous document version until this revision returns new ones.
+      $('packageArtifactActions').innerHTML = (updatedRole.packageDraft.artifacts || []).map(artifact => `<button type="button" data-package-artifact="${escapeHtml(artifact.key)}">Download ${escapeHtml(artifact.key.replace('_', ' ').toUpperCase())}</button>`).join('');
+    },
+  });
   $('packageArtifactActions').innerHTML = (role.packageDraft.artifacts || []).map(artifact => `<button type="button" data-package-artifact="${escapeHtml(artifact.key)}">Download ${escapeHtml(artifact.key.replace('_', ' ').toUpperCase())}</button>`).join('');
+  let manualPanel = $('packageLocalApplication');
+  if (!manualPanel) { manualPanel = document.createElement('p'); manualPanel.id = 'packageLocalApplication'; $('packageArtifactActions').after(manualPanel); }
+  manualPanel.replaceChildren();
+  const destination = safeEmployerDestination(role.directEmployerUrl);
+  const existingSession = durableApplicationSessions.find(session => session.packageRunId === role.packageRunId);
+  const canOpen = !existingSession || Boolean(localApplicationRoute(existingSession).href);
+  if (destination && canOpen) {
+    const link = document.createElement('a'); link.href = destination.href; link.target = '_blank'; link.rel = 'noopener noreferrer';
+    link.textContent = 'Open employer application manually';
+    manualPanel.append(link, document.createTextNode(' — review the draft first. Opening the page does not upload documents, fill fields or submit an application.'));
+  }
   $('packageReviewOverlay').classList.add('open');
+  $('packageResumeTab').focus();
 }
 
 async function downloadPrivatePackageArtifact(role, artifactKey, button) {
@@ -725,7 +850,14 @@ async function downloadPrivatePackageArtifact(role, artifactKey, button) {
   } finally { button.disabled = false; }
 }
 
-function closePackageReview() { $('packageReviewOverlay').classList.remove('open'); activePackageRoleId = ''; }
+async function closePackageReview() {
+  if (packageAutosave && !(await packageAutosave.flush())) { $('savePackageReview').focus(); return false; }
+  packageAutosave?.dispose(); packageAutosave = null;
+  $('packageReviewOverlay').classList.remove('open'); activePackageRoleId = '';
+  if (packageReviewReturnFocus?.isConnected && packageReviewReturnFocus.getBoundingClientRect().width) packageReviewReturnFocus.focus();
+  else $('openJobs')?.focus();
+  return true;
+}
 
 function stableClientHash(value) {
   let hash = 2166136261;
@@ -744,7 +876,6 @@ async function reviseDurablePackage(role, resumeText, coverLetterText) {
   }, 55000);
   const data = await response.json().catch(() => ({}));
   if (!response.ok && response.status !== 202) throw new Error(data.error || 'The edited package could not be revalidated.');
-  applyDurablePackageRun(data.run);
   return data.run;
 }
 
@@ -1002,6 +1133,8 @@ async function hydrateDurableBrowserHandoff(applicationSessionId) {
 async function startDurableBrowserHandoff() {
   const session = activeDurableApplicationSession();
   if (!session) throw new Error('No saved application step is selected.');
+  if (executionPreferences.get(session.id) !== 'cloud') throw new Error('Choose the cloud browser option explicitly before starting paid browser execution.');
+  if (!localApplicationRoute(session).href) throw new Error('Reconcile the existing application before starting another browser session.');
   durableBrowserHandoff = { ...durableBrowserHandoff, applicationSessionId: session.id, status: 'starting', error: '' };
   renderApplicationWorkspace();
   const response = await fetchWithTimeout('/api/employer-browser-session', {
@@ -1048,6 +1181,7 @@ async function loadPublicAppConfig() {
     publicAppConfig = {
       authentication: {
         restoreAccessAvailable: data.authentication?.restoreAccessAvailable === true,
+        clerkAvailable: data.authentication?.clerk?.enabled === true,
       },
     };
   } catch {
@@ -1056,6 +1190,10 @@ async function loadPublicAppConfig() {
 }
 
 function openAgentAccess() {
+  if (publicAppConfig.authentication.clerkAvailable && !hasApiSession()) {
+    location.assign('/login.html');
+    return;
+  }
   agentRestoreChallenge = '';
   $('agentAccessCode').hidden = true;
   $('agentAccessCodeLabel').hidden = true;
@@ -1112,23 +1250,13 @@ function renderJobAgentPolicyBundle(bundle = sessionCapabilities.jobAgentConsent
     && expected.every((id, index) => attestations[index]?.id === id && typeof attestations[index]?.statement === 'string');
   if (!valid) return false;
   $('jobAgentConsentTitle').textContent = disclosure.heading;
-  $('jobAgentConsentIntroduction').textContent = disclosure.introduction;
+  $('jobAgentConsentIntroduction').textContent = 'Check one box to continue. You can pause the agent and change this permission at any time.';
   $('jobAgentConsentScopeHeading').textContent = disclosure.scopeHeading;
   $('jobAgentConsentScope').replaceChildren(...disclosure.scope.map(item => {
     const paragraph = document.createElement('p'); paragraph.textContent = item; return paragraph;
   }));
-  for (const item of attestations) {
-    const span = $(`jobAgentConsentChecks`)?.querySelector(`input[name="${item.id}"]`)?.nextElementSibling;
-    if (!span) return false;
-    span.replaceChildren();
-    const link = item.link;
-    if (link && ['/terms', '/privacy'].includes(link.href) && item.statement.includes(link.label)) {
-      const [before, ...after] = item.statement.split(link.label);
-      span.append(document.createTextNode(before));
-      const anchor = document.createElement('a'); anchor.href = link.href; anchor.target = '_blank'; anchor.rel = 'noopener noreferrer'; anchor.textContent = link.label;
-      span.append(anchor, document.createTextNode(after.join(link.label)));
-    } else span.textContent = item.statement;
-  }
+  const combined = $('jobAgentConsentChecks')?.querySelector('input[name="allConsentAccepted"]')?.nextElementSibling;
+  if (!combined) return false;
   if (typeof disclosure.safetyNotice === 'string') $('jobAgentConsentMessage').textContent = disclosure.safetyNotice;
   return true;
 }
@@ -1261,11 +1389,11 @@ async function submitJobAgentConsent(event) {
   message.textContent = 'Saving your encrypted authorization…';
   try {
     const form = new FormData(event.currentTarget);
+    const accepted = form.get('allConsentAccepted') === 'on';
     const response = await fetchWithTimeout('/api/job-agent-consent', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID(), ...apiAuthorizationHeaders() },
       body: JSON.stringify({ action: 'grant', version: sessionCapabilities.jobAgentConsentVersion, attestations: {
-        age18OrOlder: form.get('age18OrOlder') === 'on', termsAccepted: form.get('termsAccepted') === 'on',
-        privacyAcknowledged: form.get('privacyAcknowledged') === 'on', candidateAuthorizationAccepted: form.get('candidateAuthorizationAccepted') === 'on',
+        age18OrOlder: accepted, termsAccepted: accepted, privacyAcknowledged: accepted, candidateAuthorizationAccepted: accepted,
       } }),
     }, REQUEST_TIMEOUTS.persistence);
     const data = await response.json().catch(() => ({}));
@@ -1314,6 +1442,7 @@ async function signOutAgent(allDevices = false) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || 'Could not sign out safely.');
   clearSignedAccessState();
+  if (publicAppConfig.authentication.clerkAvailable) location.assign('/login.html?mode=sign-out');
 }
 
 function clearSignedAccessState() {
@@ -2000,6 +2129,7 @@ async function discoverMatchingJobs() {
       return `<a class="job-match" href="${escapeHtml(job.applyUrl)}" target="_blank" rel="noopener noreferrer"><strong>${escapeHtml(job.title)}</strong><span>${escapeHtml(job.employer)}${details ? ` · ${details}` : ''} · ${fit.score}/100 ${escapeHtml(fit.classification)}</span></a>`;
     }).join('');
     addMessage('assistant', `<strong>Found ${added} matching job${added === 1 ? '' : 's'} across ${checked} direct-employer job feed${checked === 1 ? '' : 's'}.</strong><br>Skipped ${duplicates} duplicate${duplicates === 1 ? '' : 's'}, ${rejectedByMission} job${rejectedByMission === 1 ? '' : 's'} outside your search requirements, and ${rejectedByQualityFloor} job${rejectedByQualityFloor === 1 ? '' : 's'} below the minimum application score of 70 points. Verified fit and your observed outcomes matter more than reaching the daily target. These roles are Found—not Submitted—and still need checks of the exact employer job page, location, travel, schedule, and any missing requirements.${topMatches ? `<div class="job-matches">${topMatches}</div>` : ''}${coverageNote}<div class="quick">${isPartial ? '<button data-prompt="Retry job discovery">Search the missing feeds again</button>' : ''}<button data-prompt="Show my jobs">Review all matches</button><button data-prompt="Review my current mission">Review search requirements</button></div>`);
+    await prepareDiscoveredApplications();
   } catch (error) {
     pending.remove();
     missionState.runState = 'Paused';
@@ -2155,6 +2285,9 @@ function renderRunState() {
     node.classList.toggle('complete', !unconfirmed && activeIndex > 0 && index < activeIndex && state !== 'Paused');
   });
   $('runStateSummary').textContent = `${evidence.label} · ${evidence.detail}`;
+  if (sessionCapabilities.adminConsole && /^[A-Z][A-Z0-9_]{0,79}$/.test(durableRun?.lastErrorCode || '')) {
+    $('runStateSummary').textContent += ` · Support code: ${durableRun.lastErrorCode}`;
+  }
   const verifiedAt = durableRun?.result?.completedAt || [...(durableRun?.events || [])].reverse().find(item => ['RUN_COMPLETED', 'RUN_PARTIALLY_COMPLETED'].includes(item.type))?.at || null;
   const nextRunAt = jobAgentSchedule.schedule?.status === 'active' ? jobAgentSchedule.schedule.nextRunAt : durableRun?.nextRetryAt;
   $('runStateTiming').textContent = `${verifiedAt ? `Last verified activity ${relativeActivityTime(verifiedAt)}` : 'No completed activity inferred'} · ${nextRunAt ? `next run ${new Date(nextRunAt).toLocaleString()}` : 'no scheduled run'}`;
@@ -2266,6 +2399,23 @@ function allNeedsYouActions() {
   return [...dueFollowUps, ...durableActions, ...localActions, ...syncedActions];
 }
 
+function needsYouNextStep(item, role) {
+  const packageReview = !item.durable && item.type === 'NEW_QUESTION' && /package|draft|UNMAPPED|OUTPUT_CLAIM/i.test(item.summary || '');
+  if (packageReview) return {
+    packageReview: true, title: 'Check your resume draft', button: role?.packageDraft ? 'Review resume draft' : 'Find saved draft',
+    summary: 'Compare the draft with your original resume. Correct or remove any experience, skills, or results you cannot support.',
+  };
+  const button = ({ LOGIN: 'Continue sign-in', OTP: 'Enter one-time code', CAPTCHA: 'Complete security check',
+    TRANSMISSION_APPROVAL: 'Review sharing', SUBMISSION_APPROVAL: 'Review submission', FOLLOW_UP_DUE: 'Review follow-up',
+    MISSING_FACT: 'Answer question', NEW_QUESTION: 'Answer question' })[item.type] || 'Review next step';
+  const summary = /[A-Z]{2,}_[A-Z_]+/i.test(item.summary || '')
+    ? 'Open this step to review what is missing and continue your application.'
+    : item.summary || 'Open this step to review what is missing and continue your application.';
+  const secureStep = ['LOGIN', 'OTP', 'CAPTCHA', 'PASSWORD_RESET', 'PASSWORD_RESET_PENDING'].includes(item.type);
+  return { title: needsYouKind(item.type), button, summary: secureStep
+    ? `${summary} Your progress is saved. Return here after this step to continue.` : summary };
+}
+
 function renderNeedsYouQueue() {
   const actions = allNeedsYouActions();
   $('headerNeedsYouCount').textContent = actions.length;
@@ -2275,7 +2425,8 @@ function renderNeedsYouQueue() {
     const role = deskState.roles.find(entry => entry.id === item.roleId);
     const label = item.roleLabel || (role ? `${role.employer} · ${role.title}` : 'Your job agent');
     const target = item.durable ? `data-review-session="${escapeHtml(item.sessionId)}"` : `data-review-action="${escapeHtml(item.id)}"`;
-    return `<article class="needs-you-item"><div><span>${escapeHtml(needsYouKind(item.type))}</span><strong>${escapeHtml(label)}</strong><small>${escapeHtml(item.summary || 'A secure step needs your attention.')}</small><em>Your saved application will resume after this step.</em></div><button type="button" ${target}>Review</button></article>`;
+    const next = needsYouNextStep(item, role);
+    return `<article class="needs-you-item"><div><span>${escapeHtml(next.title)}</span><strong>${escapeHtml(label)}</strong><small>${escapeHtml(next.summary)}</small></div><button type="button" ${target}>${escapeHtml(next.button)}</button></article>`;
   }).join('');
 }
 
@@ -2295,11 +2446,14 @@ function subscriberRoles() {
 }
 
 function primaryJobAction(role, applicationSession, status) {
-  if (applicationSession) return `<button class="job-primary-action" type="button" data-job-application-review="${escapeHtml(applicationSession.id)}">${status === 'Needs You' ? 'Review request' : 'View progress'}</button>`;
+  if (applicationSession) return `<button class="job-primary-action" type="button" data-job-application-review="${escapeHtml(applicationSession.id)}">Continue application</button>`;
   if (status === 'Rejected/Closed') return '<span class="job-action-unavailable">Employer role closed</span>';
-  if (role.packageDraft) return `<button class="job-primary-action" type="button" data-job-package-review="${escapeHtml(role.id)}">Review package</button>`;
-  if (['Verified', 'Verified - Package Preparation'].includes(role.status)) return `<button class="job-primary-action" type="button" data-job-package-generate="${escapeHtml(role.id)}">${role.packageRunId ? 'Check package' : 'Prepare package'}</button>`;
-  if (role.status === 'Package Ready') return `<button class="job-primary-action" type="button" data-job-application-start="${escapeHtml(role.id)}">Start application</button>`;
+  if (role.status === 'Package Ready') return `<button class="job-primary-action" type="button" data-job-application-start="${escapeHtml(role.id)}">Continue application</button>`;
+  if (role.packageDraft) return `<button class="job-primary-action" type="button" data-job-package-review="${escapeHtml(role.id)}">Review resume draft</button>`;
+  if (['Verified', 'Verified - Package Preparation'].includes(role.status) || (role.status === 'Found' && role.discoveryRunId && role.applyPathActive === true)) {
+    const retry = preparationRetryAllowed({ status: role.packageRunStatus, lastErrorCode: role.packageRunErrorCode });
+    return `<button class="job-primary-action" type="button" data-job-package-generate="${escapeHtml(role.id)}" data-package-retry="${retry}">${retry ? 'Try preparation again' : role.packageRunId ? 'Continue preparation' : 'Prepare application'}</button>`;
+  }
   const destination = safeEmployerDestination(role.directEmployerUrl);
   return destination ? `<a class="job-primary-action" href="${escapeHtml(destination.href)}" target="_blank" rel="noopener noreferrer">View employer role</a>` : '<span class="job-action-unavailable">No action available</span>';
 }
@@ -2329,7 +2483,8 @@ function renderSubscriberJobs() {
       const role = deskState.roles.find(entry => entry.id === item.roleId);
       const label = item.roleLabel || (role ? `${role.employer} · ${role.title}` : 'Your job agent');
       const target = item.durable ? `data-review-session="${escapeHtml(item.sessionId)}"` : `data-review-action="${escapeHtml(item.id)}"`;
-      return `<article class="simple-job-card needs-card"><header><div><p>${escapeHtml(needsYouKind(item.type))}</p><h4>${escapeHtml(label)}</h4></div><span class="status-badge status-needs-you">Needs You</span></header><p>${escapeHtml(item.summary || 'A secure step needs your attention.')}</p><footer><strong>State preserved</strong><button class="job-primary-action" type="button" ${target}>Review request</button></footer></article>`;
+      const next = needsYouNextStep(item, role);
+      return `<article class="simple-job-card needs-card"><header><div><p>${escapeHtml(next.title)}</p><h4>${escapeHtml(label)}</h4></div><span class="status-badge status-needs-you">Needs You</span></header><p>${escapeHtml(next.summary)}</p><footer><button class="job-primary-action" type="button" ${target}>${escapeHtml(next.button)}</button></footer></article>`;
     }).join('') : '<div class="jobs-empty">Nothing needs you right now. Other safe work can continue.</div>';
     return;
   }
@@ -2360,7 +2515,7 @@ function renderAgentConfiguration() {
     : campaign?.schedule?.recurrence || 'Runs when you start or resume it';
   $('configSalary').textContent = mission.salaryMin ? money(mission.salaryMin) : guidedSelection.salary ? money(guidedSelection.salary) : 'No minimum saved';
   $('configLocation').textContent = [...(mission.workModes || [mission.workMode || guidedSelection.workMode]), mission.location || guidedSelection.location].filter(Boolean).join(' · ') || 'Not configured';
-  $('configTarget').textContent = `Goal: up to ${Math.min(50, Math.max(1, Number(dailyGoal.target) || 10))} qualified applications per day, based on matching jobs and plan capacity`;
+  $('configTarget').textContent = `Daily target: ${Math.min(50, Math.max(1, Number(dailyGoal.target) || 10))}. Actual volume depends on suitable openings, your criteria, required approvals and plan limits; it may be zero.`;
   $('configApproval').textContent = deskState.autonomy.level === 'prepare_only' ? 'Prepare only · confirm before sharing' : 'Confirm personal-data sharing and final submission';
   $('configNotifications').textContent = jobAgentNotifications.preference?.enabled ? 'In-app + generic email Needs You alert' : 'In-app Needs You queue';
 }
@@ -2376,11 +2531,15 @@ function showToast(message) {
 function openConsequenceDialog(session, action) {
   pendingConsequence = { sessionId: session.id, action, actionId: $('resolveApplication').dataset.applicationActionId || '' };
   lastDialogTrigger = document.activeElement;
-  const information = (session.proposedFields || []).map(item => item.label).filter(Boolean);
+  const model = applicationControlCenterModel(session, { formFields: durableBrowserHandoff.applicationSessionId === session.id ? (durableBrowserHandoff.view?.fields || []) : [] });
+  const information = model.proposedFields.map(item => `${item.label}: ${item.preview}`).filter(Boolean);
   $('confirmationEmployer').textContent = session.role.employer || 'Unavailable';
   $('confirmationRole').textContent = session.role.title || 'Unavailable';
   $('confirmationRequisition').textContent = session.role.requisitionId || 'Not provided by employer';
-  $('confirmationInformation').textContent = information.length ? `${information.join(', ')} and package ${session.documentVersion}` : `Package ${session.documentVersion}`;
+  $('confirmationFacts').textContent = model.facts.map(item => `${item.label}: ${item.value}`).join(' · ');
+  $('confirmationInformation').textContent = information.length ? information.join(' · ') : 'No reusable answers selected';
+  $('confirmationDocument').textContent = session.documentVersion || 'No document selected';
+  $('confirmationEvidence').textContent = `${model.mappedClaims ? `${model.mappedClaims} resume claims linked to source bullets` : 'Resume source links unavailable'}${model.conflicts.length ? ` · Gaps: ${model.conflicts.map(item => item.message).join(' ')}` : ' · No material conflict detected'}`;
   $('confirmationRisk').textContent = action === 'confirm-submission'
     ? finalSubmissionExecutionEnabled
       ? 'This authorizes one final submission attempt for the exact reviewed form. It will not count as Submitted without a verified employer receipt.'
@@ -2406,15 +2565,23 @@ function closeConsequenceDialog() {
 
 function reviewNeedsYouTarget(target) {
   const durableSessionId = target?.dataset?.reviewSession;
-  if (durableSessionId) { closeNeedsYou(); openDurableApplicationWorkspace(durableSessionId); return true; }
+  if (durableSessionId) { closeJobs(); closeNeedsYou(); openDurableApplicationWorkspace(durableSessionId); return true; }
   const actionId = target?.dataset?.reviewAction;
   if (!actionId) return false;
-  const action = deskState.actionQueue.find(item => item.id === actionId);
+  const action = allNeedsYouActions().find(item => item.id === actionId);
+  const role = deskState.roles.find(item => item.id === action?.roleId);
+  const next = needsYouNextStep(action || {}, role);
   const session = activeApplicationSession();
   closeJobs(); closeNeedsYou();
+  if (next.packageReview) {
+    if (role?.packageDraft) openPackageReview(role);
+    else { openJobs('Preparing'); showToast('Choose your saved job to check preparation or open its draft.'); }
+    return true;
+  }
   if (session && (!action?.roleId || action.roleId === session.roleId)) openApplicationWorkspace();
   else {
-    addMessage('assistant', `<strong>This item is saved and waiting for you.</strong><br>${escapeHtml(action?.summary || 'Complete the secure step on the employer page, then return here to continue.')} Passwords, OTPs, and CAPTCHA answers stay on the employer site.`);
+    const destination = safeEmployerDestination(role?.directEmployerUrl);
+    addMessage('assistant', `<strong>${escapeHtml(next.title)}</strong><br>${escapeHtml(next.summary)}${destination ? `<br><a href="${escapeHtml(destination.href)}" target="_blank" rel="noopener noreferrer">Continue on employer site</a>` : '<br>Open Saved Info to check your details, or open Jobs to select the application you want to continue.'}`);
     $('agentConversation').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
   }
   return true;
@@ -2652,6 +2819,7 @@ function renderDurableBrowserHandoff(session) {
   const view = handoff.view;
   const providerAvailable = handoff.provider?.available === true;
   const active = Boolean(handoff.session && view && view.status === 'ready');
+  renderApplicationExecutionRoute(session, handoff);
   const preview = safeBrowserPreview(view?.previewImageDataUrl);
   const stream = view?.interactive === true ? safeBrowserStream(view?.streamUrl, handoff.provider?.streamOrigin) : '';
   const streamFrame = browserStreamFrame();
@@ -2669,7 +2837,7 @@ function renderDurableBrowserHandoff(session) {
   else if (handoff.error) status = handoff.error;
   else if (active && view.interactive) status = 'This is the isolated employer page. Complete credentials and challenges only inside the verified employer stream.';
   else if (active) status = 'Synthetic local fixture only. It proves session restore and field layout without contacting an employer or accepting any personal value.';
-  else if (providerAvailable) status = 'A no-cost local fixture is available to verify the resumable handoff experience.';
+  else if (providerAvailable) status = handoff.provider?.provider === 'synthetic-fixture' ? 'A synthetic fixture is available for testing.' : 'Cloud execution is available only after you explicitly start it. Browser usage may be metered.';
   $('browserHandoffStatus').textContent = status;
   $('browserHandoffFields').innerHTML = (view?.fields || []).slice(0, 12).map(field => `<div><strong>${escapeHtml(field.label)}</strong><span>${field.required ? 'Required field' : 'Optional field'} · value not included</span></div>`).join('') || '<div><strong>No extracted fields</strong><span>Field structure appears only after a secure preview starts.</span></div>';
   $('browserHandoffExpiry').textContent = active ? `Session expires ${new Date(handoff.session.expiresAt).toLocaleString()}` : 'No browser session is active.';
@@ -2677,6 +2845,30 @@ function renderDurableBrowserHandoff(session) {
   $('startBrowserHandoff').disabled = !providerAvailable || ['loading', 'starting'].includes(handoff.status);
   $('refreshBrowserHandoff').hidden = !active;
   $('closeBrowserHandoff').hidden = !handoff.session;
+}
+
+function renderApplicationExecutionRoute(session, handoff) {
+  const route = localApplicationRoute(session);
+  let panel = $('applicationExecutionRoute');
+  if (!panel) { panel = document.createElement('section'); panel.id = 'applicationExecutionRoute'; panel.className = 'attention-card'; $('applicationBrowserHandoff').before(panel); }
+  panel.replaceChildren();
+  const heading = document.createElement('h3'); heading.textContent = 'Continue your application';
+  const description = document.createElement('p'); description.textContent = route.message;
+  panel.append(heading, description);
+  if (route.href) {
+    const link = document.createElement('a'); link.href = route.href; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.className = 'primary secure-employer-link';
+    link.textContent = '1. Open employer application'; panel.append(link);
+  }
+  const activeCloud = Boolean(handoff.session);
+  if (activeCloud) executionPreferences.set(session.id, 'cloud');
+  const cloudChosen = executionPreferences.get(session.id) === 'cloud';
+  $('applicationBrowserHandoff').hidden = !cloudChosen;
+  const toggle = document.createElement('button'); toggle.type = 'button';
+  toggle.textContent = cloudChosen ? 'Use my browser instead' : 'Use cloud browser instead';
+  toggle.disabled = activeCloud || (!cloudChosen && (handoff.provider?.available !== true || !route.href));
+  toggle.addEventListener('click', () => { executionPreferences.set(session.id, cloudChosen ? 'local' : 'cloud'); renderDurableBrowserHandoff(session); });
+  if (activeCloud || handoff.provider?.available === true) panel.append(toggle);
+  if (activeCloud) { const note = document.createElement('p'); note.textContent = 'End the active cloud session below before switching to your browser.'; panel.append(note); }
 }
 
 function renderAnswerMemory(session, action) {
@@ -2702,39 +2894,87 @@ function renderAnswerMemory(session, action) {
   });
   const v = fact?.versions.find(v => v.version === fact.currentVersion);
   panel.innerHTML = `<form id="answerMemoryForm" class="desk-field"><label for="answerMemoryText">${escapeHtml(question)}</label>
-    ${fact ? `<small>Remembered answer · version ${fact.currentVersion} · ${escapeHtml(v.scope.employer)} · ${escapeHtml(v.confirmedAt)}</small>` : ''}
+    ${fact ? '<small>You answered this before. Check it and change it if needed.</small>' : '<small>Answer once, then choose exactly how this answer may be remembered.</small>'}
     <textarea id="answerMemoryText" rows="3" maxlength="2000" required placeholder="Only what you know to be true">${escapeHtml(v?.value || '')}</textarea>
-    <label for="answerMemoryScope">Use this answer for</label><select id="answerMemoryScope"><option value="candidate">Matching questions</option><option value="employer">Only this employer</option><option value="application">Only this application</option></select>
-    <label for="answerMemoryKind">Remember as</label><select id="answerMemoryKind"><option value="fact">A fact about me</option><option value="preference">My preference</option><option value="permission">An application-specific permission (not submission approval)</option></select>
-    <label class="check-row"><input id="answerMemorySensitive" type="checkbox"> Explicitly remember sensitive screening information, if included</label>
-    <label for="answerMemoryExpiry">Expires on (optional)</label><input id="answerMemoryExpiry" type="date">
-    <small>Ordinary answers are remembered automatically. Passwords and security codes are never accepted. Nothing is sent to the employer by saving.</small>
-    <p id="answerMemoryResult" role="status"></p><button type="submit">Save answer & continue preparation</button></form>`;
-  if (v) { $('answerMemoryScope').value = v.scope.kind; $('answerMemoryKind').value = v.scope.category; }
+    <details><summary>Privacy options</summary><label class="check-row"><input id="answerMemorySensitive" type="checkbox"> This answer includes sensitive screening information and I want it saved securely</label><label for="answerMemoryExpiry">Forget this answer after (optional)</label><input id="answerMemoryExpiry" type="date"></details>
+    <small>Passwords, security codes, and CAPTCHA answers are never saved. Nothing is sent or submitted from this step.</small>
+    <p id="answerMemoryResult" role="status"></p><button type="submit">Continue with this answer</button></form>`;
   let replaceVersion;
   $('answerMemoryForm').addEventListener('submit', async event => {
     event.preventDefault();
-    const button = event.target.querySelector('button[type="submit"]'); button.disabled = true;
-    try {
-      if (!vaultEnabled() && !(await enableApplicantVault({ ask: true }))) throw new Error('Enable encrypted backup to remember this answer, or complete it on the employer site.');
-      const data = await vaultAction('remember-answer', { sessionId: session.id, actionId: action.id, statement: $('answerMemoryText').value, scope: $('answerMemoryScope').value, kind: $('answerMemoryKind').value, sensitiveOptIn: $('answerMemorySensitive').checked, expiresAt: $('answerMemoryExpiry').value || null, replaceVersion });
-      const saved = data.vault.facts.find(f => f.status === 'active' && f.versions.at(-1)?.scope?.actionId === action.id);
-      if (!saved) throw new Error('Answer save could not be verified.');
-      await updateDurableApplicationSession('resolve-remembered-answer', true, { actionId: action.id, factId: saved.id, factVersion: saved.currentVersion });
-      showToast('Remembered. Review, Edit or Forget in Saved Info. Nothing submitted.');
-    } catch (error) {
-      $('answerMemoryResult').textContent = error.message;
-      if (error.memoryVersion) {
-        replaceVersion = undefined;
-        const replace = document.createElement('button'); replace.type = 'button'; replace.textContent = 'Replace my previous answer';
-        replace.onclick = () => { replaceVersion = error.memoryVersion; replace.remove(); $('answerMemoryResult').textContent = 'Replacement selected. Save to confirm, or choose Only this application.'; };
-        $('answerMemoryResult').append(replace);
+    const statement = $('answerMemoryText').value.trim();
+    if (!statement) return;
+    const sensitiveOptIn = $('answerMemorySensitive').checked;
+    const expiresAt = $('answerMemoryExpiry').value || null;
+    const questionMarkup = `<p class="answer-memory-question"><strong>${escapeHtml(question)}</strong><span>Your answer is ready. Choose whether 1stStep may use it again.</span></p>`;
+    panel.innerHTML = `${questionMarkup}<div class="answer-memory-choice" role="group" aria-labelledby="answerMemoryChoiceTitle"><h4 id="answerMemoryChoiceTitle">Should 1stStep remember this answer?</h4><p>Remembering ordinary answers can save time on similar applications. Reuse is limited to the same question meaning, and every application still keeps its own review and submission gates.</p><button type="button" class="answer-memory-primary" data-answer-memory-scope="candidate">Remember for similar applications</button><button type="button" data-answer-memory-scope="application">Use only for this application</button><button type="button" class="answer-memory-link" data-answer-memory-change>Change my answer</button></div><small>Nothing is sent or submitted by saving. You can edit or forget saved answers in Saved Info.</small><p id="answerMemoryResult" role="status"></p>`;
+    const saveAnswer = async scope => {
+      panel.querySelectorAll('button').forEach(button => { button.disabled = true; });
+      try {
+        if (!vaultEnabled() && !(await enableApplicantVault({ ask: true }))) throw new Error('Enable encrypted backup to remember this answer, or use the employer site for this question.');
+        const data = await vaultAction('remember-answer', { sessionId: session.id, actionId: action.id, statement, scope, kind: v?.scope?.category || 'fact', sensitiveOptIn, expiresAt, replaceVersion });
+        const saved = data.vault.facts.find(f => f.status === 'active' && f.versions.at(-1)?.scope?.actionId === action.id);
+        if (!saved) throw new Error('Answer save could not be verified.');
+        const savedVersion = saved.versions.find(version => version.version === saved.currentVersion) || saved.versions.at(-1);
+        await updateDurableApplicationSession('resolve-remembered-answer', true, { actionId: action.id, factId: saved.id, factVersion: saved.currentVersion });
+        showToast(savedVersion?.autoReuse === true && savedVersion?.scope?.kind === 'candidate'
+          ? 'Remembered for matching applications. Nothing submitted.'
+          : 'Saved for this application only. Nothing submitted.');
+      } catch (error) {
+        $('answerMemoryResult').textContent = error.message;
+        panel.querySelectorAll('button').forEach(button => { button.disabled = false; });
+        if (error.memoryVersion) {
+          replaceVersion = undefined;
+          const replace = document.createElement('button'); replace.type = 'button'; replace.textContent = 'Replace my previous answer';
+          replace.onclick = () => { replaceVersion = error.memoryVersion; replace.remove(); $('answerMemoryResult').textContent = 'Replacement selected. Choose how broadly to remember it.'; panel.querySelectorAll('button[data-answer-memory-scope]').forEach(button => { button.disabled = false; }); };
+          $('answerMemoryResult').append(replace);
+        }
       }
-    } finally { button.disabled = false; }
+    };
+    panel.querySelectorAll('[data-answer-memory-scope]').forEach(button => button.addEventListener('click', () => saveAnswer(button.dataset.answerMemoryScope)));
+    panel.querySelector('[data-answer-memory-change]').addEventListener('click', () => renderAnswerMemory(session, action));
   });
 }
 
+function downloadApplicationLedgerReport() {
+  const markdown = applicationLedgerMarkdown({ sessions: durableApplicationSessions, roles: deskState.roles });
+  const blobUrl = URL.createObjectURL(new Blob([markdown], { type: 'text/markdown;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = blobUrl;
+  link.download = `1stStep-application-ledger-${new Date().toISOString().slice(0, 10)}.md`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(blobUrl);
+}
+
+function renderApplicationControlCenter(session) {
+  const formFields = durableBrowserHandoff.applicationSessionId === session.id ? (durableBrowserHandoff.view?.fields || []) : [];
+  const model = applicationControlCenterModel(session, { formFields });
+  const approvalOpen = (session.actions || []).some(item => item.status === 'open' && ['TRANSMISSION_APPROVAL', 'SUBMISSION_APPROVAL'].includes(item.type));
+  const warnings = model.conflicts.length
+    ? `<div class="control-center-alert" role="alert"><strong>Check before continuing</strong><ul>${model.conflicts.map(item => `<li>${escapeHtml(item.message)}</li>`).join('')}</ul></div>`
+    : '';
+  const fields = model.proposedFields.length
+    ? model.proposedFields.map(item => `<div class="control-center-share-row"><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.preview)} · ${escapeHtml(item.source || 'Verified source')}</span></div>`).join('')
+    : '<div class="control-center-share-row"><strong>Saved answers</strong><span>None selected</span></div>';
+  const container = $('applicationControlCenter');
+  container.innerHTML = `<div class="control-center-head"><div><p>Exact application packet</p><h3 id="applicationControlCenterTitle">Review everything in one place</h3><p>${escapeHtml(model.employer)} · ${escapeHtml(model.title)}${model.requisitionId ? ` · ${escapeHtml(model.requisitionId)}` : ''}</p></div><span class="control-center-status">${escapeHtml(model.status)}</span></div>
+    <div class="control-center-facts">${model.facts.map(item => `<div class="control-center-fact"><span>${escapeHtml(item.label)}</span><strong>${escapeHtml(item.value)}</strong></div>`).join('')}</div>
+    ${warnings}
+    <details class="control-center-details" ${approvalOpen ? 'open' : ''}><summary>What will be shared</summary><div class="control-center-share-list">
+      <div class="control-center-share-row"><strong>Resume/package</strong><span>${escapeHtml(model.documents[0].version)}</span></div>
+      <div class="control-center-share-row"><strong>Verified strengths</strong><span>${model.mappedClaims ? `${model.mappedClaims} resume claim${model.mappedClaims === 1 ? '' : 's'} linked to source bullets` : 'Source links need review'}</span></div>
+      <div class="control-center-share-row"><strong>Personal data</strong><span>${escapeHtml(model.personalDataSummary)}</span></div>
+      ${fields}
+    </div></details>
+    <div class="control-center-footer"><p>${model.receiptVerified ? 'Employer receipt verified. This application counts as submitted.' : 'Your approval applies only to this employer, package, and set of answers.'}</p><button id="downloadApplicationLedger" type="button">Download application report</button></div>`;
+  container.hidden = false;
+  $('downloadApplicationLedger').onclick = downloadApplicationLedgerReport;
+}
+
 function renderDurableApplicationWorkspace(session) {
+  renderApplicationControlCenter(session);
   if (session.receipt) $('applicationBrowserHandoff').hidden = true;
   else renderDurableBrowserHandoff(session);
   const openAction = (session.actions || []).find(item => item.status === 'open');
@@ -2756,6 +2996,10 @@ function renderDurableApplicationWorkspace(session) {
     && new Date(session.approvals.submission.expiresAt).getTime() <= Date.now();
   const transmissionApproval = openAction?.type === 'TRANSMISSION_APPROVAL';
   const submissionApproval = openAction?.type === 'SUBMISSION_APPROVAL';
+  const answerInApp = openAction?.type === 'AMBIGUOUS_FACT' && Boolean(openAction.metadata?.question);
+  const routePanel = $('applicationExecutionRoute');
+  if (routePanel) routePanel.hidden = answerInApp;
+  $('applicationControlCenter').hidden = !(transmissionApproval || submissionApproval || finalReviewReady);
   $('applicationModeLabel').textContent = 'Controlled beta';
   $('resumeApplication').hidden = false;
   $('resumeApplication').textContent = openAction ? '1 item needs you' : 'Application update';
@@ -2765,7 +3009,7 @@ function renderDurableApplicationWorkspace(session) {
   $('applicationEmployerDomain').textContent = employerDestination?.hostname || 'Employer domain unavailable';
   $('verifiedEmployer').classList.remove('preview');
   $('verifiedEmployer').hidden = !(openAction || session.state === 'Paused');
-  $('openEmployerPage').hidden = !(employerSiteStep || failureReconciliation || submissionOutcomeUnknown || session.stage === 'employer_form') || !employerDestination;
+  $('openEmployerPage').hidden = !(failureReconciliation || submissionOutcomeUnknown) || !employerDestination;
   if (employerDestination) {
     const extensionDestination = new URL(employerDestination.href);
     if (['boards.greenhouse.io', 'job-boards.greenhouse.io', 'job-boards.eu.greenhouse.io'].includes(extensionDestination.hostname.toLowerCase())) {
@@ -2803,7 +3047,7 @@ function renderDurableApplicationWorkspace(session) {
   } else if (submissionApproval) {
     actionTitle = 'Submit this application?';
     actionSummary = `This is the final action-time confirmation for ${session.role.employer} and ${session.documentVersion}. A submission will count only after an authoritative employer receipt is verified.`;
-  } else if (employerSiteStep) {
+  } else if (employerSiteStep && !answerInApp) {
     const employerStepCopy = {
       LOGIN: ['Sign in on the employer page', 'Use your password manager or passkey only on the verified employer page. 1stStep never receives or stores it.'],
       DOCUMENT_UPLOAD: ['Upload the approved application document', `Upload the exact package ${session.documentVersion} on the verified employer page, then return here. The extension cannot select a local file for you.`],
@@ -2835,21 +3079,25 @@ function renderDurableApplicationWorkspace(session) {
     actionTitle = 'A verified answer needs you';
     actionSummary = openAction.summary;
   }
+  if (answerInApp) {
+    actionTitle = 'Answer one question to continue';
+    actionSummary = 'Enter a truthful answer below. You can save it so the next matching application does not stop here again.';
+  }
   $('applicationActionTitle').textContent = actionTitle;
-  if (openAction?.type === 'AMBIGUOUS_FACT' && openAction.metadata?.question) actionSummary = 'Save a truthful answer below. Ordinary answers are remembered for matching questions; employer exceptions stay scoped. Saving prepares the answer, but does not fill or submit the employer form.';
   $('applicationActionSummary').textContent = actionSummary;
   renderAnswerMemory(session, openAction);
   $('advanceApplication').hidden = session.state !== 'Preparing';
   $('advanceApplication').disabled = false;
   $('advanceApplication').textContent = 'Pause safely';
   $('advanceApplication').dataset.durableAction = session.state === 'Preparing' ? 'pause' : '';
-  $('resolveApplication').hidden = !(transmissionApproval || submissionApproval || employerSiteStep || finalReviewReady || finalApprovalExpired);
+  $('resolveApplication').hidden = answerInApp || !(transmissionApproval || submissionApproval || employerSiteStep || finalReviewReady || finalApprovalExpired);
   $('resolveApplication').textContent = transmissionApproval ? 'Approve sharing' : submissionApproval ? 'Approve final submission'
     : finalReviewReady ? 'Review final application'
     : finalApprovalExpired ? 'Renew final approval'
-    : ['AMBIGUOUS_FACT', 'NONSTANDARD_CERTIFICATION', 'OUTSIDE_EMPLOYMENT_CONFLICT'].includes(openAction?.type) ? 'I answered this on the employer site' : 'I completed this on the employer site';
+    : ['AMBIGUOUS_FACT', 'NONSTANDARD_CERTIFICATION', 'OUTSIDE_EMPLOYMENT_CONFLICT'].includes(openAction?.type) ? '2. I answered it — continue' : '2. I finished — continue';
   $('resolveApplication').dataset.durableAction = transmissionApproval ? 'confirm-transmission' : submissionApproval ? 'confirm-submission' : finalReviewReady ? 'request-final-review' : finalApprovalExpired ? 'refresh-final-approval' : employerSiteStep ? 'confirm-external-step' : '';
   $('resolveApplication').dataset.applicationActionId = openAction?.id || '';
+  $('openEmployerPage').textContent = employerSiteStep ? '1. Open employer page' : failureReconciliation || submissionOutcomeUnknown ? 'Open employer page' : 'Continue on employer page';
   $('resumeManagedApplication').hidden = session.state !== 'Paused';
   $('resumeManagedApplication').textContent = 'Resume saved application';
   $('resumeManagedApplication').dataset.durableAction = session.state === 'Paused' ? 'resume' : '';
@@ -2888,6 +3136,7 @@ function renderDurableApplicationWorkspace(session) {
 function renderApplicationWorkspace() {
   const durableSession = activeDurableApplicationSession();
   if (durableSession) { renderDurableApplicationWorkspace(durableSession); return; }
+  $('applicationControlCenter').hidden = true;
   $('applicationBrowserHandoff').hidden = true;
   $('postSubmissionActions').hidden = true;
   $('applicationActionPill').textContent = 'Needs You';
@@ -3242,7 +3491,7 @@ function setDailyGoal(value, announce = true) {
   dailyGoal = { target, updatedAt: new Date().toISOString() };
   saveAll();
   renderMission();
-  if (announce) addMessage('assistant', `<strong>Daily goal set to ${target} applications.</strong><br>I’ll show prepared packages separately and count progress only after an authoritative employer receipt.`);
+  if (announce) addMessage('assistant', `<strong>Daily target set to ${target}.</strong><br>This is not a promised number of applications. I’ll prioritize suitable openings within your criteria and plan limits, keep drafts separate, and count submissions only after an employer receipt is verified.`);
 }
 
 $('openGuidedLaunch').addEventListener('click', () => openGuidedLaunch({ step: missionState.mission?.role ? 2 : guidedLaunchStep }));
@@ -3434,6 +3683,7 @@ $('messages').addEventListener('click', event => { const value = event.target?.d
 $('openJobs').addEventListener('click', () => openJobs('Matches'));
 $('openNeedsYou').addEventListener('click', openNeedsYou);
 $('openAgentStatus').addEventListener('click', () => {
+  $('agentProgress').open = true;
   if (!document.body.classList.contains('workspace-ready')) { openGuidedLaunch(); return; }
   $('agentProgress').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
   $('agentProgress').focus?.();
@@ -3475,8 +3725,8 @@ $('jobCards').addEventListener('click', async event => {
   if (reviewId) { openPackageReview(deskState.roles.find(item => item.id === reviewId)); return; }
   if (!generateId) return;
   event.target.disabled = true;
-  try { await generateDurablePackage(generateId); renderSubscriberJobs(); showToast('Resume prepared'); }
-  catch (error) { addMessage('assistant', `<strong>The package was not created.</strong><br>${escapeHtml(error.message)} Your role and resume remain saved.`); }
+  try { const run = await generateDurablePackage(generateId, { retryRequested: event.target.dataset.packageRetry === 'true' }); renderSubscriberJobs(); if (run) showToast(run.result?.resumeText ? 'Private draft ready for review' : 'Preparation saved'); }
+  catch (error) { closeJobs(); addMessage('assistant', `<strong>The package was not created.</strong><br>${escapeHtml(error.message)} Your role and resume remain saved.`); }
   finally { event.target.disabled = false; }
 });
 $('postSubmissionActions').addEventListener('click', async event => {
@@ -3617,23 +3867,38 @@ $('packageArtifactActions').addEventListener('click', async event => {
   try { await downloadPrivatePackageArtifact(role, artifactKey, event.target); }
   catch (error) { $('packageReviewStatus').textContent = error.message; }
 });
-$('savePackageReview').addEventListener('click', async () => {
-  const role = deskState.roles.find(item => item.id === activePackageRoleId);
-  if (!role?.packageDraft) return;
+$('savePackageReview').addEventListener('click', () => packageAutosave?.flush());
+for (const id of ['packageResumeText', 'packageCoverText']) $(id).addEventListener('input', () => {
+  $('packageCopyStatus').textContent = '';
+  $('packageArtifactActions').replaceChildren();
+  packageAutosave?.schedule();
+});
+for (const [id, tab] of [['packageResumeTab', 'resume'], ['packageCoverTab', 'cover']]) {
+  $(id).addEventListener('click', () => setPackageReviewTab(tab));
+  $(id).addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    setPackageReviewTab(event.key === 'Home' ? 'resume' : event.key === 'End' ? 'cover' : packageReviewTab === 'resume' ? 'cover' : 'resume', true);
+  });
+}
+$('copyPackageText').addEventListener('click', async () => {
+  const field = $(packageReviewTab === 'resume' ? 'packageResumeText' : 'packageCoverText');
+  try { await navigator.clipboard.writeText(field.value); $('packageCopyStatus').textContent = 'Copied. Review before sharing with an employer.'; }
+  catch { field.focus(); field.select(); $('packageCopyStatus').textContent = 'Text selected. Use your device’s Copy command.'; }
+});
+$('nextPackageReview').addEventListener('click', async () => {
+  const button = $('nextPackageReview'); button.disabled = true;
   try {
-    $('savePackageReview').disabled = true;
-    $('packageReviewStatus').textContent = 'Saving an encrypted revision and re-running truth, ATS, and artifact checks…';
-    const resumeText = sanitizeResumeText($('packageResumeText').value);
-    const coverLetterText = sanitizeResumeText($('packageCoverText').value);
-    if (resumeText.length < 500) throw new Error('Keep at least 500 characters of role-specific resume content.');
-    const run = await reviseDurablePackage(role, resumeText, coverLetterText);
-    openPackageReview(deskState.roles.find(item => item.id === role.id));
-    if (vaultEnabled()) {
-      backupPackageDocument('tailored-resume', `${role.employer} — ${role.title} resume`, resumeText, `${run.result?.documentVersion || 'candidate-revision'}.txt`).catch(() => {});
-      if (coverLetterText) backupPackageDocument('cover-letter', `${role.employer} — ${role.title} cover letter`, coverLetterText, `${run.result?.documentVersion || 'candidate-revision'}-cover.txt`).catch(() => {});
-    }
-  } catch (error) { $('packageReviewStatus').textContent = error.message; }
-  finally { $('savePackageReview').disabled = false; }
+    if (packageAutosave && !(await packageAutosave.flush())) { $('savePackageReview').focus(); return; }
+    if (packageReviewTab === 'resume' && !$('packageCoverTab').hidden) { setPackageReviewTab('cover', true); return; }
+    const drafts = deskState.roles.filter(item => item.packageDraft?.resumeText);
+    const next = drafts[drafts.findIndex(item => item.id === activePackageRoleId) + 1];
+    if (next) await openPackageReview(next);
+    else if (await closePackageReview()) openJobs();
+  } finally { button.disabled = false; }
+});
+window.addEventListener('beforeunload', event => {
+  if (packageAutosave?.dirty()) { event.preventDefault(); event.returnValue = ''; }
 });
 $('downloadPackageDraft').addEventListener('click', () => {
   const role = deskState.roles.find(item => item.id === activePackageRoleId);
@@ -4162,6 +4427,9 @@ function start() {
   consumeGeneratedPackage();
   if (missionState.messages.length) canonicalConversation(missionState.messages, 2).forEach(message => addMessage(message.role, message.html, false));
   else addMessage('assistant', guidanceHtml(currentGuidance(), 'I’ll guide the search one useful step at a time and keep routine setup short.'));
+  // Keep persisted learning and run controls reachable on the single-column
+  // mobile workspace. The desktop disclosure remains collapsed by default.
+  if (window.matchMedia('(max-width: 720px)').matches) $('agentProgress').open = true;
   renderAll();
   if (new URLSearchParams(window.location.search).get('managedDemo') === '1' && !activeApplicationSession()) startSyntheticApplicationWorkspace();
 }
@@ -4236,7 +4504,7 @@ function restoreDurableDiscoveryRoles(run) {
     });
     deskState = result.state;
     const restored = result.role;
-    const shouldRestoreVerified = card && (card.status === 'Verified' || card.status === 'Package Ready' || Boolean(card.packageRunId));
+    const shouldRestoreVerified = card && ['Verified', 'Verified - Package Preparation', 'Package Ready'].includes(card.status);
     if (shouldRestoreVerified && restored.status === 'Found') deskState = transitionRole(deskState, restored.id, 'Verified', { reason: 'Restored exact verified discovery evidence' });
     if (card?.packageRunId) deskState = recordPackageRunCheckpoint(deskState, restored.id, {
       runId: card.packageRunId,

@@ -1,0 +1,148 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "1stStep.ai" [ref=e3] [cursor=pointer]:
+      - /url: /
+    - link "← Back to app" [ref=e4] [cursor=pointer]:
+      - /url: /app
+  - generic [ref=e5]:
+    - generic [ref=e6]: Pricing
+    - heading [level=1] [ref=e7]:
+      - text: Stop sending the same resumeto every job.
+      - emphasis [ref=e8]: Start landing them.
+    - paragraph [ref=e9]: AI-tailored resumes and cover letters for every role you apply to. Start free, then request Job Agent beta access when you need more help.
+    - generic [ref=e10]: No credit card required to get started.
+  - generic [ref=e11]:
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - generic [ref=e14]: Free
+        - generic [ref=e15]:
+          - generic [ref=e16]: $0
+          - generic [ref=e17]: / month
+        - generic [ref=e18]: No credit card required
+        - paragraph [ref=e19]: Get a real win before you upgrade.
+        - link "Get started free" [ref=e20] [cursor=pointer]:
+          - /url: /app
+        - separator [ref=e21]
+        - generic [ref=e22]: What's included
+        - list [ref=e23]:
+          - listitem [ref=e24]:
+            - generic [ref=e25]: ✓
+            - generic [ref=e26]: 3 tailored resumes per month
+          - listitem [ref=e27]:
+            - generic [ref=e28]: ✓
+            - generic [ref=e29]: Career Positioning Brief
+          - listitem [ref=e30]:
+            - generic [ref=e31]: ✓
+            - generic [ref=e32]: Role Match Score
+          - listitem [ref=e33]:
+            - generic [ref=e34]: ✓
+            - generic [ref=e35]: 1 cover letter per month
+          - listitem [ref=e36]:
+            - generic [ref=e37]: ✓
+            - generic [ref=e38]: Resume vault preview
+          - listitem [ref=e39]:
+            - generic [ref=e40]: ✓
+            - generic [ref=e41]: Save 3 jobs
+          - listitem [ref=e42]:
+            - generic [ref=e43]: "-"
+            - generic [ref=e44]: Unlimited tailoring
+          - listitem [ref=e45]:
+            - generic [ref=e46]: "-"
+            - generic [ref=e47]: Job Agent controlled beta
+      - generic [ref=e48]:
+        - generic [ref=e49]: Controlled beta
+        - generic [ref=e50]: AI Job Agent
+        - generic [ref=e51]:
+          - generic [ref=e52]: $
+          - generic [ref=e53]: "39"
+          - generic [ref=e54]: / month when launched
+        - generic [ref=e55]: Free during approved beta access
+        - paragraph [ref=e56]: Job discovery and application preparation are available to invited testers while extension-assisted applications are completed and verified.
+        - link "Request beta access" [ref=e57] [cursor=pointer]:
+          - /url: mailto:evan@1ststep.ai?subject=Job%20Agent%20beta%20request
+        - separator [ref=e58]
+        - generic [ref=e59]: Everything in Free, plus
+        - list [ref=e60]:
+          - listitem [ref=e61]:
+            - generic [ref=e62]: ✓
+            - generic [ref=e63]: Verified direct-employer job discovery
+          - listitem [ref=e64]:
+            - generic [ref=e65]: ✓
+            - generic [ref=e66]: Role-specific resume and cover-letter preparation
+          - listitem [ref=e67]:
+            - generic [ref=e68]: ✓
+            - generic [ref=e69]: Application progress and Needs You queue
+          - listitem [ref=e70]:
+            - generic [ref=e71]: ✓
+            - generic [ref=e72]: Extension-assisted Greenhouse testing as enabled
+          - listitem [ref=e73]:
+            - generic [ref=e74]: ✓
+            - generic [ref=e75]: No charge during the controlled beta
+    - generic [ref=e76]:
+      - text: Questions? Email us at
+      - link "evan@1ststep.ai" [ref=e77] [cursor=pointer]:
+        - /url: mailto:evan@1ststep.ai
+  - generic [ref=e78]:
+    - heading "Frequently asked questions" [level=2] [ref=e79]
+    - generic [ref=e80]:
+      - heading "Does Job Agent guarantee a number of applications?" [level=3] [ref=e81]
+      - paragraph [ref=e82]: No. Application volume depends on suitable openings, your criteria, employer requirements, required approvals, and plan limits. It may be zero. Usage limits are maximum capacity, not guaranteed applications, interviews, or job offers. We do not weaken your criteria or duplicate applications to meet a quota. Prepared drafts are separate from confirmed submissions.
+      - paragraph [ref=e83]:
+        - link "Read the Job Agent application-volume and usage-limit terms." [ref=e84] [cursor=pointer]:
+          - /url: /terms#job-agent-application-limits
+    - generic [ref=e85]:
+      - heading "How does the free account work?" [level=3] [ref=e86]
+      - paragraph [ref=e87]: You get 3 tailored resumes, 1 cover letter, a Career Positioning Brief, Role Match Score, and vault preview every month at no cost. No credit card required.
+    - generic [ref=e88]:
+      - heading "What is an AI tailor?" [level=3] [ref=e89]
+      - paragraph [ref=e90]: Each tailor is one resume rewrite. You paste in your base resume and a job description, and the AI rewrites your resume to match that specific role by closing keyword gaps, reordering priorities, and reframing your experience for the role.
+    - generic [ref=e91]:
+      - heading "What does Job Agent access include?" [level=3] [ref=e92]
+      - paragraph [ref=e93]: Job Agent is free for approved controlled-beta testers. It finds verified openings and prepares application materials. Extension-assisted filling is being enabled and tested first for supported Greenhouse applications; other employer sites and final submission still require you. Paid access is planned at $39/month after the complete workflow is ready, with a separate agreement before any charge.
+    - generic [ref=e94]:
+      - heading "What if I already have a paid subscription?" [level=3] [ref=e95]
+      - paragraph [ref=e96]: Existing subscribers keep their current access. You can cancel from your account settings or contact support at any time, and access continues through the end of the current billing period.
+    - generic [ref=e97]:
+      - heading "Is my resume data safe?" [level=3] [ref=e98]
+      - paragraph [ref=e99]:
+        - text: Your resume content is sent to Anthropic's Claude API to generate the tailored output, then returned to your browser. We don't store your resume on our servers and never use it to train AI models. See our
+        - link "Privacy Policy" [ref=e100] [cursor=pointer]:
+          - /url: /privacy
+        - text: for full details.
+    - generic [ref=e101]:
+      - heading "Do you store my credit card?" [level=3] [ref=e102]
+      - paragraph [ref=e103]:
+        - text: No. Payment is handled entirely by
+        - link "Stripe" [ref=e104] [cursor=pointer]:
+          - /url: https://stripe.com
+        - text: . We never see or store your card number.
+    - generic [ref=e105]:
+      - heading "What if I hit my free limit?" [level=3] [ref=e106]
+      - paragraph [ref=e107]: You'll see your usage meter in the app. When you reach a free limit, you can wait for the next month's reset or request controlled-beta access. There is no paid Job Agent checkout today.
+  - region [ref=e108]:
+    - generic [ref=e109]:
+      - heading "AI Job Agent" [level=2] [ref=e110]
+      - paragraph [ref=e111]:
+        - strong [ref=e112]: A job search guided by fit, not a promised application count.
+        - text: Application volume depends on suitable openings, your criteria, employer requirements, required approvals, and plan limits. It may be lower than your target, including zero. Usage limits describe maximum capacity, not guaranteed applications, interviews, or job offers. We do not weaken your criteria or duplicate applications to meet a quota.
+      - paragraph [ref=e113]:
+        - strong [ref=e114]: $39/month when paid access opens.
+        - text: Free for the first 10 approved beta testers. No card required, no automatic billing, and no automatic switch to a paid plan.
+      - paragraph [ref=e115]: Email Evan to request an invitation; a request does not reserve a spot. You review the materials and submit applications yourself. Job Agent checkout is not available yet. Any later subscription needs your separate agreement. Existing plans and customer access are unchanged.
+      - link "Request a beta spot" [ref=e116] [cursor=pointer]:
+        - /url: mailto:evan@1ststep.ai?subject=Job%20Agent%20beta%20request
+      - link "Already invited? Open Job Agent" [ref=e117] [cursor=pointer]:
+        - /url: /concierge
+  - generic [ref=e119]:
+    - heading "Ready to tailor your first resume?" [level=2] [ref=e120]
+    - paragraph [ref=e121]: Start free with a real tailored resume, then request controlled-beta access when your search needs more momentum.
+    - link "Start free - no card needed" [ref=e122] [cursor=pointer]:
+      - /url: /app
+  - contentinfo [ref=e123]:
+    - generic [ref=e124]: © 2026 1stStep.ai
+    - link "Terms of Service" [ref=e125] [cursor=pointer]:
+      - /url: /terms
+    - link "Privacy Policy" [ref=e126] [cursor=pointer]:
+      - /url: /privacy
+    - link "Contact" [ref=e127] [cursor=pointer]:
+      - /url: mailto:evan@1ststep.ai

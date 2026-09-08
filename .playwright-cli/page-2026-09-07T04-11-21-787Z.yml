@@ -1,0 +1,59 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - link "1stStep .ai" [ref=e4] [cursor=pointer]:
+        - /url: /concierge
+        - text: 1stStep
+        - generic [ref=e5]: .ai
+      - navigation "Job Agent" [ref=e6]:
+        - button "My Jobs" [ref=e7] [cursor=pointer]
+        - button "Needs You 1" [ref=e8] [cursor=pointer]:
+          - text: Needs You
+          - generic [ref=e9]: "1"
+        - button "Saved Info" [ref=e10] [cursor=pointer]
+        - button "Agent Status" [ref=e11] [cursor=pointer]
+        - button "Interview Prep" [ref=e12] [cursor=pointer]
+        - button "Sign in" [ref=e13] [cursor=pointer]
+    - main [ref=e14]:
+      - region [ref=e15]:
+        - heading "Your job search, handled." [level=1] [ref=e16]
+        - paragraph [ref=e17]: Add your resume. Choose your jobs. We handle the search.
+        - button "Start my Job Agent About two minutes · mostly taps" [ref=e18] [cursor=pointer]:
+          - generic [ref=e19]: Start my Job Agent
+          - generic [ref=e20]: About two minutes · mostly taps
+        - paragraph [ref=e21]: Finds jobs and prepares applications. Submission still needs you.
+      - group [ref=e25]:
+        - generic "Activity & daily target" [ref=e26] [cursor=pointer]
+        - text: +
+      - group [ref=e27]:
+        - generic "My job preferences" [ref=e28] [cursor=pointer]
+      - region "Job Agent conversation" [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - strong [ref=e32]: Your job-search agent
+            - status [ref=e33]: Needs you
+            - paragraph [ref=e34]: Open Needs You to review the step blocking progress.
+            - generic [ref=e35]: No worker activity confirmed yet
+            - generic [ref=e36]:
+              - button "Check status" [ref=e37] [cursor=pointer]
+              - button "View my jobs" [ref=e38] [cursor=pointer]
+          - button "1 item needs you" [ref=e39] [cursor=pointer]
+        - generic [ref=e41]:
+          - text: I’ll guide the search one useful step at a time and keep routine setup short.
+          - strong [ref=e42]: Let’s create your master resume first.
+          - text: Tell me your career story naturally, answer a short verified-facts interview, or upload an existing PDF, DOCX, or TXT file.
+          - generic [ref=e43]:
+            - button "Tell me who I am" [ref=e44] [cursor=pointer]
+            - button "Guided questions" [ref=e45] [cursor=pointer]
+            - button "Upload resume" [ref=e46] [cursor=pointer]
+        - generic [ref=e47]:
+          - textbox "Job-search request" [ref=e48]:
+            - /placeholder: Tell your agent what to change or ask what is next
+          - button "Send" [ref=e49] [cursor=pointer]
+      - text: +
+      - paragraph [ref=e50]:
+        - link "Get the Chrome extension" [ref=e51] [cursor=pointer]:
+          - /url: https://chromewebstore.google.com/detail/1ststepai-%E2%80%93-tailor-your-r/gnbjcmennlcbkmakameknfcnioohnjkp
+        - text: · Optional, for desktop Chrome. Installing does not start or submit applications.
+  - text: ✓ ✓ ✓
+  - status

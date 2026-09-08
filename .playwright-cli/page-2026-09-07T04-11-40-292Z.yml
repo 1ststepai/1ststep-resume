@@ -1,0 +1,138 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - link "1stStep .ai" [ref=e4] [cursor=pointer]:
+        - /url: /concierge
+        - text: 1stStep
+        - generic [ref=e5]: .ai
+      - navigation "Job Agent" [ref=e6]:
+        - button "My Jobs" [ref=e7] [cursor=pointer]
+        - button "Needs You 1" [ref=e8] [cursor=pointer]:
+          - text: Needs You
+          - generic [ref=e9]: "1"
+        - button "Saved Info" [ref=e10] [cursor=pointer]
+        - button "Agent Status" [ref=e11] [cursor=pointer]
+        - button "Interview Prep" [ref=e12] [cursor=pointer]
+        - button "Sign in" [ref=e13] [cursor=pointer]
+    - main [ref=e14]:
+      - region [ref=e15]:
+        - heading "Your job search, handled." [level=1] [ref=e16]
+        - paragraph [ref=e17]: Add your resume. Choose your jobs. We handle the search.
+        - button "Start my Job Agent About two minutes · mostly taps" [ref=e18] [cursor=pointer]:
+          - generic [ref=e19]: Start my Job Agent
+          - generic [ref=e20]: About two minutes · mostly taps
+        - paragraph [ref=e21]: Finds jobs and prepares applications. Submission still needs you.
+      - group [ref=e25]:
+        - generic "Activity & daily target" [ref=e26] [cursor=pointer]
+        - text: +
+      - group [ref=e27]:
+        - generic "My job preferences" [ref=e28] [cursor=pointer]
+      - region "Job Agent conversation" [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - strong [ref=e32]: Your job-search agent
+            - status [ref=e33]: Needs you
+            - paragraph [ref=e34]: Open Needs You to review the step blocking progress.
+            - generic [ref=e35]: No worker activity confirmed yet
+            - generic [ref=e36]:
+              - button "Check status" [ref=e37] [cursor=pointer]
+              - button "View my jobs" [ref=e38] [cursor=pointer]
+          - button "1 item needs you" [ref=e39] [cursor=pointer]
+        - generic [ref=e41]:
+          - text: I’ll guide the search one useful step at a time and keep routine setup short.
+          - strong [ref=e42]: Let’s create your master resume first.
+          - text: Tell me your career story naturally, answer a short verified-facts interview, or upload an existing PDF, DOCX, or TXT file.
+          - generic [ref=e43]:
+            - button "Tell me who I am" [ref=e44] [cursor=pointer]
+            - button "Guided questions" [ref=e45] [cursor=pointer]
+            - button "Upload resume" [ref=e46] [cursor=pointer]
+        - generic [ref=e47]:
+          - textbox "Job-search request" [ref=e48]:
+            - /placeholder: Tell your agent what to change or ask what is next
+          - button "Send" [ref=e49] [cursor=pointer]
+      - text: +
+      - paragraph [ref=e50]:
+        - link "Get the Chrome extension" [ref=e51] [cursor=pointer]:
+          - /url: https://chromewebstore.google.com/detail/1ststepai-%E2%80%93-tailor-your-r/gnbjcmennlcbkmakameknfcnioohnjkp
+        - text: · Optional, for desktop Chrome. Installing does not start or submit applications.
+  - text: ✓ ✓ ✓
+  - status
+  - dialog [ref=e52]:
+    - generic [ref=e53]:
+      - banner [ref=e54]:
+        - generic [ref=e55]:
+          - generic [ref=e56]: Controlled beta · nothing is being submitted
+          - heading "One thing needs you" [level=2] [ref=e57]
+          - paragraph [ref=e58]: Harbor Supply Co. · Strategic Sourcing Manager
+        - button "Not now" [active] [ref=e59] [cursor=pointer]
+      - generic [ref=e60]:
+        - generic [ref=e61]:
+          - heading "Continue in your browser" [level=3] [ref=e62]
+          - paragraph [ref=e63]: This site does not have a supported extension adapter yet. Open it in your browser and use your reviewed materials to complete it yourself. No automated filling or submission is started.
+          - link "Open employer page manually" [ref=e64] [cursor=pointer]:
+            - /url: https://careers.example.com/jobs/REQ-DEMO-204
+          - button "Use cloud browser instead" [disabled] [ref=e65]
+          - paragraph [ref=e66]: Cloud execution is not configured. No paid browser session will be started.
+        - generic [ref=e67]:
+          - generic [ref=e68]: Needs You
+          - heading "Share these application details?" [level=3] [ref=e69]
+          - paragraph [ref=e70]: Approve only the masked verified fields shown and the exact package resume-demo-v3 for Harbor Supply Co.. This permission expires after 15 minutes and does not approve final submission.
+          - generic [ref=e76]:
+            - strong [ref=e77]: Verified employer domain
+            - generic [ref=e78]: careers.example.com
+          - generic [ref=e79]:
+            - strong [ref=e80]: Waiting for You
+            - text: Approval before sharing. No employer action has run.
+          - generic [ref=e81]:
+            - strong [ref=e82]: Nothing has been submitted.
+            - generic [ref=e83]: Your password, passkey, OTP, and CAPTCHA answers stay on the employer website. Your agent never stores or displays them.
+          - generic [ref=e84]:
+            - generic [ref=e85]: Credentials stay on the employer site
+            - generic [ref=e86]: Automation pauses during sign-in
+            - generic [ref=e87]: Your application step remains saved
+          - button "Approve sharing" [ref=e89] [cursor=pointer]
+        - complementary "Application summary" [ref=e90]:
+          - generic [ref=e91]: Application
+          - strong [ref=e92]: Harbor Supply Co.
+          - heading "Strategic Sourcing Manager" [level=3] [ref=e93]
+          - paragraph [ref=e94]: "Current step: Approval before sharing"
+          - generic [ref=e95]: Package resume-demo-v3 · exact version preserved
+      - region [ref=e96]:
+        - generic [ref=e97]:
+          - generic [ref=e98]:
+            - paragraph [ref=e99]: Exact application packet
+            - heading "Review everything in one place" [level=3] [ref=e100]
+            - paragraph [ref=e101]: Harbor Supply Co. · Strategic Sourcing Manager · REQ-DEMO-204
+          - generic [ref=e102]: Package Ready
+        - generic [ref=e103]:
+          - generic [ref=e104]:
+            - generic [ref=e105]: Location
+            - strong [ref=e106]: Not verified
+          - generic [ref=e107]:
+            - generic [ref=e108]: Compensation
+            - strong [ref=e109]: Not disclosed
+          - generic [ref=e110]:
+            - generic [ref=e111]: Travel
+            - strong [ref=e112]: No listing disclosure found
+        - alert [ref=e113]:
+          - strong [ref=e114]: Check before continuing
+          - list [ref=e115]:
+            - listitem [ref=e116]: Resume evidence links are unavailable for this saved session. Review the package before sharing it.
+        - group [ref=e117]:
+          - generic "What will be shared" [ref=e118] [cursor=pointer]
+          - generic [ref=e119]:
+            - generic [ref=e120]:
+              - strong [ref=e121]: Resume/package
+              - generic [ref=e122]: resume-demo-v3
+            - generic [ref=e123]:
+              - strong [ref=e124]: Resume evidence
+              - generic [ref=e125]: Source links need review
+            - generic [ref=e126]:
+              - strong [ref=e127]: Personal data
+              - generic [ref=e128]: 1 masked, verified answer
+            - generic [ref=e129]:
+              - strong [ref=e130]: Start date
+              - generic [ref=e131]: Verified answer •••• · candidate confirmation
+        - generic [ref=e132]:
+          - paragraph [ref=e133]: Your approval applies only to this employer, package, and set of answers.
+          - button "Download application report" [ref=e134] [cursor=pointer]

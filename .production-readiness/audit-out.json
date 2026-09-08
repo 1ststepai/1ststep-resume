@@ -1,0 +1,463 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-01T17:22:24.897Z",
+  "commit": "77d2086734b8baa7f48760067b168dc522c5bc58",
+  "worktree": "dirty",
+  "scorecard": {
+    "schemaVersion": 1,
+    "method": "AUDIT IN -> FINDINGS -> REMEDIATION -> VERIFICATION -> AUDIT OUT",
+    "generatedAt": "2026-09-01T17:09:54.711Z",
+    "repository": "1ststep-resume",
+    "worktreeState": "dirty-preserved",
+    "layers": [
+      {
+        "layer": 1,
+        "name": "Frontend foundations",
+        "status": "Warning",
+        "evidence": [
+          "Local web release suite passed; 36 browser scenarios passed; public assets and responsive concierge checked locally."
+        ],
+        "evidenceTimestamp": "2026-09-01T17:09:54.711Z",
+        "testCommand": "npm run test:web-release && npm run test:browser:vault",
+        "failureDetails": "Current dirty release candidate has not been verified in a clean Preview or Production deployment.",
+        "owner": "Product engineering",
+        "remediation": "Commit an isolated release candidate, deploy Preview, then capture route, accessibility, console, and responsive evidence for that commit.",
+        "acceptedRisk": false,
+        "expirationDate": null,
+        "lastVerifiedCommit": "77d2086734b8baa7f48760067b168dc522c5bc58",
+        "states": [
+          "Implemented",
+          "Tested",
+          "Unknown"
+        ]
+      },
+      {
+        "layer": 2,
+        "name": "APIs and backend logic",
+        "status": "Warning",
+        "evidence": [
+          "API security, resilience, idempotency, output-boundary, and serverless import tests pass locally across 41 routes."
+        ],
+        "evidenceTimestamp": "2026-09-01T17:09:54.711Z",
+        "testCommand": "npm run test:web-release",
+        "failureDetails": "Authenticated staging and production API behavior for this dirty candidate is unknown.",
+        "owner": "Backend engineering",
+        "remediation": "Run safe signed-user Preview probes and bounded Production acceptance after release approval; retain response status and deployment commit.",
+        "acceptedRisk": false,
+        "expirationDate": null,
+        "lastVerifiedCommit": "77d2086734b8baa7f48760067b168dc522c5bc58",
+        "states": [
+          "Implemented",
+          "Tested",
+          "Unknown"
+        ]
+      },
+      {
+        "layer": 3,
+        "name": "Database and storage",
+        "status": "Critical",
+        "evidence": [
+          "Tenant migrations include forced RLS and public privilege revocation in source; migrations 001-003 are untracked/unapplied in this checkout; no live database or storage verification was performed."
+        ],
+        "evidenceTimestamp": "2026-09-01T17:09:54.711Z",
+        "testCommand": "npm run test:concierge",
+        "failureDetails": "Applied schema, grants, RLS allow/deny behavior, backup policy, private object storage, and restore behavior are not production verified.",
+        "owner": "Database operator",
+        "remediation": "Review migrations, apply them to an isolated staging database, run role-specific allow/deny tests and advisors, then complete a documented non-production restore drill before production approval.",
+        "acceptedRisk": false,
+        "expirationDate": null,
+        "lastVerifiedCommit": "77d2086734b8baa7f48760067b168dc522c5bc58",
+        "states": [
+          "Implemented",
+          "Tested",
+          "Unknown"
+        ]
+      },
+      {
+        "layer": 4,
+        "name": "Authentication and permissions",
+        "status": "Warning",
+        "evidence": [
+          "Opaque signed-session, revocation, tenant ownership, admin-role, entitlement, and consent tests pass locally."
+        ],
+        "evidenceTimestamp": "2026-09-01T17:09:54.711Z",
+        "testCommand": "node scripts/user-session-test.mjs && node scripts/api-security-test.mjs && node scripts/clerk-identity-test.mjs",
+        "failureDetails": "Current production identity-provider configuration and signed-user flows were not inspected or exercised in this task.",
+        "owner": "Identity owner",
+        "remediation": "Verify a least-privilege staging account matrix, session revocation, admin denial, and tenant-crossing denial using the exact release commit.",
+        "acceptedRisk": false,
+        "expirationDate": null,
+        "lastVerifiedCommit": "77d2086734b8baa7f48760067b168dc522c5bc58",
+        "states": [
+          "Implemented",
+          "Tested",
+          "Unknown"
+        ]
+      },
+      {
+        "layer": 5,
+        "name": "Hosting and deployment",
+        "status": "Warning",
+        "evidence": [
+          "Vercel output boundary passes with 56 static assets, 41 functions, no internal source leaks, and explicit forbidden-route controls."
+        ],
+        "evidenceTimestamp": "2026-09-01T17:09:54.711Z",
+        "testCommand": "npm run test:deployment-output",
+        "failureDetails": "No clean Preview or Production deployment was created for the current candidate.",
+        "owner": "Release owner",
+        "remediation": "Deploy only a clean committed tree to Preview, verify aliases/routes/assets/source boundaries, and bind evidence to deployment ID and commit.",
+        "acceptedRisk": false,
+        "expirationDate": null,
+        "lastVerifiedCommit": "77d2086734b8baa7f48760067b168dc522c5bc58",
+        "states": [
+          "Implemented",
+          "Tested",
+          "Unknown"
+        ]
+      },
+      {
+        "layer": 6,
+        "name": "Cloud and compute",
+        "status": "Warning",
+        "evidence": [
+          "Function durations, fail-closed feature flags, spend limits, bounded concurrency, and isolated-worker contracts exist and have local tests."
+        ],
+        "evidenceTimestamp": "2026-09-01T17:09:54.711Z",
+        "testCommand": "npm run test:resilience && node scripts/job-agent-spend-ledger-test.mjs",
+        "failureDetails": "Runtime quotas, regional behavior, cold starts, saturation, and vendor failure behavior are unknown for the release candidate.",
+        "owner": "Platform owner",
+        "remediation": "Record Vercel plan limits, regions, concurrency assumptions, and a bounded staging fault/load exercise without enabling employer actions.",
+        "acceptedRisk": false,
+        "expirationDate": null,
+        "lastVerifiedCommit": "77d2086734b8baa7f48760067b168dc522c5bc58",
+        "states": [
+          "Implemented",
+          "Tested",
+          "Unknown"
+        ]
+      },
+      {
+        "layer": 7,
+        "name": "CI/CD and version control",
+        "status": "Warning",
+        "evidence": [
+          "A pinned-action Node 24 workflow now runs the full deterministic release gate; clean-source preflight and source inventory tests exist."
+        ],
+        "evidenceTimestamp": "2026-09-01T17:09:54.711Z",
+        "testCommand": "npm run release:gate",
+        "failureDetails": "The new workflow has not yet executed in GitHub and the working tree remains heavily dirty.",
+        "owner": "Repository maintainer",
+        "remediation": "Create an isolated commit, open a review, require the Production Readiness Gate branch check, and verify the remote CI result before release review.",
+        "acceptedRisk": false,
+        "expirationDate": null,
+        "lastVerifiedCommit": "77d2086734b8baa7f48760067b168dc522c5bc58",
+        "states": [
+          "Implemented",
+          "Tested",
+          "Unknown"
+        ]
+      },
+      {
+        "layer": 8,
+        "name": "Security and row-level security",
+        "status": "Critical",
+        "evidence": [
+          "Sherlock security review passes locally; source migrations show forced RLS and public revocation; untrusted job-content and SSRF defenses are tested."
+        ],
+        "evidenceTimestamp": "2026-09-01T17:09:54.711Z",
+        "testCommand": "node scripts/sherlock-security-review.mjs && npm run test:resilience",
+        "failureDetails": "Database RLS/grants are not verified against an applied staging or production schema, and no database advisor result is retained.",
+        "owner": "Security and database owner",
+        "remediation": "Apply reviewed migrations to staging, test anon/authenticated/service boundaries including cross-tenant denial, run database advisors, and retain redacted results tied to the migration digest.",
+        "acceptedRisk": false,
+        "expirationDate": null,
+        "lastVerifiedCommit": "77d2086734b8baa7f48760067b168dc522c5bc58",
+        "states": [
+          "Implemented",
+          "Tested",
+          "Unknown"
+        ]
+      },
+      {
+        "layer": 9,
+        "name": "Rate limiting",
+        "status": "Warning",
+        "evidence": [
+          "Durable tenant/global rate limits, hashed partitions, fail-closed configuration, and local regression tests exist; a prior operator round trip proved Upstash reachability but current parity was not rechecked."
+        ],
+        "evidenceTimestamp": "2026-09-01T17:09:54.711Z",
+        "testCommand": "node scripts/durable-rate-limit-test.mjs",
+        "failureDetails": "Current deployed limits, alert thresholds, and behavior under concurrent tenants are not verified.",
+        "owner": "Platform owner",
+        "remediation": "Run an approved staging concurrency test and a bounded production readiness probe that records only aggregate decisions and latency.",
+        "acceptedRisk": false,
+        "expirationDate": null,
+        "lastVerifiedCommit": "77d2086734b8baa7f48760067b168dc522c5bc58",
+        "states": [
+          "Implemented",
+          "Tested",
+          "Unknown"
+        ]
+      },
+      {
+        "layer": 10,
+        "name": "Caching and CDN",
+        "status": "Warning",
+        "evidence": [
+          "API and concierge data routes are no-store; index caching is explicitly short-lived; output-boundary tests pass."
+        ],
+        "evidenceTimestamp": "2026-09-01T17:09:54.711Z",
+        "testCommand": "node scripts/vercel-output-boundary-test.mjs",
+        "failureDetails": "Live cache headers, invalidation, and cross-user cache isolation are not verified for this candidate.",
+        "owner": "Web platform owner",
+        "remediation": "Verify Preview and Production response headers for public, private, API, and error routes and retain header evidence by deployment ID.",
+        "acceptedRisk": false,
+        "expirationDate": null,
+        "lastVerifiedCommit": "77d2086734b8baa7f48760067b168dc522c5bc58",
+        "states": [
+          "Implemented",
+          "Tested",
+          "Unknown"
+        ]
+      },
+      {
+        "layer": 11,
+        "name": "Load balancing and scaling",
+        "status": "Warning",
+        "evidence": [
+          "Discovery work is concurrency bounded and provider circuit breakers isolate failing sources; serverless execution supplies managed horizontal routing."
+        ],
+        "evidenceTimestamp": "2026-09-01T17:09:54.711Z",
+        "testCommand": "node scripts/public-ats-discovery-test.mjs && npm run test:resilience",
+        "failureDetails": "No measured capacity, queue-depth SLO, regional failover evidence, or tenant-fairness load result exists.",
+        "owner": "Platform owner",
+        "remediation": "Define beta load assumptions and run a capped synthetic staging test covering queue depth, rate-limit fairness, source failure, and recovery.",
+        "acceptedRisk": false,
+        "expirationDate": null,
+        "lastVerifiedCommit": "77d2086734b8baa7f48760067b168dc522c5bc58",
+        "states": [
+          "Implemented",
+          "Tested",
+          "Unknown"
+        ]
+      },
+      {
+        "layer": 12,
+        "name": "Error tracking and logs",
+        "status": "Warning",
+        "evidence": [
+          "Content-free structured events, admin-only health/dependency routes, worker heartbeat state, audit-chain tests, and operator-alert queues exist."
+        ],
+        "evidenceTimestamp": "2026-09-01T17:09:54.711Z",
+        "testCommand": "npm run test:resilience && node scripts/job-agent-operator-alert-test.mjs",
+        "failureDetails": "No production log-drain retention, alert delivery receipt, dashboard SLO, or on-call acknowledgement was verified.",
+        "owner": "Operations owner",
+        "remediation": "Configure an approved redacted log/alert destination, perform a synthetic non-user incident delivery test, and record ownership, retention, and acknowledgement evidence.",
+        "acceptedRisk": false,
+        "expirationDate": null,
+        "lastVerifiedCommit": "77d2086734b8baa7f48760067b168dc522c5bc58",
+        "states": [
+          "Implemented",
+          "Tested",
+          "Unknown"
+        ]
+      },
+      {
+        "layer": 13,
+        "name": "Availability and recovery",
+        "status": "Critical",
+        "evidence": [
+          "Lease recovery, retries, circuit breaking, liveness/readiness endpoints, encrypted record recovery code, and a disaster-recovery runbook exist and pass local synthetic tests."
+        ],
+        "evidenceTimestamp": "2026-09-01T17:09:54.711Z",
+        "testCommand": "npm run test:resilience && node scripts/encrypted-record-recovery-test.mjs",
+        "failureDetails": "Provider backup/PITR retention and an isolated restore have not been verified; RPO/RTO and alert delivery remain operator assertions rather than measured evidence.",
+        "owner": "Incident and database owner",
+        "remediation": "Verify backup/PITR configuration, restore into an isolated non-production target, measure RPO/RTO, validate reconciliation, and retain signed content-free evidence.",
+        "acceptedRisk": false,
+        "expirationDate": null,
+        "lastVerifiedCommit": "77d2086734b8baa7f48760067b168dc522c5bc58",
+        "states": [
+          "Implemented",
+          "Tested",
+          "Unknown"
+        ]
+      }
+    ]
+  },
+  "deterministicControls": [
+    {
+      "id": "PR-01",
+      "requirement": "Required 13-layer documents exist",
+      "passed": true,
+      "severity": "Critical"
+    },
+    {
+      "id": "PR-02",
+      "requirement": "All 13 scorecard layers are represented",
+      "passed": true,
+      "severity": "Critical"
+    },
+    {
+      "id": "PR-03",
+      "requirement": "Release gate and entry/exit commands are registered",
+      "passed": true,
+      "severity": "Critical"
+    },
+    {
+      "id": "PR-04",
+      "requirement": "CI enforces the deterministic release gate on Node 24",
+      "passed": true,
+      "severity": "Critical"
+    },
+    {
+      "id": "PR-05",
+      "requirement": "Direct dependencies are exactly pinned and lockfile v3 is present",
+      "passed": true,
+      "severity": "Critical"
+    },
+    {
+      "id": "PR-06",
+      "requirement": "API responses have a no-store cache boundary",
+      "passed": true,
+      "severity": "Critical"
+    },
+    {
+      "id": "PR-07",
+      "requirement": "Concierge CSP blocks inline script attributes",
+      "passed": true,
+      "severity": "Critical"
+    },
+    {
+      "id": "PR-08",
+      "requirement": "Tenant migrations contain RLS, forced RLS, and public privilege revocation",
+      "passed": true,
+      "severity": "Critical"
+    },
+    {
+      "id": "PR-09",
+      "requirement": "Liveness, readiness, dependency, and worker health endpoints exist",
+      "passed": true,
+      "severity": "Critical"
+    },
+    {
+      "id": "PR-10",
+      "requirement": "Durable rate-limit regression test exists",
+      "passed": true,
+      "severity": "Critical"
+    },
+    {
+      "id": "PR-11",
+      "requirement": "Public-output/source-leak regression test exists",
+      "passed": true,
+      "severity": "Critical"
+    },
+    {
+      "id": "PR-12",
+      "requirement": "Recovery plan and recovery drill are documented and implemented",
+      "passed": true,
+      "severity": "Critical"
+    },
+    {
+      "id": "PR-13",
+      "requirement": "AI use-case assessment gate and current assessment exist",
+      "passed": true,
+      "severity": "Critical"
+    }
+  ],
+  "deterministicCriticalCount": 0,
+  "productionCriticalCount": 3,
+  "comparison": [
+    {
+      "layer": 1,
+      "name": "Frontend foundations",
+      "entryStatus": "Warning",
+      "exitStatus": "Warning",
+      "change": "Unchanged"
+    },
+    {
+      "layer": 2,
+      "name": "APIs and backend logic",
+      "entryStatus": "Warning",
+      "exitStatus": "Warning",
+      "change": "Unchanged"
+    },
+    {
+      "layer": 3,
+      "name": "Database and storage",
+      "entryStatus": "Critical",
+      "exitStatus": "Critical",
+      "change": "Unchanged"
+    },
+    {
+      "layer": 4,
+      "name": "Authentication and permissions",
+      "entryStatus": "Warning",
+      "exitStatus": "Warning",
+      "change": "Unchanged"
+    },
+    {
+      "layer": 5,
+      "name": "Hosting and deployment",
+      "entryStatus": "Warning",
+      "exitStatus": "Warning",
+      "change": "Unchanged"
+    },
+    {
+      "layer": 6,
+      "name": "Cloud and compute",
+      "entryStatus": "Warning",
+      "exitStatus": "Warning",
+      "change": "Unchanged"
+    },
+    {
+      "layer": 7,
+      "name": "CI/CD and version control",
+      "entryStatus": "Warning",
+      "exitStatus": "Warning",
+      "change": "Unchanged"
+    },
+    {
+      "layer": 8,
+      "name": "Security and row-level security",
+      "entryStatus": "Critical",
+      "exitStatus": "Critical",
+      "change": "Unchanged"
+    },
+    {
+      "layer": 9,
+      "name": "Rate limiting",
+      "entryStatus": "Warning",
+      "exitStatus": "Warning",
+      "change": "Unchanged"
+    },
+    {
+      "layer": 10,
+      "name": "Caching and CDN",
+      "entryStatus": "Warning",
+      "exitStatus": "Warning",
+      "change": "Unchanged"
+    },
+    {
+      "layer": 11,
+      "name": "Load balancing and scaling",
+      "entryStatus": "Warning",
+      "exitStatus": "Warning",
+      "change": "Unchanged"
+    },
+    {
+      "layer": 12,
+      "name": "Error tracking and logs",
+      "entryStatus": "Warning",
+      "exitStatus": "Warning",
+      "change": "Unchanged"
+    },
+    {
+      "layer": 13,
+      "name": "Availability and recovery",
+      "entryStatus": "Critical",
+      "exitStatus": "Critical",
+      "change": "Unchanged"
+    }
+  ]
+}
