@@ -609,3 +609,47 @@ section { padding: clamp(62px, 8vw, 104px) 0; }
   .js .reveal { opacity: 1; transform: none; transition: none; }
   .step { transition: none; }
 }
+
+/* ── Landing conversion pass (2026-09-07) ──────────────────────────────────────
+   Additive only. Every colour is a theme token so light and dark both hold. */
+
+/* The logo is 23–26px tall; give the link a 44px hit area inside the 68px bar. */
+.nav .brand { min-height: 44px; }
+
+/* The primary action repeats at the bottom of the compact menu so a phone user
+   never has to close the menu to find it. It is a button, not a list row. */
+.nav-sheet .nav-sheet-cta { margin-top: 16px; border-bottom: 0; color: #fff; padding: 0 22px; }
+
+/* Hero category pill and brand payoff. */
+.hero .pill { margin-bottom: 4px; }
+.hero-payoff { margin-top: 18px; font-size: 0.95rem; font-weight: 620; color: var(--primary); letter-spacing: -0.01em; }
+
+/* A tick reads as "confirmed" where a dot only reads as "list item". Decorative:
+   the sentence beside it already carries the meaning. */
+.hero-points li::before {
+  content: ""; border-radius: 1px; background: none;
+  width: 11px; height: 6px; top: 0.46em; left: 3px; opacity: 1;
+  border-left: 2px solid var(--mint); border-bottom: 2px solid var(--mint);
+  border-top: 0; border-right: 0; transform: rotate(-45deg);
+}
+
+/* The access note explains what the primary button does and does not get you, so
+   it sits under the button rather than competing with it. */
+.path-foot { display: grid; gap: 10px; }
+.path-access { margin-top: 4px; }
+.path-access b { color: var(--ink); }
+.path-access a { font-weight: 640; }
+
+/* <h2> keeps the document outline legal (no h2 → h4 jump); the class carries the
+   small all-caps column-label look the <h4> had. */
+.foot .foot-h { font-size: 0.8rem; line-height: 1.5; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-bottom: 14px; }
+
+@media (max-width: 700px) {
+  /* The trust line is the whole reason a nervous job seeker taps the button, so
+     it stays on phones. It was display:none above. */
+  .hero-points { display: grid; justify-content: stretch; gap: 8px; margin-top: 20px; text-align: left; }
+  .hero-points li { font-size: 13px; padding-left: 22px; }
+  .hero-points li::before { left: 2px; width: 10px; height: 5px; }
+  .hero .pill { font-size: 0.78rem; }
+  .hero-payoff { font-size: 0.9rem; }
+}
