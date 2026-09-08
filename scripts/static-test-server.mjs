@@ -4,6 +4,7 @@ import { extname, resolve, sep } from 'node:path';
 
 const root = resolve(process.cwd());
 const port = Number(process.env.PORT || 4175);
+if (!Number.isInteger(port) || port < 1 || port > 65_535) throw new Error('PORT must be an integer between 1 and 65535.');
 const deploymentConfiguration = JSON.parse(await readFile(resolve(root, 'vercel.json'), 'utf8'));
 const types = new Map([
   ['.html', 'text/html; charset=utf-8'], ['.js', 'text/javascript; charset=utf-8'],
@@ -20,7 +21,7 @@ function routeHeaders(pathname) {
   return headers;
 }
 
-createServer(async (request, response) => {
+const server = createServer(async (request, response) => {
   try {
     const pathname = decodeURIComponent(new URL(request.url || '/', 'http://127.0.0.1').pathname);
     if (pathname.startsWith('/api/')) { response.writeHead(404, { 'Content-Type': 'application/json' }); return response.end('{"error":"Not configured in static browser fixture."}'); }
@@ -39,4 +40,30 @@ createServer(async (request, response) => {
     response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     return response.end('Not found');
   }
-}).listen(port, '127.0.0.1', () => console.log(`Static browser fixture ready on http://127.0.0.1:${port}`));
+});
+
+const sockets = new Set();
+server.on('connection', socket => {
+  sockets.add(socket);
+  socket.once('close', () => sockets.delete(socket));
+});
+server.on('error', error => {
+  console.error(`Static browser fixture failed: ${error.message}`);
+  process.exitCode = 1;
+});
+
+let shuttingDown = false;
+function shutdown() {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  server.close(() => process.exit(0));
+  for (const socket of sockets) socket.end();
+  setTimeout(() => {
+    for (const socket of sockets) socket.destroy();
+    process.exit(0);
+  }, 1_000).unref();
+}
+
+process.once('SIGINT', shutdown);
+process.once('SIGTERM', shutdown);
+server.listen(port, '127.0.0.1', () => console.log(`Static browser fixture ready on http://127.0.0.1:${port}`));

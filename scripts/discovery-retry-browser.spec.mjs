@@ -17,7 +17,7 @@ test('slow discovery preserves progress, allows retry, and labels partial result
     if (attempts === 1) { await new Promise(resolve => setTimeout(resolve, 500)); return route.abort().catch(() => {}); }
     return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ jobs: [], partial: true, status: 'partial', sourceSummary: [] }) });
   });
-  await page.goto('http://127.0.0.1:4175/concierge');
+  await page.goto('/concierge');
   await expect(page).toHaveTitle(/Job Agent/);
   await page.locator('#openGuidedLaunch').click();
   await page.locator('[data-guided-goal="best-fit"]').click();
