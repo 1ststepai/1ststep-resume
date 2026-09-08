@@ -174,13 +174,16 @@
         : selectedDescription.length >= 120
           ? selectedDescription
           : descriptionCandidates.sort((left, right) => right.text.length - left.text.length)[0]?.text || '').slice(0, MAX_DESCRIPTION_LENGTH);
-  const structuredTitle = clean(structured?.title || structured?.name || '');
+  // Some ATS providers HTML-encode human-readable values inside JSON-LD
+  // (for example, "Procurement &amp; Spend Strategy"). Normalize those values
+  // before they become visible labels or durable Job Agent identity fields.
+  const structuredTitle = textFromHtml(structured?.title || structured?.name || '');
   const pageTitle = firstText([...(atsProfile?.title || []), 'h1', '[data-testid*="job-title" i]', '[class*="job-title" i]', 'meta[property="og:title"]']);
-  const documentTitle = clean(document.title).replace(/\s+[|–—-]\s+(?:careers?|jobs?|apply|linkedin|indeed).*$/i, '');
-  const jobTitle = structuredTitle || clean(greenhouseJob?.title) || pageTitle || documentTitle;
+  const documentTitle = textFromHtml(document.title).replace(/\s+[|–—-]\s+(?:careers?|jobs?|apply|linkedin|indeed).*$/i, '');
+  const jobTitle = structuredTitle || textFromHtml(greenhouseJob?.title) || pageTitle || documentTitle;
 
   const organization = structured?.hiringOrganization;
-  const company = clean(
+  const company = textFromHtml(
     (typeof organization === 'string' ? organization : organization?.name) ||
     greenhouseJob?.company_name ||
     firstText([...(atsProfile?.company || []), '[data-testid*="company" i]', '[class*="company-name" i]', '[class*="companyName"]', 'meta[property="og:site_name"]'])

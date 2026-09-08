@@ -34,6 +34,20 @@ test('prefers JobPosting structured data and strips description markup', async (
   expect(result.captureMethod).toBe('structured-job-posting');
 });
 
+test('decodes HTML entities in structured job identity fields', async ({ page }) => {
+  await load(page, 'https://jobs.lever.co/example/entity-title', `
+    <h1>Fallback title</h1>
+    <script type="application/ld+json">${JSON.stringify({
+      '@context': 'https://schema.org', '@type': 'JobPosting',
+      title: 'Director of Procurement &amp; Spend Strategy',
+      hiringOrganization: { '@type': 'Organization', name: 'Research &amp; Operations' },
+      description: `<p>${'Lead verified procurement and supplier operations. '.repeat(12)}</p>`,
+    })}</script>`);
+  const result = await capture(page);
+  expect(result.jobTitle).toBe('Director of Procurement & Spend Strategy');
+  expect(result.company).toBe('Research & Operations');
+});
+
 const atsCases = [
   {
     name: 'Workday', url: 'https://example.wd5.myworkdayjobs.com/en-US/jobs/job/123', method: 'workday-visible',

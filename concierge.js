@@ -2009,6 +2009,7 @@ function consumeJobAgentCapture() {
   }
 
   const roleId = `captured_${captureId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80)}`;
+  let duplicate = false;
   if (!deskState.roles.some(role => role.id === roleId)) {
     const result = addRole(deskState, {
       id: roleId,
@@ -2028,13 +2029,16 @@ function consumeJobAgentCapture() {
       travel: 'Not verified from captured page',
       schedule: 'Not verified from captured page',
     });
+    duplicate = result.duplicate === true;
     deskState = result.state;
     saveAll();
   }
   renderAll();
-  addMessage('assistant', `<strong>Captured ${escapeHtml(job.jobTitle)} at ${escapeHtml(job.company)} for review.</strong><br>I marked the source and Apply path as unverified. Nothing will be prepared or submitted until the listing is verified. ${resumeLink}.`);
+  addMessage('assistant', duplicate
+    ? `<strong>${escapeHtml(job.jobTitle)} at ${escapeHtml(job.company)} is already in My Jobs.</strong><br>I kept the existing record and did not create a duplicate. ${resumeLink}.`
+    : `<strong>Captured ${escapeHtml(job.jobTitle)} at ${escapeHtml(job.company)} for review.</strong><br>I marked the source and Apply path as unverified. Nothing will be prepared or submitted until the listing is verified. ${resumeLink}.`);
   openJobs('Matches');
-  showToast('Captured job added for supervised review');
+  showToast(duplicate ? 'Job already saved; duplicate suppressed' : 'Captured job added for supervised review');
 }
 
 // Indeterminate "still working" affordance for long-running scans.

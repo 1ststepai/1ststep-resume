@@ -17,6 +17,7 @@ const jobTitleEl     = document.getElementById('jobTitle');
 const companyEl      = document.getElementById('company');
 const siteEl         = document.getElementById('site');
 const capturedDetailsEl = document.getElementById('capturedDetails');
+const agentConnectionHint = document.getElementById('agentConnectionHint');
 const tailorBtn      = document.getElementById('tailorBtn');
 const autofillBtn    = document.getElementById('autofillBtn');
 const autofillEmptyBtn = document.getElementById('autofillEmptyBtn');
@@ -27,7 +28,11 @@ const openAppLink    = document.getElementById('openAppLink');
 async function checkAuth() {
   return new Promise(resolve => chrome.runtime.sendMessage({ action: 'GET_JOB_AGENT_STATUS' }, response => {
     const capabilities = response?.data?.capabilities || response?.data || {};
-    resolve({ jobAgentAccess: response?.success === true && capabilities.jobAgentAccess === true, tier: capabilities.tier || 'guest' });
+    resolve({
+      jobAgentAccess: response?.success === true && capabilities.jobAgentAccess === true,
+      tier: capabilities.tier || 'guest',
+      code: typeof response?.code === 'string' ? response.code : '',
+    });
   }));
 }
 
@@ -38,7 +43,9 @@ async function init() {
     const auth = await checkAuth();
 
     unauthState.style.display = 'none';
-    statusBadge.textContent = auth.jobAgentAccess ? 'Agent Connected' : 'Resume Tools';
+    statusBadge.textContent = auth.jobAgentAccess
+      ? 'Agent Connected'
+      : auth.code === 'JOB_AGENT_APP_BRIDGE_UNAVAILABLE' ? 'Reconnect Agent' : 'Resume Tools';
     statusBadge.classList.toggle('authenticated', auth.jobAgentAccess);
 
     const job = await getCurrentJob();
@@ -94,6 +101,14 @@ function showJobCard(job, auth) {
   jobState.style.display     = 'block';
   jobCard.classList.add('visible');
   emptyState.style.display   = 'none';
+
+  if (agentConnectionHint) {
+    const bridgeNeedsReload = auth?.code === 'JOB_AGENT_APP_BRIDGE_UNAVAILABLE';
+    agentConnectionHint.textContent = bridgeNeedsReload
+      ? 'Reload your open 1stStep.ai tab, then reopen this extension to reconnect Job Agent.'
+      : '';
+    agentConnectionHint.style.display = bridgeNeedsReload ? 'block' : 'none';
+  }
 
   const titleMissing = !job.jobTitle || job.jobTitle === 'Unknown Role';
 
