@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { identityEmailHash, postgresTenantStoreConfiguration, upsertClerkTenantIdentity } from '../lib/postgres-tenant-store.js';
+import { identityEmailHash, postgresTenantStoreConfiguration, probePostgresTenantStore, upsertClerkTenantIdentity } from '../lib/postgres-tenant-store.js';
 
 const tenantId = 'a'.repeat(40);
 const queries = [];
@@ -14,6 +14,23 @@ sql.transaction = async (items, options) => {
 assert.equal(postgresTenantStoreConfiguration({}).reason, 'POSTGRES_DISABLED');
 assert.equal(postgresTenantStoreConfiguration({ JOB_AGENT_POSTGRES_ENABLED: 'true' }).reason, 'DATABASE_URL_MISSING');
 assert.match(identityEmailHash('Person@Example.test', 'x'.repeat(40)), /^[a-f0-9]{64}$/);
+
+assert.deepEqual(await probePostgresTenantStore({ configuration: { enabled: false } }), { status: 'disabled' });
+assert.deepEqual(await probePostgresTenantStore({ configuration: { enabled: true, ready: false } }), { status: 'unavailable' });
+const probeQueries = [];
+function probeSql(strings, ...values) { const query = { strings: [...strings], values }; probeQueries.push(query); return query; }
+probeSql.transaction = async (items, options) => {
+  assert.equal(items.length, 3);
+  assert.deepEqual(options, { isolationLevel: 'ReadCommitted', readOnly: true });
+  return [[], [], [{ role_ok: true, tenant_context_ok: true, schema_ok: true }]];
+};
+assert.deepEqual(await probePostgresTenantStore({ configuration: { enabled: true, ready: true, getSql: () => probeSql } }), { status: 'healthy' });
+assert.match(probeQueries[0].strings.join(''), /set_config\('app\.tenant_id'/);
+assert.match(probeQueries[1].strings.join(''), /set local role job_agent_backend/);
+assert.match(probeQueries[2].strings.join(''), /to_regclass\('public\.app_tenants'\)/);
+assert.equal(probeQueries.flatMap(query => query.values).every(value => value === '0'.repeat(40)), true);
+const failedProbe = await probePostgresTenantStore({ configuration: { enabled: true, ready: true, getSql: () => ({ transaction: async () => { throw new Error('private connection detail'); } }) } });
+assert.deepEqual(failedProbe, { status: 'unavailable' });
 
 const stored = await upsertClerkTenantIdentity({
   tenantId,

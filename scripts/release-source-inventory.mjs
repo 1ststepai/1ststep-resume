@@ -86,7 +86,8 @@ const toolingOnlyModules = new Set([
 
 const inventory = untracked.map(file => {
   if (required.has(file)) return { file, classification: 'REQUIRED PRODUCTION SOURCE' };
-  if (file.startsWith('migrations/') || file.startsWith('supabase/migrations/') || file.startsWith('supabase/tests/')) {
+  if (file.startsWith('.github/workflows/')) return { file, classification: 'REQUIRED PRODUCTION SOURCE' };
+  if (file === 'supabase/config.toml' || file.startsWith('migrations/') || file.startsWith('supabase/migrations/') || file.startsWith('supabase/tests/')) {
     return { file, classification: 'REQUIRED DATABASE SOURCE' };
   }
   if (file.startsWith('docs/production-readiness/')) {

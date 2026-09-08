@@ -7,8 +7,33 @@ export function classifyConciergeMessage(input) {
   if (!text) return { kind: 'empty' };
   if (UNSAFE_TERMS.test(text)) return { kind: 'blocked', reason: 'credentials' };
   if (PROTECTED_RANKING.test(text)) return { kind: 'blocked', reason: 'protected-trait' };
+  if (/\b(?:status|progress)\b|\b(?:is|are)\b.*\b(?:agent|you|search)\b.*\b(?:running|working|active|doing|started)\b|\bwhat(?:'s| is| are)?\b.*\b(?:happening|doing|next)\b/i.test(text)) return { kind: 'status' };
   if (!JOB_TERMS.test(text)) return { kind: 'off-topic' };
   return { kind: 'job' };
+}
+
+export function jobAgentStatus({ run, discovery = {}, paused = false, needsYou = false, now = Date.now(), unavailable = false } = {}) {
+  const last = run?.lastHeartbeatAt || run?.updatedAt || null;
+  const status = run?.lifecycleState || run?.status;
+  const result = (label, detail, tone = 'idle') => ({ label, detail, tone, last });
+  if (unavailable) return result('Status unavailable', 'We could not check the worker. Your saved work is not proof that it is running.', 'attention');
+  if (paused || status === 'Paused') return result('Paused', 'Your progress is saved; no new work is starting. Use Play again when you are ready.');
+  if (needsYou || status === 'Waiting for You') return result('Needs you', 'Open Needs You to review the step blocking progress.', 'attention');
+  if (status === 'Queued') return result('Queued — not started yet', 'Your search is saved, but a worker has not started it. Check status for an update.', 'waiting');
+  if (status === 'Retrying') return result('Waiting to retry', 'A source needs another attempt. Saved results are retained; this is not an active-search confirmation.', 'waiting');
+  if (status === 'Failed Safely' || run?.status === 'Failed' || discovery.status === 'error') return result('Search needs attention', 'The last attempt did not finish. Review Agent Status before retrying.', 'attention');
+  if (['Completed', 'Partially Completed', 'Finished'].includes(status)) return result(status === 'Partially Completed' ? 'Finished with partial results' : 'Search finished', 'Open My Jobs to review the results. This does not mean applications were submitted.', 'complete');
+  if (run) {
+    const heartbeat = Date.parse(run.lastHeartbeatAt || '');
+    const lease = Date.parse(run.leaseUntil || '');
+    if (['Searching', 'Verifying', 'Preparing'].includes(status) && now >= heartbeat && now - heartbeat < 90000 && lease > now) {
+      return result(status === 'Preparing' ? 'Preparing' : 'Searching', 'Recent worker activity confirmed. No action needed right now.', 'working');
+    }
+    return result('Waiting for a worker update', 'We cannot confirm that the worker is still running. Check status; do not start a duplicate search.', 'waiting');
+  }
+  if (discovery.status === 'searching') return result('Searching in this tab', 'A search request is in progress. Keep this tab open until results arrive.', 'working');
+  if (discovery.status === 'complete') return result('Search finished', 'Open My Jobs to review your matches.', 'complete');
+  return result('Ready — not running', 'Your preferences are ready. Start a search to find matching jobs.');
 }
 
 export function parseMission(input, prior = {}) {

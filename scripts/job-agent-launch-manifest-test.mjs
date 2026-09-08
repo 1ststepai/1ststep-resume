@@ -55,6 +55,8 @@ const readyEnv = {
   JOB_AGENT_ALERT_COOLDOWN_SECONDS: '900',
   JOB_AGENT_ALERT_RETENTION_DAYS: '90',
   JOB_AGENT_ALERT_ACKNOWLEDGEMENT_MINUTES: '15',
+  JOB_AGENT_DISCORD_ALERTS_APPROVED: 'true',
+  JOB_AGENT_DISCORD_WEBHOOK_URL: `https://discord.com/api/webhooks/123456789012345678/${'d'.repeat(64)}`,
   STRIPE_WEBHOOK_IDEMPOTENCY_SECRET: 'i'.repeat(48),
   JOB_AGENT_RECEIPT_SECRET: 'q'.repeat(48),
   AI_GLOBAL_DAILY_UNITS: '200',
@@ -154,6 +156,9 @@ assert.equal(manifest.operatorAlerting.approved, true);
 assert.equal(manifest.operatorAlerting.retentionDays, 90);
 assert.equal(manifest.operatorAlerting.acknowledgementWindowMinutes, 15);
 assert.equal(manifest.operatorAlerting.containsEndpointOrCredential, false);
+assert.equal(manifest.discordOperatorAlerts.ready, true);
+assert.equal(manifest.discordOperatorAlerts.destination, 'private-discord-channel');
+assert.equal(manifest.discordOperatorAlerts.containsEndpointOrCredential, false);
 assert.equal(Object.hasOwn(manifest.operatorAlerting, 'url'), false);
 assert.equal(Object.hasOwn(manifest.operatorAlerting, 'bearerToken'), false);
 assert.equal(manifest.assistedExecutionMode, 'greenhouse-extension');
@@ -172,6 +177,7 @@ assert.ok(manifest.capabilities.signedBeta.blockers.includes('PRIVATE_DOCUMENT_S
 manifest = jobAgentLaunchManifest(readyEnv, { now });
 const serialized = JSON.stringify(manifest);
 for (const secret of [readyEnv.RESEND_API_KEY, readyEnv.RESEND_WEBHOOK_SECRET, readyEnv.JOB_AGENT_AUDIT_SECRET, readyEnv.JOB_AGENT_LAUNCH_EVIDENCE_SECRET, readyEnv.JOB_AGENT_ALERT_BEARER_TOKEN, readyEnv.JOB_AGENT_AUDIT_ARCHIVE_BEARER_TOKEN, readyEnv.JOB_AGENT_AUDIT_ARCHIVE_ACK_SECRET, readyEnv.BETA_DATA_ENCRYPTION_KEY]) assert.equal(serialized.includes(secret), false);
+assert.equal(serialized.includes(readyEnv.JOB_AGENT_DISCORD_WEBHOOK_URL), false);
 assert.equal(serialized.includes(readyEnv.JOB_AGENT_SUPPORT_OWNER), false);
 assert.equal(serialized.includes(readyEnv.JOB_AGENT_INCIDENT_OWNER), false);
 assert.equal(serialized.includes(JOB_AGENT_INCIDENT_RUNBOOK_SHA256), false);

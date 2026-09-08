@@ -11,7 +11,7 @@ function Invoke-PreviewGet([string]$Path) {
 }
 
 $html = Invoke-PreviewGet '/concierge.html'
-if ($html -notmatch 'Start my job agent' -or $html -notmatch 'Fully remote' -or $html -notmatch 'Receipt-verified application target' -or $html -notmatch '>Sign in<') {
+if ($html -notmatch 'Start my job agent' -or $html -notmatch 'Fully remote' -or $html -notmatch 'Real progress, without a quota' -or $html -notmatch '>Sign in<') {
   throw 'Hosted Concierge HTML verification failed.'
 }
 

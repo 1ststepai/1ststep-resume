@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+const source = readFileSync(new URL('../concierge.js', import.meta.url), 'utf8');
+assert.ok(source.includes('minimum application score of 70 points'));
+assert.ok(source.includes('These roles are Found—not Submitted'));
+assert.ok(source.includes('exact employer job page, location, travel, schedule, and any missing requirements'));
+assert.ok(source.includes('Verified fit and your observed outcomes matter more than application volume'));
+assert.ok(source.includes('Imported “applied” labels are not treated as receipts.'));
+assert.ok(source.includes('data-prompt="Review my current mission"'));
+assert.ok(!source.includes('duplicates were suppressed'));
+console.log('PASS: narration preserves threshold, state, verification, receipts and action identifiers');

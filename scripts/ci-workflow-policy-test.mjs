@@ -5,6 +5,7 @@ const workflowPaths = [
   '.github/workflows/production-readiness.yml',
   '.github/workflows/qa.yml',
   '.github/workflows/codeql.yml',
+  '.github/workflows/isolated-database-verification.yml',
 ];
 const workflows = Object.fromEntries(workflowPaths.map((path) => [path, readFileSync(path, 'utf8')]));
 
@@ -28,6 +29,9 @@ const readiness = workflows['.github/workflows/production-readiness.yml'];
 assert.match(readiness, /node-version:\s*['"]24['"]/, 'Production readiness must use application Node 24');
 assert.match(readiness, /run:\s*npm ci --ignore-scripts/, 'Production readiness must install the lockfile without lifecycle scripts');
 assert.match(readiness, /run:\s*npm run release:gate/, 'Production readiness must execute the complete release gate');
+assert.match(readiness, /VERCEL_ORG_ID:\s*team_[A-Za-z0-9]{20,}/, 'Production readiness must provide the non-secret Vercel organization identifier for the local output build');
+assert.match(readiness, /VERCEL_PROJECT_ID:\s*prj_[A-Za-z0-9]{20,}/, 'Production readiness must provide the non-secret Vercel project identifier for the local output build');
+assert.doesNotMatch(readiness, /secrets\.VERCEL_TOKEN/, 'The deterministic output build must not depend on a deployment credential');
 assert.match(readiness, /dependency-audit:/, 'Production readiness must include a separate dependency audit job');
 assert.match(readiness, /run:\s*npm audit --omit=dev --audit-level=high/, 'Production dependency audit must reject high or critical runtime advisories');
 assert.match(readiness, /name:\s*Production dependency vulnerability audit[\s\S]*?timeout-minutes:\s*10/, 'Production dependency audit must have its own bounded runtime');
@@ -41,5 +45,14 @@ assert.match(qa, /run:\s*npm run smoke/, 'QA must use the package smoke command'
 const codeql = workflows['.github/workflows/codeql.yml'];
 assert.match(codeql, /^\s*security-events:\s*write\s*$/m, 'CodeQL needs only its explicit security-events write permission');
 assert.match(codeql, /github\/codeql-action\/analyze@[a-f0-9]{40}/, 'CodeQL analysis must remain enabled and SHA-pinned');
+
+const isolatedDatabase = workflows['.github/workflows/isolated-database-verification.yml'];
+assert.match(isolatedDatabase, /^\s*workflow_dispatch:\s*$/m, 'Isolated database verification must be manually triggered');
+assert.doesNotMatch(isolatedDatabase, /^\s*(push|pull_request|schedule):\s*$/m, 'Isolated database verification must not run automatically');
+assert.match(isolatedDatabase, /run:\s*npx --no-install supabase --version/, 'Isolated database verification must use the lockfile-pinned Supabase CLI');
+assert.match(isolatedDatabase, /JOB_AGENT_ISOLATED_TARGET_KIND:\s*local-supabase/, 'Isolated database verification must attest a disposable local target');
+assert.match(isolatedDatabase, /run:\s*npx --no-install supabase test db/, 'Isolated database verification must run the pgTAP suite');
+assert.match(isolatedDatabase, /run:\s*bash scripts\/isolated-database-ci-drill\.sh/, 'Isolated database verification must run the recovery drill');
+assert.doesNotMatch(isolatedDatabase, /secrets\.|VERCEL_|PRODUCTION_SUPABASE|--prod|db push|link/, 'Isolated database verification must not access deployment or Production credentials');
 
 console.log('CI workflow policy verified Node 24, locked installs, immutable actions, bounded jobs, minimal permissions, non-persisted checkout credentials, and a separate high/critical production dependency audit.');

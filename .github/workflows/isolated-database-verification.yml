@@ -1,0 +1,100 @@
+name: Isolated Database Verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Disposable target authorized for this run
+        type: choice
+        default: none
+        options:
+          - none
+          - local-supabase
+      confirmation:
+        description: Type CONFIRM_ISOLATED_NONPRODUCTION_TARGET to authorize the local drill
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: isolated-database-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  authorize-target:
+    name: Check isolated target authorization
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      authorized: ${{ steps.target.outputs.authorized }}
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Check explicit local authorization
+        id: target
+        run: |
+          node scripts/isolated-database-ci-authorization-test.mjs
+          node scripts/isolated-database-ci-readiness-test.mjs
+          node scripts/isolated-database-ci-authorization.mjs
+        env:
+          JOB_AGENT_ISOLATED_TARGET_KIND: ${{ inputs.target }}
+          JOB_AGENT_ISOLATED_TARGET_CONFIRMATION: ${{ inputs.confirmation }}
+
+  isolated-supabase:
+    name: Supabase migration, RLS, and recovery drill
+    needs: authorize-target
+    if: needs.authorize-target.outputs.authorized == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Use application Node version
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Verify pinned Supabase CLI
+        run: npx --no-install supabase --version
+
+      - name: Verify local-only boundary
+        run: npm run security:isolated-data-preflight
+        env:
+          JOB_AGENT_ISOLATED_TARGET_KIND: local-supabase
+          JOB_AGENT_ISOLATED_TARGET_CONFIRMATION: ${{ inputs.confirmation }}
+
+      - name: Start disposable Supabase database
+        run: npx --no-install supabase db start
+
+      - name: Verify migration reconciliation
+        run: npm run db:reconcile:check
+
+      - name: Run adversarial tenant-isolation tests
+        run: npx --no-install supabase test db
+
+      - name: Run isolated backup and restore drill
+        run: bash scripts/isolated-database-ci-drill.sh
+
+      - name: Retain content-free verification summary
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: isolated-database-verification-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/isolated-database-ci-summary.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Stop disposable Supabase database
+        if: always()
+        run: npx --no-install supabase stop --no-backup || true

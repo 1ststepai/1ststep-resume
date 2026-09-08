@@ -1,14 +1,15 @@
 # Job Agent release execution plan
 
-This is the operator path from the current protected Preview to a controlled Production release. It is an execution checklist, not an authorization record. No checked box, source change, or successful test authorizes a migration, paid resource, credential transmission, personal-data transmission, employer action, Git push, merge, or Production deployment.
+This is the operator path from the combined candidate to a controlled Production release. It is an execution checklist, not an authorization record. No checked box, source change, or successful test authorizes a migration, paid resource, credential transmission, personal-data transmission, employer action, merge, or Production deployment.
 
 ## Current release identity
 
-- Release candidate commit: `16089681c330c1684a526e786a466e4a2b6f917e`
-- Runtime SHA-256: `219a40b7d38f4a4e0a88cd75897c552faa18c2d247d05457857ddc782b7a94a7`
+- Combined implementation baseline: `48454f976d8aeee2550cdbbbce334dd3eddc72a1`
+- Review branch: `codex/finish-staged-candidate-20260907` (pushed; automatic Vercel branch deployments disabled)
+- Exact review head and runtime SHA-256: resolve after the final evidence commit and before Preview creation
 - Core CI-hardening commit: `307e48d2fb1c134da3252959ba8b5ed3efc6285e`
 - Production dependency-audit commit: `0510756bed9537de9bba87eb1566150268d57408`
-- Exact protected Preview: `dpl_AiGJMf7zBkHJbwv6CjFtZvNj8STf`
+- Latest retained protected Preview: `dpl_AiGJMf7zBkHJbwv6CjFtZvNj8STf` (earlier candidate; not evidence for the combined candidate)
 - Current Production/rollback reference: `dpl_9c9giRaF6YzZnEgDVsNfvRx48mGM`
 - Production state: unchanged and not candidate-parity
 
@@ -76,9 +77,11 @@ Exit proof: `Submitted` remains impossible until an authoritative employer recei
 - [x] Complete the capped 10-request/concurrency-2 protected Preview liveness probe through the authenticated Vercel CLI transport, without a bypass secret, response bodies, or writes.
 - [x] Add a strict content-free acceptance contract for the separately approved synthetic signed-user fairness, rate-limit, queue/backpressure, dependency-failure, provider-quota, cost, and cleanup evidence.
 - [ ] Record plan, region, concurrency, queue-depth, latency, and cost assumptions; run approved signed-user fairness and dependency-failure drills after the durable runtime exists.
-- [ ] Explicitly authorize the branch push and review request.
+- [x] Push the isolated candidate branch without enabling automatic deployment.
+- [ ] Open the review request with an authorized repository collaborator.
 - [ ] Require green remote Production Readiness Gate CI and human review; do not merge automatically.
-- [x] Re-run the complete local gate and exact-Preview verifier against the current local candidate; repeat after remote review because the branch has not been pushed.
+- [x] Re-run the complete local gate against the combined local candidate.
+- [ ] Create and verify an exact protected Preview for the final review head after deployment authorization.
 - [x] Retain a content-free candidate index binding commit `70736f3`, runtime digest, exact protected Preview, fresh Production guard, and the Ready alias-owning rollback target without authorizing rollback or release.
 - [ ] Reconcile the 13-layer scorecard, full execution plan, evidence register, runbook, rollback preflight, and approval queue to the same commit and runtime digest.
 

@@ -1,7 +1,163 @@
 import { test, expect } from '@playwright/test';
 import { jobAgentPolicyBundle } from '../lib/job-agent-policy-bundle.js';
+import { jobAgentStatus } from '../client/concierge-router.js';
+import { grantVaultConsent } from '../lib/applicant-vault-domain.js';
+import { rememberApplicationAnswer, resolveApplicationAnswer, forgetAnswerMemory } from '../lib/application-answer-memory.js';
 
 const baseUrl = process.env.CONCIERGE_TEST_URL || 'http://127.0.0.1:4175/concierge';
+
+test('Needs You remembers an exact answer, restores attribution, and forgets it without transmission', async ({ page }) => {
+  let vault = grantVaultConsent(), version = 1, patch;
+  let session = { id:'application-memory-fixture',version:1,packageRunId:'package-memory-fixture',role:{employer:'Synthetic Employer',title:'Operations Manager',requisitionId:'REQ-MEMORY',directEmployerUrl:'https://careers.example.com/REQ-MEMORY'},documentVersion:'resume-memory-v1',state:'Waiting for You',stage:'employer_form',externalApplicationExecution:false,proposedFields:[],approvals:{transmission:null,submission:null},receipt:null,actions:[{id:'action-memory-fixture',type:'AMBIGUOUS_FACT',status:'open',summary:'Describe your vendor experience.',metadata:{question:'Describe your vendor experience.'}}],timeline:[] };
+  const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.route('**/api/session-capabilities*', route => route.fulfill({json:{jobAgentAccess:true,authentication:'opaque-session'}}));
+  await page.route('**/api/applicant-vault', async route => {
+    if (route.request().method() === 'POST') {
+      const body = route.request().postDataJSON();
+      if (body.action === 'remember-answer') vault = rememberApplicationAnswer(vault, session, body.input);
+      if (body.action === 'forget-memory') vault = forgetAnswerMemory(vault, body.input.id);
+      version++;
+    }
+    await route.fulfill({json:{vault,version}});
+  });
+  await page.route('**/api/application-sessions*', async route => {
+    if (route.request().method() === 'PATCH') { patch = route.request().postDataJSON(); session = {...resolveApplicationAnswer(session,vault,patch),version:2}; }
+    await route.fulfill({json:{session,sessions:[session],submissionsEnabled:false}});
+  });
+  await page.goto(baseUrl,{waitUntil:'domcontentloaded'});
+  await page.locator('#resumeApplication').click();
+  await expect(page.locator('#answerMemoryForm')).toContainText('Continue with this answer');
+  await expect(page.locator('#answerMemoryForm')).not.toContainText('Remember for similar applications');
+  await page.screenshot({path:`${process.env.TEMP || '/tmp'}/needs-you-answer-step.png`});
+  await page.setViewportSize({width:390,height:844});
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({path:`${process.env.TEMP || '/tmp'}/needs-you-answer-step-mobile.png`});
+  await page.locator('#answerMemoryText').fill('I handled equipment warranty claims and vendor terms at Example Company.');
+  await page.locator('#answerMemoryForm button[type="submit"]').click();
+  await expect(page.locator('#answerMemoryPanel')).toContainText('Should 1stStep remember this answer?');
+  expect(vault.facts).toHaveLength(0);
+  expect(patch).toBeUndefined();
+  await page.locator('[data-answer-memory-scope="candidate"]').click();
+  await expect(page.locator('#applicationSuggestions')).toContainText('Supplied by remembered fact, version 1');
+  expect(patch.action).toBe('resolve-remembered-answer');
+  expect(JSON.stringify(patch)).not.toContain('equipment warranty');
+  expect(session.approvals).toEqual({transmission:null,submission:null});
+  await page.reload({waitUntil:'networkidle'});
+  await page.locator('#openVault').click();
+  await expect(page.locator('#vaultList')).toContainText('Remembered about you');
+  await expect(page.locator('#vaultList')).toContainText('equipment warranty claims');
+  await page.screenshot({path:`${process.env.TEMP || '/tmp'}/remembered-about-you.png`});
+  await page.setViewportSize({width:390,height:844});
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({path:`${process.env.TEMP || '/tmp'}/remembered-about-you-mobile.png`});
+  await page.locator('[data-memory-forget]').click();
+  await expect(page.locator('#vaultList')).not.toContainText('equipment warranty claims');
+  expect(JSON.stringify(vault)).not.toContain('equipment warranty claims');
+  expect(errors).toEqual([]);
+});
+
+test('running requires recent heartbeat and unexpired lease', () => {
+  const now = Date.now();
+  const run = { lifecycleState: 'Searching', lastHeartbeatAt: new Date(now - 1000).toISOString(), leaseUntil: new Date(now + 30000).toISOString() };
+  expect(jobAgentStatus({ run, now }).tone).toBe('working');
+  expect(jobAgentStatus({ run, now: now + 100000 }).tone).toBe('waiting');
+  expect(jobAgentStatus({ run: { lifecycleState: 'Searching' }, now }).tone).toBe('waiting');
+  expect(jobAgentStatus({ run, now, unavailable: true }).label).toBe('Status unavailable');
+});
+
+test('queued status is visible and a running question receives status instead of rejection', async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('1ststep_concierge_mission_v1', JSON.stringify({ mission: { role: 'Procurement Manager', target: 10 }, messages: [], discovery: { status: 'queued' } }));
+    sessionStorage.setItem('1ststep_job_agent_run_v1', JSON.stringify({ id: 'synthetic-status', status: 'Searching', lifecycleState: 'Queued', taskType: 'direct_employer_discovery' }));
+  });
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await expect(page.locator('#agentRunState')).toHaveText('Queued — not started yet');
+  await expect(page.locator('#agentStatusDetail')).toContainText('worker has not started');
+  await expect(page.locator('[data-run-state="Searching"]')).not.toHaveClass(/active/);
+  await page.locator('#messageInput').fill('is my agent running currently?');
+  await page.locator('#composer button[type="submit"]').click();
+  await expect(page.locator('#messages')).toContainText('Queued — not started yet');
+  await expect(page.locator('#messages')).not.toContainText('I only handle');
+  await page.locator('#checkAgentStatus').click();
+  await expect(page.locator('#agentRunState')).toHaveText('Queued — not started yet');
+  await page.locator('#agentConversation').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: `${process.env.TEMP || '/tmp'}/agent-status-desktop.png` });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('#agentConversation').scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: `${process.env.TEMP || '/tmp'}/agent-status-mobile.png` });
+});
+
+test('newly reviewed resume survives late sign-in hydration and reaches consent without a second upload', async ({ page }) => {
+  let releaseSession;
+  const sessionReady = new Promise(resolve => { releaseSession = resolve; });
+  const bundle = jobAgentPolicyBundle({ termsVersion: 'terms-beta-1', privacyVersion: 'privacy-beta-1', authorizationVersion: 'job-agent-beta-1' });
+  const consent = { status: 'not-granted', active: false, code: 'JOB_AGENT_CONSENT_REQUIRED', scopes: [], requiredPolicy: bundle.binding, policyBundle: bundle };
+  await page.route('**/api/**', route => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Synthetic unavailable account backup' }) }));
+  await page.route('**/api/app-config', route => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
+  await page.route('**/api/session-capabilities', async route => {
+    await sessionReady;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ jobAgentAccess: true, tier: 'complete', sessionAuthentication: 'opaque-session', jobAgentConsent: consent, jobAgentConsentPolicyConfigured: true }) });
+  });
+  await page.route('**/api/job-agent-consent', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ consent, policyConfigured: true, version: 0 }) }));
+  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await page.locator('#openGuidedLaunch').click();
+  await page.locator('[data-guided-goal="best-fit"]').click();
+  const chooser = page.waitForEvent('filechooser');
+  await page.locator('#quickUploadResume').click();
+  const resume = `Synthetic reviewed resume\n${'Managed sourcing and supplier operations.\n'.repeat(12)}`;
+  await (await chooser).setFiles({ name: 'synthetic-resume.txt', mimeType: 'text/plain', buffer: Buffer.from(resume) });
+  await expect(page.locator('#resumeEditor')).toHaveValue(resume.trim());
+  await page.locator('#saveResume').click();
+  await expect(page.locator('#resumeMeta')).toContainText('available in this tab');
+  releaseSession();
+  await expect.poll(() => page.evaluate(() => document.querySelector('#openAgentAccess').textContent)).not.toBe('Sign in');
+  await page.waitForLoadState('networkidle');
+  expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('1ststep_resume')).text)).toBe(resume.trim());
+  expect(await page.evaluate(() => localStorage.getItem('1ststep_resume'))).toBeNull();
+  page.on('dialog', dialog => dialog.accept());
+  await page.locator('#saveResume').click();
+  await expect(page.locator('#resumeMeta')).toContainText('not backed up to your account');
+  expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('1ststep_resume')).text)).toBe(resume.trim());
+  await page.locator('#closeResumeSetup').click();
+  await expect(page.locator('#quickResumeState')).toContainText('Resume ready');
+  await page.locator('#guidedLaunchNext').click();
+  await page.locator('[data-opportunity-path]').first().click();
+  await page.locator('[data-launch-choice="workMode"][data-value="Remote"]').click();
+  await page.locator('[data-launch-choice="employmentType"][data-value="Full-time"]').click();
+  await page.locator('[data-launch-choice="salary"][data-value="0"]').click();
+  await page.locator('#startJobSearch').click();
+  await expect(page.locator('#resumeOverlay')).not.toHaveClass(/open/);
+  await expect(page.locator('#jobAgentConsentOverlay')).toHaveClass(/open/);
+  await page.screenshot({ path: `${process.env.TEMP || '/tmp'}/resume-handoff-consent.png` });
+  await page.locator('#cancelJobAgentConsent').click();
+  await page.locator('#guidedLaunchClose').click();
+  await page.route('**/api/user-session*', route => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
+  await page.locator('#openAgentAccess').click();
+  await page.locator('#signOutAgent').click();
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem('1ststep_resume'))).toBeNull();
+  await expect(page.locator('#resumeEditor')).toHaveValue('');
+});
+
+test('resume workspace loads executable assets and its Job Agent chooser reaches concierge', async ({ page }) => {
+  const assetFailures = [];
+  const pageErrors = [];
+  page.on('response', response => {
+    const path = new URL(response.url()).pathname;
+    if (response.status() >= 400 && ['/style.css', '/product-choice.css', '/app.js', '/resume-builder.js'].includes(path)) {
+      assetFailures.push(`${response.status()} ${path}`);
+    }
+  });
+  page.on('pageerror', error => pageErrors.push(error.message));
+  const resumeWorkspaceUrl = new URL('/app/resume', baseUrl).toString();
+  await page.goto(resumeWorkspaceUrl, { waitUntil: 'networkidle' });
+  await expect(page).toHaveTitle(/Resume Workspace/);
+  await expect(page.locator('#welcomeOverlay')).toHaveClass(/visible/);
+  await page.locator('#welcomeAgentProductBtn').click();
+  await expect(page).toHaveURL(/\/concierge$/);
+  expect(assetFailures).toEqual([]);
+  expect(pageErrors).toEqual([]);
+});
 
 async function routeEncryptedResumeVault(page, resumeText = `Candidate reviewed resume\n${'Verified procurement and vendor-management experience.\n'.repeat(8)}`) {
   await page.route('**/api/applicant-vault', route => route.fulfill({
@@ -45,22 +201,36 @@ async function reachGuidedLaunchReview(page, { goal = 'best-fit', salary = '0' }
   await expect(page.locator('#startJobSearch')).toBeVisible();
 }
 
-test('core onboarding stays short and refuses secret-shaped answers without advancing', async ({ page }) => {
+test('two-click resume onboarding stays short and refuses secret-shaped answers without advancing', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('1ststep_applicant_vault_preference_v1', 'device-only'));
   await page.goto(baseUrl);
-  await page.locator('#messageInput').fill('Start onboarding');
-  await page.locator('#composer').evaluate(form => form.requestSubmit());
+  await page.locator('#openGuidedLaunch').click();
+  await page.locator('[data-guided-goal="best-fit"]').click();
+  await page.locator('#quickBuildResume').click();
   await expect(page.locator('#questionOverlay')).toHaveClass(/open/);
-  await expect(page.locator('#questionProgress')).toHaveText('Core setup 1 of 15 · 0% ready');
+  await expect(page.locator('#questionProgress')).toHaveText('Resume setup · 4 essential answers remaining');
+  await expect(page.getByRole('button', { name: 'Name + email only' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save & continue' })).toBeVisible();
   await page.locator('#questionValue').fill('password is hunter2');
   await page.locator('#questionForm').evaluate(form => form.requestSubmit());
   await expect(page.locator('#questionVaultStatus')).toContainText('not saved');
-  await expect(page.locator('#questionProgress')).toHaveText('Core setup 1 of 15 · 0% ready');
+  await expect(page.locator('#questionProgress')).toHaveText('Resume setup · 4 essential answers remaining');
   await page.locator('#questionValue').fill('Jordan Example, jordan@example.test');
   await page.locator('#questionForm').evaluate(form => form.requestSubmit());
-  await expect(page.locator('#questionProgress')).toContainText('Core setup 2 of 15');
-  await expect(page.locator('#questionTitle')).toHaveText('Work authorization');
-  await expect(page.locator('#questionHelp')).toContainText('never silently reused or inferred');
+  await expect(page.locator('#questionProgress')).toHaveText('Resume setup · 3 essential answers remaining');
+  await expect(page.locator('#questionTitle')).toHaveText('Employment history');
+  await expect(page.locator('#questionHelp')).toContainText('One recent role is enough');
+  await page.getByRole('button', { name: 'No work experience yet' }).click();
+  await expect(page.locator('#questionValue')).toHaveValue('No paid work experience yet');
+  await page.locator('#questionForm').evaluate(form => form.requestSubmit());
+  await expect(page.locator('#questionTitle')).toHaveText('Education history');
+  await page.getByRole('button', { name: "Bachelor's degree" }).click();
+  await expect(page.locator('#questionValue')).toHaveValue("Bachelor's degree");
+  await page.locator('#questionForm').evaluate(form => form.requestSubmit());
+  await expect(page.locator('#questionTitle')).toHaveText('Verified skills');
+  await page.getByRole('button', { name: 'Procurement & sourcing' }).click();
+  await page.getByRole('button', { name: 'Vendor management' }).click();
+  await expect(page.locator('#questionValue')).toHaveValue('Procurement & sourcing, Vendor management');
 });
 
 test('saved-info privacy controls render safely for a signed-out user', async ({ page }) => {
@@ -74,6 +244,9 @@ test('saved-info privacy controls render safely for a signed-out user', async ({
   await expect(page.locator('#agentConversation')).toBeHidden();
   await expect(page.locator('#openAgentAccess')).toHaveText('Sign in');
   await expect(page.locator('#openDesk')).toBeHidden();
+  await page.locator('#openAgentStatus').click();
+  await expect(page.locator('#guidedLaunchOverlay')).toHaveClass(/open/);
+  await page.locator('#guidedLaunchClose').click();
   await page.locator('#openVault').click();
   await expect(page.locator('#vaultOverlay')).toHaveClass(/open/);
   await expect(page.locator('#vaultStatus')).toContainText(/Sign in with Job Agent access/);
@@ -247,7 +420,7 @@ test('admin-only evidence shows content-free background worker health', async ({
   await expect(page.locator('#openDesk')).toBeVisible();
   await page.locator('#openDesk').click();
   await page.locator('[data-desk-tab="audit"]').click();
-  await expect(page.locator('#deskTitle')).toHaveText('Admin evidence');
+  await expect(page.locator('#deskTitle')).toHaveText('Admin control center');
   await expect(page.locator('#auditList')).toContainText('Background worker · healthy');
   await expect(page.locator('#auditList')).toContainText('schedule enqueued: 1');
   await expect(page.locator('#auditList')).toContainText('Operational queues · aggregate only');
@@ -277,7 +450,7 @@ test('admin-only evidence shows content-free background worker health', async ({
 
 test('a durable private package is reviewable from a simple job card', async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem('1ststep_concierge_desk_v2', JSON.stringify({
+    sessionStorage.setItem('1ststep_concierge_desk_v2', JSON.stringify({
       roles: [{
         id: 'role-browser-fixture', employer: 'Fixture Employer', title: 'Procurement Manager', requisitionId: 'REQ-1',
         directEmployerUrl: 'https://jobs.example.test/req/1', status: 'Verified - Package Preparation', fitScore: 88,
@@ -339,7 +512,7 @@ test('the guided tap-through launch starts a truthful no-submit search in a few 
   await expect(page.locator('#startJobSearch')).toBeEnabled();
   await page.locator('#startJobSearch').click();
   await expect(page.locator('#runStateTrack [data-run-state="Preparing"]')).toHaveClass(/active/);
-  await expect(page.locator('#messages')).toContainText('Found 0 credible mission matches');
+  await expect(page.locator('#messages')).toContainText('Found 0 matching jobs');
   await expect(page.locator('#messages')).toContainText('Found—not Submitted');
   expect(submittedMission?.location).toBe('United States');
   expect(submittedMission?.searchGoal).toBe('best-fit');
@@ -402,7 +575,7 @@ test('a stale device run cannot hide a newer tenant discovery run', async ({ pag
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await expect(page.locator('#dailyGoalMessage')).toContainText('Supplier Relationship Manager');
-  await expect(page.locator('#runStateTrack [data-run-state="Searching"]')).toHaveClass(/active/);
+  await expect(page.locator('#agentRunState')).toHaveText('Waiting for a worker update');
   expect(await page.evaluate(() => localStorage.getItem('1ststep_job_agent_run_v1'))).toBeNull();
   expect(await page.evaluate(() => sessionStorage.getItem('1ststep_job_agent_run_v1'))).toBeNull();
   expect(exactRunRequests).toBe(0);
@@ -475,16 +648,16 @@ test('signed account state replaces stale browser workflow data and leaves no du
   await page.locator('#openJobs').click();
   await page.locator('[data-job-tab="Preparing"]').click();
   await expect(page.locator('#jobCards')).toContainText('Account Employer');
-  await expect(page.locator('[data-job-package-generate="account-job"]')).toHaveText('Check package');
+  await expect(page.locator('[data-job-package-generate="account-job"]')).toHaveText('Continue preparation');
   expect(packageRestoreRequests).toBe(1);
   expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('1ststep_resume') || 'null'))).toMatchObject({ source: 'secure-vault', fileName: 'master-resume.txt' });
   await page.evaluate(() => sessionStorage.removeItem('1ststep_resume'));
   await page.locator('[data-job-package-generate="account-job"]').click();
   await expect.poll(() => packageRestoreRequests).toBe(2);
   await expect(page.locator('body')).not.toContainText('Wrong Local Employer');
-  await page.locator('#dailyGoalInput').fill('20');
-  await page.locator('#dailyGoalForm').evaluate(form => form.requestSubmit());
-  await expect.poll(() => savedAccountState?.workspace?.dailyGoal?.target).toBe(20);
+  await page.locator('#closeJobs').click();
+  await expect(page.locator('#dailyGoalForm')).toHaveCount(0);
+  await expect(page.locator('#agentProgress')).not.toContainText(/daily target|application target/i);
   expect(savedAccountState.subscriberView.jobCards.map(job => job.employer)).toEqual(['Account Employer']);
   expect(savedAccountState.subscriberView.jobCards[0]).toMatchObject({
     requisitionId: 'REQ-ACCOUNT-1', discoveryRunId: 'run_account_restore_001', packageRunId: 'package_account_restore_001', sourceProvider: 'greenhouse',
@@ -534,19 +707,22 @@ test('a signed-in user gives one-time scoped authorization before any agent run 
   await page.locator('[data-launch-choice="salary"][data-value="0"]').click();
   await page.locator('#startJobSearch').click();
   await expect(page.locator('#jobAgentConsentOverlay')).toHaveClass(/open/);
-  await expect(page.locator('#jobAgentConsentChecks input[type="checkbox"]')).toHaveCount(4);
+  await expect(page.locator('#jobAgentConsentChecks input[type="checkbox"]')).toHaveCount(1);
   await expect(page.locator('#jobAgentConsentOverlay input[type="date"]')).toHaveCount(0);
   await expect(page.locator('#jobAgentConsentTitle')).toHaveText(policyBundle.disclosure.heading);
-  await expect(page.locator('#jobAgentConsentChecks label').nth(3)).toHaveText(policyBundle.disclosure.attestations[3].statement);
+  await expect(page.locator('#jobAgentConsentIntroduction')).toHaveText(policyBundle.disclosure.introduction);
+  for (const attestation of policyBundle.disclosure.attestations) {
+    await expect(page.locator('#jobAgentConsentChecks label')).toContainText(attestation.statement);
+  }
   await expect(page.locator('#jobAgentConsentChecks a[href="/terms"]')).toHaveText('Terms');
   await expect(page.locator('#grantJobAgentConsent')).toBeEnabled();
   expect(runStarts).toBe(0);
-  for (const checkbox of await page.locator('#jobAgentConsentChecks input[type="checkbox"]').all()) await checkbox.check();
+  await page.locator('#jobAgentConsentChecks input[type="checkbox"]').check();
   await page.locator('#grantJobAgentConsent').click();
   await expect(page.locator('#jobAgentConsentOverlay')).not.toHaveClass(/open/);
   await expect.poll(() => runStarts).toBe(1);
   expect(savedAttestations).toEqual({ age18OrOlder: true, termsAccepted: true, privacyAcknowledged: true, candidateAuthorizationAccepted: true });
-  await expect(page.locator('#messages')).toContainText('Found 0 credible mission matches');
+  await expect(page.locator('#messages')).toContainText('Found 0 matching jobs');
 });
 
 test('the same saved-info area can revoke authorization and pause the agent', async ({ page }) => {
@@ -640,7 +816,7 @@ test('a signed-out launch stops at the dedicated no-charge Job Agent access scre
   await page.locator('#startJobSearch').click();
   await expect(page.locator('#agentAccessOverlay')).toHaveClass(/open/);
   await expect(page.locator('#agentAccessOverlay')).toContainText('No new charge is created from this screen');
-  await expect(page.locator('#agentAccessOverlay')).toContainText('Dedicated pricing is being measured');
+  await expect(page.locator('#agentAccessOverlay')).toContainText('Billing is not active yet; nothing is charged');
   expect(startedSearches).toEqual([]);
 });
 
@@ -679,7 +855,7 @@ test('a slow-feed failure pauses safely and offers one-click retry without claim
 
 test('subscriber work is reduced to simple job cards and one consolidated Needs You queue', async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem('1ststep_concierge_desk_v2', JSON.stringify({
+    sessionStorage.setItem('1ststep_concierge_desk_v2', JSON.stringify({
       roles: [{
         id: 'role-needs-you-fixture', employer: 'Fixture Employer', title: 'Sourcing Manager', requisitionId: 'REQ-2',
         directEmployerUrl: 'https://jobs.example.test/req/2', status: 'Blocked', fitScore: 84,
@@ -698,7 +874,7 @@ test('subscriber work is reduced to simple job cards and one consolidated Needs 
   await expect(page.locator('#needsYouOverlay')).toHaveClass(/open/);
   await expect(page.locator('#needsYouList .needs-you-item')).toHaveCount(1);
   await expect(page.locator('#needsYouList')).toContainText('Complete the challenge directly on the employer page');
-  await expect(page.locator('#needsYouList')).toContainText('Your saved application will resume after this step');
+  await expect(page.locator('#needsYouList')).toContainText('Your progress is saved. Return here after this step to continue.');
   await page.locator('#closeNeedsYou').click();
   await page.locator('#openJobs').click();
   await page.locator('[data-job-tab="Needs You"]').click();
@@ -709,12 +885,12 @@ test('subscriber work is reduced to simple job cards and one consolidated Needs 
 
 test('status tabs, mission stats, and receipt-only submission counting share one canonical view', async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem('1ststep_concierge_mission_v1', JSON.stringify({
+    sessionStorage.setItem('1ststep_concierge_mission_v1', JSON.stringify({
       mission: { role: 'Procurement Manager', roleFamily: 'procurement', workModes: ['Remote'], employmentTypes: ['Full-time'], salaryMin: 100000, location: 'United States', target: 10 },
       messages: [], discovery: { status: 'complete', matches: 3 }, runState: 'Preparing',
     }));
-    localStorage.setItem('1ststep_resume', `Candidate reviewed resume\n${'Verified sourcing experience.\n'.repeat(12)}`);
-    localStorage.setItem('1ststep_concierge_desk_v2', JSON.stringify({
+    sessionStorage.setItem('1ststep_resume', `Candidate reviewed resume\n${'Verified sourcing experience.\n'.repeat(12)}`);
+    sessionStorage.setItem('1ststep_concierge_desk_v2', JSON.stringify({
       roles: [
         { id: 'found', employer: 'Found Co', title: 'Buyer', status: 'Found', fitScore: 81 },
         { id: 'ready', employer: 'Ready Co', title: 'Sourcing Lead', status: 'Package Ready', fitScore: 88 },
@@ -784,9 +960,8 @@ test('ambiguous employer question is completed on the verified employer page wit
   await page.locator('#resumeApplication').click();
   await expect(page.locator('#applicationActionTitle')).toHaveText('Answer this employer question');
   await expect(page.locator('#applicationActionSummary')).toContainText('will not infer, capture, or silently reuse this answer');
-  await expect(page.locator('#openEmployerPage')).toBeVisible();
-  await expect(page.locator('#openEmployerPage')).toHaveAttribute('href', 'https://careers.example.com/REQ-QUESTION-1');
-  await expect(page.locator('#resolveApplication')).toHaveText('I answered this on the employer site');
+  await expect(page.getByRole('link', { name: '1. Open employer application' })).toHaveAttribute('href', 'https://careers.example.com/REQ-QUESTION-1');
+  await expect(page.locator('#resolveApplication')).toHaveText('2. I answered it — continue');
   await page.locator('#resolveApplication').click();
   expect(patchBody).toEqual({ action: 'confirm-external-step', sessionId: 'application-ambiguous-fixture', actionId: 'action-ambiguous-1', confirmed: true, version: 3 });
   expect(JSON.stringify(patchBody)).not.toMatch(/answer|value|employerQuestion|candidate/i);
@@ -1035,6 +1210,8 @@ test('resumable browser handoff shows only a safe read-only field-structure prev
   });
   await page.goto(`${baseUrl}?uiFixture=durable-application`, { waitUntil: 'networkidle' });
   await page.locator('#resumeApplication').click();
+  await expect(page.locator('#applicationBrowserHandoff')).toBeHidden();
+  await page.getByRole('button', { name: 'Use cloud browser instead' }).click();
   await expect(page.locator('#applicationBrowserHandoff')).toBeVisible();
   await expect(page.locator('#browserHandoffMode')).toHaveText('Not started');
   await page.locator('#startBrowserHandoff').click();
@@ -1086,6 +1263,8 @@ test('approved remote provider renders only its exact isolated stream origin in 
   });
   await page.goto(`${baseUrl}?uiFixture=durable-application`, { waitUntil: 'networkidle' });
   await page.locator('#resumeApplication').click();
+  await expect(page.locator('#applicationBrowserHandoff')).toBeHidden();
+  await page.getByRole('button', { name: 'Use cloud browser instead' }).click();
   await page.locator('#startBrowserHandoff').click();
   await expect(page.locator('#browserHandoffMode')).toHaveText('Interactive secure stream');
   const frame = page.locator('#browserStreamFrame');
@@ -1171,6 +1350,7 @@ test('Learning Center renders only persisted confirmed rules and remains usable 
     }),
   }));
   await page.goto(`${baseUrl}?uiFixture=subscriber`, { waitUntil: 'networkidle' });
+  await page.locator('#agentProgress > summary').click();
   await page.locator('#learningCenter summary').click();
 
   await expect(page.locator('#learningStatus')).toHaveText('Learning active');
@@ -1191,8 +1371,9 @@ test('mobile persisted retry state supports keyboard Pause and Play again withou
     sessionStorage.setItem('1ststep_job_agent_run_v1', JSON.stringify({ id: 'run_resilience_fixture_1', operationId: 'op_resilience_fixture_1', taskType: 'direct_employer_discovery', status: 'Searching', lifecycleState: 'Retrying', attempt: 2, maxAttempts: 4, nextRetryAt: retryAt, lastHeartbeatAt: now, createdAt: now, updatedAt: now, events: [{ id: 'event_retry_1', type: 'RETRY_SCHEDULED', state: 'Retrying', attempt: 2, at: now }] }));
   }, { now, retryAt });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await expect(page.locator('#runStateSummary')).toContainText('Retrying one source');
+  await expect(page.locator('#runStateSummary')).toContainText('Waiting to retry');
   await expect(page.locator('#runStateTiming')).toContainText('next run');
+  await page.locator('#agentProgress > summary').click();
   const pause = page.locator('#pauseRun');
   await pause.focus();
   await expect(pause).toBeFocused();

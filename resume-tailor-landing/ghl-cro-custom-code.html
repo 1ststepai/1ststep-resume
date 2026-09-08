@@ -629,6 +629,9 @@
   #stp-cro .stp-trust-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   #stp-cro .stp-ba-grid,
   #stp-cro .stp-pricing-grid { grid-template-columns: 1fr 1fr; }
+  #stp-job-agent-plan .stp-price small { display: block; font-size: 16px; font-weight: 500; line-height: 1.5; letter-spacing: normal; margin-top: 8px; }
+  #stp-job-agent-plan .stp-copy { font-size: 16px; font-weight: 400; line-height: 1.6; }
+  #stp-job-agent-plan .stp-btn { margin: 6px 8px 6px 0; }
   #stp-cro .stp-ba-card {
     border-radius: 8px;
     padding: 26px;
@@ -1045,18 +1048,17 @@
     <section class="stp-hero">
       <div class="stp-wrap stp-hero-grid">
         <div>
-          <div class="stp-pill">AI resume tailoring with an instant Match Score</div>
-          <h1>Turn one resume into the right resume for each job.</h1>
-          <p class="stp-copy">Paste a role, see the match score, and generate a tailored resume that keeps your real experience specific, relevant, and ATS-friendly.</p>
+          <div class="stp-pill">Chrome extension available · Job Agent early access</div>
+          <h1>Less job-search busywork. More time for your next step.</h1>
+          <p class="stp-copy">Find roles, prepare tailored resumes and cover letters, and keep your search organized with 1stStep.ai.</p>
           <div class="stp-signal-row" aria-label="Trust signals">
-            <span class="stp-signal">Free positioning strategy</span>
-            <span class="stp-signal">Human-readable output checks</span>
-            <span class="stp-signal">Built to avoid generic AI fluff</span>
-            <span class="stp-signal">Chrome extension workflow available</span>
+            <span class="stp-signal">Your real experience</span>
+            <span class="stp-signal">Role-specific resumes</span>
+            <span class="stp-signal">You stay in control</span>
           </div>
           <p class="stp-copy" style="margin-top:16px;font-size:16px;line-height:1.6;">
-            <strong>Career Positioning Brief</strong><br>
-            Spot the best story for the role, missing proof points, weak bullets, and impact gaps before you generate.
+            <strong>One workspace. Two ways to start.</strong><br>
+            Tailor for a job you found, or use the Job Agent to find and prepare for matching roles.
           </p>
 
           <a class="stp-drop" href="https://app.1ststep.ai">
@@ -1066,22 +1068,22 @@
               </svg>
             </span>
             <span>
-              <strong>Drop Resume Here</strong>
+              <strong>Open your resume workspace</strong>
               <span>Start free. Get 3 tailored resumes included.</span>
             </span>
             <span class="stp-drop-start">Start</span>
           </a>
 
           <div class="stp-hero-actions">
-            <a class="stp-btn stp-btn-primary" href="https://app.1ststep.ai">
-              Start Free - 3 Resumes Included
+            <a class="stp-btn stp-btn-primary" href="https://app.1ststep.ai/concierge">
+              Explore the Job Agent
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </a>
-            <a class="stp-btn stp-btn-secondary" href="#stp-preview">See Live Preview</a>
+            <a class="stp-btn stp-btn-secondary" href="https://chromewebstore.google.com/detail/1ststepai-job-agent/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener noreferrer">Get the Chrome extension</a>
           </div>
-          <p class="stp-hero-microcopy">No credit card required to start.</p>
+          <p class="stp-hero-microcopy">Job Agent access is invite-paced. It prepares; you submit applications yourself.</p>
 
           <div class="stp-privacy">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -1095,7 +1097,7 @@
         <div id="stp-preview" class="stp-preview">
           <div class="stp-preview-head">
             <div>
-              <div class="stp-preview-label">Live Preview</div>
+              <div class="stp-preview-label">Illustrative resume example</div>
               <strong>AI tailoring engine</strong>
             </div>
             <div class="stp-score-ring" role="img" aria-label="Match score 92 percent">92%<span>Match</span></div>
@@ -1139,16 +1141,16 @@
           <div class="stp-logo-card">Workday</div>
         </div>
         <div class="stp-beta-row">
-          <a class="stp-beta-link" href="https://app.1ststep.ai/funnel">Try the Chrome extension workflow</a>
+          <a class="stp-beta-link" href="https://chromewebstore.google.com/detail/1ststepai-job-agent/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener noreferrer">Install the new Chrome extension</a>
         </div>
       </div>
     </section>
 
     <section id="stp-proof" class="stp-section stp-stats">
       <div class="stp-wrap stp-stat-grid">
-        <div class="stp-stat"><strong>15,000+</strong><span>keywords optimized this week</span></div>
-        <div class="stp-stat"><strong>42%</strong><span>average match score increase</span></div>
-        <div class="stp-stat"><strong>3 steps</strong><span>resume, job description, tailored output</span></div>
+        <div class="stp-stat"><strong>Resume builder</strong><span>Tailored documents from your real experience.</span></div>
+        <div class="stp-stat"><strong>Chrome extension</strong><span>Open 1stStep from your browser. Available in the Chrome Web Store.</span></div>
+        <div class="stp-stat"><strong>Job Agent beta</strong><span>Find roles, prepare materials, and see what needs you.</span></div>
       </div>
     </section>
 
@@ -1277,7 +1279,7 @@
               <li>Scores your resume against the actual job description.</li>
               <li>Tailors bullets around your real experience and role requirements.</li>
               <li>Saves each job-specific resume, cover letter, and application record.</li>
-              <li>Includes tracker and Chrome extension tools for repeated applying.</li>
+              <li>Includes application tracking and extension-assisted Greenhouse testing when enabled.</li>
             </ul>
           </article>
           <article class="stp-compare-card">
@@ -1346,7 +1348,7 @@
     <section id="stp-pricing" class="stp-section">
       <div class="stp-wrap">
         <p class="stp-kicker">Pricing</p>
-        <h2>Start free. Upgrade when your job hunt gets serious.</h2>
+        <h2>Start free. Get every tool with one membership.</h2>
         <div class="stp-pricing-grid">
           <article class="stp-price-card">
             <h3>Free Account</h3>
@@ -1363,21 +1365,25 @@
             <a class="stp-btn stp-btn-secondary" href="https://app.1ststep.ai">Start Free</a>
           </article>
 
-          <article class="stp-price-card popular">
-            <div class="stp-popular">Most Popular</div>
-            <h3>Job Hunt Pass</h3>
-            <p class="stp-copy">For active applicants who want the full job-search workspace.</p>
-            <div class="stp-price">$24.99<small>/month</small></div>
+          <article class="stp-price-card popular" id="stp-job-agent-plan">
+            <div class="stp-popular">Everything Included</div>
+            <h3>1stStep Complete</h3>
+            <p class="stp-copy">One membership for resume tools, cover letters, tracking, the extension workflow, and Job Agent.</p>
+            <div class="stp-price">$39<small>/month when paid access opens</small></div>
             <ul class="stp-checks two">
-              <li><span class="stp-check"></span>Unlimited resume tailoring</li>
+              <li><span class="stp-check"></span>Resume tailoring</li>
               <li><span class="stp-check"></span>Career Positioning Brief</li>
-              <li><span class="stp-check"></span>Unlimited cover letters</li>
+              <li><span class="stp-check"></span>Cover letters</li>
               <li><span class="stp-check"></span>Full resume vault and version history</li>
               <li><span class="stp-check"></span>Application tracker and follow-up workflow</li>
-              <li><span class="stp-check"></span>Chrome extension workflow</li>
-              <li><span class="stp-check"></span>Cancel anytime</li>
+              <li><span class="stp-check"></span>Extension-assisted Greenhouse testing when enabled</li>
+              <li><span class="stp-check"></span>Job Agent discovery and preparation</li>
+              <li><span class="stp-check"></span>No charge during approved early access</li>
             </ul>
-            <a class="stp-btn stp-btn-primary" href="https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00">Start Job Hunt Pass</a>
+            <a class="stp-btn stp-btn-primary" href="mailto:sales@1ststep.ai?subject=1stStep%20Complete%20early%20access">Request early access</a>
+            <p class="stp-copy">Free access for the first 10 approved early users. No card required, no automatic billing, and no automatic switch to a paid subscription.</p>
+            <p class="stp-copy">You remain in control of employer-facing actions. Paid checkout is not available yet. Any later subscription requires your separate agreement. Existing customer access is unchanged.</p>
+            <a class="stp-btn stp-btn-secondary" href="https://app.1ststep.ai/concierge">Already invited? Open Job Agent</a>
           </article>
         </div>
       </div>
@@ -1398,7 +1404,7 @@
           </details>
           <details>
             <summary>Do I need a credit card to start?</summary>
-            <p>No. The free account includes 3 tailored resumes so you can test 1stStep.ai before upgrading.</p>
+            <p>No. The free account includes 3 tailored resumes so you can test 1stStep.ai. Job Agent beta access also does not require a card.</p>
           </details>
           <details>
             <summary>Is my resume information private?</summary>
@@ -1411,7 +1417,7 @@
     <section class="stp-section stp-final">
       <div class="stp-wrap stp-final-row">
         <div>
-          <h2>Tailor your next resume before you apply.</h2>
+          <h2>Your next step starts here.</h2>
           <p class="stp-copy">Start free with 3 resumes included. No credit card required.</p>
         </div>
         <div>
@@ -1421,10 +1427,20 @@
       </div>
     </section>
   </main>
+  <footer class="stp-wrap" style="padding:28px 20px 100px;text-align:center">
+    <strong>Follow 1stStep.ai</strong>
+    <nav aria-label="1stStep.ai social accounts" style="display:flex;justify-content:center;flex-wrap:wrap;gap:16px;margin-top:12px">
+      <a href="https://x.com/1ststepai" target="_blank" rel="noopener noreferrer">X / Twitter</a>
+      <a href="https://www.instagram.com/1ststepdotai/" target="_blank" rel="noopener noreferrer">Instagram</a>
+      <a href="https://www.facebook.com/472124739310907" target="_blank" rel="noopener noreferrer">Facebook</a>
+      <a href="https://www.linkedin.com/company/105262286/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+      <a href="https://www.youtube.com/@1ststepdotai" target="_blank" rel="noopener noreferrer">YouTube</a>
+    </nav>
+  </footer>
 
   <div class="stp-beta-pulse">
-    <strong>Chrome extension workflow</strong>
-    Tailor while browsing LinkedIn or job boards. <a href="https://app.1ststep.ai/funnel">Try the extension workflow</a>.
+    <strong>New Chrome extension</strong>
+    Bring 1stStep into your browser. <a href="https://chromewebstore.google.com/detail/1ststepai-job-agent/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener noreferrer">Get the extension</a>.
   </div>
 
   <div class="stp-mobile-sticky">

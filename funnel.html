@@ -476,10 +476,10 @@
         <li><span class="check">✓</span> Full match breakdown</li>
       </ul>
 
-      <div class="paywall-price">$24.99<span style="font-size:14px;font-weight:500;color:var(--muted)">/mo</span></div>
-      <div class="paywall-cancel">Billed monthly. Cancel anytime.</div>
+      <div class="paywall-price">Job Agent beta</div>
+      <div class="paywall-cancel">No paid checkout while the application workflow is being completed.</div>
 
-      <button class="btn btn-primary" id="unlockBtn">🔒 Unlock My Resume</button>
+      <button class="btn btn-primary" id="unlockBtn">See current access options</button>
 
       <div class="paywall-urgency">Limited-time free preview — don't lose your tailored version.</div>
 
@@ -527,7 +527,7 @@ function collapseLetterSpacing(text) {
 }
 
 // ── Config ──────────────────────────────────────────────────────
-const STRIPE_URL = 'https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00';
+const CURRENT_ACCESS_URL = '/pricing#job-agent-pricing';
 
 // ── State ────────────────────────────────────────────────────────
 const S = {
@@ -1093,7 +1093,7 @@ document.getElementById('saveEmailBtn').addEventListener('click', () => {
 
 // ── Paywall ──────────────────────────────────────────────────────
 document.getElementById('unlockBtn').addEventListener('click', () => {
-  window.location.href = STRIPE_URL;
+  window.location.href = CURRENT_ACCESS_URL;
 });
 
 document.getElementById('verifyLink').addEventListener('click', e => {

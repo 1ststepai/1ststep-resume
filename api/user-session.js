@@ -4,8 +4,15 @@ import { enforceDurableRateLimit, sendRateLimitResult } from '../lib/durable-rat
 import { authenticateClerkIdentity } from '../lib/clerk-identity.js';
 import { identityEmailHash, postgresTenantStoreConfiguration, upsertClerkTenantIdentity } from '../lib/postgres-tenant-store.js';
 import { jobAgentTenantId } from '../lib/job-agent-run-store.js';
+import { sendVerifiedSubscriptionSession } from './subscription.js';
 
 export const maxDuration = 15;
+
+export function clerkSubscriptionRequest(req) {
+  // IncomingMessage.headers is a prototype getter, not an enumerable property.
+  // An object spread alone silently loses the origin at the second auth check.
+  return { ...req, headers: req.headers, query: { ...req.query, client: 'job-agent' } };
+}
 
 export default async function handler(req, res) {
   applyApiHeaders(req, res);
@@ -41,16 +48,10 @@ export default async function handler(req, res) {
     } catch {
       return res.status(503).json({ error: 'Account storage is temporarily unavailable.', code: 'POSTGRES_IDENTITY_WRITE_FAILED' });
     }
-    const session = await createUserSession({ ...runtime, subject: identity.subject, tier: 'free', entitlements: [], maxSessions: 21 });
-    setAccessSessionCookie(res, session.token, { maxAgeSeconds: session.maxAgeSeconds });
-    return res.status(200).json({
-      signedIn: true,
-      identityProvider: 'clerk',
-      tier: 'free',
-      entitlementStatus: 'requires-existing-stripe-resolution',
-      session: 'http-only-revocable',
-      sessionExpiresAt: session.expiresAt,
-    });
+    return sendVerifiedSubscriptionSession(
+      clerkSubscriptionRequest(req), res, identity.subject,
+      { signedIn: true, identityProvider: 'clerk', email: identity.subject },
+    );
   }
 
   const auth = await authenticateApiRequest(req);

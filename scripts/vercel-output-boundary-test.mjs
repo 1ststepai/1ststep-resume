@@ -1,20 +1,52 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const projectLinkPath = path.join(root, '.vercel', 'project.json');
+let temporaryProjectLink = false;
+if (!existsSync(projectLinkPath)) {
+  const projectId = String(process.env.VERCEL_PROJECT_ID || '');
+  const orgId = String(process.env.VERCEL_ORG_ID || '');
+  if (!/^prj_[A-Za-z0-9]{20,}$/.test(projectId) || !/^team_[A-Za-z0-9]{20,}$/.test(orgId)) {
+    throw new Error('A local Vercel project link or the non-secret VERCEL_PROJECT_ID and VERCEL_ORG_ID identifiers are required.');
+  }
+  mkdirSync(path.dirname(projectLinkPath), { recursive: true });
+  const projectLink = {
+    projectId,
+    orgId,
+    projectName: '1ststep-resume',
+    settings: {
+      framework: null,
+      devCommand: null,
+      installCommand: null,
+      buildCommand: null,
+      outputDirectory: null,
+      rootDirectory: null,
+      directoryListing: false,
+      nodeVersion: '24.x',
+    },
+  };
+  writeFileSync(projectLinkPath, `${JSON.stringify(projectLink, null, 2)}\n`, { flag: 'wx' });
+  temporaryProjectLink = true;
+}
 const buildCommand = process.platform === 'win32'
   ? { command: process.env.ComSpec || 'cmd.exe', args: ['/d', '/s', '/c', 'npx vercel build --prod --yes'] }
   : { command: 'npx', args: ['vercel', 'build', '--prod', '--yes'] };
+const buildEnvironment = { ...process.env, VERCEL_TELEMETRY_DISABLED: '1' };
+delete buildEnvironment.VERCEL_TOKEN;
 const build = spawnSync(buildCommand.command, buildCommand.args, {
   cwd: root,
   encoding: 'utf8',
   stdio: 'pipe',
   maxBuffer: 20 * 1024 * 1024,
+  env: buildEnvironment,
 });
+if (temporaryProjectLink) rmSync(projectLinkPath, { force: true });
 
 if (build.status !== 0) {
   process.stderr.write(build.stdout || '');
@@ -46,11 +78,12 @@ const expectedStatic = [
   'terms.html',
   'privacy.html',
   'style.css',
-  'home.css',
+  'home-motion.css',
+  'home-momentum.jpg',
   'persistent-concierge.css',
   'product-choice.css',
   'app.js',
-  'home.js',
+  'home-motion.js',
   'concierge.js',
   'resume-builder.js',
   'client/concierge-router.js',
@@ -61,6 +94,8 @@ const expectedStatic = [
   'client/opportunity-paths.js',
   'client/subscriber-ui-model.js',
   'client/persistent-campaign.js',
+  'client/admin-cost-dashboard.js',
+  'client/admin-system-alerts.js',
   'client/prohibited-secret.js',
   '1ststep-logo.png',
   '1ststep-ai-icon.png',
@@ -129,7 +164,8 @@ for (const requiredFunction of [
 ]) {
   assert(functionNames.has(requiredFunction), `Expected serverless API function missing: api/${requiredFunction}`);
 }
-assert.equal(functionNames.size, 41, `Unexpected API function count: ${functionNames.size}`);
+assert(functionNames.has('job-agent-discord-relay.func'), 'Expected serverless API function missing: api/job-agent-discord-relay.func');
+assert.equal(functionNames.size, 42, `Unexpected API function count: ${functionNames.size}`);
 
 const outputConfig = JSON.parse(await readFile(path.join(outputRoot, 'config.json'), 'utf8'));
 const routeText = JSON.stringify(outputConfig.routes || []);
