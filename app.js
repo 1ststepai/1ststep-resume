@@ -2630,25 +2630,10 @@ ${resume.slice(0, 3000)}
       const hasResume  = !!(fileContent || document.getElementById('resumeText')?.value.trim());
       const hasJobDesc = !!(jobData.jobDescription?.trim());
 
-      // Both resume + job description ready - skip modal, auto-start tailoring
-      if (hasResume && hasJobDesc) {
-        const roleLabel = [jobData.jobTitle, jobData.company].filter(Boolean).join(' at ');
-        showToast(roleLabel ? `Tailoring your resume for ${roleLabel}...` : 'Tailoring your resume...', 'success');
-        scrollWorkflowTargetIntoView(document.getElementById('runBtn'));
-        // Re-inject jobDescription into #jobText immediately before firing (race-condition guard)
-        const jt = document.getElementById('jobText');
-        if (jt && !jt.value.trim()) {
-          jt.value = jobData.jobDescription;
-          jt.dispatchEvent(new Event('input'));
-        }
-        setTimeout(() => runTailoring(), 400);
-        return;
-      }
-
-      // Show 2-option card (Upload + Build)
       const confirm = document.getElementById('jobCaptureConfirm');
       const titleEl = document.getElementById('jccTitle');
       const subEl   = confirm?.querySelector('.jcc-sub');
+      const actions = confirm?.querySelector('.jcc-actions');
       if (!confirm || !titleEl) return;
 
       const company = jobData.company || '';
@@ -2657,10 +2642,18 @@ ${resume.slice(0, 3000)}
         ? `Job captured from ${company} - ${title}`
         : company ? `Job captured from ${company}` : title || 'Job captured';
 
-      // If description is missing, prompt user to paste it in
-      if (!hasJobDesc && subEl) {
+      if (hasResume && hasJobDesc && subEl) {
+        subEl.textContent = 'Review the imported description below. Nothing is generated until you click Tailor My Resume.';
+      } else if (!hasJobDesc && subEl) {
         subEl.textContent = 'Job description not detected - paste it into the box after opening.';
+      } else if (subEl) {
+        subEl.textContent = 'Add your resume to tailor it for this role.';
       }
+
+      // Once both inputs are present, the ordinary Tailor My Resume button is
+      // the single explicit generation action. Capturing a page never spends a
+      // credit or starts AI work on its own.
+      if (actions) actions.style.display = hasResume && hasJobDesc ? 'none' : '';
 
       confirm.style.display = 'block';
     }
@@ -2806,7 +2799,7 @@ ${resume.slice(0, 3000)}
       }
 
       // If the extension delivered a resume and none is loaded yet, load it now
-      // so auto-tailor can fire without requiring the user to re-upload
+      // so the user can review both inputs without re-uploading.
       const appHasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
       if (!appHasResume && resumeText) {
         document.getElementById('resumeText').value = resumeText;
@@ -3772,7 +3765,8 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
         const matchingPositioningBrief = _positioningContextKey === getPositioningContextKey(resumeRaw, jobDesc)
           ? results.positioningBrief
           : null;
-        results = { resume: atsClean, keywords: { ...kwData, ...gapData }, changes, coverLetter, score: gapData, matchPct: clientMatchPct, positioningBrief: matchingPositioningBrief };
+        const tailoredMatchPct = calcMatchScore(atsClean, jobDesc);
+        results = { resume: atsClean, keywords: { ...kwData, ...gapData }, changes, coverLetter, score: gapData, matchPct: tailoredMatchPct, positioningBrief: matchingPositioningBrief };
         renderResults();
         renderSkillGapCard(gapData);   // a skill gap card (free: teaser, paid: full)
         showResults();
@@ -3783,15 +3777,15 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
         const tailorEntry = {
           id: `tailor_${Date.now()}`,
           jobId: lastTailoredJobId || null,
-          jobTitle: _srcJob?.title || kwData?.job_title || gapData?.job_title || window._capturedJob?.title || '',
-          company: _srcJob?.company?.display_name || kwData?.company || gapData?.company || window._capturedJob?.company || '',
+          jobTitle: _srcJob?.title || window._capturedJob?.title || kwData?.job_title || gapData?.job_title || '',
+          company: _srcJob?.company?.display_name || window._capturedJob?.company || kwData?.company || gapData?.company || '',
           location: _srcJob?.location?.display_name || '',
           jobUrl: _srcJob?.redirect_url || window._capturedJob?.url || '',
           resume: atsClean,
           coverLetter: coverLetter || '',
           jobDescription: jobDesc.slice(0, 5000),
           tailoredAt: new Date().toISOString(),
-          matchPct: gapData?.match_score_after_estimate - clientMatchPct,
+          matchPct: tailoredMatchPct,
           positioningBrief: matchingPositioningBrief || null,
           usedPositioningBrief: usingPositioningBrief,
           positioningBriefUsedAt: usingPositioningBrief ? (_currentPositioningUsedAt || new Date().toISOString()) : null,
