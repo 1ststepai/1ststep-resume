@@ -58,20 +58,19 @@ for (const viewport of VIEWPORTS) {
   note(overflow.scrollWidth <= overflow.clientWidth + 1, `${viewport.name} · no horizontal overflow (${overflow.scrollWidth} vs ${overflow.clientWidth})`);
 
   // The hero CTA must open the Job Agent
-  const heroCta = page.locator('a.btn-primary').first();
+  const heroCta = page.locator('.hero-cta a.btn-primary').first();
   note((await heroCta.getAttribute('href')) === '/concierge', `${viewport.name} · primary CTA targets /concierge`);
 
-  // Two product paths render. The Chrome assistant is a Job Agent capability, not a
-  // third peer product, so a third card reappearing is a regression.
+  // Two product paths render. The Chrome extension remains a supporting capability,
+  // not a third peer product card.
   note(await page.locator('.path').count() === 2, `${viewport.name} · two product paths render`);
-  const pathText = await page.locator('#paths').innerText();
-  note(!/assisted apply|chrome (assistant|extension)/i.test(pathText),
-    `${viewport.name} · no assisted-apply claim while the handoff is flag-gated off`);
+  note(await page.locator('.studio-extension [data-chrome-web-store-url]').count() === 1,
+    `${viewport.name} · approved Chrome extension appears as a supporting workflow`);
 
   // Testimonials: with no approved quotes the grid must stay hidden and
   // the truthful principles block must show instead.
   note(await page.locator('#quotesGrid').isHidden(), `${viewport.name} · testimonial grid hidden with no verified quotes`);
-  note(await page.locator('#principles').isVisible(), `${viewport.name} · product-principle block shown instead`);
+  note(await page.locator('.compact-details').isVisible(), `${viewport.name} · truthful product details shown instead`);
   const quoteCards = await page.locator('#quotesGrid .quote').count();
   note(quoteCards === 0, `${viewport.name} · zero fabricated testimonials rendered`);
 
@@ -91,7 +90,7 @@ for (const viewport of VIEWPORTS) {
   note(ctaBox && ctaBox.height >= 44, `${viewport.name} · primary CTA height >= 44px (${Math.round(ctaBox?.height || 0)}px)`);
 
   // Mobile menu behavior
-  if (viewport.width <= 1080) {
+  if (viewport.width <= 900) {
     const toggle = page.locator('#navToggle');
     note(await toggle.isVisible(), `${viewport.name} · mobile menu toggle visible`);
     await toggle.click();
@@ -131,14 +130,13 @@ for (const viewport of VIEWPORTS) {
   await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
   const hidden = await page.locator('.reveal:not(.is-in)').count();
   note(hidden === 0, `reduced-motion · all reveal content visible without animation (${hidden} still hidden)`);
-  const doneSteps = await page.locator('#runSteps .step.is-done').count();
-  note(doneSteps === 5, `reduced-motion · agent card renders completed state (${doneSteps}/5)`);
+  note(await page.locator('#runSteps').isVisible(), 'reduced-motion · product tour remains visible without animation');
   await page.screenshot({ path: `${OUT}/reduced-motion.png`, fullPage: true });
   await context.close();
 }
 
 // ── Content must not depend on JavaScript ────────────────────────────────────
-// The reveal animation hides content until JS reveals it. If home.js ever fails
+// The reveal animation hides content until JS reveals it. If home-motion.js ever fails
 // to load, every section must still render rather than staying invisible.
 {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, javaScriptEnabled: false });
@@ -176,14 +174,14 @@ for (const viewport of VIEWPORTS) {
 }
 
 
-// ── The app itself still loads at /app ───────────────────────────────────────
+// ── The resume workspace itself still loads at /app/resume ──────────────────
 {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await context.newPage();
-  const response = await page.goto(`${BASE}/app`, { waitUntil: 'domcontentloaded' });
-  note(response.status() < 400, `/app · workspace responded ${response.status()}`);
-  note(await page.locator('#welcomeOverlay').count() === 1, '/app · three-step onboarding overlay present');
-  note(await page.locator('#fileInput').count() === 1, '/app · workspace DOM intact (#fileInput)');
+  const response = await page.goto(`${BASE}/app/resume`, { waitUntil: 'domcontentloaded' });
+  note(response.status() < 400, `/app/resume · workspace responded ${response.status()}`);
+  note(await page.locator('#welcomeOverlay').count() === 1, '/app/resume · three-step onboarding overlay present');
+  note(await page.locator('#fileInput').count() === 1, '/app/resume · workspace DOM intact (#fileInput)');
   await page.screenshot({ path: `${OUT}/app-workspace.png` });
   await context.close();
 }

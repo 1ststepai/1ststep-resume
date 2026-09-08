@@ -110,7 +110,7 @@ async function pushToGHL({ email, name, tier }) {
   const nameParts = (name || '').trim().split(/\s+/);
   const firstName = nameParts[0] || '';
   const lastName  = nameParts.slice(1).join(' ') || '';
-  const tierLabel = 'Job Hunt Pass';
+  const tierLabel = '1stStep Complete';
 
   // 1. Upsert contact (create or update by email)
   let contactId;
@@ -251,7 +251,7 @@ async function getTierFromSession(stripe, sessionId) {
       : 'complete';
   } catch (err) {
     console.error(JSON.stringify({ type: 'subscription-tier-restore-error', name: err?.name || 'unknown' }));
-    return 'complete'; // single paid plan: Job Hunt Pass
+    return 'complete'; // Single paid tier; legacy product names remain compatible.
   }
 }
 
@@ -319,7 +319,7 @@ export default async function handler(req, res) {
       console.log('Checkout complete');
 
       const tier      = await getTierFromSession(stripe, session.id);
-      const tierLabel = 'Job Hunt Pass';
+      const tierLabel = '1stStep Complete';
       console.log(JSON.stringify({ type: 'stripe-checkout-completed', outcome: 'observed' }));
 
       // Sync to GHL CRM

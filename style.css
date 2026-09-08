@@ -75,8 +75,8 @@
       /* ── Typography ──────────────────────────────────────────── */
       --text: #E4E7F0;
       --text2: #8892B0;
-      --muted: #50577A;
-      --label: #50577A;
+      --muted: #8892B0;
+      --label: #8892B0;
 
       /* ── Status colors ───────────────────────────────────────── */
       --green: #10B981;
@@ -131,8 +131,8 @@
       --border2: rgba(0, 0, 0, 0.14);
       --text: #1A1E2E;
       --text2: #4B5563;
-      --muted: #9CA3AF;
-      --label: #9CA3AF;
+      --muted: #667085;
+      --label: #667085;
       --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.08);
       --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0,0,0,0.04);
       --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0,0,0,0.05);
@@ -144,6 +144,9 @@
       --amber-light: rgba(251, 191, 36, 0.1);
       --blue-light: rgba(99, 102, 241, 0.1);
     }
+
+    [data-theme="light"] .hero-ai-badge { color: #3730A3; }
+    [data-theme="light"] .run-section p span { color: #08734D !important; }
 
     /* Theme toggle button */
     #themeToggle {
@@ -730,7 +733,7 @@
     }
 
     .empty-state-button {
-      min-height: 36px;
+      min-height:44px;
       padding: 9px 15px;
       border-radius: 8px;
       border: 1px solid rgba(99,102,241,0.45);
@@ -2061,7 +2064,7 @@
         flex-shrink: 0;
         padding: 6px 10px;
         font-size: 11px;
-        min-height: 34px;
+        min-height:44px;
       }
 
       /* ── Panels ─────────────────────────────────────────── */
@@ -2230,7 +2233,7 @@
         min-width: 0;
         font-size: 11px;
         text-align: center;
-        min-height: 36px;
+        min-height:44px;
       }
 
       /* ── Job search left panel: resume sync area ─────────── */
@@ -2295,7 +2298,7 @@
       .tier-btn {
         font-size: 11px;
         padding: 6px 10px;
-        min-height: 36px;
+        min-height:44px;
       }
 
       /* ── Match score badge / results topbar ──────────────── */
@@ -4261,7 +4264,7 @@
     }
 
     .whats-next-btn {
-      min-height: 34px;
+      min-height:44px;
       padding: 8px 13px;
       border-radius: 8px;
       font-family: 'Inter', sans-serif;
@@ -5924,3 +5927,46 @@
     .hover-indigo-border:hover { border-color: rgba(99,102,241,0.7) !important; }
     .hover-indigo-btn:hover { background: #3730a3 !important; }
     .hover-feedback:hover { border-color: var(--brand) !important; color: var(--brand) !important; }
+
+
+/* ---------------------------------------------------------------------------
+   Reduced motion
+   The workspace shipped 10 @keyframes and 15 animation declarations with no
+   prefers-reduced-motion guard, while the homepage has honoured the setting all
+   along. This closes that gap.
+
+   Attention-seeking motion (pulses, blink) and entrance animations are removed.
+   Progress indicators are NOT removed - a spinner or skeleton is the only signal
+   that work is still running, so suppressing it would hide state rather than
+   motion. They are slowed to a calm, non-flashing rate instead.
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Attention pulses and blinking: removed outright. */
+  .btn-run.pulse-cta,
+  .job-card.tailored,
+  .ext-ready-pulse,
+  .resume-output.streaming::after {
+    animation: none !important;
+  }
+
+  /* Progress indicators: kept, slowed, never flashing. */
+  .ui-icon-spin svg,
+  .btn-run.spinning svg,
+  .job-loading-spinner,
+  .btn-analyze-resume.spinning #autoDetectBtnIcon {
+    animation: none !important;
+  }
+
+  .skeleton {
+    animation: none !important;
+  }
+}

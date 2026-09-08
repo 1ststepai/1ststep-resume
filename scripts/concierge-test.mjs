@@ -60,8 +60,18 @@ assert.doesNotMatch(conciergeHtml, /<style\b|\sstyle\s*=|\son[a-z]+\s*=/i, 'Job 
 assert.doesNotMatch(conciergeJs, /\.style\.|\.cssText\b|setAttribute\(\s*['"]style['"]/i, 'Job Agent JavaScript must not create inline styles');
 assert.match(conciergeHtml, /mammoth\.browser\.min\.js" integrity="sha384-[A-Za-z0-9+/=]+" crossorigin="anonymous"/);
 assert.match(conciergeHtml, /pdf\.min\.js" integrity="sha384-[A-Za-z0-9+/=]+" crossorigin="anonymous"/);
-assert.match(conciergeHtml, /<progress id="dailyGoalBar" max="100" value="0"/);
+assert.doesNotMatch(conciergeHtml, /id="dailyGoalBar"/);
 assert.match(conciergeHtml, /<progress id="progressBar" max="100" value="0"/);
+assert.match(conciergeHtml, /data-desk-tab="costs"[^>]*>Live costs</);
+assert.match(conciergeHtml, /id="costSummaryGrid"/);
+assert.match(conciergeHtml, /id="costCategoryRows"/);
+assert.match(conciergeHtml, /A configured budget limits spending\. It does not activate employer browsing, submission, storage, or email\./);
+assert.match(conciergeJs, /buildAdminCostDashboard\(operationalMetrics\)/);
+assert.match(conciergeJs, /User-count telemetry is not connected/);
+assert.match(conciergeHtml, /data-desk-tab="alerts"[^>]*>System alerts</);
+assert.match(conciergeHtml, /id="alertStatusGrid"/);
+assert.match(conciergeHtml, /external uptime monitor must watch <code>\/api\/health\/live<\/code>/i);
+assert.match(conciergeJs, /buildAdminSystemAlertDashboard\(operationalMetrics\)/);
 const claudeApi = await readFile(new URL('../api/claude.js', import.meta.url), 'utf8');
 const genericAiApi = await readFile(new URL('../api/ai.js', import.meta.url), 'utf8');
 const stateApi = await readFile(new URL('../api/concierge-state.js', import.meta.url), 'utf8');
@@ -75,8 +85,9 @@ assert.match(conciergeJs, /async function hydrateAccountWorkflow\(\) \{[\s\S]*in
 assert.match(conciergeJs, /function accountWorkflowIsAuthoritative\(\)[\s\S]*sessionCapabilities\.authentication === 'opaque-session' && hasJobAgentAccess\(\)/);
 assert.match(conciergeJs, /workspace:\s*\{[\s\S]*mission: missionState\.mission/);
 assert.doesNotMatch(conciergeJs, /localStorage\.setItem\((?:MISSION_KEY|DESK_KEY|CAMPAIGN_KEY|DAILY_GOAL_KEY|JOB_AGENT_RUN_KEY|'1ststep_resume')/, 'durable Job Agent workflow or resume content must not be written to localStorage');
-assert.match(conciergeHtml, /Your job search, handled\./);
-assert.match(conciergeHtml, /Your agent keeps moving and only asks when you’re needed/);
+assert.match(conciergeHtml, /A more thoughtful/);
+assert.match(conciergeHtml, /your next role\./);
+assert.match(conciergeHtml, /Your experience\. Your priorities\. A job search built around you\./);
 assert.match(conciergeHtml, /id="openGuidedLaunch"/);
 assert.match(conciergeHtml, /id="guidedLaunchOverlay"[^>]*role="dialog"[^>]*aria-modal="true"/);
 for (const stage of ['goal', 'resume', 'path', 'work', 'employment', 'salary', 'review']) assert.match(conciergeHtml, new RegExp(`data-guided-stage="${stage}"`));
@@ -108,25 +119,55 @@ assert.match(conciergeJs, /directSourceCoverage\(durableRun\)/);
 assert.match(conciergeJs, /maskedActivityFeed\(\{ run: durableRun/);
 assert.match(conciergeHtml, /Persisted only/);
 assert.doesNotMatch(conciergeHtml.match(/id="agentProgress"[\s\S]*?<\/section>/)?.[0] || '', /demo|synthetic/i);
-assert.match(conciergeHtml, /id="dailyGoalForm"/);
-assert.match(conciergeHtml, /authoritative receipts today/);
-assert.match(conciergeHtml, /Package Ready is tracked separately from Submitted/);
-assert.match(conciergeHtml, /Receipt-verified application target/);
-assert.match(conciergeHtml, /Daily target \(not a guarantee\)/);
+assert.doesNotMatch(conciergeHtml, /id="dailyGoalForm"|daily application target|Your application target|Daily target \(not a guarantee\)/i);
+assert.match(conciergeHtml, /Real progress, without a quota/);
+assert.match(conciergeHtml, /Prepared drafts stay separate from employer-confirmed submissions/);
 assert.match(conciergeHtml, /id="openAgentAccess"[^>]*>Sign in</);
 assert.match(conciergeJs, /loadPublicAppConfig\(\)/);
 assert.match(conciergeJs, /restoreAccessAvailable === false/);
 assert.match(conciergeJs, /Secure sign-in is not configured for this environment\. No code was sent\./);
 assert.match(conciergeJs, /classList\.toggle\('workspace-ready', workspaceReady\)/);
 assert.match(conciergeCss, /body:not\(\.workspace-ready\) \.daily-dashboard/);
-assert.match(conciergeCss, /@media\(max-width:720px\)[\s\S]*?\.agent-header nav button\{[^}]*font-size:10\.5px/, 'Mobile navigation labels must remain readable at the primary breakpoint');
-assert.match(conciergeCss, /@media\(max-width:390px\)\{\.agent-header nav button\{font-size:10px\}/, 'Narrow mobile navigation labels must not regress below 10px');
+// These two assertions previously pinned an exact px value, which failed when the
+// labels were made LARGER. The intent is a readability floor, so assert the floor
+// and accept any unit at or above it.
+function navLabelPx(css, breakpoint) {
+  // The stylesheet has many @media blocks at the same breakpoint, so the block
+  // holding the nav rule must be found by brace matching rather than by lazily
+  // scanning to the next @media.
+  const marker = `@media(max-width:${breakpoint}px)`;
+  const sizes = [];
+  for (let at = css.indexOf(marker); at !== -1; at = css.indexOf(marker, at + 1)) {
+    const open = css.indexOf('{', at);
+    if (open === -1) continue;
+    let depth = 0;
+    let close = -1;
+    for (let i = open; i < css.length; i += 1) {
+      if (css[i] === '{') depth += 1;
+      else if (css[i] === '}') { depth -= 1; if (depth === 0) { close = i; break; } }
+    }
+    if (close === -1) continue;
+    const block = css.slice(open + 1, close);
+    for (const rule of block.matchAll(/\.agent-header nav button\s*\{([^}]*)\}/g)) {
+      const size = /font-size:\s*([0-9.]+)(px|rem|em)/.exec(rule[1]);
+      if (size) sizes.push(size[2] === 'px' ? Number(size[1]) : Number(size[1]) * 16);
+    }
+  }
+  assert.ok(sizes.length, `no .agent-header nav button font-size at ${breakpoint}px`);
+  // The smallest declared size is the one that has to clear the floor.
+  return Math.min(...sizes);
+}
+
+assert.ok(navLabelPx(conciergeCss, 720) >= 10.5,
+  'Mobile navigation labels must remain readable at the primary breakpoint (>= 10.5px)');
+assert.ok(navLabelPx(conciergeCss, 390) >= 10,
+  'Narrow mobile navigation labels must not regress below 10px');
 assert.match(conciergeHtml, /id="sourceMemory"/);
 assert.match(conciergeHtml, /id="funnelMetrics"/);
 assert.match(conciergeHtml, /Admin evidence and operating controls/);
 assert.match(conciergeHtml, /id="activity" hidden/);
 assert.match(conciergeHtml, /id="openDesk" type="button" hidden/);
-assert.match(conciergeHtml, /<h2 id="deskTitle">Admin evidence<\/h2>/);
+assert.match(conciergeHtml, /<h2 id="deskTitle">Admin control center<\/h2>/);
 assert.match(conciergeHtml, /data-desk-tab="demo" type="button" hidden aria-hidden="true" tabindex="-1"/);
 assert.match(conciergeHtml, /data-desk-panel="demo" hidden aria-hidden="true"/);
 assert.match(conciergeCss, /\[data-desk-tab="demo"\],\[data-desk-panel="demo"\]\{display:none!important\}/);
@@ -138,7 +179,9 @@ assert.match(conciergeJs, /finalSubmissionExecutionEnabled/);
 assert.match(conciergeHtml, /id="jobsOverlay"/);
 assert.match(conciergeHtml, /id="needsYouList"/);
 assert.match(conciergeHtml, /id="agentAccessOverlay"/);
-assert.match(conciergeHtml, /Dedicated pricing is being measured/);
+assert.match(conciergeHtml, /Included with 1stStep Complete\./);
+assert.match(conciergeHtml, /One planned \$39\/month membership for the resume tools and Job Agent\./);
+assert.match(conciergeHtml, /Billing is not active yet; nothing is charged/);
 assert.match(conciergeHtml, /id="openEmployerPage"/);
 assert.match(conciergeHtml, /Your password, passkey, OTP, and CAPTCHA answers stay on the employer website/);
 assert.match(conciergeHtml, /id="applicationBrowserHandoff"/);
@@ -167,7 +210,7 @@ assert.match(conciergeJs, /employer-feed catalog needed/);
 assert.match(conciergeJs, /quickUploadResume/);
 assert.match(conciergeJs, /jobLaunchForm/);
 assert.match(conciergeJs, /DAILY_GOAL_KEY/);
-assert.match(conciergeJs, /function setDailyGoal/);
+assert.doesNotMatch(conciergeJs, /function setDailyGoal/);
 assert.match(conciergeJs, /function fetchWithTimeout/);
 assert.match(conciergeJs, /REQUEST_TIMEOUT/);
 assert.match(conciergeJs, /loadSessionCapabilities/);
@@ -197,7 +240,8 @@ assert.match(conciergeHtml, /id="jobAgentConsentOverlay"/);
 assert.match(conciergeHtml, /id="dailyBackgroundSearch"[^>]*checked/);
 assert.match(conciergeHtml, /id="emailNeedsYouAlerts"/);
 assert.match(conciergeHtml, /id="savedNeedsYouEmailAlerts"/);
-for (const attestation of ['age18OrOlder', 'termsAccepted', 'privacyAcknowledged', 'candidateAuthorizationAccepted']) assert.match(conciergeHtml, new RegExp(`name="${attestation}"[^>]*required`));
+assert.match(conciergeHtml, /name="allConsentAccepted"[^>]*required/);
+for (const attestation of ['age18OrOlder', 'termsAccepted', 'privacyAcknowledged', 'candidateAuthorizationAccepted']) assert.match(conciergeJs, new RegExp(`${attestation}: accepted`));
 assert.doesNotMatch(conciergeHtml.match(/id="jobAgentConsentOverlay"[\s\S]*?id="toastRegion"/)?.[0] || '', /type="date"/);
 assert.match(conciergeJs, /source: 'guided-popup'/);
 assert.match(conciergeJs, /extractResumeFile/);
@@ -214,9 +258,10 @@ assert.match(conciergeJs, /AI_CONSENT_KEY/);
 assert.match(conciergeJs, /redactChatForModel/);
 assert.match(conciergeJs, /fetchWithTimeout\('\/api\/ai'/);
 assert.match(conciergeJs, /fetchWithTimeout\('\/api\/concierge-discovery'/);
-assert.match(conciergeJs, /REQUEST_TIMEOUTS\s*=\s*Object\.freeze\(\{\s*discovery:\s*30000\b/, 'broad direct-employer discovery must retain a 30-second client window');
+assert.match(conciergeJs, /REQUEST_TIMEOUTS\s*=\s*Object\.freeze\(\{\s*discovery:\s*40000\b/, 'discovery must allow the server deadline to finish before the client aborts');
 assert.match(conciergeJs, /filterSummary\?\.scanned/, 'opportunity-path evidence must report the broad source scan rather than only returned matches');
-assert.match(conciergeJs, /A broad scan usually takes 10–25 seconds/, 'the searching state must set an honest expectation for the live employer-feed scan');
+assert.match(conciergeJs, /workingIndicator\('Searching employer feeds…'\)/, 'searching must have an indeterminate, named progress indicator');
+assert.match(conciergeJs, /Some sources or requisition checks could not finish/, 'incomplete coverage must be disclosed without a fabricated reason');
 assert.match(conciergeJs, /evaluateCandidateFit/);
 assert.match(conciergeJs, /rejectedByQualityFloor/);
 assert.match(conciergeJs, /rankOpportunityPaths/);

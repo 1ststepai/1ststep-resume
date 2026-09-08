@@ -53,10 +53,10 @@ const apiBeta = fs.existsSync(path.join(ROOT, 'api', 'beta.js'))
 section('HTML structure');
 
 if (html) {
-  if (/<link[^>]+href=["']style\.css["']/.test(html)) pass('style.css linked in <head>');
+  if (/<link[^>]+href=["']\/?style\.css["']/.test(html)) pass('style.css linked in <head>');
   else fail('style.css NOT linked in <head>');
 
-  if (/<script[^>]+src=["']app\.js(?:\?[^"']*)?["']/.test(html)) pass('app.js linked before </body>');
+  if (/<script[^>]+src=["']\/?app\.js(?:\?[^"']*)?["']/.test(html)) pass('app.js linked before </body>');
   else fail('app.js NOT linked');
 
   // Orphaned content after </html>
@@ -366,16 +366,19 @@ if (html) {
 section('Free-to-Pro conversion smoke');
 
 if (html) {
-  if (/\$24\.99/.test(html)) pass('Job Hunt Pass price appears in upgrade/paywall copy');
-  else fail('Job Hunt Pass price $24.99 is missing from upgrade/paywall copy');
+  if (!/\$24\.99|Job Hunt Pass/.test(html) && !/buy\.stripe\.com\/5kQ4gA7OFgH14u89fhfIs00/.test(html)) pass('Retired Job Hunt Pass sale is absent from app copy');
+  else fail('Retired Job Hunt Pass pricing or checkout remains in app copy');
 
-  if (/Upgrade to Job Hunt Pass/.test(html) || /Start Job Hunt Pass/.test(html)) pass('Single-plan Job Hunt Pass upgrade CTA copy exists');
-  else fail('Job Hunt Pass upgrade CTA copy is missing');
+  if (/1stStep Complete/.test(html) && /\$39/.test(html) && /month when paid access opens/.test(html)) pass('Unified 1stStep Complete name and future price exist');
+  else fail('Unified 1stStep Complete name or future price is missing');
+
+  if (/Resume tailoring and cover letters/.test(html) && /Job discovery and application preparation/.test(html)) pass('One app offer includes both resume tools and Job Agent preparation');
+  else fail('Unified membership inclusions are missing from the app offer');
 }
 
 if (js) {
   [
-    'FREE_TO_PRO_PRICE',
+    'JOB_AGENT_FUTURE_PRICE',
     'PRO_TIER_ALIASES',
     'getPlanState',
     'guardProFeature',
@@ -704,15 +707,88 @@ function readIfExists(rel) {
 
 const A11Y_FILES = [
   'app.html',
+  'concierge.html',
   'index.html',
   'funnel.html',
   'admin.html',
+  'pricing.html',
+  'privacy.html',
+  'terms.html',
   path.join('1ststep-extension', 'popup.html'),
   path.join('1ststep-extension', 'sidepanel.html'),
 ].filter(rel => fs.existsSync(path.join(ROOT, rel)));
 
+// Remove <script>/<style> ELEMENTS and comments, keeping the markup around them.
+// Splitting on the first <script> skipped ~99% of app.html, so most of the
+// authenticated workspace was never accessibility-checked.
+function stripRawTextElements(src, tagName) {
+  const source = String(src);
+  const lower = source.toLowerCase();
+  const opening = `<${tagName}`;
+  const closing = `</${tagName}`;
+  let cursor = 0;
+  let output = '';
+  while (cursor < source.length) {
+    const start = lower.indexOf(opening, cursor);
+    if (start < 0) return output + source.slice(cursor);
+    const openingBoundary = lower[start + opening.length];
+    if (openingBoundary && !/[\s/>]/.test(openingBoundary)) {
+      output += source.slice(cursor, start + opening.length);
+      cursor = start + opening.length;
+      continue;
+    }
+    const openEnd = lower.indexOf('>', start + opening.length);
+    if (openEnd < 0) return output + source.slice(cursor, start);
+    let closeStart = lower.indexOf(closing, openEnd + 1);
+    while (closeStart >= 0) {
+      const closingBoundary = lower[closeStart + closing.length];
+      if (!closingBoundary || /[\s>]/.test(closingBoundary)) break;
+      closeStart = lower.indexOf(closing, closeStart + closing.length);
+    }
+    if (closeStart < 0) return output + source.slice(cursor, start);
+    const closeEnd = lower.indexOf('>', closeStart + closing.length);
+    if (closeEnd < 0) return output + source.slice(cursor, start);
+    output += `${source.slice(cursor, start)} `;
+    cursor = closeEnd + 1;
+  }
+  return output;
+}
+
+function stripHtmlComments(src) {
+  const source = String(src);
+  let cursor = 0;
+  let output = '';
+  while (cursor < source.length) {
+    const start = source.indexOf('<!--', cursor);
+    if (start < 0) return output + source.slice(cursor);
+    const end = source.indexOf('-->', start + 4);
+    if (end < 0) return output + source.slice(cursor, start);
+    output += `${source.slice(cursor, start)} `;
+    cursor = end + 3;
+  }
+  return output;
+}
+
+function stripScriptAndStyle(src) {
+  return stripHtmlComments(stripRawTextElements(stripRawTextElements(src, 'script'), 'style'));
+}
+
 function escRe(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// An input is also labelled when it is WRAPPED by a <label> that carries text
+// (implicit labelling). Honouring only <label for> reported 9 false positives in
+// concierge.html, all of them correctly-labelled wrapped controls.
+function implicitlyLabelled(markup, id) {
+  const labels = markup.match(/<label\b[^>]*>[\s\S]*?<\/label\s*>/gi) || [];
+  return labels.some(block => {
+    const QUOTES = String.fromCharCode(34, 39);
+    const idRe = new RegExp('<[a-zA-Z][^>]*\\bid=[' + QUOTES + ']' + escRe(id) + '[' + QUOTES + ']', 'i');
+    if (!idRe.test(block)) return false;
+    const inner = block.replace(/<label\b[^>]*>/i, '').replace(/<\/label\s*>/i, '');
+    return textOutsideTags(inner).length > 0;
+  });
 }
 
 function textOutsideTags(markup) {
@@ -728,7 +804,7 @@ function textOutsideTags(markup) {
 
 A11Y_FILES.forEach(rel => {
   const src = readIfExists(rel);
-  const markup = src.split(/<script\b/i)[0];
+  const markup = stripScriptAndStyle(src);
   if (/<html\b[^>]*\blang=["'][^"']+["']/i.test(markup)) pass(rel + ' has <html lang>');
   else fail(rel + ' is missing <html lang>');
 
@@ -743,7 +819,8 @@ A11Y_FILES.forEach(rel => {
   else fail(rel + ' has ' + missingAlt.length + ' <img> tag(s) missing alt');
 
   const unlabeledFields = [...markup.matchAll(/<(input|textarea|select)\b(?![^>]*(?:aria-label|aria-labelledby|type=["']hidden["']|aria-hidden=["']true["']))[^>]*\bid=["']([^"']+)["'][^>]*>/gi)]
-    .filter(([, , id]) => !new RegExp(`<label\\b[^>]*\\bfor=["']${escRe(id)}["']`, 'i').test(markup));
+    .filter(([, , id]) => !new RegExp(`<label\\b[^>]*\\bfor=["']${escRe(id)}["']`, 'i').test(markup)
+      && !implicitlyLabelled(markup, id));
   if (unlabeledFields.length === 0) pass(rel + ' has no obvious unlabeled fields');
   else unlabeledFields.forEach(([, tag, id]) => fail(rel + ' <' + tag.toLowerCase() + '> #' + id + ' has no obvious accessible label'));
 

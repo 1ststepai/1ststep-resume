@@ -34,7 +34,12 @@ function collapseLetterSpacing(text) {
     .replace(/\n{3,}/g, '\n\n');
 }
 
-import { buildSearchLinks, classifyConciergeMessage, conciergeStateGuidance, missionGaps, parseMission } from './client/concierge-router.js';
+import { buildSearchLinks, classifyConciergeMessage, conciergeStateGuidance, jobAgentStatus, missionGaps, parseMission } from './client/concierge-router.js';
+import { preparationCandidates, automaticPreparationAuthorized, preparationFailureCode, preparationRetryAllowed } from './client/application-preparation.js';
+import { createDraftAutosave, createRevisionWriter, draftReviewGuidance } from './client/draft-review.js';
+import { localApplicationRoute } from './client/application-execution-route.js';
+import { applicationControlCenterModel, applicationLedgerMarkdown } from './client/application-control-center.js';
+const executionPreferences = new Map();
 import {
   ACTION_TYPES, APPLICATION_WORKFLOW_STEPS, DEMO_STAGES, ONBOARDING_REQUIRED_FIELDS, READINESS_FIELDS, REDACTED_WORKFLOW_REPLAY, addActionItem, addRole, advanceManagedApplicationSession, advanceSalesDemo, approveBatch,
   buildCareerStoryDraft, buildReadinessDraftFromSources, buildVerifiedResumeDraft, confirmReadinessDraft, confirmReusableFact, createApprovalBatch, createDeskState, createSalesDemo, deleteReusableFact, discardReadinessDraft,
@@ -50,6 +55,8 @@ import { authoritativeReceiptCount, canonicalConversation, directSourceCoverage,
 import {
   CAMPAIGN_TEMPLATES, addCampaign, campaignMetrics, createCampaignStore, operatingContractText, updateCampaignStatus, updatePersistentCampaign,
 } from './client/persistent-campaign.js';
+import { buildAdminCostDashboard } from './client/admin-cost-dashboard.js';
+import { buildAdminSystemAlertDashboard } from './client/admin-system-alerts.js';
 
 const MISSION_KEY = '1ststep_concierge_mission_v1';
 const DESK_KEY = '1ststep_concierge_desk_v2';
@@ -64,11 +71,19 @@ const JOB_AGENT_RUN_KEY = '1ststep_job_agent_run_v1';
 const VAULT_PREFERENCE_KEY = '1ststep_applicant_vault_preference_v1';
 const RESUME_HANDOFF_KEY = '1ststep_resume_handoff';
 const RESUME_KEYS = ['1ststep_resume', '1ststep_resume_text'];
+// Only a resume reviewed during this page lifetime may survive late account hydration.
+// Never restore an arbitrary previous browser cache across account initialization.
+let reviewedResumeInPage = null;
 const $ = id => document.getElementById(id);
 const list = value => String(value || '').split(/[\n,]/).map(item => item.trim()).filter(Boolean);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const escapeXmlData = value => String(value ?? '').replace(/[&<>]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[character]);
-let missionState = loadWorkflowJson(MISSION_KEY, { mission: {}, messages: [] });
+// Candidate mission details can include compensation and location preferences.
+// Keep signed-out setup in memory; authenticated state is persisted by the
+// encrypted account workflow rather than clear-text browser storage.
+let missionState = { mission: {}, messages: [] };
+localStorage.removeItem(MISSION_KEY);
+sessionStorage.removeItem(MISSION_KEY);
 let deskState = createDeskState(loadWorkflowJson(DESK_KEY, {}));
 let campaignStore = createCampaignStore(loadWorkflowJson(CAMPAIGN_KEY, {}));
 let dailyGoal = loadWorkflowJson(DAILY_GOAL_KEY, { target: 10, updatedAt: null });
@@ -122,7 +137,7 @@ if (LOCAL_SUBSCRIBER_UI_FIXTURE) {
   missionState = { mission: { role: 'Procurement Manager', roleFamily: 'procurement', workModes: ['Remote'], employmentTypes: ['Full-time'], salaryMin: 100000, location: 'United States', target: 10 }, messages: [], discovery: { status: 'complete', matches: 5 }, runState: 'Preparing' };
   deskState = createDeskState({
     roles: [
-      { id: 'fixture-found', employer: 'Northwind Logistics', title: 'Procurement Manager', requisitionId: 'NW-102', directEmployerUrl: 'https://careers.example.com/NW-102', status: 'Found', fitScore: 91, remoteEligibility: 'Remote · United States', salaryMin: 110000, salaryMax: 135000, createdAt: fixtureNow },
+      { id: 'fixture-found', employer: 'Northwind Logistics', title: 'Procurement Manager', requisitionId: 'NW-102', directEmployerUrl: 'https://careers.example.com/NW-102', discoveryRunId: 'run-fixture-discovery', sourceType: 'direct-employer', applyPathActive: true, jobDescription: 'Synthetic procurement responsibilities and verified requirements. '.repeat(8), status: 'Found', fitScore: 91, remoteEligibility: 'Remote · United States', salaryMin: 110000, salaryMax: 135000, createdAt: fixtureNow },
       { id: 'fixture-stale-off-mission', employer: 'Archived Example', title: 'Legal Operations Analyst II', requisitionId: 'OLD-099', directEmployerUrl: 'https://careers.example.com/OLD-099', status: 'Found', fitScore: 95, remoteEligibility: 'Remote · United States', salaryMin: 120000, createdAt: fixtureNow },
       { id: 'fixture-verified', employer: 'Harbor Supply Co.', title: 'Strategic Sourcing Manager', requisitionId: 'HS-204', directEmployerUrl: 'https://careers.example.com/HS-204', status: 'Verified', fitScore: 88, remoteEligibility: 'Remote · New Jersey eligible', salaryMin: 105000, createdAt: fixtureNow },
       { id: 'fixture-ready', employer: 'Summit Manufacturing', title: 'Vendor Operations Lead', requisitionId: 'SM-310', directEmployerUrl: 'https://careers.example.com/SM-310', status: 'Package Ready', fitScore: 84, remoteEligibility: 'Hybrid · Newark, NJ', salaryMin: 100000, createdAt: fixtureNow },
@@ -146,6 +161,42 @@ let guidedLaunchStep = Math.min(6, Math.max(0, Number(missionState.onboardingDra
 let guidedLaunchOpen = false;
 const GUIDED_LAUNCH_STAGES = Object.freeze(['goal', 'resume', 'path', 'work', 'employment', 'salary', 'review']);
 if (LOCAL_SUBSCRIBER_UI_FIXTURE) guidedSelection = { goal: 'best-fit', pathId: 'procurement', workMode: 'Remote', employmentType: 'Full-time', salary: 100000, location: 'United States' };
+const RESUME_CLICK_CHOICES = Object.freeze({
+  contact: [
+    { label: 'Name + email only', template: 'Jordan Taylor · jordan@email.com' },
+  ],
+  employment: [
+    { label: 'Add one recent job', template: 'Buyer at Acme, 2022-now · Managed 20 vendors' },
+    { label: 'No work experience yet', value: 'No paid work experience yet' },
+    { label: 'Use school or volunteer work', template: 'Volunteer Coordinator at Food Bank, 2024 · Organized 12 volunteers' },
+  ],
+  education: [
+    'High school or GED', 'Associate degree', "Bachelor's degree", "Master's degree", 'Trade school or certification', 'No formal education',
+  ],
+  skills: [
+    { label: 'Customer service', value: 'Customer service', append: true },
+    { label: 'Sales', value: 'Sales', append: true },
+    { label: 'Operations', value: 'Operations', append: true },
+    { label: 'Project coordination', value: 'Project coordination', append: true },
+    { label: 'Microsoft Office', value: 'Microsoft Office', append: true },
+    { label: 'Data & reporting', value: 'Data & reporting', append: true },
+    { label: 'Procurement & sourcing', value: 'Procurement & sourcing', append: true },
+    { label: 'Vendor management', value: 'Vendor management', append: true },
+  ],
+});
+const RESUME_FIELD_GUIDANCE = Object.freeze({
+  contact: 'Keep it short: type your name and email. A phone number is optional.',
+  employment: 'One recent role is enough. Tap a path below, then add only the facts you know.',
+  education: 'Tap the closest level. You can add a school or subject in the box if you want.',
+  skills: 'Tap every skill group that fits you. Add another skill in the box only if it is missing.',
+});
+const RESUME_FIELD_PLACEHOLDERS = Object.freeze({
+  contact: 'Jordan Taylor · jordan@email.com',
+  employment: 'Buyer at Acme, 2022-now · Managed 20 vendors',
+  education: 'Optional: school name or field of study',
+  skills: 'Optional: add another skill',
+});
+
 const QUICK_ANSWERS = Object.freeze({
   authorization: ['Authorized to work in the United States', 'Not currently authorized', 'Unsure'],
   sponsorship: ['No sponsorship required', 'Sponsorship required', 'Unsure'],
@@ -166,7 +217,7 @@ const WORKFLOW_LABELS = Object.freeze({
   transmit: 'Transmit', submit: 'Submit', verify_receipt: 'Verify Receipt',
 });
 const RUN_STATES = Object.freeze(['Searching', 'Preparing', 'Waiting for You', 'Paused', 'Finished']);
-const REQUEST_TIMEOUTS = Object.freeze({ discovery: 30000, aiFast: 20000, aiQuality: 40000, persistence: 10000, capability: 8000 });
+const REQUEST_TIMEOUTS = Object.freeze({ discovery: 40000, aiFast: 20000, aiQuality: 40000, persistence: 10000, capability: 8000 });
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
   const controller = new AbortController();
@@ -200,17 +251,13 @@ function loadJson(key, fallback) {
 }
 function loadWorkflowJson(key, fallback) {
   try {
-    if (key !== DAILY_GOAL_KEY) {
-      sessionStorage.removeItem(key);
-      localStorage.removeItem(key);
-      return fallback;
-    }
     const sessionValue = sessionStorage.getItem(key);
     if (sessionValue) return JSON.parse(sessionValue) || fallback;
     const legacyValue = localStorage.getItem(key);
+    localStorage.removeItem(key);
+    if (key !== DAILY_GOAL_KEY) return fallback;
     if (!legacyValue) return fallback;
     sessionStorage.setItem(key, legacyValue);
-    localStorage.removeItem(key);
     return JSON.parse(legacyValue) || fallback;
   } catch {
     localStorage.removeItem(key);
@@ -239,8 +286,8 @@ function saveAll() {
     return;
   }
   sessionStorage.removeItem(MISSION_KEY);
-  sessionStorage.removeItem(DESK_KEY);
-  sessionStorage.removeItem(CAMPAIGN_KEY);
+  sessionStorage.setItem(DESK_KEY, JSON.stringify(deskState));
+  sessionStorage.setItem(CAMPAIGN_KEY, JSON.stringify(campaignStore));
   sessionStorage.setItem(DAILY_GOAL_KEY, JSON.stringify(dailyGoal));
   localStorage.removeItem(MISSION_KEY);
   localStorage.removeItem(DESK_KEY);
@@ -423,6 +470,7 @@ function renderVaultStatus() {
   const scheduleRow = authenticated ? `<div class="desk-row"><div><strong>Daily background search</strong><small>${escapeHtml(scheduleStatus)} · direct-employer discovery only · no applications submitted</small></div><div class="desk-actions"><button data-schedule-action="${scheduleAction}" ${scheduleAction === 'resume' && (!missionState.mission?.role || !activeJobAgentConsent()) ? 'disabled' : ''}>${scheduleAction === 'pause' ? 'Pause daily search' : 'Resume daily search'}</button></div></div>` : '';
   $('vaultList').innerHTML = [scheduleRow, ...facts.map(fact => {
     const version = fact.versions.find(item => item.version === fact.currentVersion) || fact.versions.at(-1);
+    if (version?.scope?.memory) return `<div class="desk-row"><div><strong>Remembered about you · ${escapeHtml(version.scope.category)}</strong><p>${escapeHtml(version.value)}</p><small>${escapeHtml(fact.label)} · ${escapeHtml(version.scope.kind)} scope · ${escapeHtml(version.scope.employer)} · ${escapeHtml(version.confirmedAt)} · ${version.scope.expiresAt ? `expires ${escapeHtml(version.scope.expiresAt)}` : 'until you edit or forget'}</small></div><div class="desk-actions"><button data-memory-edit="${escapeHtml(fact.id)}">Edit</button><button data-memory-forget="${escapeHtml(fact.id)}">Forget</button></div></div>`;
     return `<div class="desk-row"><div><strong>${escapeHtml(fact.label)}</strong><small>Saved securely · ${escapeHtml(version?.provenance || 'candidate confirmation')} · confidence ${Math.round((Number(version?.confidence) || 0) * 100)}% · version ${fact.currentVersion}${version?.autoReuse ? ' · reusable when meaning matches' : ' · manual review required'}</small></div><div class="desk-actions"><button data-vault-edit-fact="${escapeHtml(fact.fieldKey)}">Edit</button><button data-vault-revoke-fact="${escapeHtml(fact.id)}">Revoke</button></div></div>`;
   }), ...documents.map(document => `<div class="desk-row"><div><strong>${escapeHtml(document.title)}</strong><small>Encrypted document · ${escapeHtml(document.type)} · version ${document.currentVersion} · contents hidden</small></div><div class="desk-actions"><button data-vault-revoke-document="${escapeHtml(document.id)}">Revoke</button></div></div>`)].filter(Boolean).join('') || empty('No encrypted account-backed answers or documents. Unsaved details remain only in this tab.');
 }
@@ -444,7 +492,7 @@ async function hydrateApplicantVault() {
       }
       for (const fact of applicantVault.vault.facts.filter(item => item.status === 'active')) {
         const version = fact.versions.find(item => item.version === fact.currentVersion) || fact.versions.at(-1);
-        if (!version?.value) continue;
+        if (!version?.value || version.scope?.memory) continue;
         deskState = confirmReusableFact(deskState, { fieldKey: fact.fieldKey, value: version.value, confirmed: true, verificationState: version.verificationState, source: `secure-vault:${version.provenance}`, sensitivity: version.sensitivity, autoReuse: version.autoReuse });
       }
       const master = applicantVault.vault.documents.find(document => document.status === 'active' && document.type === 'master-resume');
@@ -474,6 +522,7 @@ async function vaultAction(action, input = {}) {
       body: JSON.stringify({ version: applicantVault.version, action, input }),
     }, REQUEST_TIMEOUTS.persistence);
     const data = await response.json().catch(() => ({}));
+    if (data.code === 'MEMORY_CONFLICT') { const error = new Error(data.error); error.memoryVersion = data.factVersion; throw error; }
     if (response.status === 409) { await hydrateApplicantVault(); throw new Error('Secure backup changed in another session. Review it and try again.'); }
     if (!response.ok) throw new Error(data.error || 'Secure backup could not be updated.');
     applicantVault.version = Number(data.version) || applicantVault.version;
@@ -561,8 +610,7 @@ function applyDurablePackageRun(run) {
     });
   }
   if (run.status === 'Waiting for You' && !deskState.actionQueue.some(item => item.roleId === roleId && item.status === 'open' && /package/i.test(item.summary || ''))) {
-    const issues = (run.result?.qa?.issues || []).slice(0, 4).join(', ');
-    deskState = addActionItem(deskState, { roleId, type: 'NEW_QUESTION', summary: `Review the generated package${issues ? `: ${issues}` : ''}. No document was transmitted.` }).state;
+    deskState = addActionItem(deskState, { roleId, type: 'NEW_QUESTION', summary: 'Review your application package. Compare the draft with your original resume and correct any unsupported details.' }).state;
   }
   saveAll(); renderAll();
 }
@@ -573,9 +621,11 @@ async function refreshDurablePackage(runId, announce = false) {
     const data = await response.json().catch(() => ({}));
     if (!response.ok || !data.run) throw new Error(data.error || 'Package status is unavailable.');
     applyDurablePackageRun(data.run);
-    if (announce) addMessage('assistant', data.run.result?.resumeText
-      ? '<strong>Your role-specific package is ready for review.</strong><br>Private DOCX/PDF files were generated and their text order, hashes, and page count were checked. Isolated visual-render evidence remains required before Package Ready.'
-      : '<strong>Your package is still safely queued.</strong><br>You can close this page; the durable run will resume from its checkpoint.');
+    if (announce) addMessage('assistant', data.run.status === 'Failed'
+      ? `<strong>Application preparation stopped.</strong><br>Support code: ${escapeHtml(preparationFailureCode(data.run))}. Your saved resume and role are intact.`
+      : data.run.result?.resumeText
+        ? `<strong>Your private draft is ready for review.</strong><br>${data.run.result.artifacts?.length ? 'Document files are available; visual review is still required.' : 'Resume and cover-letter text are available. No DOCX/PDF files were produced.'}`
+        : '<strong>Preparation is pending.</strong><br>Progress is saved. Check again for the next recorded result.');
     return data.run;
   } catch (error) {
     if (announce) addMessage('assistant', `<strong>Package status is temporarily unavailable.</strong><br>${escapeHtml(error.message)} Your saved role and master resume remain intact.`);
@@ -583,14 +633,17 @@ async function refreshDurablePackage(runId, announce = false) {
   }
 }
 
-async function generateDurablePackage(roleId) {
+async function generateDurablePackage(roleId, { automatic = false, retryRequested = false } = {}) {
   const role = deskState.roles.find(item => item.id === roleId);
   if (!role) throw new Error('Role not found.');
   if (!hasJobAgentAccess() || !hasApiSession()) throw new Error('Restore Job Agent access before preparing a durable package.');
   if (role.packageRunId && !role.packageDraft) {
     const current = await refreshDurablePackage(role.packageRunId, false);
+    if (current?.status === 'Failed' && (automatic || !retryRequested || !preparationRetryAllowed(current))) {
+      throw new Error(`Preparation stopped: ${preparationFailureCode(current)}. The failed step needs correction before another provider attempt.`);
+    }
     if (current?.status !== 'Failed') {
-      if (current) addMessage('assistant', '<strong>Your package checkpoint is current.</strong><br>I’ll keep the draft private and surface it here when generation or review is ready.');
+      if (current) addMessage('assistant', '<strong>Your package progress is up to date.</strong><br>I’ll keep the draft private and show it here when generation or review is ready.');
       return current;
     }
     const retryResponse = await fetchWithTimeout(`/api/application-packages?id=${encodeURIComponent(role.packageRunId)}`, {
@@ -599,12 +652,15 @@ async function generateDurablePackage(roleId) {
     const retryData = await retryResponse.json().catch(() => ({}));
     if (!retryResponse.ok) throw new Error(retryData.error || 'The failed package could not be retried.');
     applyDurablePackageRun(retryData.run);
+    if (retryData.run?.status === 'Failed') throw new Error(`Preparation stopped: ${preparationFailureCode(retryData.run)}.`);
+    if (retryData.run?.result?.resumeText) openPackageReview(deskState.roles.find(item => item.id === roleId));
     return retryData.run;
   }
   if (!role.jobDescription || role.jobDescription.length < 200) throw new Error('A verified employer job description is required.');
   const resumeText = savedResumeText();
   if (resumeText.length < 200) throw new Error('Save a candidate-reviewed master resume first.');
-  if (localStorage.getItem(PACKAGE_AI_CONSENT_KEY) !== 'approved') {
+  if (!automaticPreparationAuthorized(sessionCapabilities.jobAgentConsent) && localStorage.getItem(PACKAGE_AI_CONSENT_KEY) !== 'approved') {
+    if (automatic) return null;
     const approved = window.confirm('Prepare this application package? Your reviewed resume and this verified employer job description will be encrypted in your durable run and sent to 1stStep’s configured AI provider. Nothing is sent to the employer, and no application is submitted.');
     if (!approved) return null;
     localStorage.setItem(PACKAGE_AI_CONSENT_KEY, 'approved');
@@ -618,7 +674,7 @@ async function generateDurablePackage(roleId) {
       roleId: role.id, discoveryRunId: role.discoveryRunId, employer: role.employer, title: role.title, requisitionId: role.requisitionId,
       directEmployerUrl: role.directEmployerUrl, applyPathActive: role.applyPathActive === true,
       jobDescription: role.jobDescription, resumeText, includeCoverLetter: true,
-    }, runNow: true }),
+    }, runNow: !automatic, background: automatic }),
   }, 55000);
   const data = await response.json().catch(() => ({}));
   if (!response.ok && response.status !== 202) {
@@ -637,9 +693,36 @@ async function generateDurablePackage(roleId) {
     throw new Error(data.error || 'The package could not be started.');
   }
   applyDurablePackageRun(data.run);
+  if (data.run?.status === 'Failed') throw new Error(`Preparation stopped: ${preparationFailureCode(data.run)}.`);
   if (!data.run?.result) setTimeout(() => refreshDurablePackage(data.run.id, true), 5000);
-  else openPackageReview(deskState.roles.find(item => item.id === roleId));
+  else if (!automatic) openPackageReview(deskState.roles.find(item => item.id === roleId));
   return data.run;
+}
+
+let preparingMatches = false;
+async function prepareDiscoveredApplications() {
+  if (preparingMatches || !hasApiSession() || !automaticPreparationAuthorized(sessionCapabilities.jobAgentConsent)
+    || missionState.runState === 'Paused') return;
+  const candidates = preparationCandidates(deskState.roles, { discoveryRunId: durableRun?.id, limit: dailyGoal.target });
+  if (!candidates.length) return;
+  if (savedResumeText().length < 200) {
+    addMessage('assistant', '<strong>Your matches are saved. I need your reviewed master resume to prepare applications.</strong><br>Open Saved Info or upload your resume; you do not need to repeat the search.');
+    return;
+  }
+  preparingMatches = true;
+  addMessage('assistant', '<strong>I’m preparing private application drafts for your matching roles.</strong><br>I’ll use your reviewed resume, recheck each employer posting, and preserve unanswered requirements for review. Nothing is sent to employers.');
+  try {
+    for (const candidate of candidates) {
+      if (missionState.runState === 'Paused' || !hasApiSession()) break;
+      try {
+        const run = await generateDurablePackage(candidate.id, { automatic: true });
+        if (!run || !['Searching', 'Preparing', 'Finished', 'Waiting for You'].includes(run.status)) break;
+      } catch (error) {
+        addMessage('assistant', `<strong>Application preparation needs attention.</strong><br>${escapeHtml(error.message)} Your matches and existing drafts remain saved.`);
+        break;
+      }
+    }
+  } finally { preparingMatches = false; renderAll(); }
 }
 
 async function renderDurablePackage(roleId) {
@@ -655,20 +738,106 @@ async function renderDurablePackage(roleId) {
   return data.run;
 }
 
-function openPackageReview(role) {
+let packageAutosave = null;
+let packageReviewReturnFocus = null;
+let packageReviewTab = 'resume';
+
+function packageReviewDocuments() {
+  return { resumeText: $('packageResumeText').value, coverLetterText: $('packageCoverText').value };
+}
+
+function setPackageReviewSaveState(state) {
+  const labels = { pending: 'Saving soon…', saving: 'Saving…', saved: 'Saved', error: 'Couldn’t save. Keep this page open.' };
+  $('packageSaveStatus').textContent = labels[state];
+  $('packageSaveStatus').dataset.state = state;
+  if (state === 'saving') $('packageArtifactActions').replaceChildren();
+  $('savePackageReview').hidden = state !== 'error';
+}
+
+function updatePackageReviewGuidance(role) {
+  const draft = role.packageDraft;
+  $('packageReviewStatus').textContent = draft.artifacts?.length
+    ? 'Your DOCX/PDF files are available below. Review the text and file layout before using them.'
+    : 'Your draft text is ready to review. Downloadable document files are not ready yet.';
+  $('packageReviewGuidance').replaceChildren(...draftReviewGuidance(draft).map(text => {
+    const item = document.createElement('li'); item.textContent = text; return item;
+  }));
+}
+
+function setPackageReviewTab(tab, focus = false) {
+  packageReviewTab = tab === 'cover' && !$('packageCoverTab').hidden ? 'cover' : 'resume';
+  for (const name of ['resume', 'cover']) {
+    const selected = name === packageReviewTab;
+    const button = $(name === 'resume' ? 'packageResumeTab' : 'packageCoverTab');
+    button.setAttribute('aria-selected', String(selected)); button.tabIndex = selected ? 0 : -1;
+    $(name === 'resume' ? 'packageResumeWrap' : 'packageCoverWrap').hidden = !selected;
+    if (selected && focus) button.focus();
+  }
+  $('copyPackageText').textContent = packageReviewTab === 'resume' ? 'Copy resume' : 'Copy cover letter';
+  $('packageReviewTitle').textContent = packageReviewTab === 'resume' ? 'Check your resume' : 'Check your cover letter';
+  const drafts = deskState.roles.filter(item => item.packageDraft?.resumeText);
+  const position = drafts.findIndex(item => item.id === activePackageRoleId);
+  $('packageReviewPosition').textContent = `Job ${position + 1} of ${drafts.length}`;
+  $('nextPackageReview').textContent = packageReviewTab === 'resume' && !$('packageCoverTab').hidden
+    ? 'Review cover letter' : position < drafts.length - 1 ? 'Review next job' : 'Save and return to jobs';
+}
+
+async function openPackageReview(role) {
   if (!role?.packageDraft) return;
+  if (packageAutosave && !(await packageAutosave.flush())) return;
+  packageAutosave?.dispose();
+  if (!$('packageReviewOverlay').classList.contains('open')) packageReviewReturnFocus = document.activeElement;
+  closeJobs();
   activePackageRoleId = role.id;
-  $('packageReviewTitle').textContent = `${role.employer} — ${role.title}`;
-  $('packageReviewStatus').textContent = role.packageDraft.atsIssues?.length
-    ? `Needs your review: ${role.packageDraft.atsIssues.join(', ')}`
-    : role.packageDraft.artifacts?.length
-      ? 'DOCX/PDF text order, integrity, and page count passed. Isolated visual-render evidence is still required before Package Ready.'
-      : 'ATS text checks passed. Generate fresh DOCX/PDF files after any edit; visual-render evidence is still required.';
+  $('packageReviewJob').textContent = `${role.employer} · ${role.title}`;
+  $('packageMoreOptions').open = false;
+  updatePackageReviewGuidance(role);
   $('packageResumeText').value = role.packageDraft.resumeText || '';
   $('packageCoverText').value = role.packageDraft.coverLetterText || '';
-  $('packageCoverWrap').hidden = !role.packageDraft.coverLetterText;
+  $('packageCoverTab').hidden = !role.packageDraft.coverLetterText;
+  $('packageCopyStatus').textContent = '';
+  setPackageReviewTab('resume');
+  setPackageReviewSaveState('saved');
+  const writeRevision = createRevisionWriter({
+    getRole: () => deskState.roles.find(item => item.id === role.id),
+    submit: (base, snapshot) => reviseDurablePackage(base, snapshot.resumeText, snapshot.coverLetterText),
+    readRun: async id => {
+      const response = await fetchWithTimeout(`/api/application-packages?id=${encodeURIComponent(id)}`, { headers: apiAuthorizationHeaders() }, REQUEST_TIMEOUTS.persistence);
+      if (!response.ok) throw new Error('Saved revision is unavailable.');
+      return (await response.json()).run;
+    },
+    apply: applyDurablePackageRun,
+  });
+  packageAutosave = createDraftAutosave({
+    initial: packageReviewDocuments(), read: packageReviewDocuments, onState: setPackageReviewSaveState,
+    save: async snapshot => {
+      const resumeText = sanitizeResumeText(snapshot.resumeText);
+      const coverLetterText = sanitizeResumeText(snapshot.coverLetterText);
+      if (resumeText.length < 500) {
+        $('packageReviewStatus').textContent = 'Your resume needs more detail before it can be saved. Keep at least 500 characters.';
+        throw new Error('Resume is too short.');
+      }
+      await writeRevision({ resumeText, coverLetterText });
+      const updatedRole = deskState.roles.find(item => item.id === role.id);
+      updatePackageReviewGuidance(updatedRole);
+      // Files belong to the previous document version until this revision returns new ones.
+      $('packageArtifactActions').innerHTML = (updatedRole.packageDraft.artifacts || []).map(artifact => `<button type="button" data-package-artifact="${escapeHtml(artifact.key)}">Download ${escapeHtml(artifact.key.replace('_', ' ').toUpperCase())}</button>`).join('');
+    },
+  });
   $('packageArtifactActions').innerHTML = (role.packageDraft.artifacts || []).map(artifact => `<button type="button" data-package-artifact="${escapeHtml(artifact.key)}">Download ${escapeHtml(artifact.key.replace('_', ' ').toUpperCase())}</button>`).join('');
+  let manualPanel = $('packageLocalApplication');
+  if (!manualPanel) { manualPanel = document.createElement('p'); manualPanel.id = 'packageLocalApplication'; $('packageArtifactActions').after(manualPanel); }
+  manualPanel.replaceChildren();
+  const destination = safeEmployerDestination(role.directEmployerUrl);
+  const existingSession = durableApplicationSessions.find(session => session.packageRunId === role.packageRunId);
+  const canOpen = !existingSession || Boolean(localApplicationRoute(existingSession).href);
+  if (destination && canOpen) {
+    const link = document.createElement('a'); link.href = destination.href; link.target = '_blank'; link.rel = 'noopener noreferrer';
+    link.textContent = 'Open employer application manually';
+    manualPanel.append(link, document.createTextNode(' — review the draft first. Opening the page does not upload documents, fill fields or submit an application.'));
+  }
   $('packageReviewOverlay').classList.add('open');
+  $('packageResumeTab').focus();
 }
 
 async function downloadPrivatePackageArtifact(role, artifactKey, button) {
@@ -688,7 +857,14 @@ async function downloadPrivatePackageArtifact(role, artifactKey, button) {
   } finally { button.disabled = false; }
 }
 
-function closePackageReview() { $('packageReviewOverlay').classList.remove('open'); activePackageRoleId = ''; }
+async function closePackageReview() {
+  if (packageAutosave && !(await packageAutosave.flush())) { $('savePackageReview').focus(); return false; }
+  packageAutosave?.dispose(); packageAutosave = null;
+  $('packageReviewOverlay').classList.remove('open'); activePackageRoleId = '';
+  if (packageReviewReturnFocus?.isConnected && packageReviewReturnFocus.getBoundingClientRect().width) packageReviewReturnFocus.focus();
+  else $('openJobs')?.focus();
+  return true;
+}
 
 function stableClientHash(value) {
   let hash = 2166136261;
@@ -707,7 +883,6 @@ async function reviseDurablePackage(role, resumeText, coverLetterText) {
   }, 55000);
   const data = await response.json().catch(() => ({}));
   if (!response.ok && response.status !== 202) throw new Error(data.error || 'The edited package could not be revalidated.');
-  applyDurablePackageRun(data.run);
   return data.run;
 }
 
@@ -752,12 +927,18 @@ async function loadSessionCapabilities() {
 }
 
 function initializeAccountWorkflowAuthority() {
-  if (!accountWorkflowIsAuthoritative()) return;
+  if (!accountWorkflowIsAuthoritative() || LOCAL_APPLICATION_UI_FIXTURE || LOCAL_SUBSCRIBER_UI_FIXTURE) return;
+  const accountEmail = String(loadJson('1ststep_sub_cache', {}).email || '').trim().toLowerCase();
+  const retainedResume = reviewedResumeInPage && (!reviewedResumeInPage.accountEmail || reviewedResumeInPage.accountEmail === accountEmail)
+    ? { ...reviewedResumeInPage, accountEmail } : null;
   clearBrowserWorkflowCopies();
   for (const key of RESUME_KEYS) {
     localStorage.removeItem(key);
     sessionStorage.removeItem(key);
   }
+  reviewedResumeInPage = retainedResume;
+  if (retainedResume) sessionStorage.setItem('1ststep_resume', retainedResume.value);
+  else { $('resumeEditor').value = ''; $('resumeFile').value = ''; }
   missionState = { mission: {}, messages: [], discovery: { status: 'idle' }, runState: null };
   deskState = createDeskState({});
   campaignStore = createCampaignStore({});
@@ -775,6 +956,8 @@ async function hydrateOperationalMetrics() {
     const data = await response.json().catch(() => ({}));
     operationalMetrics = response.ok && data.contentFree === true ? data : { unavailable: true };
   } catch { operationalMetrics = { unavailable: true }; }
+  renderLiveCosts();
+  renderSystemAlerts();
 }
 
 function hasJobAgentAccess() { return sessionCapabilities.jobAgentAccess === true; }
@@ -959,6 +1142,8 @@ async function hydrateDurableBrowserHandoff(applicationSessionId) {
 async function startDurableBrowserHandoff() {
   const session = activeDurableApplicationSession();
   if (!session) throw new Error('No saved application step is selected.');
+  if (executionPreferences.get(session.id) !== 'cloud') throw new Error('Choose the cloud browser option explicitly before starting paid browser execution.');
+  if (!localApplicationRoute(session).href) throw new Error('Reconcile the existing application before starting another browser session.');
   durableBrowserHandoff = { ...durableBrowserHandoff, applicationSessionId: session.id, status: 'starting', error: '' };
   renderApplicationWorkspace();
   const response = await fetchWithTimeout('/api/employer-browser-session', {
@@ -988,7 +1173,7 @@ async function closeDurableBrowserHandoff() {
 function renderAgentAccessState() {
   const active = hasJobAgentAccess();
   const pilotInviteRequired = sessionCapabilities.pilotAccess?.code === 'JOB_AGENT_PILOT_INVITE_REQUIRED';
-  if ($('openAgentAccess')) $('openAgentAccess').textContent = active ? 'Job Agent active' : pilotInviteRequired ? 'Pilot invite required' : 'Sign in';
+  if ($('openAgentAccess')) $('openAgentAccess').textContent = active ? 'Account access enabled' : pilotInviteRequired ? 'Pilot invite required' : 'Sign in';
   if ($('deleteAccountData')) $('deleteAccountData').textContent = 'Delete Job Agent cloud data';
   if (!$('startJobSearch')) return;
   const missionActive = Boolean(missionState.mission?.role);
@@ -1005,6 +1190,7 @@ async function loadPublicAppConfig() {
     publicAppConfig = {
       authentication: {
         restoreAccessAvailable: data.authentication?.restoreAccessAvailable === true,
+        clerkAvailable: data.authentication?.clerk?.enabled === true,
       },
     };
   } catch {
@@ -1013,6 +1199,10 @@ async function loadPublicAppConfig() {
 }
 
 function openAgentAccess() {
+  if (publicAppConfig.authentication.clerkAvailable && !hasApiSession()) {
+    location.assign('/login.html');
+    return;
+  }
   agentRestoreChallenge = '';
   $('agentAccessCode').hidden = true;
   $('agentAccessCodeLabel').hidden = true;
@@ -1074,17 +1264,20 @@ function renderJobAgentPolicyBundle(bundle = sessionCapabilities.jobAgentConsent
   $('jobAgentConsentScope').replaceChildren(...disclosure.scope.map(item => {
     const paragraph = document.createElement('p'); paragraph.textContent = item; return paragraph;
   }));
+  const combined = $('jobAgentConsentChecks')?.querySelector('input[name="allConsentAccepted"]')?.nextElementSibling;
+  if (!combined) return false;
+  combined.replaceChildren();
   for (const item of attestations) {
-    const span = $(`jobAgentConsentChecks`)?.querySelector(`input[name="${item.id}"]`)?.nextElementSibling;
-    if (!span) return false;
-    span.replaceChildren();
+    const statement = document.createElement('span');
     const link = item.link;
     if (link && ['/terms', '/privacy'].includes(link.href) && item.statement.includes(link.label)) {
       const [before, ...after] = item.statement.split(link.label);
-      span.append(document.createTextNode(before));
-      const anchor = document.createElement('a'); anchor.href = link.href; anchor.target = '_blank'; anchor.rel = 'noopener noreferrer'; anchor.textContent = link.label;
-      span.append(anchor, document.createTextNode(after.join(link.label)));
-    } else span.textContent = item.statement;
+      statement.append(document.createTextNode(before));
+      const anchor = document.createElement('a');
+      anchor.href = link.href; anchor.target = '_blank'; anchor.rel = 'noopener noreferrer'; anchor.textContent = link.label;
+      statement.append(anchor, document.createTextNode(after.join(link.label)));
+    } else statement.textContent = item.statement;
+    combined.append(statement, document.createTextNode(' '));
   }
   if (typeof disclosure.safetyNotice === 'string') $('jobAgentConsentMessage').textContent = disclosure.safetyNotice;
   return true;
@@ -1218,11 +1411,11 @@ async function submitJobAgentConsent(event) {
   message.textContent = 'Saving your encrypted authorization…';
   try {
     const form = new FormData(event.currentTarget);
+    const accepted = form.get('allConsentAccepted') === 'on';
     const response = await fetchWithTimeout('/api/job-agent-consent', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID(), ...apiAuthorizationHeaders() },
       body: JSON.stringify({ action: 'grant', version: sessionCapabilities.jobAgentConsentVersion, attestations: {
-        age18OrOlder: form.get('age18OrOlder') === 'on', termsAccepted: form.get('termsAccepted') === 'on',
-        privacyAcknowledged: form.get('privacyAcknowledged') === 'on', candidateAuthorizationAccepted: form.get('candidateAuthorizationAccepted') === 'on',
+        age18OrOlder: accepted, termsAccepted: accepted, privacyAcknowledged: accepted, candidateAuthorizationAccepted: accepted,
       } }),
     }, REQUEST_TIMEOUTS.persistence);
     const data = await response.json().catch(() => ({}));
@@ -1271,9 +1464,13 @@ async function signOutAgent(allDevices = false) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || 'Could not sign out safely.');
   clearSignedAccessState();
+  if (publicAppConfig.authentication.clerkAvailable) location.assign('/login.html?mode=sign-out');
 }
 
 function clearSignedAccessState() {
+  reviewedResumeInPage = null;
+  $('resumeEditor').value = '';
+  $('resumeFile').value = '';
   const cache = loadJson('1ststep_sub_cache', {});
   localStorage.setItem('1ststep_sub_cache', JSON.stringify({ email: cache.email || '', tier: 'free', ts: Date.now(), status: 'signed_out' }));
   sessionCapabilities = { adminConsole: false, jobAgentAccess: false, tier: 'free', checked: true, authentication: 'none', expiresAt: null, pilotAccess: null, jobAgentConsent: null, jobAgentConsentPolicyConfigured: null, jobAgentConsentVersion: 0 };
@@ -1450,6 +1647,17 @@ function guidedStageIsReady(stage = GUIDED_LAUNCH_STAGES[guidedLaunchStep]) {
   return true;
 }
 
+// The overlay is its own scroll container (position:fixed; overflow:auto).
+// Without this, advancing a step kept the previous step’s scroll offset and
+// the new heading opened below the fold.
+let guidedLaunchRenderedStage = null;
+
+function resetGuidedLaunchScroll(overlay) {
+  if (!overlay) return;
+  overlay.scrollTop = 0;
+  overlay.scrollLeft = 0;
+}
+
 function renderGuidedLaunch() {
   const overlay = $('guidedLaunchOverlay');
   if (!overlay) return;
@@ -1461,6 +1669,12 @@ function renderGuidedLaunch() {
     node.classList.toggle('active', active);
     node.hidden = !active;
   });
+  if (!guidedLaunchOpen) {
+    guidedLaunchRenderedStage = null;
+  } else if (guidedLaunchRenderedStage !== stage) {
+    guidedLaunchRenderedStage = stage;
+    resetGuidedLaunchScroll(overlay);
+  }
   $('guidedLaunchProgress').value = guidedLaunchStep + 1;
   $('guidedLaunchProgressText').textContent = `${guidedLaunchStep + 1} of ${GUIDED_LAUNCH_STAGES.length}`;
   $('guidedLaunchBack').disabled = guidedLaunchStep === 0;
@@ -1475,24 +1689,45 @@ function renderGuidedLaunch() {
   });
   if (stage === 'review') {
     const path = selectedOpportunityPath();
+    const resumeReady = hasResume();
     const goalLabels = { 'best-fit': 'Best long-term fit', fast: 'Land a job sooner', explore: 'Explore better opportunities' };
     const salary = guidedSelection.salary ? `$${Math.round(guidedSelection.salary / 1000)}K+` : 'Any salary';
     const location = guidedSelection.workMode === 'Remote' ? 'United States remote' : ($('launchLocation').value.trim() || guidedSelection.location || 'Location needed');
     $('guidedLaunchReview').innerHTML = [
       ['Goal', goalLabels[guidedSelection.goal] || 'Not selected'],
+      ['Resume', resumeReady ? 'Ready' : 'Needed before starting'],
       ['Job path', path?.label || 'Not selected'],
       ['Work', `${guidedSelection.workMode} · ${location}`],
       ['Job type', guidedSelection.employmentType],
       ['Minimum salary', salary],
     ].map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
+    const locationReady = guidedSelection.workMode === 'Remote' || Boolean($('launchLocation').value.trim() || guidedSelection.location);
+    const blocker = !resumeReady
+      ? 'Add your resume before starting. This keeps the agent from guessing about your experience.'
+      : !path
+        ? 'Choose a job path before starting.'
+        : !locationReady
+          ? 'Add a city or commuting area before starting.'
+          : '';
+    $('startJobSearchBlocker').hidden = !blocker;
+    $('startJobSearchHelp').textContent = blocker;
+    $('reviewAddResume').hidden = resumeReady;
+    $('startJobSearch').disabled = Boolean(blocker);
   }
 }
 
 function openGuidedLaunch(options = {}) {
   if (Number.isInteger(options.step)) guidedLaunchStep = Math.min(6, Math.max(0, options.step));
+  if (guidedLaunchStep > 1 && !hasResume()) guidedLaunchStep = 1;
   guidedLaunchOpen = true;
   renderMission();
-  setTimeout(() => document.querySelector('[data-guided-stage].active button:not([disabled]), [data-guided-stage].active input')?.focus(), 0);
+  setTimeout(() => {
+    const overlay = $('guidedLaunchOverlay');
+    resetGuidedLaunchScroll(overlay);
+    const target = document.querySelector('[data-guided-stage].active button:not([disabled]), [data-guided-stage].active input');
+    // preventScroll: focusing the first control used to scroll the heading out of view.
+    target?.focus({ preventScroll: true });
+  }, 0);
 }
 
 function closeGuidedLaunch() {
@@ -1557,9 +1792,9 @@ function renderOpportunityPaths() {
   }).join('');
   const scan = missionState.pathScan;
   $('pathEvidence').textContent = scan?.status === 'complete'
-    ? `Compared ${scan.jobsScanned} current postings across ${scan.sourcesChecked} connected direct-employer feeds and ${OPPORTUNITY_PATHS.length} job paths. Your observed rate appears after 5 receipt-verified applications and is not labeled reliable before 20.`
+    ? `${scan.partial ? 'Some sources could not finish. You can compare again; these results are partial. ' : ''}Compared ${scan.jobsScanned} current postings across ${scan.sourcesChecked} connected direct-employer feeds and ${OPPORTUNITY_PATHS.length} job paths. Your observed rate appears after 5 receipt-verified applications and is not labeled reliable before 20.`
     : scan?.status === 'error'
-      ? `Live comparison needs attention: ${scan.message}. Starter paths remain available.`
+      ? `Live comparison needs attention: ${String(scan.message || '').replace(/[.!?]+$/, '')}. Starter paths remain available.`
       : 'Starter paths come from your confirmed experience. Live opening counts appear only after a direct-employer feed scan.';
   const locationReady = guidedSelection.workMode === 'Remote' || Boolean($('launchLocation').value.trim() || guidedSelection.location);
   $('startJobSearch').disabled = !guidedSelection.pathId || !hasResume() || !locationReady;
@@ -1594,7 +1829,7 @@ async function scanOpportunityPaths() {
     if (!response.ok) throw new Error(data.error || 'Live path comparison is unavailable');
     const ranked = rankOpportunityPaths({ jobs: data.jobs || [], supplyByPath: data.supplyByPath || {}, outcomes: mergeAuthoritativeOutcomeEvidence(deskState.acquisitionOutcomes, durableApplicationSessions), profile: deskState.truthProfile, resumeText: savedResumeText() });
     missionState.pathScan = {
-      status: 'complete', checkedAt: new Date().toISOString(), jobsScanned: Number(data.filterSummary?.scanned) || (data.jobs || []).length,
+      status: 'complete', partial: data.partial === true || data.status === 'partial', checkedAt: new Date().toISOString(), jobsScanned: Number(data.filterSummary?.scanned) || (data.jobs || []).length,
       sourcesChecked: (data.sourceSummary || []).filter(source => ['ok', 'partial'].includes(source.status)).length,
       recommendations: ranked.map(path => ({
         id: path.id, label: path.label, searchRole: path.searchRole, rankScore: path.rankScore,
@@ -1653,6 +1888,9 @@ function saveResumeText(text, source, fileName = '') {
   if (clean.length < 100) throw new Error('Add at least 100 characters so there is enough resume content to use.');
   const value = JSON.stringify({ source, text: clean, fileName, savedAt: new Date().toISOString() });
   sessionStorage.setItem('1ststep_resume', value);
+  if (source !== 'secure-vault') reviewedResumeInPage = {
+    value, accountEmail: String(loadJson('1ststep_sub_cache', {}).email || '').trim().toLowerCase(),
+  };
   localStorage.removeItem('1ststep_resume');
   try { window.postMessage({ source: 'app', action: 'SYNC_PROFILE' }, '*'); } catch { /* extension not installed */ }
   return clean;
@@ -1711,6 +1949,16 @@ function showDeskMessage(message = '', error = false) {
 function safeAction(action) {
   try { showDeskMessage(); action(); saveAll(); renderAll(); return true; }
   catch (error) { showDeskMessage(error.message, true); return false; }
+}
+
+// Indeterminate "still working" affordance for long-running scans.
+// No percentage and no ETA: a feed scan has no measurable completion ratio,
+// so a numeric bar would be invented progress.
+function workingIndicator(label) {
+  return `<div class="agent-working" role="status" aria-live="polite">`
+    + `<span class="agent-working-track" aria-hidden="true"></span>`
+    + `<span class="agent-working-label">${escapeHtml(label)}</span>`
+    + `</div>`;
 }
 
 function addMessage(role, html, persist = true) {
@@ -1787,7 +2035,7 @@ async function askSmartConcierge(input) {
     resumeAvailable: hasResume(), recommendedPriority: guidance.priority,
     productionCapabilities: { publicEmployerFeedDiscovery: true, externalSubmission: false, managedApplicationWorkspace: 'simulated' },
   };
-  const pending = addMessage('assistant', '<strong>Reviewing your mission and deciding the best next step…</strong>', false);
+  const pending = addMessage('assistant', '<strong>Reviewing your mission and deciding the best next step…</strong>' + workingIndicator('Thinking…'), false);
   try {
     const reply = await callAI('concierge', 'fast', `<concierge_state>${escapeXmlData(JSON.stringify(stateSummary))}</concierge_state>\n<user_request>${escapeXmlData(redactChatForModel(input))}</user_request>`, 350);
     pending.remove();
@@ -1804,7 +2052,13 @@ async function discoverMatchingJobs() {
   missionState.runState = 'Searching';
   missionState.discovery = { status: 'searching', checkedAt: new Date().toISOString(), requestId: previousRequestId };
   saveAll(); renderMission();
-  const pending = addMessage('assistant', '<strong>Checking free direct-employer feeds now…</strong><br>A broad scan usually takes 10–25 seconds. I’ll keep only mission matches and suppress duplicates. External applications remain disabled.', false);
+  // The scan is bounded by a shared server deadline and a longer browser
+  // allowance, so it always ends - either complete, or partial with whatever
+  // was verified in time. The copy promises that behaviour, not a duration.
+  const pending = addMessage('assistant', '<strong>Checking free direct-employer feeds now…</strong>'
+    + '<br>I’ll keep only mission matches and suppress duplicates. If a feed is slow I stop waiting and show whatever was verified by then, clearly marked as partial. External applications remain disabled.'
+    + workingIndicator('Searching employer feeds…'), false);
+  pending.setAttribute('aria-busy', 'true');
   $('agentRunState').textContent = 'Checking public employer feeds';
   try {
     const headers = apiAuthorizationHeaders();
@@ -1827,7 +2081,7 @@ async function discoverMatchingJobs() {
         missionState.runState = durableRun.status === 'Failed' ? 'Paused' : durableRun.status;
         missionState.discovery = { ...missionState.discovery, status: 'queued', checkedAt: new Date().toISOString(), requestId };
         saveAll(); renderMission();
-        addMessage('assistant', '<strong>Your search run is safely queued.</strong><br>It can be retried from its durable checkpoint if a feed is slow or temporarily unavailable. Nothing was submitted.<div class="quick"><button data-prompt="Retry job discovery">Check again</button></div>');
+        addMessage('assistant', '<strong>Your search is safely queued.</strong><br>If a job source is slow or temporarily unavailable, the search can be retried from its saved progress. Nothing was submitted.<div class="quick"><button data-prompt="Retry job discovery">Check again</button></div>');
         setTimeout(() => refreshDurableDiscovery(durableRun.id), 5000);
         return;
       }
@@ -1878,16 +2132,26 @@ async function discoverMatchingJobs() {
     }
     if (missionState.runState !== 'Paused') missionState.runState = 'Preparing';
     saveAll(); renderAll();
-    const checked = (data.sourceSummary || []).filter(source => ['ok', 'partial'].includes(source.status)).length;
-    missionState.discovery = { status: 'complete', checkedAt: new Date().toISOString(), sourcesChecked: checked, matches: added, duplicates, rejectedByMission, rejectedByQualityFloor, requestId, durableRunId: durableRun?.id || null };
+    const sourceSummary = data.sourceSummary || [];
+    const checked = sourceSummary.filter(source => ['ok', 'partial'].includes(source.status)).length;
+    // A run is partial when the server said so, or when any source did not finish.
+    const degraded = sourceSummary.filter(source => !['ok'].includes(source.status)).length;
+    const isPartial = data.partial === true || data.status === 'partial' || degraded > 0;
+    missionState.discovery = { status: 'complete', partial: isPartial, sourcesChecked: checked, sourcesDegraded: degraded, checkedAt: new Date().toISOString(), matches: added, duplicates, rejectedByMission, rejectedByQualityFloor, requestId, durableRunId: durableRun?.id || null };
     saveAll(); renderMission();
+    // Partial coverage is stated plainly rather than being hidden behind a
+    // healthy-looking match count. The matches shown were still verified.
+    const coverageNote = isPartial
+      ? '<div class="coverage-note"><strong>This search was incomplete.</strong> Some sources or requisition checks could not finish. Available matches are preserved and still need the review described above. You can retry the search; missing results are not guaranteed.</div>'
+      : '';
     const topMatches = missionJobs.slice(0, 5).map(job => {
       const details = [job.employmentType, job.workplaceType || job.location].filter(Boolean).map(escapeHtml).join(' · ');
       const fit = evaluateCandidateFit({ ...job, requirements: extractStructuredRequirements(job) }, deskState.truthProfile, mission);
       if (!fit.credibleInterviewPath) return '';
       return `<a class="job-match" href="${escapeHtml(job.applyUrl)}" target="_blank" rel="noopener noreferrer"><strong>${escapeHtml(job.title)}</strong><span>${escapeHtml(job.employer)}${details ? ` · ${details}` : ''} · ${fit.score}/100 ${escapeHtml(fit.classification)}</span></a>`;
     }).join('');
-    addMessage('assistant', `<strong>Found ${added} credible mission match${added === 1 ? '' : 'es'} across ${checked} direct-employer feed${checked === 1 ? '' : 's'}.</strong><br>${duplicates} duplicate${duplicates === 1 ? ' was' : 's were'} suppressed; ${rejectedByMission} off-mission role${rejectedByMission === 1 ? ' was' : 's were'} withheld; ${rejectedByQualityFloor} role${rejectedByQualityFloor === 1 ? ' was' : 's were'} held below the 70-point application floor. Verified fit and your observed outcomes outrank the daily quota. These roles are Found—not Submitted—and still require exact direct-page, geography, travel, schedule, and gap verification.${topMatches ? `<div class="job-matches">${topMatches}</div>` : ''}<div class="quick"><button data-prompt="Show my jobs">Review all matches</button><button data-prompt="Review my current mission">Review mission</button></div>`);
+    addMessage('assistant', `<strong>Found ${added} matching job${added === 1 ? '' : 's'} across ${checked} direct-employer job feed${checked === 1 ? '' : 's'}.</strong><br>Skipped ${duplicates} duplicate${duplicates === 1 ? '' : 's'}, ${rejectedByMission} job${rejectedByMission === 1 ? '' : 's'} outside your search requirements, and ${rejectedByQualityFloor} job${rejectedByQualityFloor === 1 ? '' : 's'} below the minimum application score of 70 points. Verified fit and your observed outcomes matter more than application volume. These roles are Found—not Submitted—and still need checks of the exact employer job page, location, travel, schedule, and any missing requirements.${topMatches ? `<div class="job-matches">${topMatches}</div>` : ''}${coverageNote}<div class="quick">${isPartial ? '<button data-prompt="Retry job discovery">Search the missing feeds again</button>' : ''}<button data-prompt="Show my jobs">Review all matches</button><button data-prompt="Review my current mission">Review search requirements</button></div>`);
+    await prepareDiscoveredApplications();
   } catch (error) {
     pending.remove();
     missionState.runState = 'Paused';
@@ -1936,7 +2200,7 @@ function parseCareerStoryResponse(text) {
 async function processCareerStory(input) {
   careerStoryActive = false;
   $('messageInput').placeholder = 'I need 30 remote procurement jobs, $110k+, using my saved resume';
-  const pending = addMessage('assistant', '<strong>Organizing your story into reviewable resume facts…</strong>', false);
+  const pending = addMessage('assistant', '<strong>Organizing your story into reviewable resume facts…</strong>' + workingIndicator('Organizing…'), false);
   try {
     const extracted = parseCareerStoryResponse(await callAI(
       'profileExtractor', 'fast', `<career_story>${escapeXmlData(input)}</career_story>`, 900,
@@ -2034,18 +2298,51 @@ function runStateSummary(state, detailed = detailedRunState(state)) {
 
 function renderRunState() {
   const state = currentRunState();
+  const evidence = simpleAgentStatus();
+  const unconfirmed = !['Paused', 'Needs you'].includes(evidence.label) && ['waiting', 'idle', 'unknown', 'attention'].includes(evidence.tone);
   const detailed = detailedRunState(state);
   const activeIndex = RUN_STATES.indexOf(state);
   document.querySelectorAll('[data-run-state]').forEach((node, index) => {
-    node.classList.toggle('active', node.dataset.runState === state);
-    node.classList.toggle('complete', activeIndex > 0 && index < activeIndex && state !== 'Paused');
+    node.classList.toggle('active', !unconfirmed && node.dataset.runState === state);
+    node.classList.toggle('complete', !unconfirmed && activeIndex > 0 && index < activeIndex && state !== 'Paused');
   });
-  $('runStateSummary').textContent = runStateSummary(state, detailed);
+  $('runStateSummary').textContent = `${evidence.label} · ${evidence.detail}`;
+  if (sessionCapabilities.adminConsole && /^[A-Z][A-Z0-9_]{0,79}$/.test(durableRun?.lastErrorCode || '')) {
+    $('runStateSummary').textContent += ` · Support code: ${durableRun.lastErrorCode}`;
+  }
   const verifiedAt = durableRun?.result?.completedAt || [...(durableRun?.events || [])].reverse().find(item => ['RUN_COMPLETED', 'RUN_PARTIALLY_COMPLETED'].includes(item.type))?.at || null;
   const nextRunAt = jobAgentSchedule.schedule?.status === 'active' ? jobAgentSchedule.schedule.nextRunAt : durableRun?.nextRetryAt;
   $('runStateTiming').textContent = `${verifiedAt ? `Last verified activity ${relativeActivityTime(verifiedAt)}` : 'No completed activity inferred'} · ${nextRunAt ? `next run ${new Date(nextRunAt).toLocaleString()}` : 'no scheduled run'}`;
   $('pauseRun').hidden = !state || ['Paused', 'Finished'].includes(state);
   $('resumeRun').hidden = !['Paused', 'Failed Safely', 'Partially Completed'].includes(detailed);
+  renderSimpleAgentStatus();
+}
+
+let statusCheckUnavailable = false;
+function simpleAgentStatus() {
+  return jobAgentStatus({ run: durableRun, discovery: missionState.discovery,
+    paused: missionState.runState === 'Paused', needsYou: currentRunState() === 'Waiting for You',
+    unavailable: statusCheckUnavailable });
+}
+function renderSimpleAgentStatus() {
+  const status = simpleAgentStatus();
+  $('agentRunState').textContent = status.label;
+  $('agentRunState').dataset.tone = status.tone;
+  $('agentStatusDetail').textContent = status.detail;
+  $('agentStatusSeen').textContent = status.last ? `Last recorded update: ${relativeActivityTime(status.last)}` : 'No worker activity confirmed yet';
+}
+async function checkSimpleAgentStatus(announce = false) {
+  const button = $('checkAgentStatus');
+  if (button.disabled) return;
+  button.disabled = true; button.textContent = 'Checking…';
+  try {
+    if (hasApiSession() && hasJobAgentAccess()) statusCheckUnavailable = !(await hydrateDurableRun());
+    renderRunState();
+    if (announce) {
+      const status = simpleAgentStatus();
+      addMessage('assistant', `<strong>${escapeHtml(status.label)}</strong><br>${escapeHtml(status.detail)}`);
+    }
+  } finally { button.disabled = false; button.textContent = 'Check status'; }
 }
 
 function relativeActivityTime(value) {
@@ -2124,17 +2421,54 @@ function allNeedsYouActions() {
   return [...dueFollowUps, ...durableActions, ...localActions, ...syncedActions];
 }
 
+function needsYouNextStep(item, role) {
+  const packageReview = !item.durable && item.type === 'NEW_QUESTION' && /package|draft|UNMAPPED|OUTPUT_CLAIM/i.test(item.summary || '');
+  if (packageReview) return {
+    packageReview: true, title: 'Check your resume draft', button: role?.packageDraft ? 'Review resume draft' : 'Find saved draft',
+    summary: 'Compare the draft with your original resume. Correct or remove any experience, skills, or results you cannot support.',
+  };
+  const button = ({ LOGIN: 'Continue sign-in', OTP: 'Enter one-time code', CAPTCHA: 'Complete security check',
+    TRANSMISSION_APPROVAL: 'Review sharing', SUBMISSION_APPROVAL: 'Review submission', FOLLOW_UP_DUE: 'Review follow-up',
+    MISSING_FACT: 'Answer question', NEW_QUESTION: 'Answer question' })[item.type] || 'Review next step';
+  const summary = /[A-Z]{2,}_[A-Z_]+/i.test(item.summary || '')
+    ? 'Open this step to review what is missing and continue your application.'
+    : item.summary || 'Open this step to review what is missing and continue your application.';
+  const secureStep = ['LOGIN', 'OTP', 'CAPTCHA', 'PASSWORD_RESET', 'PASSWORD_RESET_PENDING'].includes(item.type);
+  return { title: needsYouKind(item.type), button, summary: secureStep
+    ? `${summary} Your progress is saved. Return here after this step to continue.` : summary };
+}
+
 function renderNeedsYouQueue() {
   const actions = allNeedsYouActions();
+  $('attentionNow').hidden = actions.length === 0;
+  document.body.classList.toggle('needs-attention', actions.length > 0);
   $('headerNeedsYouCount').textContent = actions.length;
   $('headerNeedsYouCount').hidden = actions.length === 0;
   $('needsYouEmpty').hidden = actions.length > 0;
-  $('needsYouList').innerHTML = actions.map(item => {
+  const attentionCards = actions.map(item => {
     const role = deskState.roles.find(entry => entry.id === item.roleId);
     const label = item.roleLabel || (role ? `${role.employer} · ${role.title}` : 'Your job agent');
     const target = item.durable ? `data-review-session="${escapeHtml(item.sessionId)}"` : `data-review-action="${escapeHtml(item.id)}"`;
-    return `<article class="needs-you-item"><div><span>${escapeHtml(needsYouKind(item.type))}</span><strong>${escapeHtml(label)}</strong><small>${escapeHtml(item.summary || 'A secure step needs your attention.')}</small><em>Your saved application will resume after this step.</em></div><button type="button" ${target}>Review</button></article>`;
-  }).join('');
+    const next = needsYouNextStep(item, role);
+    return `<article class="needs-you-item"><div><span>${escapeHtml(next.title)}</span><strong>${escapeHtml(label)}</strong><small>${escapeHtml(next.summary)}</small></div><button type="button" ${target}>${escapeHtml(next.button)}</button></article>`;
+  });
+  const first = actions.find(item => {
+    const role = deskState.roles.find(entry => entry.id === item.roleId);
+    return needsYouNextStep(item, role).packageReview;
+  }) || actions[0];
+  if (first) {
+    const role = deskState.roles.find(entry => entry.id === first.roleId);
+    const label = first.roleLabel || (role ? `${role.employer} · ${role.title}` : 'your application');
+    const next = needsYouNextStep(first, role);
+    $('attentionNowTitle').textContent = actions.length === 1 ? 'One application needs you' : `${actions.length} applications need you`;
+    $('attentionNowSummary').textContent = `${next.title} for ${label}. ${next.summary}`;
+    $('reviewAttentionNow').textContent = next.button;
+    delete $('reviewAttentionNow').dataset.reviewSession;
+    delete $('reviewAttentionNow').dataset.reviewAction;
+    if (first.durable) $('reviewAttentionNow').dataset.reviewSession = first.sessionId;
+    else $('reviewAttentionNow').dataset.reviewAction = first.id;
+  }
+  $('needsYouList').innerHTML = (attentionCards[0] || '') + (attentionCards.length > 1 ? `<details class="application-review-details"><summary>See ${attentionCards.length - 1} other request${attentionCards.length === 2 ? '' : 's'}</summary>${attentionCards.slice(1).join('')}</details>` : '');
 }
 
 function visibleSubscriberRoles(roles = []) {
@@ -2153,11 +2487,14 @@ function subscriberRoles() {
 }
 
 function primaryJobAction(role, applicationSession, status) {
-  if (applicationSession) return `<button class="job-primary-action" type="button" data-job-application-review="${escapeHtml(applicationSession.id)}">${status === 'Needs You' ? 'Review request' : 'View progress'}</button>`;
+  if (applicationSession) return `<button class="job-primary-action" type="button" data-job-application-review="${escapeHtml(applicationSession.id)}">Continue application</button>`;
   if (status === 'Rejected/Closed') return '<span class="job-action-unavailable">Employer role closed</span>';
-  if (role.packageDraft) return `<button class="job-primary-action" type="button" data-job-package-review="${escapeHtml(role.id)}">Review package</button>`;
-  if (['Verified', 'Verified - Package Preparation'].includes(role.status)) return `<button class="job-primary-action" type="button" data-job-package-generate="${escapeHtml(role.id)}">${role.packageRunId ? 'Check package' : 'Prepare package'}</button>`;
-  if (role.status === 'Package Ready') return `<button class="job-primary-action" type="button" data-job-application-start="${escapeHtml(role.id)}">Start application</button>`;
+  if (role.status === 'Package Ready') return `<button class="job-primary-action" type="button" data-job-application-start="${escapeHtml(role.id)}">Continue application</button>`;
+  if (role.packageDraft) return `<button class="job-primary-action" type="button" data-job-package-review="${escapeHtml(role.id)}">Review resume draft</button>`;
+  if (['Verified', 'Verified - Package Preparation'].includes(role.status) || (role.status === 'Found' && role.discoveryRunId && role.applyPathActive === true)) {
+    const retry = preparationRetryAllowed({ status: role.packageRunStatus, lastErrorCode: role.packageRunErrorCode });
+    return `<button class="job-primary-action" type="button" data-job-package-generate="${escapeHtml(role.id)}" data-package-retry="${retry}">${retry ? 'Try preparation again' : role.packageRunId ? 'Continue preparation' : 'Prepare application'}</button>`;
+  }
   const destination = safeEmployerDestination(role.directEmployerUrl);
   return destination ? `<a class="job-primary-action" href="${escapeHtml(destination.href)}" target="_blank" rel="noopener noreferrer">View employer role</a>` : '<span class="job-action-unavailable">No action available</span>';
 }
@@ -2187,21 +2524,26 @@ function renderSubscriberJobs() {
       const role = deskState.roles.find(entry => entry.id === item.roleId);
       const label = item.roleLabel || (role ? `${role.employer} · ${role.title}` : 'Your job agent');
       const target = item.durable ? `data-review-session="${escapeHtml(item.sessionId)}"` : `data-review-action="${escapeHtml(item.id)}"`;
-      return `<article class="simple-job-card needs-card"><header><div><p>${escapeHtml(needsYouKind(item.type))}</p><h4>${escapeHtml(label)}</h4></div><span class="status-badge status-needs-you">Needs You</span></header><p>${escapeHtml(item.summary || 'A secure step needs your attention.')}</p><footer><strong>State preserved</strong><button class="job-primary-action" type="button" ${target}>Review request</button></footer></article>`;
+      const next = needsYouNextStep(item, role);
+      return `<article class="simple-job-card needs-card"><header><div><p>${escapeHtml(next.title)}</p><h4>${escapeHtml(label)}</h4></div><span class="status-badge status-needs-you">Needs You</span></header><p>${escapeHtml(next.summary)}</p><footer><button class="job-primary-action" type="button" ${target}>${escapeHtml(next.button)}</button></footer></article>`;
     }).join('') : '<div class="jobs-empty">Nothing needs you right now. Other safe work can continue.</div>';
     return;
   }
   const filtered = records.filter(item => item.tab === activeJobTab);
   $('jobCards').innerHTML = filtered.length ? filtered.map(({ role, applicationSession, status }) => {
     const salary = compensationRange(role.salaryMin, role.salaryMax);
-    const fit = role.fitScore == null ? 'Match strength unavailable' : `${role.fitScore}/100 match`;
-    const location = role.remoteEligibility || role.geographyEligibility || 'Location eligibility unavailable';
+    const fit = 'Why it matches: ' + (role.matchReasons?.[0] || role.fitReasons?.[0] || 'Check the job requirements against your resume.');
+    const location = role.remoteEligibility || role.geographyEligibility || 'Remote and location eligibility not verified';
     return `<article class="simple-job-card"><header><div><p>${escapeHtml(role.employer || 'Employer unavailable')}</p><h4>${escapeHtml(role.title || 'Job title unavailable')}</h4></div><span class="status-badge ${statusBadgeClass(status)}">${escapeHtml(status)}</span></header><div class="simple-job-meta"><span>${escapeHtml(location)}</span><span>${escapeHtml(salary)}</span></div><footer><strong>${escapeHtml(fit)}</strong>${primaryJobAction(role, applicationSession, status)}</footer></article>`;
   }).join('') : `<div class="jobs-empty">No ${escapeHtml(activeJobTab.toLowerCase())} jobs yet. Unavailable counts remain zero until persisted evidence exists.</div>`;
 }
 
 function openJobs(tab = 'Matches') { activeJobTab = tab; renderSubscriberJobs(); $('jobsOverlay').classList.add('open'); }
-function closeJobs() { $('jobsOverlay').classList.remove('open'); }
+function closeJobs() {
+  const restoreFocus = $('jobsOverlay').contains(document.activeElement);
+  $('jobsOverlay').classList.remove('open');
+  if (restoreFocus) $('openJobs').focus();
+}
 function openNeedsYou() { renderNeedsYouQueue(); $('needsYouOverlay').classList.add('open'); $('closeNeedsYou').focus(); }
 function closeNeedsYou() { $('needsYouOverlay').classList.remove('open'); }
 
@@ -2214,7 +2556,6 @@ function renderAgentConfiguration() {
     : campaign?.schedule?.recurrence || 'Runs when you start or resume it';
   $('configSalary').textContent = mission.salaryMin ? money(mission.salaryMin) : guidedSelection.salary ? money(guidedSelection.salary) : 'No minimum saved';
   $('configLocation').textContent = [...(mission.workModes || [mission.workMode || guidedSelection.workMode]), mission.location || guidedSelection.location].filter(Boolean).join(' · ') || 'Not configured';
-  $('configTarget').textContent = `Goal: up to ${Math.min(50, Math.max(1, Number(dailyGoal.target) || 10))} qualified applications per day, based on matching jobs and plan capacity`;
   $('configApproval').textContent = deskState.autonomy.level === 'prepare_only' ? 'Prepare only · confirm before sharing' : 'Confirm personal-data sharing and final submission';
   $('configNotifications').textContent = jobAgentNotifications.preference?.enabled ? 'In-app + generic email Needs You alert' : 'In-app Needs You queue';
 }
@@ -2230,11 +2571,15 @@ function showToast(message) {
 function openConsequenceDialog(session, action) {
   pendingConsequence = { sessionId: session.id, action, actionId: $('resolveApplication').dataset.applicationActionId || '' };
   lastDialogTrigger = document.activeElement;
-  const information = (session.proposedFields || []).map(item => item.label).filter(Boolean);
+  const model = applicationControlCenterModel(session, { formFields: durableBrowserHandoff.applicationSessionId === session.id ? (durableBrowserHandoff.view?.fields || []) : [] });
+  const information = model.proposedFields.map(item => `${item.label}: ${item.preview}`).filter(Boolean);
   $('confirmationEmployer').textContent = session.role.employer || 'Unavailable';
   $('confirmationRole').textContent = session.role.title || 'Unavailable';
   $('confirmationRequisition').textContent = session.role.requisitionId || 'Not provided by employer';
-  $('confirmationInformation').textContent = information.length ? `${information.join(', ')} and package ${session.documentVersion}` : `Package ${session.documentVersion}`;
+  $('confirmationFacts').textContent = model.facts.map(item => `${item.label}: ${item.value}`).join(' · ');
+  $('confirmationInformation').textContent = information.length ? information.join(' · ') : 'No reusable answers selected';
+  $('confirmationDocument').textContent = session.documentVersion || 'No document selected';
+  $('confirmationEvidence').textContent = `${model.mappedClaims ? `${model.mappedClaims} resume claims linked to source bullets` : 'Resume source links unavailable'}${model.conflicts.length ? ` · Gaps: ${model.conflicts.map(item => item.message).join(' ')}` : ' · No material conflict detected'}`;
   $('confirmationRisk').textContent = action === 'confirm-submission'
     ? finalSubmissionExecutionEnabled
       ? 'This authorizes one final submission attempt for the exact reviewed form. It will not count as Submitted without a verified employer receipt.'
@@ -2260,16 +2605,25 @@ function closeConsequenceDialog() {
 
 function reviewNeedsYouTarget(target) {
   const durableSessionId = target?.dataset?.reviewSession;
-  if (durableSessionId) { closeNeedsYou(); openDurableApplicationWorkspace(durableSessionId); return true; }
+  if (durableSessionId) { closeJobs(); closeNeedsYou(); openDurableApplicationWorkspace(durableSessionId); return true; }
   const actionId = target?.dataset?.reviewAction;
   if (!actionId) return false;
-  const action = deskState.actionQueue.find(item => item.id === actionId);
+  const action = allNeedsYouActions().find(item => item.id === actionId);
+  const role = deskState.roles.find(item => item.id === action?.roleId);
+  const next = needsYouNextStep(action || {}, role);
   const session = activeApplicationSession();
   closeJobs(); closeNeedsYou();
+  if (next.packageReview) {
+    if (role?.packageDraft) openPackageReview(role);
+    else { openJobs('Preparing'); showToast('Choose your saved job to check preparation or open its draft.'); }
+    return true;
+  }
   if (session && (!action?.roleId || action.roleId === session.roleId)) openApplicationWorkspace();
   else {
-    addMessage('assistant', `<strong>This item is saved and waiting for you.</strong><br>${escapeHtml(action?.summary || 'Complete the secure step on the employer page, then return here to continue.')} Passwords, OTPs, and CAPTCHA answers stay on the employer site.`);
-    $('agentConversation').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.body.classList.remove('needs-attention');
+    const destination = safeEmployerDestination(role?.directEmployerUrl);
+    addMessage('assistant', `<strong>${escapeHtml(next.title)}</strong><br>${escapeHtml(next.summary)}${destination ? `<br><a href="${escapeHtml(destination.href)}" target="_blank" rel="noopener noreferrer">Continue on employer site</a>` : '<br>Open Saved Info to check your details, or open Jobs to select the application you want to continue.'}`);
+    $('agentConversation').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
   }
   return true;
 }
@@ -2286,9 +2640,6 @@ function renderMission() {
   const packageReady = (counts['Package Ready'] || 0) + (counts['Awaiting Approval'] || 0);
   const workspaceReady = missionActive || Boolean(durableRun) || deskState.roles.length > 0
     || durableApplicationSessions.length > 0 || openActions > 0;
-  const submittedToday = authoritativeReceiptCount([...deskState.roles, ...durableApplicationSessions], new Date());
-  const dailyTarget = Math.min(50, Math.max(1, Number(dailyGoal.target) || 10));
-  const remainingToday = Math.max(0, dailyTarget - submittedToday);
   $('missionName').textContent = mission.role ? `${mission.role} job search` : 'No active mission';
   $('target').textContent = target;
   $('completed').textContent = submitted;
@@ -2311,15 +2662,9 @@ function renderMission() {
   $('progressInterviews').textContent = subscriberStats.interviews;
   $('progressFollowUp').textContent = subscriberStats.followUpDue;
   $('progressClosed').textContent = subscriberStats.rejectedClosed;
-  $('dailyGoalCompleted').textContent = submittedToday;
-  $('dailyGoalTarget').textContent = dailyTarget;
-  $('dailyGoalRemaining').textContent = remainingToday;
-  $('dailyGoalBar').value = Math.min(100, (submittedToday / dailyTarget) * 100);
-  $('dailyGoalInput').value = dailyTarget;
   $('dailyGoalMessage').textContent = missionActive
-    ? `${mission.role} · ${[...(mission.workModes || [mission.workMode]), ...(mission.employmentTypes || [])].filter(Boolean).join(' · ')} · target only; verified fit outranks volume`
-    : 'This is a target, not a guarantee. Verified fit and observed outcomes outrank volume.';
-  document.querySelectorAll('[data-daily-goal]').forEach(button => button.classList.toggle('selected', Number(button.dataset.dailyGoal) === dailyTarget));
+    ? `${mission.role} · ${[...(mission.workModes || [mission.workMode]), ...(mission.employmentTypes || [])].filter(Boolean).join(' · ')} · suitable openings only`
+    : 'Suitable jobs and verified outcomes matter more than application volume.';
   const discoveryLabels = {
     searching: 'Searching free direct-employer feeds',
     complete: `Search complete · ${missionState.discovery?.matches || 0} new matches`,
@@ -2372,6 +2717,7 @@ function respond(input) {
       : '<strong>I can’t accept passwords, OTPs, CAPTCHA answers, bypasses, or malicious requests.</strong> Keep authentication in your browser; I can queue the human step and continue other job work.';
     addMessage('assistant', copy); return;
   }
+  if (classification.kind === 'status') { checkSimpleAgentStatus(true); return; }
   if (classification.kind === 'off-topic') { addMessage('assistant', 'I only handle job-search work: readiness, discovery, truthful documents, applications, tracking, interviews, and follow-up.'); return; }
   if (classification.kind === 'empty') return;
   if (/confirm these career facts and build my resume/i.test(input) && deskState.readinessDraft?.status === 'pending') {
@@ -2505,6 +2851,7 @@ function renderDurableBrowserHandoff(session) {
   const view = handoff.view;
   const providerAvailable = handoff.provider?.available === true;
   const active = Boolean(handoff.session && view && view.status === 'ready');
+  renderApplicationExecutionRoute(session, handoff);
   const preview = safeBrowserPreview(view?.previewImageDataUrl);
   const stream = view?.interactive === true ? safeBrowserStream(view?.streamUrl, handoff.provider?.streamOrigin) : '';
   const streamFrame = browserStreamFrame();
@@ -2522,7 +2869,7 @@ function renderDurableBrowserHandoff(session) {
   else if (handoff.error) status = handoff.error;
   else if (active && view.interactive) status = 'This is the isolated employer page. Complete credentials and challenges only inside the verified employer stream.';
   else if (active) status = 'Synthetic local fixture only. It proves session restore and field layout without contacting an employer or accepting any personal value.';
-  else if (providerAvailable) status = 'A no-cost local fixture is available to verify the resumable handoff experience.';
+  else if (providerAvailable) status = handoff.provider?.provider === 'synthetic-fixture' ? 'A synthetic fixture is available for testing.' : 'Cloud execution is available only after you explicitly start it. Browser usage may be metered.';
   $('browserHandoffStatus').textContent = status;
   $('browserHandoffFields').innerHTML = (view?.fields || []).slice(0, 12).map(field => `<div><strong>${escapeHtml(field.label)}</strong><span>${field.required ? 'Required field' : 'Optional field'} · value not included</span></div>`).join('') || '<div><strong>No extracted fields</strong><span>Field structure appears only after a secure preview starts.</span></div>';
   $('browserHandoffExpiry').textContent = active ? `Session expires ${new Date(handoff.session.expiresAt).toLocaleString()}` : 'No browser session is active.';
@@ -2532,7 +2879,132 @@ function renderDurableBrowserHandoff(session) {
   $('closeBrowserHandoff').hidden = !handoff.session;
 }
 
+function renderApplicationExecutionRoute(session, handoff) {
+  const route = localApplicationRoute(session);
+  let panel = $('applicationExecutionRoute');
+  if (!panel) { panel = document.createElement('section'); panel.id = 'applicationExecutionRoute'; panel.className = 'attention-card'; $('applicationBrowserHandoff').before(panel); }
+  panel.replaceChildren();
+  const heading = document.createElement('h3'); heading.textContent = 'Continue your application';
+  const description = document.createElement('p'); description.textContent = route.message;
+  panel.append(heading, description);
+  if (route.href) {
+    const link = document.createElement('a'); link.href = route.href; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.className = 'primary secure-employer-link';
+    link.textContent = '1. Open employer application'; panel.append(link);
+  }
+  const activeCloud = Boolean(handoff.session);
+  if (activeCloud) executionPreferences.set(session.id, 'cloud');
+  const cloudChosen = executionPreferences.get(session.id) === 'cloud';
+  $('applicationBrowserHandoff').hidden = !cloudChosen;
+  const toggle = document.createElement('button'); toggle.type = 'button';
+  toggle.textContent = cloudChosen ? 'Use my browser instead' : 'Use cloud browser instead';
+  toggle.disabled = activeCloud || (!cloudChosen && (handoff.provider?.available !== true || !route.href));
+  toggle.addEventListener('click', () => { executionPreferences.set(session.id, cloudChosen ? 'local' : 'cloud'); renderDurableBrowserHandoff(session); });
+  if (activeCloud || handoff.provider?.available === true) panel.append(toggle);
+  if (activeCloud) { const note = document.createElement('p'); note.textContent = 'End the active cloud session below before switching to your browser.'; panel.append(note); }
+}
+
+function renderAnswerMemory(session, action) {
+  let panel = $('answerMemoryPanel');
+  if (!panel) { panel = document.createElement('section'); panel.id = 'answerMemoryPanel'; $('applicationActionSummary').after(panel); }
+  panel.replaceChildren();
+  if (action?.type !== 'AMBIGUOUS_FACT' || !action.metadata?.question) {
+    const ref = [...session.actions].reverse().find(a => a.metadata?.answerReference)?.metadata.answerReference;
+    const fact = applicantVault.vault?.facts.find(f => f.id === ref?.factId && f.status === 'active');
+    if (fact) {
+      panel.innerHTML = '<p role="status">Remembered. Saved privately; nothing submitted.</p><button type="button">Edit / Forget</button>';
+      panel.querySelector('button').addEventListener('click', () => { $('vaultOverlay').classList.add('open'); renderVaultStatus(); });
+    }
+    return;
+  }
+  const question = action.metadata.question;
+  const normalize = s => String(s || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();
+  const fact = vaultEnabled() && applicantVault.vault.facts.find(f => {
+    const v = f.versions.find(v => v.version === f.currentVersion), s = v?.scope;
+    return f.status === 'active' && s?.memory && normalize(s.question) === normalize(question)
+      && (!s.expiresAt || Date.parse(s.expiresAt) > Date.now())
+      && (s.kind === 'candidate' || s.kind === 'application' && s.applicationId === session.id || s.kind === 'employer' && s.employer === session.role.employer);
+  });
+  const v = fact?.versions.find(v => v.version === fact.currentVersion);
+  panel.innerHTML = `<form id="answerMemoryForm" class="desk-field"><label for="answerMemoryText">${escapeHtml(question)}</label>
+    ${fact ? '<small>You answered this before. Check it and change it if needed.</small>' : '<small>Answer once, then choose exactly how this answer may be remembered.</small>'}
+    <textarea id="answerMemoryText" rows="3" maxlength="2000" required placeholder="Only what you know to be true">${escapeHtml(v?.value || '')}</textarea>
+    <details><summary>Privacy options</summary><label class="check-row"><input id="answerMemorySensitive" type="checkbox"> This answer includes sensitive screening information and I want it saved securely</label><label for="answerMemoryExpiry">Forget this answer after (optional)</label><input id="answerMemoryExpiry" type="date"></details>
+    <small>Passwords, security codes, and CAPTCHA answers are never saved. Nothing is sent or submitted from this step.</small>
+    <p id="answerMemoryResult" role="status"></p><button type="submit">Continue with this answer</button></form>`;
+  let replaceVersion;
+  $('answerMemoryForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const statement = $('answerMemoryText').value.trim();
+    if (!statement) return;
+    const sensitiveOptIn = $('answerMemorySensitive').checked;
+    const expiresAt = $('answerMemoryExpiry').value || null;
+    const questionMarkup = `<p class="answer-memory-question"><strong>${escapeHtml(question)}</strong><span>Your answer is ready. Choose whether 1stStep may use it again.</span></p>`;
+    panel.innerHTML = `${questionMarkup}<div class="answer-memory-choice" role="group" aria-labelledby="answerMemoryChoiceTitle"><h4 id="answerMemoryChoiceTitle">Should 1stStep remember this answer?</h4><p>Remembering ordinary answers can save time on similar applications. Reuse is limited to the same question meaning, and every application still keeps its own review and submission gates.</p><button type="button" class="answer-memory-primary" data-answer-memory-scope="candidate">Remember for similar applications</button><button type="button" data-answer-memory-scope="application">Use only for this application</button><button type="button" class="answer-memory-link" data-answer-memory-change>Change my answer</button></div><small>Nothing is sent or submitted by saving. You can edit or forget saved answers in Saved Info.</small><p id="answerMemoryResult" role="status"></p>`;
+    const saveAnswer = async scope => {
+      panel.querySelectorAll('button').forEach(button => { button.disabled = true; });
+      try {
+        if (!vaultEnabled() && !(await enableApplicantVault({ ask: true }))) throw new Error('Enable encrypted backup to remember this answer, or use the employer site for this question.');
+        const data = await vaultAction('remember-answer', { sessionId: session.id, actionId: action.id, statement, scope, kind: v?.scope?.category || 'fact', sensitiveOptIn, expiresAt, replaceVersion });
+        const saved = data.vault.facts.find(f => f.status === 'active' && f.versions.at(-1)?.scope?.actionId === action.id);
+        if (!saved) throw new Error('Answer save could not be verified.');
+        await updateDurableApplicationSession('resolve-remembered-answer', true, { actionId: action.id, factId: saved.id, factVersion: saved.currentVersion });
+        showToast(scope === 'candidate' ? 'Remembered for matching applications. Nothing submitted.' : 'Saved for this application only. Nothing submitted.');
+      } catch (error) {
+        $('answerMemoryResult').textContent = error.message;
+        panel.querySelectorAll('button').forEach(button => { button.disabled = false; });
+        if (error.memoryVersion) {
+          replaceVersion = undefined;
+          const replace = document.createElement('button'); replace.type = 'button'; replace.textContent = 'Replace my previous answer';
+          replace.onclick = () => { replaceVersion = error.memoryVersion; replace.remove(); $('answerMemoryResult').textContent = 'Replacement selected. Choose how broadly to remember it.'; panel.querySelectorAll('button[data-answer-memory-scope]').forEach(button => { button.disabled = false; }); };
+          $('answerMemoryResult').append(replace);
+        }
+      }
+    };
+    panel.querySelectorAll('[data-answer-memory-scope]').forEach(button => button.addEventListener('click', () => saveAnswer(button.dataset.answerMemoryScope)));
+    panel.querySelector('[data-answer-memory-change]').addEventListener('click', () => renderAnswerMemory(session, action));
+  });
+}
+
+function downloadApplicationLedgerReport() {
+  const markdown = applicationLedgerMarkdown({ sessions: durableApplicationSessions, roles: deskState.roles });
+  const blobUrl = URL.createObjectURL(new Blob([markdown], { type: 'text/markdown;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = blobUrl;
+  link.download = `1stStep-application-ledger-${new Date().toISOString().slice(0, 10)}.md`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(blobUrl);
+}
+
+function renderApplicationControlCenter(session) {
+  const formFields = durableBrowserHandoff.applicationSessionId === session.id ? (durableBrowserHandoff.view?.fields || []) : [];
+  const model = applicationControlCenterModel(session, { formFields });
+  const approvalOpen = (session.actions || []).some(item => item.status === 'open' && ['TRANSMISSION_APPROVAL', 'SUBMISSION_APPROVAL'].includes(item.type));
+  const warnings = model.conflicts.length
+    ? `<div class="control-center-alert" role="alert"><strong>Check before continuing</strong><ul>${model.conflicts.map(item => `<li>${escapeHtml(item.message)}</li>`).join('')}</ul></div>`
+    : '';
+  const fields = model.proposedFields.length
+    ? model.proposedFields.map(item => `<div class="control-center-share-row"><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.preview)} · ${escapeHtml(item.source || 'Verified source')}</span></div>`).join('')
+    : '<div class="control-center-share-row"><strong>Saved answers</strong><span>None selected</span></div>';
+  const container = $('applicationControlCenter');
+  container.innerHTML = `<div class="control-center-head"><div><p>Exact application packet</p><h3 id="applicationControlCenterTitle">Review everything in one place</h3><p>${escapeHtml(model.employer)} · ${escapeHtml(model.title)}${model.requisitionId ? ` · ${escapeHtml(model.requisitionId)}` : ''}</p></div><span class="control-center-status">${escapeHtml(model.status)}</span></div>
+    <div class="control-center-facts">${model.facts.map(item => `<div class="control-center-fact"><span>${escapeHtml(item.label)}</span><strong>${escapeHtml(item.value)}</strong></div>`).join('')}</div>
+    ${warnings}
+    <details class="control-center-details" ${approvalOpen ? 'open' : ''}><summary>What will be shared</summary><div class="control-center-share-list">
+      <div class="control-center-share-row"><strong>Resume/package</strong><span>${escapeHtml(model.documents[0].version)}</span></div>
+      <div class="control-center-share-row"><strong>Verified strengths</strong><span>${model.mappedClaims ? `${model.mappedClaims} resume claim${model.mappedClaims === 1 ? '' : 's'} linked to source bullets` : 'Source links need review'}</span></div>
+      <div class="control-center-share-row"><strong>Personal data</strong><span>${escapeHtml(model.personalDataSummary)}</span></div>
+      ${fields}
+    </div></details>
+    <div class="control-center-footer"><p>${model.receiptVerified ? 'Employer receipt verified. This application counts as submitted.' : 'Your approval applies only to this employer, package, and set of answers.'}</p><button id="downloadApplicationLedger" type="button">Download application report</button></div>`;
+  container.hidden = false;
+  $('downloadApplicationLedger').onclick = downloadApplicationLedgerReport;
+}
+
 function renderDurableApplicationWorkspace(session) {
+  $('approvalSafetyNote').hidden = Boolean(session.receipt || session.submissionAttempt);
+  renderApplicationControlCenter(session);
   if (session.receipt) $('applicationBrowserHandoff').hidden = true;
   else renderDurableBrowserHandoff(session);
   const openAction = (session.actions || []).find(item => item.status === 'open');
@@ -2554,6 +3026,10 @@ function renderDurableApplicationWorkspace(session) {
     && new Date(session.approvals.submission.expiresAt).getTime() <= Date.now();
   const transmissionApproval = openAction?.type === 'TRANSMISSION_APPROVAL';
   const submissionApproval = openAction?.type === 'SUBMISSION_APPROVAL';
+  const answerInApp = openAction?.type === 'AMBIGUOUS_FACT' && Boolean(openAction.metadata?.question);
+  const routePanel = $('applicationExecutionRoute');
+  if (routePanel) routePanel.hidden = answerInApp;
+  $('applicationControlCenter').hidden = !(transmissionApproval || submissionApproval || finalReviewReady);
   $('applicationModeLabel').textContent = 'Controlled beta';
   $('resumeApplication').hidden = false;
   $('resumeApplication').textContent = openAction ? '1 item needs you' : 'Application update';
@@ -2563,7 +3039,7 @@ function renderDurableApplicationWorkspace(session) {
   $('applicationEmployerDomain').textContent = employerDestination?.hostname || 'Employer domain unavailable';
   $('verifiedEmployer').classList.remove('preview');
   $('verifiedEmployer').hidden = !(openAction || session.state === 'Paused');
-  $('openEmployerPage').hidden = !(employerSiteStep || failureReconciliation || submissionOutcomeUnknown || session.stage === 'employer_form') || !employerDestination;
+  $('openEmployerPage').hidden = !(failureReconciliation || submissionOutcomeUnknown) || !employerDestination;
   if (employerDestination) {
     const extensionDestination = new URL(employerDestination.href);
     if (['boards.greenhouse.io', 'job-boards.greenhouse.io', 'job-boards.eu.greenhouse.io'].includes(extensionDestination.hostname.toLowerCase())) {
@@ -2579,7 +3055,14 @@ function renderDurableApplicationWorkspace(session) {
   $('fixtureFields').innerHTML = (session.proposedFields || []).map(item => `<div class="fixture-field"><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.maskedPreview)} · verified source</span></div>`).join('');
   $('applicationAgentStatus').innerHTML = `<strong>${escapeHtml(session.state)}</strong><br>${escapeHtml(durableApplicationStageLabel(session.stage))}. ${session.externalApplicationExecution === false ? 'No employer action has run.' : ''}`;
   $('applicationAuthorization').innerHTML = `<div class="workspace-row"><strong>${session.approvals?.transmission ? 'Sharing permission saved' : 'No sharing permission yet'}</strong><small>Permission is exact to this employer and ${escapeHtml(session.documentVersion)}. Final submission requires a separate confirmation.</small></div>`;
-  $('applicationSuggestions').innerHTML = (session.proposedFields || []).map(item => `<div class="workspace-row"><strong>${escapeHtml(item.label)} → ${escapeHtml(item.maskedPreview)}</strong><small>${escapeHtml(item.provenance)} · ${Math.round(Number(item.confidence || 0) * 100)}% confidence</small></div>`).join('');
+  $('applicationSuggestions').innerHTML = (session.proposedFields || []).map(item => `<div class="workspace-row"><strong>${escapeHtml(item.label)} → ${escapeHtml(item.maskedPreview)}</strong><small>Source: ${escapeHtml(item.provenance)}</small></div>`).join('');
+  for (const item of session.actions || []) {
+    const ref = item.metadata?.answerReference;
+    if (!ref) continue;
+    const fact = applicantVault.vault?.facts?.find(f => f.id === ref.factId);
+    const valid = vaultEnabled() && fact?.status === 'active' && fact.currentVersion === ref.factVersion;
+    $('applicationSuggestions').insertAdjacentHTML('beforeend', `<div class="workspace-row"><strong>${escapeHtml(item.metadata.question || 'Screening answer')}</strong><small>${valid ? `Supplied by remembered fact, version ${ref.factVersion}. Prepared only; not sent.` : 'Remembered answer changed or was forgotten. Review again before use.'}</small><button type="button" data-review-memory>Review remembered answer</button></div>`);
+  }
   $('applicationBlockers').innerHTML = (session.actions || []).filter(item => item.status === 'open').map(item => `<div class="workspace-row"><strong>${escapeHtml(item.type.replaceAll('_', ' '))}</strong><small>${escapeHtml(item.summary)}</small></div>`).join('') || empty('No current blocker.');
   $('applicationTimeline').innerHTML = [...(session.timeline || [])].reverse().map(item => `<div class="workspace-row"><strong>${escapeHtml(item.kind.replaceAll('_', ' '))}</strong><small>${escapeHtml(item.summary)} · ${escapeHtml(item.at)}</small></div>`).join('');
   $('applicationReceipt').innerHTML = session.receipt ? `<div class="workspace-row receipt-box"><strong>AUTHORITATIVE EMPLOYER RECEIPT · ${escapeHtml(session.receipt.confirmationId || 'verified')}</strong><small>${escapeHtml(session.documentVersion)} · ${escapeHtml(session.receipt.receivedAt || '')}</small></div>` : empty('No authoritative receipt. This application is not counted as Submitted.');
@@ -2594,7 +3077,7 @@ function renderDurableApplicationWorkspace(session) {
   } else if (submissionApproval) {
     actionTitle = 'Submit this application?';
     actionSummary = `This is the final action-time confirmation for ${session.role.employer} and ${session.documentVersion}. A submission will count only after an authoritative employer receipt is verified.`;
-  } else if (employerSiteStep) {
+  } else if (employerSiteStep && !answerInApp) {
     const employerStepCopy = {
       LOGIN: ['Sign in on the employer page', 'Use your password manager or passkey only on the verified employer page. 1stStep never receives or stores it.'],
       DOCUMENT_UPLOAD: ['Upload the approved application document', `Upload the exact package ${session.documentVersion} on the verified employer page, then return here. The extension cannot select a local file for you.`],
@@ -2626,19 +3109,25 @@ function renderDurableApplicationWorkspace(session) {
     actionTitle = 'A verified answer needs you';
     actionSummary = openAction.summary;
   }
+  if (answerInApp) {
+    actionTitle = 'Answer one question to continue';
+    actionSummary = 'Enter a truthful answer below. You can save it so the next matching application does not stop here again.';
+  }
   $('applicationActionTitle').textContent = actionTitle;
   $('applicationActionSummary').textContent = actionSummary;
+  renderAnswerMemory(session, openAction);
   $('advanceApplication').hidden = session.state !== 'Preparing';
   $('advanceApplication').disabled = false;
   $('advanceApplication').textContent = 'Pause safely';
   $('advanceApplication').dataset.durableAction = session.state === 'Preparing' ? 'pause' : '';
-  $('resolveApplication').hidden = !(transmissionApproval || submissionApproval || employerSiteStep || finalReviewReady || finalApprovalExpired);
+  $('resolveApplication').hidden = answerInApp || !(transmissionApproval || submissionApproval || employerSiteStep || finalReviewReady || finalApprovalExpired);
   $('resolveApplication').textContent = transmissionApproval ? 'Approve sharing' : submissionApproval ? 'Approve final submission'
     : finalReviewReady ? 'Review final application'
     : finalApprovalExpired ? 'Renew final approval'
-    : ['AMBIGUOUS_FACT', 'NONSTANDARD_CERTIFICATION', 'OUTSIDE_EMPLOYMENT_CONFLICT'].includes(openAction?.type) ? 'I answered this on the employer site' : 'I completed this on the employer site';
+    : ['AMBIGUOUS_FACT', 'NONSTANDARD_CERTIFICATION', 'OUTSIDE_EMPLOYMENT_CONFLICT'].includes(openAction?.type) ? '2. I answered it — continue' : '2. I finished — continue';
   $('resolveApplication').dataset.durableAction = transmissionApproval ? 'confirm-transmission' : submissionApproval ? 'confirm-submission' : finalReviewReady ? 'request-final-review' : finalApprovalExpired ? 'refresh-final-approval' : employerSiteStep ? 'confirm-external-step' : '';
   $('resolveApplication').dataset.applicationActionId = openAction?.id || '';
+  $('openEmployerPage').textContent = employerSiteStep ? '1. Open employer page' : failureReconciliation || submissionOutcomeUnknown ? 'Open employer page' : 'Continue on employer page';
   $('resumeManagedApplication').hidden = session.state !== 'Paused';
   $('resumeManagedApplication').textContent = 'Resume saved application';
   $('resumeManagedApplication').dataset.durableAction = session.state === 'Paused' ? 'resume' : '';
@@ -2650,7 +3139,7 @@ function renderDurableApplicationWorkspace(session) {
   if (session.receipt) {
     const post = session.postSubmission || { status: 'SUBMITTED', followUp: { status: 'NOT_SCHEDULED' } };
     const followUp = post.followUp || { status: 'NOT_SCHEDULED' };
-    const statusLabel = post.status === 'INTERVIEW' ? 'Interview confirmed' : post.status === 'REJECTED_CLOSED' ? 'Rejected / closed' : 'Receipt verified';
+    const statusLabel = post.status === 'INTERVIEW' ? 'Interview confirmed' : post.status === 'REJECTED_CLOSED' ? 'Rejected / closed' : 'Employer confirmed receipt';
     $('applicationActionPill').textContent = statusLabel;
     $('applicationTitle').textContent = post.status === 'INTERVIEW' ? 'Interview recorded' : post.status === 'REJECTED_CLOSED' ? 'Application closed' : 'Application submitted';
     $('applicationActionTitle').textContent = followUp.status === 'SCHEDULED' ? `Follow-up reminder set for ${new Date(followUp.dueAt).toLocaleDateString()}` : 'What happened next?';
@@ -2677,6 +3166,7 @@ function renderDurableApplicationWorkspace(session) {
 function renderApplicationWorkspace() {
   const durableSession = activeDurableApplicationSession();
   if (durableSession) { renderDurableApplicationWorkspace(durableSession); return; }
+  $('applicationControlCenter').hidden = true;
   $('applicationBrowserHandoff').hidden = true;
   $('postSubmissionActions').hidden = true;
   $('applicationActionPill').textContent = 'Needs You';
@@ -2768,13 +3258,22 @@ function openQuestionPopup(fieldKey = '') {
     : corePosition >= 0 ? `Core setup ${corePosition + 1} of ${ONBOARDING_REQUIRED_FIELDS.length} · ${readiness.score}% ready` : 'Asked only when needed · not part of core setup';
   $('questionTitle').textContent = next.label;
   $('questionHelp').textContent = resumeInterviewActive
-    ? 'Give only verified facts. For work history, include employer, title, dates, and truthful outcomes; use semicolons to separate entries.'
+    ? (RESUME_FIELD_GUIDANCE[next.key] || 'Choose an answer below or type one short verified fact.')
     : CONSEQUENTIAL_QUESTION_KEYS.has(next.key)
       ? 'Confirm only what you know. This answer is kept for review and is never silently reused or inferred.'
       : 'Choose a common answer or enter a short correction. This becomes reusable only after you save it.';
-  $('questionValue').value = deskState.reusableFacts.find(item => item.fieldKey === next.key)?.value || '';
-  const choices = QUICK_ANSWERS[next.key] || [];
-  $('questionChoices').innerHTML = choices.map(value => `<button class="question-choice" type="button" data-question-answer="${escapeHtml(value)}">${escapeHtml(value)}</button>`).join('');
+  const currentValue = deskState.reusableFacts.find(item => item.fieldKey === next.key)?.value || '';
+  $('questionValue').value = currentValue;
+  $('questionValue').placeholder = resumeInterviewActive ? (RESUME_FIELD_PLACEHOLDERS[next.key] || 'Type a short answer') : '';
+  const choices = resumeInterviewActive ? (RESUME_CLICK_CHOICES[next.key] || []) : (QUICK_ANSWERS[next.key] || []);
+  $('questionChoices').innerHTML = choices.map(choice => {
+    const option = typeof choice === 'string' ? { label: choice, value: choice } : choice;
+    const selected = option.append ? list(currentValue).includes(option.value) : currentValue === option.value;
+    return `<button class="question-choice${selected ? ' selected' : ''}" type="button"${option.value ? ` data-question-answer="${escapeHtml(option.value)}"` : ''}${option.template ? ` data-question-template="${escapeHtml(option.template)}"` : ''}${option.append ? ' data-question-append="true"' : ''}>${escapeHtml(option.label)}</button>`;
+  }).join('');
+  $('questionLater').textContent = resumeInterviewActive ? 'Finish later' : 'Ask later';
+  const saveButton = $('questionForm').querySelector('button[type="submit"]');
+  if (saveButton) saveButton.textContent = resumeInterviewActive ? 'Save & continue' : 'Save & reuse';
   $('questionOverlay').classList.add('open');
   if (!choices.length) setTimeout(() => $('questionValue').focus(), 0);
 }
@@ -2903,7 +3402,49 @@ function renderAudit() {
   const localAudit = deskState.auditEvents.length ? [...deskState.auditEvents].reverse().map(event => `<div class="desk-row"><div><strong>${escapeHtml(event.type)}</strong><small>${escapeHtml(event.at)} · ${escapeHtml(event.entityId)} · ${escapeHtml(JSON.stringify(event.details))}</small></div></div>`).join('') : empty('No local audit events yet.');
   $('auditList').innerHTML = `${launchEvidence}${runtimeEvidence}${ownershipEvidence}${workerMetrics}${queueEvidence}${costEvidence}${costCaps}${metrics}${localAudit}`;
 }
-function renderDesk() { renderTruthForm(); renderReadiness(); renderRoles(); renderApprovals(); renderDemo(); renderAudit(); }
+function formatMoneyFromCents(value) {
+  if (value == null) return 'Unknown';
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(value) / 100);
+}
+function renderLiveCosts() {
+  const dashboard = buildAdminCostDashboard(operationalMetrics);
+  if (!dashboard.available) {
+    $('costSummaryGrid').innerHTML = '<div class="cost-empty">Live cost evidence is unavailable. Refresh after the protected ledger is reachable.</div>';
+    $('costEvidenceNote').textContent = 'No cost is shown as zero when evidence is unavailable.';
+    $('costCategoryRows').innerHTML = '<tr><td colspan="5">Cost evidence unavailable</td></tr>';
+    $('costLedgerDate').textContent = 'Date unavailable';
+    return;
+  }
+  const cards = [
+    ['Recorded today', formatMoneyFromCents(dashboard.settledCents), 'Settled ledger amount'],
+    ['Reserved now', formatMoneyFromCents(dashboard.reservedCents), 'Pending maximum exposure'],
+    ['Remaining today', formatMoneyFromCents(dashboard.remainingCents), 'Under the global daily limit'],
+    ['Active users', 'Unknown', 'User-count telemetry is not connected'],
+    ['Average per user', 'Unknown', 'Requires verified active-user evidence'],
+  ];
+  $('costSummaryGrid').innerHTML = cards.map(([label, value, detail]) => `<article class="cost-summary-card"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></article>`).join('');
+  $('costEvidenceNote').innerHTML = `<strong>Evidence status</strong><span>${escapeHtml(dashboard.evidenceStatus)}</span>`;
+  $('costLedgerDate').textContent = dashboard.ledgerDate ? `UTC day ${dashboard.ledgerDate}` : 'Date unavailable';
+  $('costCategoryRows').innerHTML = dashboard.categories.map(category => `<tr><td><strong>${escapeHtml(category.label)}</strong><small>${escapeHtml(category.key)}</small></td><td>${escapeHtml(formatMoneyFromCents(category.settledCents))}</td><td>${escapeHtml(formatMoneyFromCents(category.reservedCents))}</td><td>${category.dailyCapCents == null ? 'Not configured' : escapeHtml(formatMoneyFromCents(category.dailyCapCents))}<small>${category.maximumRequestCents == null ? 'No request limit' : `${escapeHtml(formatMoneyFromCents(category.maximumRequestCents))} max/request`}</small></td><td><span class="cost-status ${category.guarded ? 'guarded' : 'off'}">${category.guarded ? 'Guarded' : 'No budget'}</span></td></tr>`).join('');
+}
+function metricValue(value) { return value == null ? 'Unknown' : String(value); }
+function renderSystemAlerts() {
+  const dashboard = buildAdminSystemAlertDashboard(operationalMetrics);
+  if (!dashboard.available) {
+    $('alertStatusGrid').innerHTML = '<div class="cost-empty">System alert evidence is unavailable.</div>';
+    return;
+  }
+  const destinationState = dashboard.discordReady ? 'Connected' : 'Not connected';
+  const cards = [
+    ['Discord destination', destinationState, dashboard.destination, dashboard.discordReady ? 'healthy' : 'warning'],
+    ['Delivery outbox', dashboard.outboxReady ? 'Ready' : 'Not ready', `Queue: ${dashboard.queueStatus.replaceAll('-', ' ')}`, dashboard.outboxReady ? 'healthy' : 'warning'],
+    ['Pending alerts', metricValue(dashboard.pending), 'Waiting for delivery', dashboard.pending === 0 ? 'healthy' : 'warning'],
+    ['Overdue alerts', metricValue(dashboard.overdue), 'Needs operator attention', dashboard.overdue === 0 ? 'healthy' : 'critical'],
+    ['Failed alerts', metricValue(dashboard.failed), 'Retry limit reached', dashboard.failed === 0 ? 'healthy' : 'critical'],
+  ];
+  $('alertStatusGrid').innerHTML = cards.map(([label, value, detail, state]) => `<article class="alert-status-card ${state}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></article>`).join('');
+}
+function renderDesk() { renderTruthForm(); renderReadiness(); renderRoles(); renderApprovals(); renderDemo(); renderLiveCosts(); renderSystemAlerts(); renderAudit(); }
 function campaignListHtml(values) {
   return values?.length ? values.map(value => `<li>${escapeHtml(value)}</li>`).join('') : '<li class="contract-empty">Not configured</li>';
 }
@@ -3015,16 +3556,6 @@ function currentWizardStepValid() {
 
 function renderAll() { renderMission(); renderDesk(); renderApplicationWorkspace(); renderCampaignConsole(); renderVaultStatus(); renderLearningCenter(); }
 
-function setDailyGoal(value, announce = true) {
-  const parsed = Math.round(Number(value));
-  if (!Number.isFinite(parsed) || parsed < 1) return;
-  const target = Math.min(50, parsed);
-  dailyGoal = { target, updatedAt: new Date().toISOString() };
-  saveAll();
-  renderMission();
-  if (announce) addMessage('assistant', `<strong>Daily goal set to ${target} applications.</strong><br>I’ll show prepared packages separately and count progress only after an authoritative employer receipt.`);
-}
-
 $('openGuidedLaunch').addEventListener('click', () => openGuidedLaunch({ step: missionState.mission?.role ? 2 : guidedLaunchStep }));
 $('guidedLaunchClose').addEventListener('click', closeGuidedLaunch);
 $('guidedLaunchBack').addEventListener('click', () => {
@@ -3077,12 +3608,20 @@ document.querySelectorAll('[data-guided-goal]').forEach(button => {
   button.addEventListener('click', () => chooseGuidedGoal(button, true));
   button.addEventListener('keydown', handleGuidedRadioKeydown);
 });
-$('quickUploadResume').addEventListener('click', openResumeSetup);
+$('quickUseSavedResume').hidden = !hasResume();
+$('quickUseSavedResume').addEventListener('click', () => {
+  if (!hasResume()) { openResumeSetup(); return; }
+  advanceGuidedLaunch();
+});
+$('quickUploadResume').addEventListener('click', () => {
+  openResumeSetup();
+  $('resumeFile').click();
+});
+$('reviewAddResume').addEventListener('click', openResumeSetup);
 $('quickBuildResume').addEventListener('click', () => {
   guidedLaunchOpen = false;
   renderGuidedLaunch();
-  startCareerStory();
-  $('agentConversation').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  startResumeInterview();
 });
 $('scanOpportunityPaths').addEventListener('click', scanOpportunityPaths);
 $('jobSectorFilter').addEventListener('change', event => {
@@ -3110,7 +3649,7 @@ $('jobLaunchForm').addEventListener('submit', async event => {
   if (!hasJobAgentAccess()) { openAgentAccess(); return; }
   const path = selectedOpportunityPath();
   if (!hasResume()) { openResumeSetup(); return; }
-  if (!path) { $('pathStepTitle').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+  if (!path) { $('pathStepTitle').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' }); return; }
   const location = guidedSelection.workMode === 'Remote' ? 'United States' : $('launchLocation').value.trim();
   if (!location) {
     $('launchLocation').setCustomValidity('Add a city or commuting area for hybrid or on-site roles.');
@@ -3142,14 +3681,12 @@ $('jobLaunchForm').addEventListener('submit', async event => {
       addMessage('assistant', `<strong>Your search can run, but email alerts are off.</strong><br>${escapeHtml(error.message)} The in-app Needs You queue still works.`);
     });
     discoverMatchingJobs();
-    $('agentConversation').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    $('agentConversation').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
   };
   if (await ensureJobAgentConsent(continueLaunch)) await continueLaunch();
 });
-$('dailyGoalForm').addEventListener('submit', event => { event.preventDefault(); setDailyGoal($('dailyGoalInput').value); });
-document.querySelectorAll('[data-daily-goal]').forEach(button => button.addEventListener('click', () => setDailyGoal(button.dataset.dailyGoal)));
 $('activity').querySelector('summary').addEventListener('click', () => {
-  if (!$('activity').open) setTimeout(() => $('activity').scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+  if (!$('activity').open) setTimeout(() => $('activity').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }), 0);
 });
 $('openLearningVault').addEventListener('click', () => { $('vaultOverlay').classList.add('open'); renderVaultStatus(); });
 $('toggleLearning').addEventListener('click', async event => {
@@ -3205,7 +3742,12 @@ $('composer').addEventListener('submit', event => { event.preventDefault(); cons
 $('messages').addEventListener('click', event => { const value = event.target?.dataset?.prompt; if (!value) return; addMessage('user', escapeHtml(value)); respond(value); });
 $('openJobs').addEventListener('click', () => openJobs('Matches'));
 $('openNeedsYou').addEventListener('click', openNeedsYou);
-$('openAgentStatus').addEventListener('click', () => { $('agentProgress').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('agentProgress').focus?.(); });
+$('openAgentStatus').addEventListener('click', () => {
+  $('agentProgress').open = true;
+  if (!document.body.classList.contains('workspace-ready')) { openGuidedLaunch(); return; }
+  $('agentProgress').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  $('agentProgress').focus?.();
+});
 $('editAgentConfiguration').addEventListener('click', () => openGuidedLaunch({ step: 2 }));
 $('openAgentAccess').addEventListener('click', openAgentAccess);
 $('closeAgentAccess').addEventListener('click', closeAgentAccess);
@@ -3243,8 +3785,8 @@ $('jobCards').addEventListener('click', async event => {
   if (reviewId) { openPackageReview(deskState.roles.find(item => item.id === reviewId)); return; }
   if (!generateId) return;
   event.target.disabled = true;
-  try { await generateDurablePackage(generateId); renderSubscriberJobs(); showToast('Resume prepared'); }
-  catch (error) { addMessage('assistant', `<strong>The package was not created.</strong><br>${escapeHtml(error.message)} Your role and resume remain saved.`); }
+  try { const run = await generateDurablePackage(generateId, { retryRequested: event.target.dataset.packageRetry === 'true' }); renderSubscriberJobs(); if (run) showToast(run.result?.resumeText ? 'Private draft ready for review' : 'Preparation saved'); }
+  catch (error) { closeJobs(); addMessage('assistant', `<strong>The package was not created.</strong><br>${escapeHtml(error.message)} Your role and resume remain saved.`); }
   finally { event.target.disabled = false; }
 });
 $('postSubmissionActions').addEventListener('click', async event => {
@@ -3265,6 +3807,9 @@ $('postSubmissionActions').addEventListener('click', async event => {
   }
 });
 $('needsYouList').addEventListener('click', event => reviewNeedsYouTarget(event.target));
+$('reviewAttentionNow').addEventListener('click', event => {
+  if (!reviewNeedsYouTarget(event.currentTarget)) openNeedsYou();
+});
 $('closeNeedsYou').addEventListener('click', closeNeedsYou);
 $('needsYouOverlay').addEventListener('click', event => { if (event.target === $('needsYouOverlay')) closeNeedsYou(); });
 $('pauseRun').addEventListener('click', async () => {
@@ -3302,8 +3847,13 @@ $('resumeRun').addEventListener('click', async () => {
 });
 $('openDesk').addEventListener('click', () => openDesk('pipeline'));
 $('openVault').addEventListener('click', () => { $('vaultOverlay').classList.add('open'); renderVaultStatus(); });
-$('closeVault').addEventListener('click', () => $('vaultOverlay').classList.remove('open'));
-$('vaultOverlay').addEventListener('click', event => { if (event.target === $('vaultOverlay')) $('vaultOverlay').classList.remove('open'); });
+function closeVaultDialog() {
+  const restoreFocus = $('vaultOverlay').contains(document.activeElement);
+  $('vaultOverlay').classList.remove('open');
+  if (restoreFocus) $('openVault').focus();
+}
+$('closeVault').addEventListener('click', closeVaultDialog);
+$('vaultOverlay').addEventListener('click', event => { if (event.target === $('vaultOverlay')) closeVaultDialog(); });
 $('enableVault').addEventListener('click', async () => { try { await enableApplicantVault({ ask: true }); renderVaultStatus(); } catch (error) { $('vaultStatus').textContent = error.message; } });
 $('exportVault').addEventListener('click', () => {
   if (!vaultEnabled()) return;
@@ -3331,6 +3881,20 @@ $('deleteVault').addEventListener('click', async () => {
   } catch (error) { $('vaultStatus').textContent = error.message; }
 });
 $('vaultList').addEventListener('click', async event => {
+  if (event.target?.dataset?.memoryForget) {
+    try { await vaultAction('forget-memory', { id: event.target.dataset.memoryForget }); showToast('Forgotten. This answer will no longer be reused.'); }
+    catch (error) { $('vaultStatus').textContent = error.message; }
+    return;
+  }
+  if (event.target?.dataset?.memoryEdit) {
+    const fact = applicantVault.vault.facts.find(f => f.id === event.target.dataset.memoryEdit);
+    const v = fact?.versions.find(v => v.version === fact.currentVersion);
+    const statement = window.prompt('Correct your exact statement. Earlier versions will not be reused.', v?.value || '');
+    if (statement === null) return;
+    try { await vaultAction('edit-memory', { id: fact.id, statement, sensitiveOptIn: v.sensitivity !== 'standard' ? window.confirm('Explicitly remember this updated sensitive screening answer?') : false }); }
+    catch (error) { $('vaultStatus').textContent = error.message; }
+    return;
+  }
   const scheduleAction = event.target?.dataset?.scheduleAction;
   if (scheduleAction) {
     event.target.disabled = true;
@@ -3366,23 +3930,38 @@ $('packageArtifactActions').addEventListener('click', async event => {
   try { await downloadPrivatePackageArtifact(role, artifactKey, event.target); }
   catch (error) { $('packageReviewStatus').textContent = error.message; }
 });
-$('savePackageReview').addEventListener('click', async () => {
-  const role = deskState.roles.find(item => item.id === activePackageRoleId);
-  if (!role?.packageDraft) return;
+$('savePackageReview').addEventListener('click', () => packageAutosave?.flush());
+for (const id of ['packageResumeText', 'packageCoverText']) $(id).addEventListener('input', () => {
+  $('packageCopyStatus').textContent = '';
+  $('packageArtifactActions').replaceChildren();
+  packageAutosave?.schedule();
+});
+for (const [id, tab] of [['packageResumeTab', 'resume'], ['packageCoverTab', 'cover']]) {
+  $(id).addEventListener('click', () => setPackageReviewTab(tab));
+  $(id).addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    setPackageReviewTab(event.key === 'Home' ? 'resume' : event.key === 'End' ? 'cover' : packageReviewTab === 'resume' ? 'cover' : 'resume', true);
+  });
+}
+$('copyPackageText').addEventListener('click', async () => {
+  const field = $(packageReviewTab === 'resume' ? 'packageResumeText' : 'packageCoverText');
+  try { await navigator.clipboard.writeText(field.value); $('packageCopyStatus').textContent = 'Copied. Review before sharing with an employer.'; }
+  catch { field.focus(); field.select(); $('packageCopyStatus').textContent = 'Text selected. Use your device’s Copy command.'; }
+});
+$('nextPackageReview').addEventListener('click', async () => {
+  const button = $('nextPackageReview'); button.disabled = true;
   try {
-    $('savePackageReview').disabled = true;
-    $('packageReviewStatus').textContent = 'Saving an encrypted revision and re-running truth, ATS, and artifact checks…';
-    const resumeText = sanitizeResumeText($('packageResumeText').value);
-    const coverLetterText = sanitizeResumeText($('packageCoverText').value);
-    if (resumeText.length < 500) throw new Error('Keep at least 500 characters of role-specific resume content.');
-    const run = await reviseDurablePackage(role, resumeText, coverLetterText);
-    openPackageReview(deskState.roles.find(item => item.id === role.id));
-    if (vaultEnabled()) {
-      backupPackageDocument('tailored-resume', `${role.employer} — ${role.title} resume`, resumeText, `${run.result?.documentVersion || 'candidate-revision'}.txt`).catch(() => {});
-      if (coverLetterText) backupPackageDocument('cover-letter', `${role.employer} — ${role.title} cover letter`, coverLetterText, `${run.result?.documentVersion || 'candidate-revision'}-cover.txt`).catch(() => {});
-    }
-  } catch (error) { $('packageReviewStatus').textContent = error.message; }
-  finally { $('savePackageReview').disabled = false; }
+    if (packageAutosave && !(await packageAutosave.flush())) { $('savePackageReview').focus(); return; }
+    if (packageReviewTab === 'resume' && !$('packageCoverTab').hidden) { setPackageReviewTab('cover', true); return; }
+    const drafts = deskState.roles.filter(item => item.packageDraft?.resumeText);
+    const next = drafts[drafts.findIndex(item => item.id === activePackageRoleId) + 1];
+    if (next) await openPackageReview(next);
+    else if (await closePackageReview()) openJobs();
+  } finally { button.disabled = false; }
+});
+window.addEventListener('beforeunload', event => {
+  if (packageAutosave?.dirty()) { event.preventDefault(); event.returnValue = ''; }
 });
 $('downloadPackageDraft').addEventListener('click', () => {
   const role = deskState.roles.find(item => item.id === activePackageRoleId);
@@ -3413,6 +3992,7 @@ $('saveResume').addEventListener('click', async () => {
     const text = saveResumeText($('resumeEditor').value, 'concierge-reviewed', $('resumeFile').files[0]?.name || '');
     setResumeMessage(`Resume available in this tab · ${text.length.toLocaleString()} characters.`, 'good');
     showToast('Resume saved');
+    $('quickUseSavedResume').hidden = false;
     renderMission();
     addMessage('assistant', '<strong>Your resume is saved.</strong> I can use it as the master version, build readiness answers from it after your confirmation, and send role-specific tailoring through the existing Resume Tailor.');
     try {
@@ -3467,30 +4047,132 @@ $('confirmConsequence').addEventListener('click', async event => {
     $('confirmationSubtitle').classList.add('visible-error');
   } finally { button.disabled = false; }
 });
+// Every dismissible dialog, paired with the control that closes it. Escape and the
+// Tab trap previously covered only 3 of the 14 dialogs, so from the other 11 a
+// keyboard user could Tab straight out into the page hidden behind the overlay and
+// had no way to back out without finding the Close button by eye.
+//
+// questionOverlay is deliberately absent from Escape dismissal: its existing
+// Ask later/backdrop behavior remains separate. Closing uses the real button, not the underlying
+// function so keyboard dismissal behaves exactly like clicking Close (drafts saved,
+// focus restored, nothing skipped).
+const DISMISSIBLE_DIALOGS = [
+  ['confirmationOverlay', 'cancelConfirmation'],
+  ['jobAgentConsentOverlay', 'cancelJobAgentConsent'],
+  ['needsYouOverlay', 'closeNeedsYou'],
+  ['applicationOverlay', 'closeApplication'],
+  ['packageReviewOverlay', 'closePackageReview'],
+  ['interviewOverlay', 'closeInterviewPractice'],
+  ['deskOverlay', 'closeDesk'],
+  ['vaultOverlay', 'closeVault'],
+  ['campaignOverlay', 'closeCampaign'],
+  ['resumeOverlay', 'closeResumeSetup'],
+  ['jobsOverlay', 'closeJobs'],
+  ['agentAccessOverlay', 'closeAgentAccess'],
+  ['guidedLaunchOverlay', 'guidedLaunchClose'],
+];
+
+function dialogIsShown(node) {
+  if (!node) return false;
+  const styles = getComputedStyle(node);
+  if (styles.display === 'none' || styles.visibility === 'hidden') return false;
+  const rect = node.getBoundingClientRect();
+  return rect.width > 4 && rect.height > 4;
+}
+
+// Dialogs stack, so the one the user is actually looking at is the highest layer.
+function topmostOpenDialog() {
+  let best = null;
+  let bestZ = -Infinity;
+  document.querySelectorAll('[role="dialog"]').forEach((node, index) => {
+    if (!dialogIsShown(node)) return;
+    const z = Number.parseInt(getComputedStyle(node).zIndex, 10);
+    const rank = (Number.isNaN(z) ? 0 : z) * 1000 + index;
+    if (rank >= bestZ) { bestZ = rank; best = node; }
+  });
+  return best;
+}
+
+function dialogFocusables(dialog) {
+  return [...dialog.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+    .filter(node => !node.hidden && node.getBoundingClientRect().width > 0);
+}
+
 document.addEventListener('keydown', event => {
-  const openDialog = $('confirmationOverlay').classList.contains('open') ? $('confirmationOverlay')
-    : $('needsYouOverlay').classList.contains('open') ? $('needsYouOverlay')
-      : $('jobAgentConsentOverlay').classList.contains('open') ? $('jobAgentConsentOverlay') : null;
+  if (event.key !== 'Escape' && event.key !== 'Tab') return;
+  const openDialog = topmostOpenDialog();
+  if (!openDialog) return;
+
   if (event.key === 'Escape') {
-    if (openDialog === $('confirmationOverlay')) closeConsequenceDialog();
-    else if (openDialog === $('jobAgentConsentOverlay')) closeJobAgentConsent();
-    else if (openDialog) closeNeedsYou();
+    const pair = DISMISSIBLE_DIALOGS.find(([dialogId]) => dialogId === openDialog.id);
+    if (!pair) return;                       // deliberately blocking, leave it open
+    const closeControl = $(pair[1]);
+    if (!closeControl || closeControl.disabled) return;
+    event.preventDefault();
+    closeControl.click();
     return;
   }
-  if (event.key !== 'Tab' || !openDialog) return;
-  const focusable = [...openDialog.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled])')].filter(node => !node.hidden);
+
+  const focusable = dialogFocusables(openDialog);
   if (!focusable.length) return;
   const first = focusable[0];
   const last = focusable.at(-1);
   if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
   else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  else if (!openDialog.contains(document.activeElement)) { event.preventDefault(); first.focus(); }
+});
+
+// Opening a dialog should put the keyboard inside it. Several dialogs left focus
+// on the trigger behind the overlay, so the first Tab landed on hidden content.
+const dialogFocusObserver = new MutationObserver(entries => {
+  for (const entry of entries) {
+    const dialog = entry.target;
+    if (dialog.getAttribute?.('role') !== 'dialog') continue;
+    if (!dialogIsShown(dialog) || dialog.contains(document.activeElement)) continue;
+    const focusable = dialogFocusables(dialog);
+    if (focusable.length) focusable[0].focus({ preventScroll: true });
+  }
+});
+document.querySelectorAll('[role="dialog"]').forEach(dialog => {
+  dialogFocusObserver.observe(dialog, { attributes: true, attributeFilter: ['class', 'hidden', 'style'] });
 });
 document.querySelectorAll('[data-desk-tab]').forEach(node => node.addEventListener('click', () => switchTab(node.dataset.deskTab)));
+$('refreshLiveCosts').addEventListener('click', async () => {
+  $('refreshLiveCosts').disabled = true;
+  $('refreshLiveCosts').textContent = 'Refreshing...';
+  await hydrateOperationalMetrics();
+  $('refreshLiveCosts').disabled = false;
+  $('refreshLiveCosts').textContent = 'Refresh costs';
+});
+$('refreshSystemAlerts').addEventListener('click', async () => {
+  $('refreshSystemAlerts').disabled = true;
+  $('refreshSystemAlerts').textContent = 'Refreshing...';
+  await hydrateOperationalMetrics();
+  $('refreshSystemAlerts').disabled = false;
+  $('refreshSystemAlerts').textContent = 'Refresh alerts';
+});
 $('questionChoices').addEventListener('click', event => {
-  const value = event.target?.dataset?.questionAnswer;
+  const button = event.target?.closest?.('[data-question-answer],[data-question-template]');
+  if (!button) return;
+  const input = $('questionValue');
+  if (button.dataset.questionTemplate) {
+    input.placeholder = button.dataset.questionTemplate;
+    input.focus();
+    document.querySelectorAll('#questionChoices .question-choice').forEach(node => node.classList.toggle('selected', node === button));
+    return;
+  }
+  const value = button.dataset.questionAnswer;
   if (!value) return;
-  $('questionValue').value = value;
-  document.querySelectorAll('[data-question-answer]').forEach(node => node.classList.toggle('selected', node === event.target));
+  if (button.dataset.questionAppend === 'true') {
+    const values = list(input.value);
+    const index = values.indexOf(value);
+    if (index >= 0) values.splice(index, 1); else values.push(value);
+    input.value = values.join(', ');
+    button.classList.toggle('selected', index < 0);
+    return;
+  }
+  input.value = value;
+  document.querySelectorAll('#questionChoices .question-choice').forEach(node => node.classList.toggle('selected', node === button));
 });
 $('questionForm').addEventListener('submit', event => {
   event.preventDefault();
@@ -3692,13 +4374,13 @@ $('roleForm').addEventListener('submit', event => { event.preventDefault(); safe
     recruiterContact: $('roleRecruiter').value, attestations: list($('roleAttestations').value),
   });
   deskState = result.state; event.target.reset();
-  showDeskMessage(result.duplicate ? 'Duplicate suppressed; durable reason added to the existing role.' : 'Role captured as Found.');
+  showDeskMessage(result.duplicate ? 'This job is already saved. The reason was saved with the existing job.' : 'Role captured as Found.');
 }); });
 
 $('importTracker').addEventListener('click', () => safeAction(() => {
   const applications = loadJson('1ststep_applications', []); const tailored = loadJson('1ststep_tailor_history', []);
   const result = importLegacyEntries(deskState, applications, tailored); deskState = result.state;
-  showDeskMessage(`Imported ${result.imported}; suppressed ${result.duplicates} duplicates; skipped ${result.skipped}. Imported “applied” labels are not treated as receipts.`);
+  showDeskMessage(`Imported ${result.imported}; skipped ${result.duplicates} duplicates and ${result.skipped} other entries. Imported “applied” labels are not treated as receipts.`);
 }));
 
 $('roleList').addEventListener('click', event => {
@@ -3830,13 +4512,14 @@ async function hydrateDurableRun() {
   try {
     const response = await fetchWithTimeout('/api/job-agent-runs?latest=discovery', { headers: apiAuthorizationHeaders() }, REQUEST_TIMEOUTS.persistence);
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) return;
+    if (!response.ok) return false;
+    statusCheckUnavailable = false;
     if (!data.run) {
       durableRun = null;
       cacheDurableRun(null);
       delete missionState.durableRunId;
       saveAll(); renderMission();
-      return;
+      return true;
     }
     durableRun = data.run;
     cacheDurableRun(durableRun);
@@ -3856,7 +4539,8 @@ async function hydrateDurableRun() {
       missionState.runState = durableRun.status === 'Failed' ? 'Paused' : durableRun.status;
       saveAll(); renderMission();
     }
-  } catch { /* device state remains available */ }
+    return true;
+  } catch { return false; /* device state remains available */ }
 }
 
 function restoreDurableDiscoveryRoles(run) {
@@ -3894,7 +4578,7 @@ function restoreDurableDiscoveryRoles(run) {
     });
     deskState = result.state;
     const restored = result.role;
-    const shouldRestoreVerified = card && (card.status === 'Verified' || card.status === 'Package Ready' || Boolean(card.packageRunId));
+    const shouldRestoreVerified = card && ['Verified', 'Verified - Package Preparation', 'Package Ready'].includes(card.status);
     if (shouldRestoreVerified && restored.status === 'Found') deskState = transitionRole(deskState, restored.id, 'Verified', { reason: 'Restored exact verified discovery evidence' });
     if (card?.packageRunId) deskState = recordPackageRunCheckpoint(deskState, restored.id, {
       runId: card.packageRunId,
@@ -3921,6 +4605,11 @@ async function hydrateAccountWorkflow() {
   await hydrateJobAgentLearning();
 }
 start();
+$('applicationSuggestions').addEventListener('click', event => { if (event.target.hasAttribute('data-review-memory')) { $('vaultOverlay').classList.add('open'); renderVaultStatus(); } });
+$('checkAgentStatus').addEventListener('click', () => checkSimpleAgentStatus());
+$('statusShowJobs').addEventListener('click', () => $('openJobs').click());
+// Refresh the displayed age without issuing background requests or inventing activity.
+setInterval(renderRunState, 15000);
 loadPublicAppConfig();
 loadSessionCapabilities().then(async () => {
   await hydrateAccountWorkflow();

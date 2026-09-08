@@ -376,7 +376,7 @@ export default async function handler(req, res) {
     if (COMPLETE_ONLY_TYPES.has(callType) && verifiedTierForRequest !== 'complete') {
       alertOnAbuse('tier_required', ip, `callType:${callType} tier:${verifiedTierForRequest}`);
       return res.status(403).json({
-        error: 'This feature requires Job Hunt Pass.',
+        error: 'This feature is included with 1stStep Complete.',
         code:  'COMPLETE_REQUIRED',
         callType,
       });

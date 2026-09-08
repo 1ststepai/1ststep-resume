@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "isolated-database-ci-drill",
+  "contentFree": true,
+  "containsCandidateValues": false,
+  "productionAccessed": false,
+  "githubRunId": 34094509097,
+  "githubRunUrl": "https://github.com/1ststepai/1ststep-resume/actions/runs/34094509097",
+  "sourceCommit": "420c53843c01f7f1e97990efb6bb4d96133fc162",
+  "recordedAt": "2026-09-07T07:16:19Z",
+  "downloadedArtifactSha256": "b1d20c28f503e4aabc5ea5fd447d63928328f7b4338974f84cf5938416436a3e",
+  "environment": {
+    "provider": "github-actions",
+    "target": "disposable-local-supabase",
+    "persistentStaging": false
+  },
+  "tooling": {
+    "supabaseCliVersion": "2.116.0",
+    "postgresVersion": "17.6"
+  },
+  "migration": {
+    "canonicalSha256": "3c61cb457d58180353ba19aa3669408c80f8f7bb349856d02d549ed1acf5c17a",
+    "appliedToDisposableSource": true,
+    "appliedToDisposableRestore": true
+  },
+  "isolation": {
+    "pgTapPlan": 19,
+    "pgTapPassed": 19,
+    "jobAgentTables": 20,
+    "rlsAndForceRlsTables": 20
+  },
+  "recovery": {
+    "sourceFixtureRows": 1,
+    "restoredFixtureRows": 1,
+    "fixtureCountsMatch": true,
+    "restoreTargetDestroyedAfterRun": true
+  },
+  "limits": {
+    "managedBackupVerified": false,
+    "pointInTimeRecoveryVerified": false,
+    "persistentStagingVerified": false
+  }
+}

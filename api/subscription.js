@@ -183,7 +183,7 @@ async function sendSubscriptionRestoreCode(email, code) {
       subject: 'Your 1stStep.ai access code',
       html: `
         <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#0f172a">
-          <h2 style="margin:0 0 12px">Verify your Job Hunt Pass access</h2>
+          <h2 style="margin:0 0 12px">Verify your 1stStep Complete access</h2>
           <p style="margin:0 0 16px;color:#475569">Enter this one-time code in 1stStep.ai to restore your subscription access.</p>
           <div style="font-size:28px;font-weight:800;letter-spacing:0.18em;background:#f1f5f9;border-radius:12px;padding:16px 20px;text-align:center">${code}</div>
           <p style="margin:16px 0 0;color:#64748b;font-size:13px">This code expires in 10 minutes. If you did not request it, you can ignore this email.</p>
@@ -533,10 +533,17 @@ export default async function handler(req, res) {
     });
   }
 
+  return sendVerifiedSubscriptionSession(req, res, email);
+}
+
+// Only call after proving control of this exact email, through the restore
+// challenge or Clerk's server-verified primary email. Never use request email.
+export async function sendVerifiedSubscriptionSession(req, res, email, identityFields = {}, stripeClient = null) {
+  const send = (tier, fields) => sendSignedSession(req, res, email, tier, { ...identityFields, ...fields });
   // A successfully completed email challenge proves control of the configured
   // owner inbox. Only then may an administrator receive the owner session.
   if (isAdministratorSubject(email)) {
-    return sendSignedSession(req, res, email, 'complete', {
+    return send('complete', {
       status: 'owner_verified_access',
       expiresAt: null,
       expiresInDays: null,
@@ -545,23 +552,23 @@ export default async function handler(req, res) {
 
   // Legacy private-access users no longer receive paid entitlement by email alone.
   if (isBetaEmail(email)) {
-    return sendSignedSession(req, res, email, 'free', { status: 'legacy_access_free', expiresAt: null, expiresInDays: null });
+    return sendSignedSession(req, res, email, 'free', { ...identityFields, status: 'legacy_access_free', expiresAt: null, expiresInDays: null });
   }
 
-  if (!process.env.STRIPE_SECRET_KEY) {
+  if (!stripeClient && !process.env.STRIPE_SECRET_KEY) {
     console.error('STRIPE_SECRET_KEY not set. Subscription check unavailable.');
-    return sendSignedSession(req, res, email, 'free', { error: 'Subscription check unavailable.' });
+    return res.status(503).json({ error: 'Subscription check unavailable. Please try again.' });
   }
 
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' });
+    const stripe = stripeClient || new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20', timeout: 8000, maxNetworkRetries: 0 });
 
     // Find customers with this email
     const customers = await stripe.customers.list({ email, limit: 5 });
 
     if (!customers.data.length) {
       // Return same shape as 'free' — don't reveal whether the email has ever been seen
-      return sendSignedSession(req, res, email, 'free', { status: 'no_active_subscription' });
+      return send('free', { status: 'no_active_subscription' });
     }
 
     // Check each customer for an active subscription
@@ -585,7 +592,7 @@ export default async function handler(req, res) {
               const expiresMs = passExpMs || periodEndMs;
               const expiresAt = expiresMs ? new Date(expiresMs).toISOString() : null;
               const expiresInDays = expiresMs ? Math.max(0, Math.ceil((expiresMs - Date.now()) / 86400000)) : null;
-              return sendSignedSession(req, res, email, tier, { status: sub.status, expiresAt, expiresInDays });
+              return send(tier, { status: sub.status, expiresAt, expiresInDays });
             }
           }
         }
@@ -608,7 +615,7 @@ export default async function handler(req, res) {
               const expiresMs = sub.current_period_end ? sub.current_period_end * 1000 : null;
               const expiresAt = expiresMs ? new Date(expiresMs).toISOString() : null;
               const expiresInDays = expiresMs ? Math.max(0, Math.ceil((expiresMs - Date.now()) / 86400000)) : null;
-              return sendSignedSession(req, res, email, tier, { status: 'trialing', expiresAt, expiresInDays });
+              return send(tier, { status: 'trialing', expiresAt, expiresInDays });
             }
           }
         }
@@ -616,11 +623,11 @@ export default async function handler(req, res) {
     }
 
     // Customer exists but no active paid or trialing subscription found
-    return sendSignedSession(req, res, email, 'free', { status: 'no_active_subscription' });
+    return send('free', { status: 'no_active_subscription' });
 
   } catch (err) {
     console.error(JSON.stringify({ type: 'stripe-subscription-check-error', name: err?.name || 'unknown' }));
-    // Fail closed to free access when Stripe is unavailable or returns an unexpected error.
-    return sendSignedSession(req, res, email, 'free', { error: 'Subscription check failed.' });
+    // Do not overwrite a paid session with free access during an outage.
+    return res.status(503).json({ error: 'Subscription check failed. Please try again.' });
   }
 }
