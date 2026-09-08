@@ -516,6 +516,81 @@ section { padding: clamp(62px, 8vw, 104px) 0; }
 @media(max-width: 600px) { .outcome-section { scroll-margin-top: 72px; } .outcome-stage { padding: 20px 12px; } .journey-card { padding: 20px 12px; min-height: 380px; } .journey-foot { flex-direction: column; align-items: flex-start; } .journey-nav { gap: 5px; } .journey-nav button { padding: 9px 12px; font-size: 11px; } .offer-envelope { width: 235px; } .conversation-bubble { position: static; margin: -12px auto 0; width: max-content; max-width: 100%; } }
 @media(prefers-reduced-motion: reduce) { html:not(.motion-opt-in) .journey-track { transition: none; } html:not(.motion-opt-in) .tour-pointer { animation: none; } }
 
+/* Phone layout: preserve the motion story while making every step feel native to a small screen. */
+@media (max-width: 600px) {
+  body { font-size: 16px; }
+  .wrap { padding-inline: 18px; }
+  section { padding-block: 48px; }
+  .nav-inner { height: 64px; gap: 10px; }
+  .brand-logo { height: 22px; }
+
+  .hero { padding-top: 34px; padding-bottom: 42px; }
+  .hero-grid { gap: 18px; }
+  .hero h1 { margin-top: 8px; font-size: clamp(42px, 12vw, 52px); line-height: 1.02; }
+  .hero .lede { max-width: 21rem; font-size: 16px; line-height: 1.5; }
+  .hero-cta { width: min(100%, 320px); margin: 24px auto 0; flex-direction: column; }
+  .hero-cta .btn { width: 100%; min-height: 52px; }
+
+  .demo-stage { padding-top: 18px; }
+  .demo-window { border-radius: 18px; }
+  .demo-toolbar { padding: 13px 14px; }
+  .demo-label { font-size: 10px; }
+  .demo-content { padding: 17px; }
+  .demo-content h2 { min-height: 0; font-size: 23px; }
+  .demo-job { padding: 14px; }
+  .demo-progress { gap: 4px; padding: 2px 15px 15px; }
+  .demo-progress button { padding-top: 9px; font-size: 10px; text-align: center; }
+  .demo-controls { justify-content: center; margin-top: 12px; font-size: 11px; }
+  .opportunity-stream { margin-top: 18px; }
+  .opportunity-group > span { min-width: 178px; padding: 11px 15px; font-size: 12px; }
+
+  .outcome-heading { margin-bottom: 20px; }
+  .outcome-heading h2 { font-size: 34px; }
+  .outcome-stage { padding: 14px 10px 18px; border-radius: 22px; }
+  .journey-viewport { border-radius: 17px; }
+  .journey-card { min-height: 350px; padding: 20px 12px; border-radius: 17px; }
+  .journey-card h3 { font-size: 27px; }
+  .journey-graphic { height: 185px; }
+  .journey-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 14px; }
+  .journey-nav button { width: 100%; padding: 8px 10px; }
+  .journey-foot { align-items: center; margin-top: 12px; text-align: center; }
+
+  .section-head { margin-bottom: 24px; }
+  .product-studio .section-head h2 { font-size: 32px; }
+  .studio-grid { gap: 16px; }
+  .studio-card { padding: 22px 20px; border-radius: 20px; }
+  .studio-card h3 { font-size: 27px; }
+  .studio-card > p:not(.eyebrow), .studio-extension > div > p:not(.eyebrow) { font-size: 15px; }
+  .studio-link { width: 100%; justify-content: space-between; }
+  .resume-visual { height: 230px; }
+  .resume-paper { width: 88%; padding: 22px; }
+  .edit-prompt { bottom: 18px; padding: 14px; font-size: 13px; }
+  .resume-done { right: 2px; }
+  .job-visual { height: 218px; }
+  .studio-extension { padding: 22px 20px; }
+  .extension-visual { padding: 28px 8px 12px; border-radius: 16px; }
+  .browser-body { height: 168px; padding: 20px; }
+  .browser-body strong { font-size: 24px; }
+  .extension-popover { margin-inline: 8px; padding: 14px; }
+
+  .paths { gap: 16px; }
+  .path { padding: 26px 20px 22px; border-radius: 20px; }
+  .path-tag { left: 20px; }
+  .path-foot { padding-top: 18px; }
+  .path-foot .btn + .btn, .path-foot .path-note + .btn { margin-top: 10px; }
+
+  .compact-details { padding-block: 40px; }
+  .compact-details h2 { font-size: 27px; }
+  .faq summary { padding-block: 18px; font-size: 0.98rem; }
+  .close-inner { padding: 38px 20px; border-radius: 20px; }
+  .close-inner h2 { font-size: 31px; }
+
+  .foot { padding: 42px 0 28px; }
+  .foot-grid { grid-template-columns: 1fr; gap: 28px; }
+  .foot h4 { margin-bottom: 10px; }
+  .foot-legal { flex-direction: column; align-items: flex-start; margin-top: 30px; }
+}
+
 /* Keep motion graphics legible against the light landing canvas. */
 .demo-stage,.outcome-stage,.studio-card{isolation:isolate}
 .demo-stage::after,.outcome-stage::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;background:radial-gradient(circle at 78% 14%,rgba(99,102,241,.22),transparent 34%),radial-gradient(circle at 16% 78%,rgba(59,130,246,.14),transparent 30%)}
