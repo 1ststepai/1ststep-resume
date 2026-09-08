@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const baseUrl = 'http://127.0.0.1:4175/concierge';
+const baseUrl = process.env.CONCIERGE_TEST_URL || 'http://127.0.0.1:4175/concierge';
 
 test('a generic extension capture is visibly added to Job Agent for supervised review', async ({ page }) => {
   const captureId = 'browser-capture-account-director';
