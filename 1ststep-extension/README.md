@@ -5,11 +5,11 @@ This package has two explicit user flows: capture the visible job page into the 
 ## Job capture flow
 
 1. Open a job posting and click the extension.
-2. The extension uses the temporary `activeTab` grant to inspect that page only. It prefers JobPosting structured data, then visible job-description containers. It does not request permanent access to every website.
-3. Review or correct the title and company, then choose Resume Builder, cover letter, or Job Agent review. Manual paste remains available when a page cannot be read.
+2. The extension uses the temporary `activeTab` grant to inspect that page only. It prefers JobPosting structured data, then adapters for Workday, Lever, Ashby, SmartRecruiters, and Greenhouse, then visible job-description containers. Accessible embedded frames are checked only during that click. It does not request permanent access to every website.
+3. Review or correct the captured title, company, location, pay disclosure, and description, then choose Resume Builder, cover letter, or Job Agent review. If the layout is unusual, highlight the description and click the extension again; manual paste remains the last fallback.
 4. A unique capture is kept locally for up to 15 minutes and removed only after the matching 1stStep page confirms it was saved.
 
-Capture works on ordinary HTTP(S) pages whose job details are available in the top-level rendered document. It cannot bypass sign-in walls, read browser-internal pages, or guarantee extraction from PDFs, cross-origin iframe-only pages, or closed shadow roots.
+Capture works on ordinary HTTP(S) pages whose job details are available in the rendered document or an accessible embedded frame. It cannot bypass sign-in walls, read browser-internal pages, or guarantee extraction from protected PDFs, inaccessible frames, or closed shadow roots.
 
 ## User flow
 
@@ -33,9 +33,9 @@ Load `1ststep-extension` as an unpacked extension only in a synthetic or explici
 
 ## Current boundary
 
-- Job capture: user-triggered on the currently selected ordinary HTTP(S) page; no automatic background browsing and no permanent all-sites host permission.
+- Job capture: user-triggered on the currently selected ordinary HTTP(S) page, with major ATS adapters and highlighted-text fallback; no automatic background browsing and no permanent all-sites host permission.
 - Supported execution adapter: Greenhouse standard hosted boards only.
 - Résumé upload: automatic only for the exact approved `resume_pdf` artifact and a single unambiguous Greenhouse résumé control. Bytes are never written to Chrome storage and completion reports only `resumeDocument`.
 - Final submit: never performed by the extension.
 - Receipt: must be independently captured and verified by the server workflow.
-- Automated form filling on Ashby, Lever, SmartRecruiters, iCIMS, and Workday is not supported. Capturing their visible job text does not authorize form filling or submission.
+- Automated form filling on Ashby, Lever, SmartRecruiters, iCIMS, and Workday is not supported. Their job details can be captured, but capture does not authorize form filling or submission.

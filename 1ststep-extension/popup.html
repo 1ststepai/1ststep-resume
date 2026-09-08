@@ -469,6 +469,7 @@
           <span id="company">—</span>
           <span id="site">—</span>
         </div>
+        <div id="capturedDetails" style="display:none; font-size:12px; color:var(--text2); margin-bottom:8px;"></div>
         <div id="jobUrl" style="display:none; font-size:11px; color:var(--muted); margin-bottom:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
 
         <!-- Job info edit form — shown when title is missing or user clicks edit -->
@@ -510,10 +511,10 @@
       <div id="emptyState" class="empty-state">
         <div class="empty-state-icon">🔍</div>
         <div class="empty-state-title">We couldn't read this job page</div>
-        <div class="empty-state-desc">This can happen on browser pages, PDFs, sign-in walls, or iframe-only postings. Paste the job description instead.</div>
+        <div class="empty-state-desc">Highlight the job description on the page, then open 1stStep again. We will capture the selected text without copy and paste. Protected PDFs, sign-in walls, and closed frames may still need the fallback below.</div>
 
         <div class="manual-section" id="manualSection">
-          <label class="manual-label" for="manualJdInput">Job description:</label>
+          <label class="manual-label" for="manualJdInput">Last resort — paste the job description:</label>
           <textarea id="manualJdInput" class="manual-textarea" aria-label="Job description" placeholder="Paste the full job description here…"></textarea>
           <button class="btn-primary" id="manualOpenBtn" style="width:100%; margin-top:8px; flex:none;">Use in Resume Builder</button>
         </div>

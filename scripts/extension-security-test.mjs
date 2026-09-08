@@ -36,7 +36,16 @@ assert.doesNotMatch(files['background.js'], /chrome\.storage\.(?:local|session)\
 assert.match(files['popup.js'], /chrome\.scripting\.executeScript/,
   'generic capture must run only after the user opens the popup on the active tab');
 assert.match(files['popup.js'], /files: \['generic-capture\.js'\]/);
+assert.match(files['popup.js'], /allFrames: true/,
+  'user-triggered capture must inspect accessible job frames without permanent host access');
+assert.match(files['popup.js'], /allFrames: false/,
+  'protected frames must fall back to the selected top-level page');
 assert.match(files['generic-capture.js'], /application\/ld\+json/);
+for (const ats of ['workday', 'lever', 'ashby', 'smartrecruiters']) {
+  assert.match(files['generic-capture.js'], new RegExp(`id: '${ats}'`), `generic capture must include the ${ats} adapter`);
+}
+assert.match(files['generic-capture.js'], /window\.getSelection/,
+  'highlighted text must provide a no-copy-paste fallback');
 assert.match(files['generic-capture.js'], /jobDescription\.length < 120/,
   'generic capture must reject pages without a meaningful visible description');
 assert.doesNotMatch(files['generic-capture.js'], /fetch\(|XMLHttpRequest|chrome\.storage/,

@@ -131,6 +131,9 @@ function normalizedCapturedJob(input) {
     jobDescription: String(value.jobDescription || '').trim().slice(0, 50000),
     applyUrl,
     site: String(value.site || '').trim().slice(0, 60),
+    location: String(value.location || '').trim().slice(0, 500),
+    salaryText: String(value.salaryText || '').trim().slice(0, 500),
+    captureMethod: String(value.captureMethod || '').trim().slice(0, 80),
   };
 }
 
@@ -2019,8 +2022,8 @@ function consumeJobAgentCapture() {
       sourceProvider: job.site || 'user-selected page',
       sourceEvidence: 'User-triggered extension capture. Employer ownership, requisition identity, and active Apply path still require verification.',
       remoteEligibility: 'Not verified from captured page',
-      geographyEligibility: 'Not verified from captured page',
-      salaryDisclosure: 'Not verified from captured page',
+      geographyEligibility: job.location ? `Captured page: ${job.location} (not independently verified)` : 'Not verified from captured page',
+      salaryDisclosure: job.salaryText ? `Captured page: ${job.salaryText} (not independently verified)` : 'Not verified from captured page',
       postedDate: 'Not verified from captured page',
       travel: 'Not verified from captured page',
       schedule: 'Not verified from captured page',

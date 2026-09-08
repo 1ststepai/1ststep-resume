@@ -1,8 +1,8 @@
 # Draft privacy addendum — counsel review required
 
-The controlled 1stStep extension is optional. A user may click it on an ordinary HTTP(S) job page to capture the visible title, company, description, current URL, and site name into 1stStep. Automated application-field review and filling remains limited to hosted Greenhouse pages plus `app.1ststep.ai`.
+The controlled 1stStep extension is optional. A user may click it on an ordinary HTTP(S) job page to capture the visible title, company, description, location, pay disclosure, current URL, site name, and extraction method into 1stStep. Automated application-field review and filling remains limited to hosted Greenhouse pages plus `app.1ststep.ai`.
 
-Generic capture uses Chrome's temporary `activeTab` grant and a packaged local script only after the user clicks the extension. It does not request permanent all-sites host access, monitor browsing in the background, read browser history, or send the page merely because it was visited. Pages behind sign-in walls, browser-internal pages, PDFs, and iframe-only postings may require manual paste.
+Generic capture uses Chrome's temporary `activeTab` grant and a packaged local script only after the user clicks the extension. The script can inspect the selected rendered document and accessible embedded frames, or read text the user highlighted as a fallback. It does not request permanent all-sites host access, monitor browsing in the background, read browser history, or send the page merely because it was visited. Pages behind sign-in walls, browser-internal pages, protected PDFs, inaccessible frames, and closed components may require manual paste.
 
 When the user clicks Auto-fill, the extension reads the exact page URL and a value-free description of visible form controls. Password, file, OTP, CAPTCHA, identity, demographic, protected-trait, certification, conflict, and other consequential controls are not read for their values or filled automatically. The extension does not read browser history, saved passwords, cookies, or values the user already typed.
 

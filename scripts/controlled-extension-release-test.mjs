@@ -10,7 +10,7 @@ try {
   const first = await buildControlledExtension({ outputDirectory: join(directory, 'first') });
   const second = await buildControlledExtension({ outputDirectory: join(directory, 'second') });
   assert.equal(first.sha256, second.sha256, 'controlled extension build must be reproducible');
-  assert.equal(first.capability, 'supervised-greenhouse-no-submit');
+  assert.equal(first.capability, 'universal-capture-supervised-greenhouse-no-submit');
   assert.equal(first.containsCandidateValues, false);
 
   const zip = await JSZip.loadAsync(await readFile(first.outputPath));
@@ -27,7 +27,7 @@ try {
   assert.equal(releaseManifest.files.length, 12);
   assert.equal(releaseManifest.excludesLegacyModules, true);
   assert.equal(releaseManifest.containsCandidateValues, false);
-  assert.equal(releaseManifest.capability, 'supervised-greenhouse-no-submit');
+  assert.equal(releaseManifest.capability, 'universal-capture-supervised-greenhouse-no-submit');
   for (const file of releaseManifest.files) {
     assert.match(file.sha256, /^[a-f0-9]{64}$/);
     assert.ok(file.bytes > 0);
