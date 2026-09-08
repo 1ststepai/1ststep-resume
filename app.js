@@ -1272,6 +1272,13 @@ function collapseLetterSpacing(text) {
       document.getElementById('resumeChoiceBuildBtn')?.addEventListener('click', () => openResumeBuilder?.());
       document.getElementById('bulkBuildResumeBtn')?.addEventListener('click', () => openResumeBuilder?.());
       document.getElementById('jccBuildResumeBtn')?.addEventListener('click', () => openResumeBuilder?.());
+
+      if (new URLSearchParams(window.location.search).get('start') === 'resume-builder') {
+        localStorage.setItem('1ststep_welcomed', '1');
+        document.getElementById('welcomeOverlay')?.classList.remove('visible');
+        document.body.style.overflow = '';
+        setTimeout(() => openResumeBuilder?.(), 0);
+      }
     });
 
 

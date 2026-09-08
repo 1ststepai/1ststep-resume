@@ -142,6 +142,8 @@ function _wbResume() {
 function openResumeBuilder() {
   if (document.getElementById('resumeBuilderModal')) return; // already open
 
+  document.body.classList.add('resume-builder-open');
+
   _wb.step = 1;
   _wb.resume = null; // reset — will re-init on _wbResume() call
   _wbResume();       // trigger pre-populate from session if available
@@ -204,6 +206,7 @@ function openResumeBuilder() {
 function closeResumeBuilder() {
   const modal = document.getElementById('resumeBuilderModal');
   if (modal) modal.remove();
+  document.body.classList.remove('resume-builder-open');
   _wb.el = null;
 }
 
@@ -300,7 +303,52 @@ function _rbBack() {
 
 function _rbNext() {
   _rbSaveCurrentStep();
+  if (!_rbValidateCurrentStep()) return;
   if (_wb.step < _wb.total) { _wb.step++; _rbRender(); }
+}
+
+function _rbValidationError(message, fieldId = '') {
+  document.getElementById('rbValidationMessage')?.remove();
+  const content = document.getElementById('rbContent');
+  if (!content) return false;
+  const alert = document.createElement('div');
+  alert.id = 'rbValidationMessage';
+  alert.setAttribute('role', 'alert');
+  alert.style.cssText = 'margin:0 0 14px;padding:11px 13px;border:1px solid rgba(248,113,113,.45);border-radius:9px;background:rgba(127,29,29,.28);color:#FCA5A5;font-size:12px;line-height:1.45';
+  alert.textContent = message;
+  content.prepend(alert);
+  const field = fieldId ? document.getElementById(fieldId) : null;
+  if (field) {
+    field.setAttribute('aria-invalid', 'true');
+    field.focus();
+  }
+  return false;
+}
+
+function _rbValidateCurrentStep() {
+  const r = _wbResume();
+  document.getElementById('rbValidationMessage')?.remove();
+  document.querySelectorAll('#rbContent [aria-invalid="true"]').forEach(field => field.removeAttribute('aria-invalid'));
+
+  if (_wb.step === 1) {
+    if (!r.name) return _rbValidationError('Enter your full name before continuing.', 'rb_name');
+    if (!r.email) return _rbValidationError('Enter your email address before continuing.', 'rb_email');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email)) return _rbValidationError('Enter a valid email address before continuing.', 'rb_email');
+  }
+  if (_wb.step === 2) {
+    const hasExperience = r.experience.some(exp => exp.company || exp.title || exp.dates || exp.bullets?.some(Boolean));
+    if (!hasExperience) return _rbValidationError('Add at least a job title, employer, date, or accomplishment before continuing.', r.experience[0] ? `exp_title_${r.experience[0].id}` : '');
+    r.experience = r.experience.filter(exp => exp.company || exp.title || exp.dates || exp.bullets?.some(Boolean));
+  }
+  if (_wb.step === 3) {
+    const hasEducation = r.education.some(edu => edu.school || edu.degree || edu.field || edu.dates);
+    if (!hasEducation) return _rbValidationError('Add at least a school, degree, field of study, or date before continuing.', r.education[0] ? `edu_school_${r.education[0].id}` : '');
+    r.education = r.education.filter(edu => edu.school || edu.degree || edu.field || edu.dates);
+  }
+  if (_wb.step === 4 && !r.skills.length) {
+    return _rbValidationError('Add at least one skill before continuing.', 'sk_technical');
+  }
+  return true;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

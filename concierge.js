@@ -3348,6 +3348,10 @@ function openQuestionPopup(fieldKey = '') {
       : 'Choose a common answer or enter a short correction. This becomes reusable only after you save it.';
   const currentValue = deskState.reusableFacts.find(item => item.fieldKey === next.key)?.value || '';
   $('questionValue').value = currentValue;
+  $('questionValue').removeAttribute('aria-invalid');
+  $('questionVaultStatus').textContent = resumeInterviewActive && next.key === 'contact'
+    ? 'Enter both your name and email before continuing.'
+    : 'Saved on this device. Secure cross-device backup is optional.';
   $('questionValue').placeholder = resumeInterviewActive ? (RESUME_FIELD_PLACEHOLDERS[next.key] || 'Type a short answer') : '';
   const choices = resumeInterviewActive ? (RESUME_CLICK_CHOICES[next.key] || []) : (QUICK_ANSWERS[next.key] || []);
   $('questionChoices').innerHTML = choices.map(choice => {
@@ -3362,6 +3366,17 @@ function openQuestionPopup(fieldKey = '') {
   if (!choices.length) setTimeout(() => $('questionValue').focus(), 0);
 }
 function closeQuestionPopup() { $('questionOverlay').classList.remove('open'); activeQuestionKey = ''; }
+
+function resumeContactValidationMessage(value) {
+  const emailMatch = String(value || '').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  if (!emailMatch) return 'Add your email address before continuing.';
+  const name = String(value || '')
+    .replace(emailMatch[0], '')
+    .replace(/[·|,;]+/g, ' ')
+    .trim();
+  if (!/[A-Za-z]{2,}/.test(name)) return 'Add your name before continuing.';
+  return '';
+}
 
 function renderTruthForm() {
   const profile = deskState.truthProfile;
@@ -4271,6 +4286,16 @@ $('questionForm').addEventListener('submit', event => {
   event.preventDefault();
   const value = $('questionValue').value.trim();
   if (!value || !activeQuestionKey) return;
+  if (resumeInterviewActive && activeQuestionKey === 'contact') {
+    const message = resumeContactValidationMessage(value);
+    if (message) {
+      $('questionValue').setAttribute('aria-invalid', 'true');
+      $('questionVaultStatus').textContent = message;
+      $('questionValue').focus();
+      return;
+    }
+    $('questionValue').removeAttribute('aria-invalid');
+  }
   const saved = safeAction(() => {
     deskState = confirmReusableFact(deskState, {
       fieldKey: activeQuestionKey, value, confirmed: true, verificationState: 'user-confirmed',
