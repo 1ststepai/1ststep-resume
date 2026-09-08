@@ -9,6 +9,7 @@ import { readApplicationSubmissionTaskQueueHealth } from '../lib/application-sub
 import { readApplicationReceiptTaskQueueHealth } from '../lib/application-receipt-task-store.js';
 import { readAccountDataExportQueueHealth } from '../lib/account-data-export-task.js';
 import { readJobAgentOperatorAlertQueueHealth } from '../lib/job-agent-operator-alert-outbox.js';
+import { isJobAgentOperatorBridgeAuthorized } from '../lib/job-agent-operator-bridge.js';
 
 export const maxDuration = 15;
 
@@ -21,9 +22,12 @@ export default async function handler(req, res) {
     return res.status(204).end();
   }
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
-  const auth = await authenticateApiRequest(req, { requireOpaqueSession: true });
+  const bridgeAuthorized = isJobAgentOperatorBridgeAuthorized(req);
+  const auth = bridgeAuthorized
+    ? { ok: true, subject: 'operator-bridge', authentication: 'operator-bridge' }
+    : await authenticateApiRequest(req, { requireOpaqueSession: true });
   if (!auth.ok) return res.status(auth.status).json({ error: 'Request not authorized.', code: auth.code });
-  if (!isAdminSubject(auth.subject)) return res.status(403).json({ error: 'Administrator access is required.' });
+  if (!bridgeAuthorized && !isAdminSubject(auth.subject)) return res.status(403).json({ error: 'Administrator access is required.' });
   const config = jobAgentOperationalMetricsConfiguration();
   if (!config) return res.status(503).json({ error: 'Operational metrics are not configured.' });
   const limit = await enforceDurableRateLimit(req, { scope: 'job-agent-operations', subject: auth.subject, ipRule: { limit: 12, window: '1 m' }, accountRule: { limit: 100, window: '1 d' } });
