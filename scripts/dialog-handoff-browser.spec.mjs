@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('http://127.0.0.1:4175/concierge?uiFixture=subscriber');
+  await page.goto('/concierge?uiFixture=subscriber');
 });
 
 test('question dialog contains forward, reverse and stray keyboard focus without discarding draft', async ({ page }) => {
