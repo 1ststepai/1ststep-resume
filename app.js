@@ -3935,7 +3935,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
           document.getElementById('tierErrorPassBtn')?.addEventListener('click', openUpgradeModal);
           setTimeout(() => openUpgradeModal(), 400);
         } else {
-          document.getElementById('resumeOutput').innerHTML = `<div class="error-box"><strong>Error:</strong> ${escHtml(err.message)}<br><br>Common fixes:<br>- Check your internet connection and try again<br>- If the error says "529", Anthropic is temporarily overloaded - wait 30 seconds<br>- Contact support at evan@1ststep.ai if the problem persists</div>`;
+          document.getElementById('resumeOutput').innerHTML = `<div class="error-box"><strong>Error:</strong> ${escHtml(err.message)}<br><br>Common fixes:<br>- Check your internet connection and try again<br>- If the error says "529", Anthropic is temporarily overloaded - wait 30 seconds<br>- Contact support at support@1ststep.ai if the problem persists</div>`;
         }
       } finally {
         btn.disabled = false;
@@ -5360,7 +5360,7 @@ ${_resumeSlice}
       });
 
       if (res.status === 403 || res.status === 401) {
-        throw new Error('Job search configuration error - contact support at evan@1ststep.ai');
+        throw new Error('Job search configuration error - contact support at support@1ststep.ai');
       }
       if (res.status === 429) {
         throw new Error('Job search is temporarily at capacity - please try again in a few minutes.');
@@ -6710,7 +6710,7 @@ ${desc}`;
       if (text) {
         const subject = encodeURIComponent(`1stStep.ai Feedback${stars ? ` - ${stars} star${stars !== 1 ? 's' : ''}` : ''}`);
         const body = encodeURIComponent(`Stars: ${stars || 'not rated'}\n\nFeedback:\n${text}`);
-        window.open(`mailto:evan@1ststep.ai?subject=${subject}&body=${body}`, '_blank');
+        window.open(`mailto:support@1ststep.ai?subject=${subject}&body=${body}`, '_blank');
       }
 
       // Show thank-you state

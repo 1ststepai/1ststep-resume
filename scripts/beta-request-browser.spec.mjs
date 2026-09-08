@@ -9,9 +9,9 @@ for (const width of [390, 1440]) {
     const link = page.locator('[data-beta-request]');
     await link.scrollIntoViewIfNeeded();
     await expect(link).toBeVisible();
-    await expect(link).toHaveAttribute('href', 'mailto:evan@1ststep.ai?subject=Job%20Agent%20beta%20request');
+  await expect(link).toHaveAttribute('href', 'mailto:sales@1ststep.ai?subject=Job%20Agent%20beta%20request');
     const card = link.locator('xpath=ancestor::article');
-    await expect(card).toContainText('first 10 approved beta testers');
+    await expect(card).toContainText('first 10 approved participants');
     await expect(card).toContainText('no automatic billing');
     await expect(card).toContainText('Sending a request does not reserve a spot');
     await expect(card.locator('a[href="/concierge"]')).toBeVisible();

@@ -18,8 +18,8 @@
 - Production candidate and live domain: all 29 checked routes/assets/boundaries passed. Public routes and selected CSS, JS, image and client module return 200. Ten forbidden paths return true 404, including stale extension ZIP.
 - `/api/app-config`: 200. `/api/session-capabilities`: 403 `ORIGIN_FORBIDDEN` for no-origin anonymous request, consistent with inspected auth gate; not an authenticated workflow test.
 - Browser: candidate landing, guided setup entry, close behavior and Needs You panel verified; live domain renders released navigation/landing. No search, employer action, payment or candidate transmission performed.
-- Terms SHA-256: `c3d393ded7a8fdc246f47fd80362d0d30300e23bb6884a843d0714175fc4c87c`.
-- Privacy SHA-256: `5391d01205fe3337e84fdb023f07aa4b8a17ef167e5bf3fa041bb4e7323982eb`.
+- Terms SHA-256: `83813b5f711c8468338d60d42eec67577530fd1131b5872eaab24892312c6d2e` (contact address updated to `support@1ststep.ai`).
+- Privacy SHA-256: `2ba25dd4da5deb9d88fd9aa1db081d712a5002142e7d7875690ac94d1f781a67` (privacy contact address updated to `support@1ststep.ai`).
 - Both live hashes exactly match pre-release Production and committed release source.
 
 ## Boundaries and next modules

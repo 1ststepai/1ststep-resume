@@ -104,7 +104,19 @@ assert.doesNotMatch(html, /40 (?:jobs|applications)|guaranteed interviews/i);
 assert.doesNotMatch(html, /illustrative|fictional|made-up|example only|sample preview/i);
 assert.match(html, /Nothing will be sent until you approve this application\./);
 assert.match(html, /data-chrome-web-store-url/);
-assert.match(html, /mailto:evan@1ststep.ai/);
+assert.match(html, /mailto:sales@1ststep.ai/);
+for (const publicFile of [
+  'index.html',
+  'pricing.html',
+  'app.html',
+  'terms.html',
+  'privacy.html',
+  'resume-tailor-landing/ghl-custom-code.html',
+  'resume-tailor-landing/ghl-cro-custom-code.html',
+]) {
+  const source = readFileSync(new URL(`../${publicFile}`, import.meta.url), 'utf8');
+  assert.doesNotMatch(source, /(?:mailto:|Email\s+)evan@1ststep\.ai/i, `${publicFile} must not expose the owner inbox`);
+}
 assert.match(css, /prefers-reduced-motion: reduce/);
 assert.match(html, /data-theme-toggle/);
 assert.match(css, /\.journey-track\s*\{[^}]*transition:\s*transform/);
