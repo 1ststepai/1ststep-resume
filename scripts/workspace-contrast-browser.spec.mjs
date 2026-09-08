@@ -1,7 +1,20 @@
-const testOrigin = new URL(process.env.CONCIERGE_TEST_URL || testOrigin + '/concierge').origin;
 import { test, expect } from '@playwright/test';
 
+const testOrigin = new URL(process.env.CONCIERGE_TEST_URL || 'http://127.0.0.1:4175/concierge').origin;
 const base = testOrigin;
+const themes = ['light', 'dark'];
+
+const explainFailures = (label, failures) => [
+  `${label}: ${failures.length} contrast failure(s)`,
+  ...failures.map(({ ratio, need, text, placeholder, where }) =>
+    `${ratio}:1 needs ${need}: "${text || placeholder || '(unlabelled control)'}" at ${where}`),
+].join('\n');
+
+async function openWithTheme(page, url, theme) {
+  await page.addInitScript(value => localStorage.setItem('1ststep_theme', value), theme);
+  await page.goto(url, { waitUntil: 'networkidle' });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+}
 
 // The light-theme migration flipped page ink to --agent-ink while several
 // components kept dark-theme text and panel colours. That left 20 WCAG AA
@@ -19,14 +32,16 @@ const AUDIT = `(() => {
   const failures=[];
   const root=document.querySelector('#resumeOverlay.open')||document.querySelector('.application-overlay.open')||document.querySelector('.desk-overlay.open')||document;
   for(const el of root.querySelectorAll('*')){
-    if(el.children.length>0) continue;                       // text-bearing leaves only
-    const text=(el.textContent||'').trim();
+    const control=el.matches('input,textarea,select');
+    if(el.children.length>0&&!control) continue;              // text-bearing leaves and controls only
+    const placeholder=control&&!el.value?el.getAttribute('placeholder')||'':'';
+    const text=(control?(el.value||placeholder||el.getAttribute('aria-label')||''):(el.textContent||'')).trim();
     if(text.length<2) continue;
     const rect=el.getBoundingClientRect();
     if(rect.width<4||rect.height<4) continue;                // not rendered
     const cs=getComputedStyle(el);
     if(cs.visibility==='hidden'||cs.opacity==='0') continue;
-    const fg=parse(cs.color);
+    const fg=parse(placeholder?getComputedStyle(el,'::placeholder').color:cs.color);
     if(!fg||fg.a===0) continue;
     const px=parseFloat(cs.fontSize);
     const bold=parseInt(cs.fontWeight,10)>=700;
@@ -42,24 +57,24 @@ const SURFACES = [
   { name: 'subscriber workspace', url: `${base}/concierge?uiFixture=subscriber` }
 ];
 
-for (const surface of ['admin', 'application']) for (const width of [375,1440]) {
-  test(`${surface} overlay contrast at ${width}px`, async ({page}) => {
+for (const theme of themes) for (const surface of ['admin', 'application']) for (const width of [375,1440]) {
+  test(`${surface} overlay ${theme} contrast at ${width}px`, async ({page}) => {
     await page.setViewportSize({width:surface === 'admin' ? 1440 : width,height:900});
     await page.route('**/api/session-capabilities*', r => r.fulfill({json:{adminConsole:true,jobAgentAccess:true,authentication:'opaque-session'}}));
     await page.route('**/api/application-sessions*', r => r.fulfill({json:{sessions:[{id:'application-contrast-fixture',version:1,role:{employer:'Synthetic Employer',title:'Operations',directEmployerUrl:'https://careers.example.com/job'},documentVersion:'synthetic-resume-v1',state:'Waiting for You',stage:'employer_form',proposedFields:[],approvals:{},actions:[{id:'action-contrast',type:'AMBIGUOUS_FACT',status:'open',summary:'Review the employer question.',metadata:{}}],timeline:[]}]}}));
-    await page.goto(`${base}/concierge`,{waitUntil:'networkidle'});
+    await openWithTheme(page, `${base}/concierge`, theme);
     await page.locator(surface === 'admin' ? '#openDesk' : '#reviewAttentionNow').click();
     await page.setViewportSize({width,height:900});
     const failures = await page.evaluate(AUDIT);
-    expect(failures,JSON.stringify(failures)).toEqual([]);
-    await page.screenshot({path:`${process.env.TEMP || '/tmp'}/${surface}-contrast-${width}.png`});
+    expect(failures.length, explainFailures(`${surface} ${theme} ${width}px`, failures)).toBe(0);
+    await page.screenshot({path:`${process.env.TEMP || '/tmp'}/${surface}-${theme}-contrast-${width}.png`});
   });
 }
 
-for (const width of [375, 1440]) {
-  test(`resume overlay readable and mobile nav meets rendered floor at ${width}px`, async ({page}) => {
+for (const theme of themes) for (const width of [375, 1440]) {
+  test(`resume overlay ${theme} readable and mobile nav meets rendered floor at ${width}px`, async ({page}) => {
     await page.setViewportSize({width,height:900});
-    await page.goto(`${base}/concierge`,{waitUntil:'networkidle'});
+    await openWithTheme(page, `${base}/concierge`, theme);
     if(width === 375) {
       const buttons = await page.locator('.agent-header nav button:visible').evaluateAll(nodes => nodes.map(n => ({font:parseFloat(getComputedStyle(n).fontSize),height:n.getBoundingClientRect().height})));
       expect(buttons.length).toBeGreaterThan(0);
@@ -70,22 +85,18 @@ for (const width of [375, 1440]) {
     await page.locator('#quickUploadResume').click();
     await expect(page.locator('#resumeOverlay')).toHaveClass(/open/);
     const failures = await page.evaluate(AUDIT);
-    expect(failures,JSON.stringify(failures)).toEqual([]);
-    await page.screenshot({path:`${process.env.TEMP || '/tmp'}/resume-contrast-${width}.png`});
+    expect(failures.length, explainFailures(`resume ${theme} ${width}px`, failures)).toBe(0);
+    await page.screenshot({path:`${process.env.TEMP || '/tmp'}/resume-${theme}-contrast-${width}.png`});
   });
 }
 
 for (const surface of SURFACES) {
-  for (const width of [375, 1440]) {
-    test(`${surface.name} meets WCAG AA text contrast at ${width}px`, async ({ page }) => {
+  for (const theme of themes) for (const width of [375, 1440]) {
+    test(`${surface.name} meets WCAG AA ${theme} text contrast at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto(surface.url);
-      await page.waitForLoadState('networkidle');
+      await openWithTheme(page, surface.url, theme);
       const failures = await page.evaluate(AUDIT);
-      expect(
-        failures,
-        failures.map(f => `${f.ratio}:1 (needs ${f.need}) ${f.px}px "${f.text}" at ${f.where}`).join('\n')
-      ).toEqual([]);
+      expect(failures.length, explainFailures(`${surface.name} ${theme} ${width}px`, failures)).toBe(0);
     });
   }
 }
@@ -110,3 +121,35 @@ test('the primary Needs You panel never renders dark text on a dark panel', asyn
   })()`);
   expect(unreadable, unreadable.join(', ')).toEqual([]);
 });
+
+for (const theme of themes) for (const width of [375, 1440]) {
+  test(`secondary concierge panels and text fields meet WCAG AA in ${theme} at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await openWithTheme(page, `${base}/concierge?uiFixture=subscriber`, theme);
+
+    const panels = ['#needsYouOverlay', '#jobsOverlay', '#vaultOverlay', '#interviewOverlay', '#agentAccessOverlay'];
+    const allFailures = [];
+    for (const panel of panels) {
+      await page.locator(panel).evaluate(element => element.classList.add('open'));
+      await expect(page.locator(panel)).toHaveClass(/open/);
+      const failures = await page.evaluate(AUDIT);
+      allFailures.push(...failures.map(failure => ({ ...failure, where: `${panel} ${failure.where}` })));
+      await page.locator(panel).evaluate(element => element.classList.remove('open'));
+    }
+
+    await page.locator('#guidedLaunchOverlay').evaluate(element => element.classList.add('open'));
+    await expect(page.locator('#guidedLaunchOverlay')).toHaveClass(/open/);
+    const onboardingFailures = await page.evaluate(AUDIT);
+    allFailures.push(...onboardingFailures.map(failure => ({ ...failure, where: `#guidedLaunchOverlay ${failure.where}` })));
+    await page.locator('#guidedLaunchOverlay').evaluate(element => element.classList.remove('open'));
+
+    for (const panel of ['#questionOverlay', '#packageReviewOverlay']) {
+      await page.locator(panel).evaluate(element => element.classList.add('open'));
+      const failures = await page.evaluate(AUDIT);
+      allFailures.push(...failures.map(failure => ({ ...failure, where: `${panel} ${failure.where}` })));
+      await page.locator(panel).evaluate(element => element.classList.remove('open'));
+    }
+
+    expect(allFailures.length, explainFailures(`all secondary panels ${theme} ${width}px`, allFailures)).toBe(0);
+  });
+}

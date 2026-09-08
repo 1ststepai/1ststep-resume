@@ -77,6 +77,31 @@ html[data-theme="dark"] body[data-page="concierge"] :is(.agent-logo,#agentTitle,
 html[data-theme="dark"] body[data-page="concierge"] :is(.agent-logo span,.studio-eyebrow,.agent-launch h1 em,.agent-promise a){color:var(--agent-link)!important}
 html[data-theme="dark"] body[data-page="concierge"] :is(.agent-header nav button,.agent-header .site-theme-toggle,.launch-benefits span,.agent-promise){color:var(--agent-body)!important}
 html[data-theme="dark"] body[data-page="concierge"] .agent-header .site-theme-toggle{background:var(--agent-surface)!important;border-color:var(--agent-control-border)!important}
+html[data-theme="dark"] body[data-page="concierge"] :is(.application-shell,.application-head,.attention-card,.attention-job,.application-review-details,.jobs-head,.needs-sheet>header,.vault-shell,.vault-head,.guided-launch-shell,.package-review-shell,.package-review-head,.package-review-footer){background:var(--agent-surface)!important;border-color:var(--agent-border)!important;color:var(--agent-ink)!important}
+html[data-theme="dark"] body[data-page="concierge"] :is(.attention-body,.jobs-body,.needs-sheet-body,.vault-body,.resume-body,.package-review-body){background:var(--agent-soft)!important;color:var(--agent-ink)!important}
+html[data-theme="dark"] body[data-page="concierge"] :is(.attention-now h2,.application-head h2,.attention-card h3,.attention-job strong,.attention-job h3,.jobs-head h2,.jobs-section-head h3,.needs-sheet h2,.needs-you-item strong,.vault-head h2,.resume-head h2,.package-review-head h2){color:var(--agent-ink)!important}
+html[data-theme="dark"] body[data-page="concierge"] .simple-job-card h4{color:var(--agent-ink)!important}
+html[data-theme="dark"] body[data-page="concierge"] :is(.application-head p,.jobs-head p,.jobs-section-head p,.needs-sheet header p,.needs-you-item small,.simple-job-meta,.simple-job-card header p,.simple-job-card footer strong,.vault-head p,.resume-head p,.resume-footer small,.package-review-head p,.desk-empty){color:var(--agent-body)!important}
+html[data-theme="dark"] body[data-page="concierge"] :is(.application-head .simulated-label,.jobs-head>div>span,.needs-sheet header span,.vault-head .eyebrow,.resume-head .eyebrow){color:#c7d2fe!important}
+html[data-theme="dark"] body[data-page="concierge"] :is(.approval-safety-note,.application-review-details .workspace-row){background:var(--agent-tint)!important;border-color:var(--agent-control-border)!important;color:#e0e7ff!important}
+html[data-theme="dark"] body[data-page="concierge"] .application-review-details .workspace-row small{color:#cbd5e1!important}
+html[data-theme="dark"] body[data-page="concierge"] :is(input,textarea)::placeholder{color:#b9c5d7!important;opacity:1}
+html[data-theme="dark"] body[data-page="concierge"] :is(.send,.resume-primary,.desk-submit,.wizard-buttons .save,.interview-primary,.question-primary,.attention-actions .primary,.job-primary-action,.needs-you-item button){background:#4f46e5!important;border-color:#4f46e5!important;color:#fff!important}
+html[data-theme="dark"] body[data-page="concierge"] .agent-access-form button{background:#4338ca!important;color:#fff!important}
+html[data-theme="dark"] body[data-page="concierge"] .agent-authorization-control .danger{background:#3b151c!important;border-color:#be6470!important;color:#fecdd3!important}
+html[data-theme="dark"] body[data-page="concierge"] .access-measurement{background:#2b2415!important;border-color:#735f2b!important}
+html[data-theme="dark"] body[data-page="concierge"] .access-measurement :is(strong,span){color:#fde68a!important}
+html[data-theme="dark"] body[data-page="concierge"] .guided-launch-stage h2{color:var(--agent-ink)!important}
+html[data-theme="dark"] body[data-page="concierge"] .guided-launch-footer p{color:var(--agent-body)!important}
+html[data-theme="dark"] body[data-page="concierge"] #packageReviewOverlay :is(.package-more summary,.package-not-sent){color:#cbd5e1!important}
+
+html[data-theme="light"] body[data-page="concierge"] :is(.jobs-head h2,.jobs-section-head h3,.simple-job-card h4){color:#172033!important}
+html[data-theme="light"] body[data-page="concierge"] .jobs-head>div>span{color:#3730a3!important;font-size:12px}
+html[data-theme="light"] body[data-page="concierge"] :is(.jobs-head p,.jobs-section-head p,.simple-job-meta,.simple-job-meta span){color:#475569!important}
+html[data-theme="light"] body[data-page="concierge"] .jobs-head p{font-size:14px}
+html[data-theme="light"] body[data-page="concierge"] .jobs-section-head h3{font-size:18px}
+html[data-theme="light"] body[data-page="concierge"] .jobs-section-head p{font-size:14px}
+html[data-theme="light"] body[data-page="concierge"] .simple-job-meta{font-size:13px}
 
 html[data-theme="light"] body[data-page="pricing"],html[data-theme="light"] body[data-page="legal"]{
   --dark:#f8fafc;--dark2:#fff;--dark3:#f1f5f9;--border:#d8e0ec;--text:#0f172a;--muted:#52627a;--blue:#4f46e5;
