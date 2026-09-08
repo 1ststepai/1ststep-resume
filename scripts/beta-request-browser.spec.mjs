@@ -5,7 +5,7 @@ for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.goto('http://127.0.0.1:4175/');
+    await page.goto('/');
     const link = page.locator('[data-beta-request]');
     await link.scrollIntoViewIfNeeded();
     await expect(link).toBeVisible();
