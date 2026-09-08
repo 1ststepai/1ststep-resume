@@ -59,7 +59,7 @@ const apiBeta = fs.existsSync(path.join(ROOT, 'api', 'beta.js'))
 section('HTML structure');
 
 if (html) {
-  if (/<link[^>]+href=["']\/?style\.css["']/.test(html)) pass('style.css linked in <head>');
+  if (/<link[^>]+href=["']\/?style\.css(?:\?[^"']*)?["']/.test(html)) pass('style.css linked in <head>');
   else fail('style.css NOT linked in <head>');
 
   if (/<script[^>]+src=["']\/?app\.js(?:\?[^"']*)?["']/.test(html)) pass('app.js linked before </body>');
@@ -484,7 +484,7 @@ if (js) {
 
 section('User feedback regression coverage');
 
-if ((pricing.match(/href=["']\/app\?start=resume-builder["']/g) || []).length >= 2) pass('Pricing resume CTAs open the resume builder directly');
+if ((pricing.match(/href=["']\/app\/resume\?start=resume-builder["']/g) || []).length >= 2) pass('Pricing resume CTAs open the resume builder directly');
 else fail('Pricing resume CTAs do not consistently open the resume builder directly');
 
 if (/get\('start'\) === 'resume-builder'/.test(js)) pass('App honors the resume-builder entry route');
