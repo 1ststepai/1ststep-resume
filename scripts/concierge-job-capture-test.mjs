@@ -14,6 +14,10 @@ assert.doesNotMatch(conciergeSource.slice(conciergeSource.indexOf("event.data.ty
   'Job Agent must leave the extension capture available for an explicit Resume Builder handoff');
 assert.doesNotMatch(conciergeSource.slice(conciergeSource.indexOf('function consumeJobAgentCapture'), conciergeSource.indexOf('function workingIndicator')), /runTailoring\(|generateDurablePackage\(|startDurableApplication\(/,
   'receiving a generic capture must not generate, apply, or spend automatically');
+assert.match(conciergeSource, /Captured page: \$\{job\.location\} \(not independently verified\)/,
+  'captured location must be shown as unverified evidence');
+assert.match(conciergeSource, /Captured page: \$\{job\.salaryText\} \(not independently verified\)/,
+  'captured pay must be shown as unverified evidence');
 
 const added = addRole(createDeskState({}), {
   id: 'captured_test', employer: 'Example Supply', title: 'Senior Buyer',

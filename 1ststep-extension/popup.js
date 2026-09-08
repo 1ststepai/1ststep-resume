@@ -16,6 +16,8 @@ const emptyState     = document.getElementById('emptyState');
 const jobTitleEl     = document.getElementById('jobTitle');
 const companyEl      = document.getElementById('company');
 const siteEl         = document.getElementById('site');
+const capturedDetailsEl = document.getElementById('capturedDetails');
+const agentConnectionHint = document.getElementById('agentConnectionHint');
 const tailorBtn      = document.getElementById('tailorBtn');
 const autofillBtn    = document.getElementById('autofillBtn');
 const autofillEmptyBtn = document.getElementById('autofillEmptyBtn');
@@ -26,7 +28,11 @@ const openAppLink    = document.getElementById('openAppLink');
 async function checkAuth() {
   return new Promise(resolve => chrome.runtime.sendMessage({ action: 'GET_JOB_AGENT_STATUS' }, response => {
     const capabilities = response?.data?.capabilities || response?.data || {};
-    resolve({ jobAgentAccess: response?.success === true && capabilities.jobAgentAccess === true, tier: capabilities.tier || 'guest' });
+    resolve({
+      jobAgentAccess: response?.success === true && capabilities.jobAgentAccess === true,
+      tier: capabilities.tier || 'guest',
+      code: typeof response?.code === 'string' ? response.code : '',
+    });
   }));
 }
 
@@ -37,7 +43,9 @@ async function init() {
     const auth = await checkAuth();
 
     unauthState.style.display = 'none';
-    statusBadge.textContent = auth.jobAgentAccess ? 'Agent Connected' : 'Resume Tools';
+    statusBadge.textContent = auth.jobAgentAccess
+      ? 'Agent Connected'
+      : auth.code === 'JOB_AGENT_APP_BRIDGE_UNAVAILABLE' ? 'Reconnect Agent' : 'Resume Tools';
     statusBadge.classList.toggle('authenticated', auth.jobAgentAccess);
 
     const job = await getCurrentJob();
@@ -94,11 +102,23 @@ function showJobCard(job, auth) {
   jobCard.classList.add('visible');
   emptyState.style.display   = 'none';
 
+  if (agentConnectionHint) {
+    const bridgeNeedsReload = auth?.code === 'JOB_AGENT_APP_BRIDGE_UNAVAILABLE';
+    agentConnectionHint.textContent = bridgeNeedsReload
+      ? 'Reload your open 1stStep.ai tab, then reopen this extension to reconnect Job Agent.'
+      : '';
+    agentConnectionHint.style.display = bridgeNeedsReload ? 'block' : 'none';
+  }
+
   const titleMissing = !job.jobTitle || job.jobTitle === 'Unknown Role';
 
   jobTitleEl.textContent = job.jobTitle || 'Unknown Role';
   companyEl.textContent  = job.company  || '';
   siteEl.textContent     = (job.site    || 'unknown').toUpperCase();
+  if (capturedDetailsEl) {
+    capturedDetailsEl.textContent = [job.location, job.salaryText].filter(Boolean).join(' · ');
+    capturedDetailsEl.style.display = capturedDetailsEl.textContent ? 'block' : 'none';
+  }
 
   const jobUrlEl      = document.getElementById('jobUrl');
   const jobInfoForm   = document.getElementById('jobInfoForm');
@@ -235,12 +255,48 @@ async function getCurrentJob() {
 
       // The user clicked the extension for this tab, so activeTab grants a
       // one-time, page-scoped read. No always-on access to arbitrary sites.
-      const injected = await chrome.scripting.executeScript({
-        target: { tabId: tab.id, allFrames: false },
-        files: ['generic-capture.js'],
-      });
-      const captured = injected?.[0]?.result || null;
-      if (captured?.jobDescription) return captured;
+      let injected;
+      try {
+        injected = await chrome.scripting.executeScript({
+          target: { tabId: tab.id, allFrames: true },
+          files: ['generic-capture.js'],
+        });
+      } catch (_) {
+        // A protected cross-origin frame can reject an all-frame request even
+        // though the selected top page is readable. Preserve normal capture.
+        injected = await chrome.scripting.executeScript({
+          target: { tabId: tab.id, allFrames: false },
+          files: ['generic-capture.js'],
+        });
+      }
+      const candidates = (injected || [])
+        .map(frame => frame?.result)
+        .filter(candidate => candidate?.jobDescription)
+        .map(candidate => {
+          // Keep the page the user chose as the canonical Apply URL even when
+          // the description came from an accessible embedded ATS frame.
+          let pageSite = candidate.site || 'job-page';
+          try { pageSite = new URL(tab.url).hostname.replace(/^www\./, ''); } catch (_) {}
+          return { ...candidate, applyUrl: tab.url || candidate.applyUrl, site: pageSite };
+        });
+      const captured = candidates.sort((left, right) => {
+        const methodPriority = {
+          'structured-job-posting': 5,
+          'greenhouse-job-data': 4,
+          'workday-visible': 3,
+          'lever-visible': 3,
+          'ashby-visible': 3,
+          'smartrecruiters-visible': 3,
+          'selected-text': 2,
+          'visible-page': 1,
+        };
+        const score = candidate => (methodPriority[candidate.captureMethod] || 0) * 100_000
+          + candidate.jobDescription.length
+          + (candidate.jobTitle ? 500 : 0)
+          + (candidate.company ? 250 : 0);
+        return score(right) - score(left);
+      })[0] || null;
+      if (captured) return captured;
     }
   } catch (_) {}
   return null;
@@ -265,7 +321,10 @@ async function openInApp(job, btn, mode = 'tailor') {
     company:         job.company         || '',
     jobDescription:  job.jobDescription,
     applyUrl:        job.applyUrl        || '',
-    site:            job.site            || 'unknown'
+    site:            job.site            || 'unknown',
+    location:        job.location        || '',
+    salaryText:      job.salaryText      || '',
+    captureMethod:   job.captureMethod   || 'unknown'
   };
 
   chrome.runtime.sendMessage({ action: 'OPEN_IN_APP', jobData, mode }, (response) => {

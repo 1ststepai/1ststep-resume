@@ -36,7 +36,20 @@ assert.doesNotMatch(files['background.js'], /chrome\.storage\.(?:local|session)\
 assert.match(files['popup.js'], /chrome\.scripting\.executeScript/,
   'generic capture must run only after the user opens the popup on the active tab');
 assert.match(files['popup.js'], /files: \['generic-capture\.js'\]/);
+assert.match(files['popup.js'], /allFrames: true/,
+  'user-triggered capture must inspect accessible job frames without permanent host access');
+assert.match(files['popup.js'], /allFrames: false/,
+  'protected frames must fall back to the selected top-level page');
+assert.match(files['popup.js'], /JOB_AGENT_APP_BRIDGE_UNAVAILABLE[\s\S]*Reconnect Agent/,
+  'a stale app bridge must be shown as a reconnect problem, not silently downgraded to Resume Tools');
+assert.match(files['popup.html'], /id="agentConnectionHint"[\s\S]*aria-live="polite"/,
+  'the reconnect instruction must be announced accessibly');
 assert.match(files['generic-capture.js'], /application\/ld\+json/);
+for (const ats of ['workday', 'lever', 'ashby', 'smartrecruiters']) {
+  assert.match(files['generic-capture.js'], new RegExp(`id: '${ats}'`), `generic capture must include the ${ats} adapter`);
+}
+assert.match(files['generic-capture.js'], /window\.getSelection/,
+  'highlighted text must provide a no-copy-paste fallback');
 assert.match(files['generic-capture.js'], /jobDescription\.length < 120/,
   'generic capture must reject pages without a meaningful visible description');
 assert.doesNotMatch(files['generic-capture.js'], /fetch\(|XMLHttpRequest|chrome\.storage/,
@@ -78,6 +91,8 @@ assert.match(conciergeJs, /sourceType: 'user-captured'/,
   'captured jobs must remain visibly distinct from verified employer listings');
 assert.match(conciergeJs, /applyPathActive: false/,
   'a generic capture must never claim that the employer Apply path was verified');
+assert.match(conciergeJs, /Job already saved; duplicate suppressed/,
+  'a repeated capture must report duplicate suppression instead of claiming it was newly added');
 
 assert.deepEqual(manifest.host_permissions.sort(), ['https://*.greenhouse.io/*', 'https://app.1ststep.ai/*'].sort());
 assert.equal(manifest.permissions.includes('scripting'), true);

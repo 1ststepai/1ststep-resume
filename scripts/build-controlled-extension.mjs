@@ -74,7 +74,7 @@ export async function buildControlledExtension({ outputDirectory = join(ROOT, 'd
     schemaVersion: 1,
     product: '1ststep-job-agent-controlled-greenhouse-extension',
     version: manifest.version,
-    capability: 'supervised-greenhouse-no-submit',
+    capability: 'universal-capture-supervised-greenhouse-no-submit',
     files: entries.map(({ name, sha256: digest, bytes }) => ({ name, sha256: digest, bytes })),
     excludesLegacyModules: true,
     containsCandidateValues: false,

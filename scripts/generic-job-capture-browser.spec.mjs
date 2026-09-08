@@ -20,13 +20,72 @@ test('prefers JobPosting structured data and strips description markup', async (
       '@context': 'https://schema.org', '@type': 'JobPosting', title: 'Senior Buyer',
       hiringOrganization: { '@type': 'Organization', name: 'Example Supply' },
       description: `<p>Lead strategic sourcing and supplier reviews.</p><p>${'Verified responsibilities. '.repeat(10)}</p>`,
+      jobLocationType: 'TELECOMMUTE',
+      jobLocation: { address: { addressLocality: 'New York', addressRegion: 'NY', addressCountry: 'US' } },
+      baseSalary: { currency: 'USD', value: { minValue: 120000, maxValue: 150000, unitText: 'YEAR' } },
     })}</script>`);
   const result = await capture(page);
   expect(result.jobTitle).toBe('Senior Buyer');
   expect(result.company).toBe('Example Supply');
   expect(result.jobDescription).toContain('Lead strategic sourcing');
   expect(result.jobDescription).not.toContain('<p>');
+  expect(result.location).toBe('Remote · New York, NY, US');
+  expect(result.salaryText).toBe('USD 120000-150000 per year');
   expect(result.captureMethod).toBe('structured-job-posting');
+});
+
+test('decodes HTML entities in structured job identity fields', async ({ page }) => {
+  await load(page, 'https://jobs.lever.co/example/entity-title', `
+    <h1>Fallback title</h1>
+    <script type="application/ld+json">${JSON.stringify({
+      '@context': 'https://schema.org', '@type': 'JobPosting',
+      title: 'Director of Procurement &amp; Spend Strategy',
+      hiringOrganization: { '@type': 'Organization', name: 'Research &amp; Operations' },
+      description: `<p>${'Lead verified procurement and supplier operations. '.repeat(12)}</p>`,
+    })}</script>`);
+  const result = await capture(page);
+  expect(result.jobTitle).toBe('Director of Procurement & Spend Strategy');
+  expect(result.company).toBe('Research & Operations');
+});
+
+const atsCases = [
+  {
+    name: 'Workday', url: 'https://example.wd5.myworkdayjobs.com/en-US/jobs/job/123', method: 'workday-visible',
+    body: `<div data-automation-id="jobPostingHeader"><h2>Strategic Sourcing Manager</h2></div><div data-automation-id="companyName">Example Industries</div><div data-automation-id="locations">Remote - United States</div><section data-automation-id="jobPostingDescription">${'Lead sourcing programs and supplier negotiations. '.repeat(12)}</section>`,
+  },
+  {
+    name: 'Lever', url: 'https://jobs.lever.co/example/abc', method: 'lever-visible',
+    body: `<meta property="og:site_name" content="Example Labs"><div class="posting-headline"><h2>Procurement Lead</h2></div><div class="posting-categories"><span class="location">Remote, US</span></div><div class="posting-page"><section data-qa="job-description">${'Build procurement operations and contract workflows. '.repeat(12)}</section></div>`,
+  },
+  {
+    name: 'Ashby', url: 'https://jobs.ashbyhq.com/example/abc', method: 'ashby-visible',
+    body: `<h1 data-testid="job-posting-title">Vendor Operations Manager</h1><div data-testid="job-posting-company">Example AI</div><div data-testid="job-posting-location">New York, NY</div><section data-testid="job-posting-description">${'Own vendor operations, governance, and performance reviews. '.repeat(12)}</section>`,
+  },
+  {
+    name: 'SmartRecruiters', url: 'https://jobs.smartrecruiters.com/Example/123', method: 'smartrecruiters-visible',
+    body: `<div data-test="company-name">Example Mobility</div><h1 data-test="job-title">Senior Buyer</h1><div data-test="job-location">Remote</div><section id="st-jobDescription">${'Lead category strategy and cross-functional sourcing projects. '.repeat(12)}</section>`,
+  },
+];
+
+for (const fixture of atsCases) {
+  test(`captures ${fixture.name} without copy and paste`, async ({ page }) => {
+    await load(page, fixture.url, `<title>${fixture.name} job</title>${fixture.body}`);
+    const result = await capture(page);
+    expect(result.captureMethod).toBe(fixture.method);
+    expect(result.jobDescription.length).toBeGreaterThan(120);
+    expect(result.jobTitle).not.toBe('');
+    expect(result.location).not.toBe('');
+  });
+}
+
+test('captures highlighted job text when a site exposes no usable job container', async ({ page }) => {
+  const selectedText = 'Lead supplier strategy, negotiate agreements, and partner with finance and legal teams. '.repeat(8);
+  await load(page, 'https://careers.example.test/jobs/unusual-layout', `
+    <title>Category Manager — Careers</title><h1>Category Manager</h1><div id="selection-target">${selectedText}</div>`);
+  await page.locator('#selection-target').selectText();
+  const result = await capture(page);
+  expect(result.captureMethod).toBe('selected-text');
+  expect(result.jobDescription).toContain('Lead supplier strategy');
 });
 
 test('captures a visible job container without site-specific selectors', async ({ page }) => {

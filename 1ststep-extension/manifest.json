@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "1stStep.ai Job Agent",
-  "version": "1.4.0",
-  "description": "Capture the job page you choose for truthful resume tailoring and supervised Job Agent review. Greenhouse filling never submits.",
+  "version": "1.5.0",
+  "description": "Capture jobs from major ATS sites without copy and paste, then review them in Resume Builder or Job Agent. Greenhouse filling never submits.",
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
