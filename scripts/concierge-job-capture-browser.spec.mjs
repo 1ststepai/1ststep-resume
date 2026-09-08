@@ -4,8 +4,6 @@ const baseUrl = 'http://127.0.0.1:4175/concierge';
 
 test('a generic extension capture is visibly added to Job Agent for supervised review', async ({ page }) => {
   const captureId = 'browser-capture-account-director';
-  const acknowledgements = [];
-
   await page.addInitScript(() => {
     window.addEventListener('message', event => {
       if (event.source === window && event.data?.type === '1STSTEP_JOB_CAPTURE_ACK') {
@@ -50,13 +48,13 @@ test('a generic extension capture is visibly added to Job Agent for supervised r
 
   const state = await page.evaluate(() => ({
     acknowledgements: window.__captureAcknowledgements || [],
-    pending: JSON.parse(sessionStorage.getItem('1ststep_pending_capture') || 'null'),
+    pending: sessionStorage.getItem('1ststep_pending_capture'),
+    jobAgentCapture: sessionStorage.getItem('1ststep_job_agent_capture_v1'),
   }));
-  acknowledgements.push(...state.acknowledgements);
-  expect(acknowledgements).toContain(captureId);
-  expect(state.pending.jobData).toMatchObject({
-    jobTitle: 'Account Director, Health Systems',
-    company: 'Zocdoc',
-    applyUrl: 'https://job-boards.greenhouse.io/zocdoc/jobs/8074626',
-  });
+  expect(state.acknowledgements).toEqual([]);
+  expect(state.pending).toBeNull();
+  expect(state.jobAgentCapture).toBeNull();
+
+  await page.getByRole('button', { name: 'Use in Resume Builder' }).click();
+  await expect(page).toHaveURL(new RegExp(`/app/resume\\?jobCaptureId=${captureId}&mode=tailor$`));
 });

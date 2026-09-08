@@ -70,7 +70,6 @@ const DAILY_GOAL_KEY = '1ststep_concierge_daily_goal_v1';
 const JOB_AGENT_RUN_KEY = '1ststep_job_agent_run_v1';
 const VAULT_PREFERENCE_KEY = '1ststep_applicant_vault_preference_v1';
 const RESUME_HANDOFF_KEY = '1ststep_resume_handoff';
-const JOB_CAPTURE_KEY = '1ststep_job_agent_capture_v1';
 const RESUME_KEYS = ['1ststep_resume', '1ststep_resume_text'];
 // Only a resume reviewed during this page lifetime may survive late account hydration.
 // Never restore an arbitrary previous browser cache across account initialization.
@@ -115,6 +114,7 @@ let pendingConsequence = null;
 let pendingConsentContinuation = null;
 let lastDialogTrigger = null;
 let accountWorkflowHydrated = false;
+let pendingJobAgentCapture = null;
 const processedJobCaptureIds = new Set();
 
 function jobCaptureIdFromUrl() {
@@ -141,8 +141,10 @@ window.addEventListener('message', event => {
   if (!captureId || captureId !== jobCaptureIdFromUrl()) return;
   const jobData = normalizedCapturedJob(event.data.jobData);
   if (!jobData.jobDescription) return;
-  sessionStorage.setItem(JOB_CAPTURE_KEY, JSON.stringify({ captureId, jobData, ts: Date.now() }));
-  window.postMessage({ type: '1STSTEP_JOB_CAPTURE_ACK', version: '1', captureId }, window.location.origin);
+  // Keep the raw posting in memory. The extension remains its short-lived
+  // source of truth until Resume Builder explicitly receives and acknowledges
+  // it, avoiding a second clear-text browser-storage copy in Job Agent.
+  pendingJobAgentCapture = { captureId, jobData };
   if (accountWorkflowHydrated) consumeJobAgentCapture();
 });
 const LOCAL_APPLICATION_UI_FIXTURE = ['127.0.0.1', 'localhost'].includes(window.location.hostname)
@@ -1984,16 +1986,14 @@ function safeAction(action) {
 }
 
 function consumeJobAgentCapture() {
-  let capture;
-  try { capture = JSON.parse(sessionStorage.getItem(JOB_CAPTURE_KEY) || 'null'); } catch (_) { capture = null; }
+  const capture = pendingJobAgentCapture;
   const captureId = String(capture?.captureId || '');
   const job = normalizedCapturedJob(capture?.jobData);
   if (!captureId || processedJobCaptureIds.has(captureId) || !job.jobDescription) return;
   processedJobCaptureIds.add(captureId);
 
-  // Preserve a manual route even if Job Agent access or secure persistence is unavailable.
-  sessionStorage.setItem('1ststep_pending_capture', JSON.stringify({ jobData: job, ts: Date.now() }));
-  const resumeLink = '<a href="/app/resume">Use this job in the Resume Builder</a>';
+  const resumeUrl = `/app/resume?jobCaptureId=${encodeURIComponent(captureId)}&mode=tailor`;
+  const resumeLink = `<a href="${escapeHtml(resumeUrl)}">Use this job in the Resume Builder</a>`;
   if (!hasJobAgentAccess()) {
     addMessage('assistant', `<strong>Your job page is captured.</strong><br>${resumeLink}. Job Agent review requires current Job Agent access; no application was started.`);
     showToast('Job captured for the Resume Builder');
@@ -3862,11 +3862,9 @@ $('jobCards').addEventListener('click', async event => {
   if (capturedResumeId) {
     const role = deskState.roles.find(item => item.id === capturedResumeId);
     if (!role?.jobDescription) { showToast('The captured description is no longer available in this tab'); return; }
-    sessionStorage.setItem('1ststep_pending_capture', JSON.stringify({ jobData: {
-      jobTitle: role.title, company: role.employer, jobDescription: role.jobDescription,
-      applyUrl: role.directEmployerUrl, site: role.sourceProvider || 'captured job',
-    }, ts: Date.now() }));
-    window.location.href = '/app/resume?mode=tailor';
+    const captureId = capturedResumeId.startsWith('captured_') ? capturedResumeId.slice('captured_'.length) : '';
+    if (!captureId) { showToast('Capture reference unavailable; capture the job again from its page'); return; }
+    window.location.href = `/app/resume?jobCaptureId=${encodeURIComponent(captureId)}&mode=tailor`;
     return;
   }
   if (reviewApplicationId) { openDurableApplicationWorkspace(reviewApplicationId); return; }

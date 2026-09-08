@@ -7,8 +7,11 @@ import { validateDurableCampaignState } from '../lib/tenant-campaign-store.js';
 const conciergeSource = await readFile(new URL('../concierge.js', import.meta.url), 'utf8');
 assert.match(conciergeSource, /event\.source !== window \|\| event\.origin !== window\.location\.origin/);
 assert.match(conciergeSource, /captureId !== jobCaptureIdFromUrl\(\)/);
-assert.match(conciergeSource, /sessionStorage\.setItem\(JOB_CAPTURE_KEY/);
-assert.ok(conciergeSource.indexOf('sessionStorage.setItem(JOB_CAPTURE_KEY') < conciergeSource.indexOf("type: '1STSTEP_JOB_CAPTURE_ACK'"), 'capture must be saved before acknowledgement');
+assert.match(conciergeSource, /pendingJobAgentCapture = \{ captureId, jobData \}/);
+assert.doesNotMatch(conciergeSource, /JOB_CAPTURE_KEY|sessionStorage\.setItem\('1ststep_pending_capture'/,
+  'Job Agent must not duplicate the raw captured posting into clear-text browser storage');
+assert.doesNotMatch(conciergeSource.slice(conciergeSource.indexOf("event.data.type !== '1STSTEP_JOB_CAPTURE'"), conciergeSource.indexOf('const LOCAL_APPLICATION_UI_FIXTURE')), /1STSTEP_JOB_CAPTURE_ACK/,
+  'Job Agent must leave the extension capture available for an explicit Resume Builder handoff');
 assert.doesNotMatch(conciergeSource.slice(conciergeSource.indexOf('function consumeJobAgentCapture'), conciergeSource.indexOf('function workingIndicator')), /runTailoring\(|generateDurablePackage\(|startDurableApplication\(/,
   'receiving a generic capture must not generate, apply, or spend automatically');
 
@@ -43,4 +46,4 @@ assert.throws(() => validateDurableCampaignState({
   subscriberView: { ...durableState.subscriberView, jobCards: [{ ...durableState.subscriberView.jobCards[0], jobDescription: 'private captured text' }] },
 }), /Unsupported durable subscriber field/);
 
-console.log('Job Agent capture stays user-selected, unverified, metadata-only when durable, visible for review, and never auto-generates or submits.');
+console.log('Job Agent capture stays in memory, user-selected, unverified, metadata-only when durable, visible for review, and never auto-generates or submits.');
