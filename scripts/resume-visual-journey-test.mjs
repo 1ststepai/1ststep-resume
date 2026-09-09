@@ -5,30 +5,30 @@ const path = new URL('../resume-tailor-landing/ghl-visual-journey-custom-code.ht
 const html = fs.readFileSync(path, 'utf8');
 const required = [
   'id="fs-journey"',
-  'Turn any job page into your next application.',
+  'Spend your time choosing the right job.',
+  'On supported Greenhouse job pages',
   'Get the Chrome extension',
   'Start My Job Agent',
   'href="https://app.1ststep.ai"',
   'https://www.instagram.com/1ststepdotai/',
-  'From job page to review-ready packet.',
-  'You stay in control. The busywork stays behind.',
-  'Starts after your first captured job',
-  'No CAPTCHA bypass',
+  'One capture. Less repetitive work.',
+  'See the time you get back.',
+  'Estimated time saved on this application',
+  'Example estimate.',
+  'completed, auditable workflow events',
+  'Automation for the work. Human judgment for the decision.',
+  'You control submission',
   'No automatic submission',
-  'prefers-reduced-motion: reduce',
+  'prefers-reduced-motion:reduce',
   'gnbjcmennlcbkmakameknfcnioohnjkp',
   'data-stage="0"',
   'data-stage="3"',
-  'data-pause',
-  'data-replay',
   'data-theme="dark"',
   'data-theme-toggle',
   "localStorage.getItem('1ststep_theme')",
-  'is-motion-paused',
-  '@keyframes fsFloatA',
-  '@keyframes fsExtension',
-  '@keyframes fsTaskPulse',
-  '@keyframes fsGaugeSpin',
+  'data-capture',
+  'data-worktab="0"',
+  'data-worktab="3"',
 ];
 
 for (const value of required) {
@@ -54,5 +54,9 @@ new vm.Script(scripts[0], { filename: 'ghl-visual-journey-custom-code.html' });
 
 const primaryCtas = (html.match(/Get the Chrome extension/g) || []).length;
 if (primaryCtas < 3) throw new Error(`Expected at least three extension CTAs, found ${primaryCtas}`);
+
+for (const noisyMotion of ['@keyframes fsFloat', '@keyframes fsDrift', '@keyframes fsGaugeSpin', '@keyframes fsPacket']) {
+  if (html.includes(noisyMotion)) throw new Error(`Decorative motion returned: ${noisyMotion}`);
+}
 
 console.log(`Resume visual journey contract passed (${primaryCtas} extension CTAs).`);
