@@ -1,0 +1,1462 @@
+<!-- 1stStep.ai resume landing: restrained product story + auditable time-saved estimate -->
+<meta charset="utf-8" /><link rel="icon" href="data:," />
+<style>
+  #fs-journey {
+    color-scheme: dark;
+    --bg: #09090b;
+    --surface: #111114;
+    --surface2: #18181c;
+    --ink: #f7f7f8;
+    --text: #b8b8c2;
+    --muted: #858590;
+    --line: #2b2b32;
+    --violet: #6d5dfc;
+    --violet-text: #a39aff;
+    --soft: #211e46;
+    --green: #42d39b;
+    background: var(--bg);
+    color: var(--ink);
+    font-family:
+      Inter,
+      Geist,
+      system-ui,
+      -apple-system,
+      "Segoe UI",
+      sans-serif;
+    line-height: 1.5;
+    overflow: hidden;
+  }
+  #fs-journey[data-theme="light"] {
+    color-scheme: light;
+    --bg: #fff;
+    --surface: #fafafa;
+    --surface2: #f3f3f5;
+    --ink: #111116;
+    --text: #4f4f5a;
+    --muted: #74747f;
+    --line: #dddde3;
+    --soft: #eeebff;
+    --violet-text: #4938d1;
+  }
+  #fs-journey *,
+  #fs-journey *:before,
+  #fs-journey *:after {
+    box-sizing: border-box;
+  }
+  #fs-journey a {
+    color: inherit;
+    text-decoration: none;
+  }
+  #fs-journey button {
+    font: inherit;
+  }
+  #fs-journey a:focus-visible,
+  #fs-journey button:focus-visible {
+    outline: 3px solid #9c92ff;
+    outline-offset: 4px;
+  }
+  .fs-wrap {
+    width: min(1240px, calc(100% - 48px));
+    margin: auto;
+  }
+  .fs-nav {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    border-bottom: 1px solid var(--line);
+    background: color-mix(in srgb, var(--bg) 94%, transparent);
+    backdrop-filter: blur(16px);
+  }
+  .fs-nav-in {
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+  }
+  .fs-brand {
+    font-size: 25px;
+    font-weight: 900;
+    letter-spacing: -0.055em;
+  }
+  .fs-brand span,
+  .fs-text-link {
+    color: var(--violet-text);
+  }
+  .fs-links {
+    display: flex;
+    align-items: center;
+    gap: 27px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .fs-links > a:not(.fs-btn) {
+    color: var(--text);
+  }
+  .fs-theme {
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+  .fs-theme svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+  }
+  .fs-sun {
+    display: none;
+  }
+  #fs-journey[data-theme="light"] .fs-sun {
+    display: block;
+  }
+  #fs-journey[data-theme="light"] .fs-moon {
+    display: none;
+  }
+  .fs-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 50px;
+    padding: 0 20px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    font-weight: 800;
+    transition:
+      transform 0.18s,
+      background 0.18s;
+  }
+  .fs-btn:hover {
+    transform: translateY(-2px);
+  }
+  .fs-btn-primary {
+    color: #fff !important;
+    background: var(--violet);
+  }
+  .fs-btn-secondary {
+    background: transparent;
+    border-color: var(--line);
+  }
+  .fs-chrome {
+    width: 21px;
+    height: 21px;
+    border-radius: 50%;
+    background: conic-gradient(#ea4335 0 33%, #fbbc05 0 66%, #34a853 0);
+    position: relative;
+  }
+  .fs-chrome:after {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    border: 2px solid white;
+    border-radius: 50%;
+    background: #4285f4;
+  }
+  h1,
+  h2,
+  h3,
+  p {
+    margin-top: 0;
+  }
+  .fs-hero {
+    padding: 66px 0 76px;
+  }
+  .fs-hero-grid {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: 64px;
+    align-items: center;
+  }
+  .fs-copy h1 {
+    font-size: clamp(49px, 5.2vw, 76px);
+    line-height: 1.01;
+    letter-spacing: -0.06em;
+    margin-bottom: 25px;
+  }
+  .fs-copy h1 span {
+    color: var(--muted);
+  }
+  .fs-lede {
+    max-width: 610px;
+    color: var(--text);
+    font-size: 19px;
+    line-height: 1.6;
+  }
+  .fs-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 30px 0;
+  }
+  .fs-hero-control {
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 700;
+    margin: -12px 0 20px;
+  }
+  .fs-proof {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--green);
+    border-radius: 10px;
+    background: var(--surface);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+  .fs-proof small {
+    display: block;
+    color: var(--violet-text);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .fs-proof strong {
+    display: block;
+    margin-top: 5px;
+    font-size: 16px;
+  }
+  .fs-proof p {
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.45;
+    margin: 4px 0 0;
+  }
+  .fs-text-link {
+    font-weight: 800;
+  }
+  .fs-time-card {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: 205px 1fr;
+    overflow: hidden;
+  }
+  .fs-time-total {
+    padding: 23px 25px;
+    border-right: 1px solid var(--line);
+  }
+  .fs-time-total small {
+    display: block;
+    color: var(--text);
+  }
+  .fs-time-total strong {
+    display: block;
+    font-size: 49px;
+    line-height: 1;
+    margin: 11px 0 4px;
+    letter-spacing: -0.05em;
+  }
+  .fs-time-list {
+    padding: 15px 22px;
+  }
+  .fs-time-row {
+    display: grid;
+    grid-template-columns: 20px 1fr auto;
+    gap: 9px;
+    align-items: center;
+    min-height: 34px;
+    border-bottom: 1px solid var(--line);
+    font-size: 12px;
+  }
+  .fs-time-row:last-of-type {
+    border: 0;
+  }
+  .fs-check {
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    background: var(--green);
+    color: #07150f;
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    font-weight: 900;
+  }
+  .fs-time-note {
+    color: var(--muted);
+    font-size: 12px;
+    margin: 9px 0 0;
+  }
+  .fs-product {
+    border: 1px solid #3b3b45;
+    border-radius: 14px;
+    background: var(--surface);
+    overflow: hidden;
+    box-shadow: 0 28px 65px rgba(0, 0, 0, 0.32);
+  }
+  .fs-browserbar {
+    height: 44px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+  }
+  .fs-dots {
+    display: flex;
+    gap: 6px;
+  }
+  .fs-dots i {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #74747f;
+  }
+  .fs-address {
+    height: 26px;
+    flex: 1;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    color: var(--muted);
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+  .fs-product-body {
+    min-height: 500px;
+    display: grid;
+    grid-template-columns: 1fr 238px;
+  }
+  .fs-job-page {
+    background: #f7f7f8;
+    color: #17171a;
+    padding: 32px;
+  }
+  .fs-job-brand {
+    font-size: 12px;
+    color: #397954;
+    margin-bottom: 28px;
+    font-weight: 800;
+  }
+  .fs-job-role {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    margin-bottom: 4px;
+  }
+  .fs-job-meta {
+    font-size: 12px;
+    color: #62626a;
+  }
+  .fs-job-label {
+    font-size: 13px;
+    font-weight: 800;
+    margin: 27px 0 9px;
+  }
+  .fs-lines {
+    display: grid;
+    gap: 8px;
+  }
+  .fs-lines i {
+    height: 7px;
+    border-radius: 3px;
+    background: #d8d8dd;
+  }
+  .fs-lines i:nth-child(2) {
+    width: 91%;
+  }
+  .fs-lines i:nth-child(3) {
+    width: 77%;
+  }
+  .fs-extension {
+    border-left: 1px solid var(--line);
+    padding: 19px 16px;
+  }
+  .fs-ext-head {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 900;
+    margin-bottom: 23px;
+  }
+  .fs-ext-head span {
+    color: var(--violet-text);
+  }
+  .fs-role {
+    padding: 13px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    font-size: 12px;
+    color: var(--text);
+  }
+  .fs-role strong {
+    display: block;
+    color: var(--ink);
+    font-size: 13px;
+  }
+  .fs-ext-button {
+    width: 100%;
+    border: 0;
+    border-radius: 8px;
+    background: var(--violet);
+    color: #fff;
+    padding: 12px;
+    font-weight: 800;
+    margin: 15px 0;
+    cursor: pointer;
+  }
+  .fs-ext-status {
+    display: grid;
+    grid-template-columns: 18px 1fr auto;
+    gap: 8px;
+    align-items: center;
+    border-top: 1px solid var(--line);
+    padding: 12px 0;
+    font-size: 12px;
+  }
+  .fs-ext-foot {
+    border-top: 1px solid var(--line);
+    padding-top: 15px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .fs-section {
+    padding: 100px 0;
+    border-top: 1px solid var(--line);
+    scroll-margin-top: 70px;
+  }
+  .fs-section-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 30px;
+    margin-bottom: 46px;
+  }
+  .fs-section h2 {
+    font-size: clamp(40px, 5vw, 65px);
+    line-height: 1.02;
+    letter-spacing: -0.055em;
+    max-width: 760px;
+    margin-bottom: 0;
+  }
+  .fs-section-head p {
+    max-width: 390px;
+    color: var(--text);
+    font-size: 17px;
+    margin-bottom: 4px;
+  }
+  .fs-steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--line);
+    margin-bottom: 32px;
+  }
+  .fs-step {
+    color: var(--muted);
+    background: transparent;
+    border: 0;
+    border-top: 2px solid transparent;
+    margin-top: -1px;
+    padding: 21px 16px;
+    text-align: left;
+    cursor: pointer;
+  }
+  .fs-step + .fs-step {
+    border-left: 1px solid var(--line);
+  }
+  .fs-step b,
+  .fs-step strong {
+    display: block;
+  }
+  .fs-step b {
+    font-size: 12px;
+    margin-bottom: 7px;
+  }
+  .fs-step strong {
+    color: var(--text);
+    font-size: 13px;
+  }
+  .fs-step.is-active {
+    border-top-color: var(--violet);
+    color: #aaa2ff;
+  }
+  .fs-step.is-active strong {
+    color: var(--ink);
+  }
+  .fs-workspace {
+    display: grid;
+    grid-template-columns: 170px 1fr;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    min-height: 490px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .fs-side {
+    border-right: 1px solid var(--line);
+    padding: 25px 16px;
+  }
+  .fs-side-brand {
+    font-weight: 900;
+    margin-bottom: 28px;
+  }
+  .fs-side-brand span {
+    color: #a39aff;
+  }
+  .fs-side div {
+    padding: 10px;
+    border-radius: 7px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .fs-side div.is-active {
+    background: var(--soft);
+    color: #afa8ff;
+  }
+  .fs-main {
+    padding: 25px;
+  }
+  .fs-job-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 21px;
+  }
+  .fs-job-title h3 {
+    margin: 0;
+    font-size: 21px;
+  }
+  .fs-job-title span {
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .fs-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--line);
+  }
+  .fs-tab {
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    padding: 17px 25px;
+    cursor: pointer;
+  }
+  .fs-tab.is-active {
+    color: #aaa2ff;
+    border-bottom-color: var(--violet);
+  }
+  .fs-panel {
+    display: none;
+    padding: 29px 2px;
+  }
+  .fs-panel.is-active {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 28px;
+  }
+  .fs-details dl {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 13px;
+    margin: 0;
+    font-size: 13px;
+  }
+  .fs-details dt {
+    color: var(--muted);
+  }
+  .fs-details dd {
+    margin: 0;
+  }
+  .fs-details .fs-lines {
+    margin-top: 18px;
+  }
+  .fs-docs {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px;
+  }
+  .fs-docs h3 {
+    font-size: 15px;
+  }
+  .fs-doc-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 13px 0;
+    border-top: 1px solid var(--line);
+    font-size: 12px;
+  }
+  .fs-control {
+    margin-top: 18px;
+    padding: 14px;
+    background: var(--soft);
+    border-radius: 8px;
+    font-size: 12px;
+  }
+  .fs-control strong {
+    display: block;
+  }
+  .fs-safety-line {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    margin: 18px 0 0;
+  }
+  .fs-saved {
+    text-align: center;
+  }
+  .fs-saved h2 {
+    margin: 0 auto 14px;
+  }
+  .fs-saved .fs-lede {
+    margin: auto;
+  }
+  .fs-saved-value {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    gap: 0.12em;
+    font-size: clamp(88px, 12vw, 156px);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.06em;
+    margin: 44px 0 6px;
+  }
+  .fs-saved-value span {
+    font-size: 0.27em;
+    letter-spacing: -0.03em;
+    color: #b8b2ff;
+  }
+  .fs-saved-label {
+    font-size: 18px;
+    color: var(--text);
+  }
+  .fs-ledger {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    margin: 56px 0 34px;
+  }
+  .fs-ledger div {
+    padding: 23px;
+    display: grid;
+    grid-template-columns: 22px 1fr auto;
+    align-items: center;
+    gap: 11px;
+    text-align: left;
+  }
+  .fs-ledger div + div {
+    border-left: 1px solid var(--line);
+  }
+  .fs-ledger small {
+    display: block;
+    color: var(--muted);
+  }
+  .fs-periods {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 750px;
+    margin: auto;
+  }
+  .fs-periods div + div {
+    border-left: 1px solid var(--line);
+  }
+  .fs-periods small {
+    display: block;
+    color: var(--muted);
+  }
+  .fs-method {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 22px;
+  }
+  .fs-trust {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 70px;
+  }
+  .fs-trust-copy h2 {
+    margin-bottom: 22px;
+  }
+  .fs-trust-copy p {
+    color: var(--text);
+    font-size: 18px;
+  }
+  .fs-rules {
+    border-top: 1px solid var(--line);
+  }
+  .fs-rule {
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 16px;
+    padding: 22px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .fs-rule b {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--green) 16%, transparent);
+    color: var(--green);
+    display: grid;
+    place-items: center;
+  }
+  .fs-rule span {
+    display: block;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .fs-close {
+    padding: 90px 30px;
+    border-top: 1px solid var(--line);
+    text-align: center;
+    background: var(--surface);
+  }
+  .fs-close h2 {
+    font-size: clamp(42px, 5vw, 68px);
+    letter-spacing: -0.055em;
+    line-height: 1.02;
+    margin-bottom: 30px;
+  }
+  .fs-close h2 span {
+    color: #aaa3ff;
+  }
+  .fs-close .fs-actions {
+    justify-content: center;
+  }
+  .fs-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 28px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .fs-foot nav {
+    display: flex;
+    gap: 19px;
+  }
+  .fs-foot-end {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+  }
+  .fs-foot .fs-socials {
+    gap: 10px;
+  }
+  .fs-social {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 7px;
+    color: var(--text);
+    transition:
+      color 0.18s,
+      transform 0.18s;
+  }
+  .fs-social:hover {
+    color: var(--ink);
+    transform: translateY(-2px);
+  }
+  .fs-social svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+  }
+  .fs-social-instagram svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+  }
+  .fs-mobile-cta {
+    display: none;
+  }
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  [data-reveal].is-visible {
+    opacity: 1;
+    transform: none;
+  }
+  @media (max-width: 960px) {
+    .fs-links > a:not(.fs-btn) {
+      display: none;
+    }
+    .fs-hero-grid {
+      grid-template-columns: 1fr;
+    }
+    .fs-section-head {
+      display: block;
+    }
+    .fs-section-head p {
+      margin-top: 18px;
+    }
+    .fs-trust {
+      grid-template-columns: 1fr;
+    }
+    .fs-workspace {
+      grid-template-columns: 140px 1fr;
+    }
+  }
+  @media (max-width: 640px) {
+    .fs-wrap {
+      width: min(100% - 28px, 1240px);
+    }
+    .fs-nav-in {
+      height: 62px;
+    }
+    .fs-links .fs-btn {
+      display: none;
+    }
+    .fs-hero {
+      padding: 42px 0 58px;
+    }
+    .fs-copy h1 {
+      font-size: 46px;
+    }
+    .fs-lede {
+      font-size: 17px;
+    }
+    .fs-time-card {
+      grid-template-columns: 1fr;
+    }
+    .fs-time-total {
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .fs-product-body {
+      grid-template-columns: 1fr;
+    }
+    .fs-job-page {
+      min-height: 370px;
+      padding: 23px;
+    }
+    .fs-extension {
+      border-left: 0;
+      border-top: 1px solid var(--line);
+    }
+    .fs-section {
+      padding: 72px 0;
+    }
+    .fs-section h2 {
+      font-size: 40px;
+    }
+    .fs-steps {
+      grid-template-columns: 1fr 1fr;
+    }
+    .fs-step:nth-child(3) {
+      border-left: 0;
+    }
+    .fs-workspace {
+      grid-template-columns: 1fr;
+    }
+    .fs-side {
+      display: none;
+    }
+    .fs-main {
+      padding: 18px;
+    }
+    .fs-tabs {
+      overflow: auto;
+    }
+    .fs-tab {
+      white-space: nowrap;
+      padding: 14px 16px;
+    }
+    .fs-panel.is-active {
+      grid-template-columns: 1fr;
+    }
+    .fs-ledger {
+      grid-template-columns: 1fr;
+    }
+    .fs-ledger div + div {
+      border-left: 0;
+      border-top: 1px solid var(--line);
+    }
+    .fs-periods {
+      grid-template-columns: 1fr;
+    }
+    .fs-periods div + div {
+      border-left: 0;
+    }
+    .fs-foot {
+      padding-bottom: 64px;
+      flex-direction: column;
+    }
+    .fs-foot-end {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .fs-mobile-cta {
+      display: flex;
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 60;
+      min-height: 54px;
+      border-radius: 11px;
+      background: var(--violet);
+      color: #fff !important;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-weight: 900;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #fs-journey *,
+    #fs-journey *:before,
+    #fs-journey *:after {
+      transition-duration: 0.001ms !important;
+    }
+    [data-reveal] {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @media (max-width: 640px) {
+    .fs-job-title {
+      display: block;
+    }
+    .fs-job-title h3 {
+      font-size: 18px;
+      overflow-wrap: anywhere;
+    }
+    .fs-job-title span {
+      display: block;
+      margin-top: 5px;
+    }
+    .fs-panel {
+      overflow: hidden;
+    }
+    .fs-panel h3 {
+      font-size: 18px;
+    }
+    .fs-docs {
+      min-width: 0;
+    }
+  }
+</style>
+<main id="fs-journey" data-theme="dark">
+  <nav class="fs-nav" aria-label="Primary navigation">
+    <div class="fs-wrap fs-nav-in">
+      <a class="fs-brand" href="https://app.1ststep.ai"
+        >1stStep<span>.ai</span></a
+      >
+      <div class="fs-links">
+        <a href="#fs-how">How it works</a><a href="#fs-time">Time saved</a
+        ><a href="#fs-safety">Safety</a
+        ><button
+          class="fs-theme"
+          data-theme-toggle
+          aria-label="Switch to light theme"
+        >
+          <svg class="fs-moon" viewBox="0 0 24 24">
+            <path
+              d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"
+            /></svg
+          ><svg class="fs-sun" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M2 12h2M20 12h2" />
+          </svg></button
+        ><a
+          class="fs-btn fs-btn-primary"
+          href="https://chromewebstore.google.com/detail/1ststepai-job-agent/gnbjcmennlcbkmakameknfcnioohnjkp"
+          target="_blank"
+          rel="noopener"
+          ><i class="fs-chrome"></i>Get the Chrome extension</a
+        >
+      </div>
+    </div>
+  </nav>
+  <section class="fs-hero">
+    <div class="fs-wrap fs-hero-grid">
+      <div class="fs-copy" data-reveal>
+        <h1>
+          Save time on every application.
+          <span>Stay in control.</span>
+        </h1>
+        <p class="fs-lede">
+          Use the Chrome extension to capture a job and prepare tailored
+          documents in your workspace. Start the Job Agent when you want an
+          ongoing search. You review and submit.
+        </p>
+        <div class="fs-actions">
+          <a
+            class="fs-btn fs-btn-primary"
+            href="https://chromewebstore.google.com/detail/1ststepai-job-agent/gnbjcmennlcbkmakameknfcnioohnjkp"
+            target="_blank"
+            rel="noopener"
+            ><i class="fs-chrome"></i>Get the Chrome extension</a
+          ><a class="fs-text-link" href="https://app.1ststep.ai"
+            >Explore the ongoing Job Agent search →</a
+          >
+        </div>
+        <p class="fs-hero-control">
+          Nothing is sent automatically. You approve every document and final
+          submission.
+        </p>
+        <aside class="fs-proof" aria-label="Verified founder test result">
+          <small>Verified founder test · August 24</small>
+          <strong>First-round interview invitation received</strong>
+          <p>
+            A role worked through with 1stStep was followed by an interview
+            invitation. The employer made the decision.
+          </p>
+        </aside>
+        <div class="fs-time-card">
+          <div class="fs-time-total">
+            <small>Estimated time saved</small><strong>35 min</strong
+            ><span>this application</span>
+          </div>
+          <div class="fs-time-list">
+            <div class="fs-time-row">
+              <i class="fs-check">✓</i><span>Job captured</span><b>5 min</b>
+            </div>
+            <div class="fs-time-row">
+              <i class="fs-check">✓</i><span>Résumé prepared</span><b>18 min</b>
+            </div>
+            <div class="fs-time-row">
+              <i class="fs-check">✓</i><span>Cover letter prepared</span
+              ><b>12 min</b>
+            </div>
+            <p class="fs-time-note">Estimate based on completed steps.</p>
+          </div>
+        </div>
+      </div>
+      <div class="fs-product" data-reveal>
+        <div class="fs-browserbar">
+          <span class="fs-dots"><i></i><i></i><i></i></span
+          ><span class="fs-address">jobs.example.com/company/role</span>
+        </div>
+        <div class="fs-product-body">
+          <div class="fs-job-page">
+            <div class="fs-job-brand">job posting</div>
+            <div class="fs-job-role">Senior Operations Manager</div>
+            <div class="fs-job-meta">
+              Northstar Logistics · Remote · Full-time
+            </div>
+            <div class="fs-job-label">About the role</div>
+            <div class="fs-lines"><i></i><i></i><i></i><i></i></div>
+            <div class="fs-job-label">What you’ll do</div>
+            <div class="fs-lines"><i></i><i></i><i></i></div>
+          </div>
+          <aside class="fs-extension" aria-label="Chrome extension preview">
+            <div class="fs-ext-head">1stStep<span>.ai</span></div>
+            <div class="fs-role">
+              <strong>Senior Operations Manager</strong>Northstar Logistics ·
+              Remote
+            </div>
+            <button class="fs-ext-button" data-capture>Capture this job</button>
+            <div class="fs-ext-status">
+              <i class="fs-check">✓</i><b>Job captured</b><span>5 min</span>
+            </div>
+            <div class="fs-ext-status">
+              <i class="fs-check">✓</i><b>Résumé prepared</b><span>18 min</span>
+            </div>
+            <div class="fs-ext-status">
+              <i class="fs-check">✓</i><b>Cover letter prepared</b
+              ><span>12 min</span>
+            </div>
+            <p class="fs-ext-foot">
+              Saved to your 1stStep workspace. You review before anything is
+              submitted.
+            </p>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="fs-section" id="fs-how">
+    <div class="fs-wrap">
+      <div class="fs-section-head" data-reveal>
+        <h2>Capture once. Keep moving.</h2>
+        <p>Send the job straight to your application workspace.</p>
+      </div>
+      <div class="fs-steps" aria-label="Application workflow preview">
+        <button type="button" class="fs-step is-active" data-stage="0">
+          <b>01</b><strong>Open the job</strong></button
+        ><button type="button" class="fs-step" data-stage="1">
+          <b>02</b><strong>Capture it</strong></button
+        ><button type="button" class="fs-step" data-stage="2">
+          <b>03</b><strong>Prepare</strong></button
+        ><button type="button" class="fs-step" data-stage="3">
+          <b>04</b><strong>Review &amp; submit</strong>
+        </button>
+      </div>
+      <div class="fs-workspace" data-reveal>
+        <aside class="fs-side" aria-label="Workspace navigation preview">
+          <div class="fs-side-brand">1stStep<span>.ai</span></div>
+          <div class="is-active">Job Agent</div>
+          <div>My Jobs</div>
+          <div>Documents</div>
+          <div>Career Profile</div>
+        </aside>
+        <div class="fs-main">
+          <div class="fs-job-title">
+            <h3>Senior Operations Manager</h3>
+            <span>Captured from job page</span>
+          </div>
+          <div class="fs-tabs">
+            <button class="fs-tab is-active" data-worktab="0">
+              Job details</button
+            ><button class="fs-tab" data-worktab="1">Résumé</button
+            ><button class="fs-tab" data-worktab="2">Cover letter</button
+            ><button class="fs-tab" data-worktab="3">Review</button>
+          </div>
+          <div class="fs-panel is-active" data-panel="0">
+            <div class="fs-details">
+              <dl>
+                <dt>Company</dt>
+                <dd>Northstar Logistics</dd>
+                <dt>Role</dt>
+                <dd>Senior Operations Manager</dd>
+                <dt>Location</dt>
+                <dd>Remote</dd>
+                <dt>Employment</dt>
+                <dd>Full-time</dd>
+              </dl>
+              <div class="fs-lines"><i></i><i></i><i></i></div>
+            </div>
+            <aside class="fs-docs" aria-label="Prepared application documents">
+              <h3>Your application</h3>
+              <div class="fs-doc-row"><span>Résumé</span><b>Prepared</b></div>
+              <div class="fs-doc-row">
+                <span>Cover letter</span><b>Prepared</b>
+              </div>
+              <div class="fs-control">
+                <strong>You stay in control.</strong>You review and submit every
+                application yourself.
+              </div>
+            </aside>
+          </div>
+          <div class="fs-panel" data-panel="1">
+            <div>
+              <h3>Résumé ready for review</h3>
+              <p class="fs-lede">Check the edits. Keep every fact accurate.</p>
+            </div>
+          </div>
+          <div class="fs-panel" data-panel="2">
+            <div>
+              <h3>Cover letter ready</h3>
+              <p class="fs-lede">Review the draft.</p>
+            </div>
+          </div>
+          <div class="fs-panel" data-panel="3">
+            <div>
+              <h3>Ready when you are</h3>
+              <p class="fs-lede">
+                Answer employer questions. Submit when ready.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="fs-safety-line">You review. You submit.</p>
+    </div>
+  </section>
+  <section class="fs-section fs-saved" id="fs-time">
+    <div class="fs-wrap" data-reveal>
+      <h2>See what you saved.</h2>
+      <div class="fs-saved-value">35 <span>min</span></div>
+      <div class="fs-saved-label">Estimated time saved</div>
+      <div class="fs-ledger">
+        <div>
+          <i class="fs-check">✓</i
+          ><span><strong>Job captured</strong><small>Completed</small></span
+          ><b>5 min</b>
+        </div>
+        <div>
+          <i class="fs-check">✓</i
+          ><span><strong>Résumé prepared</strong><small>Completed</small></span
+          ><b>18 min</b>
+        </div>
+        <div>
+          <i class="fs-check">✓</i
+          ><span
+            ><strong>Cover letter prepared</strong
+            ><small>Completed</small></span
+          ><b>12 min</b>
+        </div>
+      </div>
+      <div class="fs-periods">
+        <div><small>This application</small><strong>35 min</strong></div>
+        <div><small>This week</small><strong>—</strong></div>
+        <div><small>All time</small><strong>—</strong></div>
+      </div>
+      <p class="fs-method">Based on completed workflow steps.</p>
+    </div>
+  </section>
+  <section class="fs-section" id="fs-safety">
+    <div class="fs-wrap fs-trust">
+      <div class="fs-trust-copy" data-reveal>
+        <h2>Your application. Your call.</h2>
+        <p>1stStep prepares the work. You approve it.</p>
+      </div>
+      <div class="fs-rules" data-reveal>
+        <div class="fs-rule">
+          <b>✓</b>
+          <div>
+            <strong>Review first</strong><span>Edit every document.</span>
+          </div>
+        </div>
+        <div class="fs-rule">
+          <b>✓</b>
+          <div>
+            <strong>Private answers stay private</strong
+            ><span>You answer personal questions.</span>
+          </div>
+        </div>
+        <div class="fs-rule">
+          <b>✓</b>
+          <div>
+            <strong>You submit</strong
+            ><span>CAPTCHA and the final click stay with you.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="fs-close">
+    <div class="fs-wrap">
+      <h2>Save time on your next application.</h2>
+      <div class="fs-actions">
+        <a
+          class="fs-btn fs-btn-primary"
+          href="https://chromewebstore.google.com/detail/1ststepai-job-agent/gnbjcmennlcbkmakameknfcnioohnjkp"
+          target="_blank"
+          rel="noopener"
+          ><i class="fs-chrome"></i>Get the Chrome extension</a
+        ><a class="fs-btn fs-btn-secondary" href="https://app.1ststep.ai"
+          >Explore ongoing Job Agent search</a
+        >
+      </div>
+      <footer class="fs-foot">
+        <span>© 1stStep.ai</span>
+        <div class="fs-foot-end">
+          <nav class="fs-socials" aria-label="Social media">
+            <a
+              class="fs-social"
+              href="https://x.com/1ststepai"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="X"
+              title="X"
+              ><svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817-5.966 6.817H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.451-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"
+                ></path></svg
+            ></a>
+            <a
+              class="fs-social fs-social-instagram"
+              href="https://www.instagram.com/1ststepdotai/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              title="Instagram"
+              ><svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="5"></rect>
+                <circle cx="12" cy="12" r="4"></circle>
+                <circle
+                  cx="17.4"
+                  cy="6.6"
+                  r="1"
+                  fill="currentColor"
+                  stroke="none"
+                ></circle></svg
+            ></a>
+            <a
+              class="fs-social"
+              href="https://www.linkedin.com/company/105262286/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+              title="LinkedIn"
+              ><svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.86-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.34V8.99h3.41v1.56h.05c.47-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.29ZM5.33 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12ZM7.11 20.45H3.55V8.99h3.56v11.46Z"
+                ></path></svg
+            ></a>
+            <a
+              class="fs-social"
+              href="https://www.youtube.com/@1ststepdotai"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="YouTube"
+              title="YouTube"
+              ><svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.75 15.5v-7l6.5 3.5-6.5 3.5Z"
+                ></path></svg
+            ></a>
+          </nav>
+          <nav aria-label="Footer links">
+            <a href="https://partners.1ststep.ai">Affiliates</a
+            ><a href="https://app.1ststep.ai/privacy">Privacy</a
+            ><a href="https://app.1ststep.ai/terms">Terms</a
+            ><a href="mailto:support@1ststep.ai">Support</a>
+          </nav>
+        </div>
+      </footer>
+    </div>
+  </section>
+  <a
+    class="fs-mobile-cta"
+    href="https://chromewebstore.google.com/detail/1ststepai-job-agent/gnbjcmennlcbkmakameknfcnioohnjkp"
+    target="_blank"
+    rel="noopener"
+    ><i class="fs-chrome"></i>Get the Chrome extension</a
+  >
+</main>
+<script>
+  (function () {
+    var seo = {
+      title: "AI Job Application Assistant & Resume Builder | 1stStep.ai",
+      description:
+        "Capture job postings from supported pages with the 1stStep.ai Chrome extension, prepare tailored application materials, and review before you submit.",
+      url: "https://resume.1ststep.ai/ai-resume-builder",
+      image:
+        "https://assets.cdn.filesafe.space/ER85bbRj2EUSuMtO0uFQ/media/69f033ad717d5dd4e196aeb3.png",
+    };
+    function setMeta(attribute, key, value) {
+      var selector = "meta[" + attribute + '="' + key + '"]';
+      var nodes = Array.from(document.head.querySelectorAll(selector));
+      var node = nodes.shift();
+      if (!node) {
+        node = document.createElement("meta");
+        node.setAttribute(attribute, key);
+        document.head.appendChild(node);
+      }
+      node.setAttribute("content", value);
+      nodes.forEach(function (extra) {
+        extra.remove();
+      });
+    }
+    function normalizeSeo() {
+      document.documentElement.lang = "en";
+      document.title = seo.title;
+      setMeta("name", "description", seo.description);
+      setMeta("name", "robots", "index,follow,max-image-preview:large");
+      setMeta("property", "og:title", seo.title);
+      setMeta("property", "og:description", seo.description);
+      setMeta("property", "og:type", "website");
+      setMeta("property", "og:url", seo.url);
+      setMeta("property", "og:site_name", "1stStep.ai");
+      setMeta("property", "og:locale", "en_US");
+      setMeta("property", "og:image", seo.image);
+      setMeta("name", "twitter:card", "summary_large_image");
+      setMeta("name", "twitter:title", seo.title);
+      setMeta("name", "twitter:description", seo.description);
+      setMeta("name", "twitter:image", seo.image);
+      document.head
+        .querySelectorAll(
+          'meta[name="keywords"],meta[property="og:keywords"],meta[property="og:author"],meta[property^="twitter:"]',
+        )
+        .forEach(function (node) {
+          node.remove();
+        });
+      var canonicals = Array.from(
+        document.head.querySelectorAll('link[rel~="canonical"]'),
+      );
+      var canonical = canonicals.shift();
+      if (!canonical) {
+        canonical = document.createElement("link");
+        canonical.rel = "canonical";
+        document.head.appendChild(canonical);
+      }
+      canonical.href = seo.url;
+      canonicals.forEach(function (extra) {
+        extra.remove();
+      });
+    }
+    normalizeSeo();
+    window.setTimeout(normalizeSeo, 1000);
+    var r = document.getElementById("fs-journey");
+    if (!r || r.dataset.ready) return;
+    r.dataset.ready = "1";
+    var t = r.querySelector("[data-theme-toggle]");
+    function theme(x) {
+      r.dataset.theme = x;
+      t.setAttribute(
+        "aria-label",
+        x === "dark" ? "Switch to light theme" : "Switch to dark theme",
+      );
+    }
+    var s = "dark";
+    try {
+      s = localStorage.getItem("1ststep_theme") || "dark";
+    } catch (_) {
+      // Storage can be unavailable in privacy modes; the rendered theme still works.
+    }
+    theme(s === "light" ? "light" : "dark");
+    t.onclick = function () {
+      var n = r.dataset.theme === "dark" ? "light" : "dark";
+      try {
+        localStorage.setItem("1ststep_theme", n);
+      } catch (_) {
+        // Storage can be unavailable in privacy modes; the rendered theme still works.
+      }
+      theme(n);
+    };
+    var a = Array.from(r.querySelectorAll("[data-stage]")),
+      b = Array.from(r.querySelectorAll("[data-worktab]")),
+      p = Array.from(r.querySelectorAll("[data-panel]"));
+    function show(i) {
+      a.forEach(function (x, n) {
+        x.classList.toggle("is-active", n === i);
+      });
+      b.forEach(function (x, n) {
+        x.classList.toggle("is-active", n === i);
+      });
+      p.forEach(function (x, n) {
+        x.classList.toggle("is-active", n === i);
+      });
+    }
+    a.forEach(function (x, i) {
+      x.onclick = function () {
+        show(i);
+      };
+    });
+    b.forEach(function (x, i) {
+      x.onclick = function () {
+        show(i);
+      };
+    });
+    r.querySelector("[data-capture]").onclick = function () {
+      this.textContent = "Captured ✓";
+      this.disabled = true;
+      show(1);
+      r.querySelector("#fs-how").scrollIntoView({
+        behavior: matchMedia("(prefers-reduced-motion:reduce)").matches
+          ? "auto"
+          : "smooth",
+      });
+    };
+    var q = Array.from(r.querySelectorAll("[data-reveal]"));
+    if ("IntersectionObserver" in window) {
+      var io = new IntersectionObserver(
+        function (es) {
+          es.forEach(function (e) {
+            if (e.isIntersecting) {
+              e.target.classList.add("is-visible");
+              io.unobserve(e.target);
+            }
+          });
+        },
+        { threshold: 0.12 },
+      );
+      q.forEach(function (x) {
+        io.observe(x);
+      });
+    } else
+      q.forEach(function (x) {
+        x.classList.add("is-visible");
+      });
+  })();
+</script>

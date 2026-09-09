@@ -22,15 +22,22 @@
 <meta name="twitter:title" content="1stStep.ai — Your AI Job Agent">
 <meta name="twitter:description" content="Find the right jobs. Build better applications. Faster. You review and submit every application yourself.">
 <meta name="twitter:image" content="https://app.1ststep.ai/og-1ststep-ai.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="icon" href="/1ststep-ai-icon.png">
 <link rel="apple-touch-icon" href="/1ststep-ai-icon.png">
-<script src="/site-theme.js"></script>
+<script>
+try {
+  var initialTheme = localStorage.getItem('1ststep_theme');
+  document.documentElement.dataset.theme = initialTheme === 'dark' ? 'dark' : 'light';
+  document.documentElement.style.colorScheme = document.documentElement.dataset.theme;
+} catch (_) {
+  // Storage can be unavailable in privacy modes; the light theme is the safe default.
+  document.documentElement.dataset.theme = 'light';
+}
+document.documentElement.classList.add('js');
+</script>
 <link rel="stylesheet" href="/home-motion.css">
 <link rel="stylesheet" href="/site-theme.css">
-<script>document.documentElement.classList.add('js');</script>
+<script src="/site-theme.js" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -44,6 +51,7 @@
       <a href="#how">How it works</a>
       <a href="#details">Good to know</a>
       <a href="/pricing">Pricing</a>
+      <a href="https://partners.1ststep.ai/">Affiliates</a>
     </nav>
     <div class="nav-actions">
       <a class="nav-signin" href="/app">Sign in</a>
@@ -57,6 +65,7 @@
     <a href="#how">How it works</a>
     <a href="#details">Good to know</a>
     <a href="/pricing">Pricing</a>
+    <a href="https://partners.1ststep.ai/">Affiliates</a>
     <a href="/app">Sign in</a>
     <a class="btn btn-primary btn-block nav-sheet-cta" href="/concierge">Start My Job Agent — Free</a>
   </nav>
@@ -70,17 +79,27 @@
     <div class="hero-copy">
       <p class="pill"><span class="pill-tag">Beta</span> AI Job Agent · free early access by invitation</p>
       <h1>Find the right jobs. Build better applications. <span class="hero-accent">Faster.</span></h1>
-      <p class="lede">Your AI Job Agent helps find suitable openings and prepare a tailored résumé and cover letter from experience you have confirmed. You review every application and submit it yourself.</p>
+      <p class="lede">Capture a job with the extension, prepare tailored documents in your workspace, or start the Job Agent to keep your search moving. You review every application and submit it yourself.</p>
       <div class="hero-cta">
         <a class="btn btn-primary btn-lg" href="/concierge">Start My Job Agent — Free</a>
         <a class="btn btn-quiet btn-lg" href="#how">See How It Works</a>
       </div>
+      <div class="hero-evidence" aria-label="Product evidence">
+        <article>
+          <span>Verified founder test · August 24</span>
+          <strong>First-round interview invitation received</strong>
+          <p>A role worked through with 1stStep was followed by an interview invitation. The employer made the decision.</p>
+        </article>
+        <article>
+          <span>Example after completed work</span>
+          <strong>35 minutes estimated saved</strong>
+          <p>Job captured: 5 min · résumé prepared: 18 min · cover letter prepared: 12 min.</p>
+        </article>
+      </div>
       <ul class="hero-points">
         <li>Free early access by invitation — no card required</li>
         <li>You review and submit every application yourself</li>
-        <li>Start with your résumé and a few simple questions</li>
       </ul>
-      <p class="hero-payoff">Your next role. One step closer.</p>
     </div>
 
     <div class="hero-panel demo-stage" data-motion-scene>
@@ -162,7 +181,7 @@
 
       </article>
       <article class="studio-card studio-extension reveal" data-motion-scene>
-        <div><p class="eyebrow">03 / TAKE IT WITH YOU</p><h3>Found a job you love?<br>Bring it into your workspace.</h3><p>The 1stStep Chrome extension keeps job capture close at hand while you browse.</p><a class="studio-link" href="https://chromewebstore.google.com/detail/1ststepai-%E2%80%93-tailor-your-r/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener noreferrer" data-chrome-web-store-url>Get the Chrome extension <span aria-hidden="true">↗</span></a></div>
+        <div><p class="eyebrow">03 / TAKE IT WITH YOU</p><h3>Found a job you love?<br>Bring it into your workspace.</h3><p>Capture a supported job page without copying and pasting. Review the details in your 1stStep workspace.</p><a class="studio-link" href="https://chromewebstore.google.com/detail/1ststepai-%E2%80%93-tailor-your-r/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener noreferrer" data-chrome-web-store-url>Get the Chrome extension <span aria-hidden="true">↗</span></a></div>
         <div class="extension-visual"><div class="browser-preview"><div class="browser-bar"><span aria-hidden="true">● ● ●</span> Employer careers</div><div class="browser-body"><span class="eyebrow">CAREERS</span><strong>Make your next move.</strong><i></i><i></i></div></div><div class="extension-popover"><span class="brand-mark sm" aria-hidden="true">1st</span><div><strong>A good find.</strong><span>Bring this role to 1stStep.</span></div><span aria-hidden="true">↗</span></div></div>
       </article>
     </div>
@@ -260,7 +279,7 @@
     </div>
     <div>
       <h2 class="foot-h">Product</h2>
-      <ul><li><a href="/app/resume">Résumé Builder</a></li><li><a href="/concierge">Job Agent</a></li><li><a href="https://chromewebstore.google.com/detail/1ststepai-%E2%80%93-tailor-your-r/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener noreferrer" data-chrome-web-store-url>Chrome extension</a></li><li><a href="/pricing">Pricing</a></li></ul>
+      <ul><li><a href="/app/resume">Résumé Builder</a></li><li><a href="/concierge">Job Agent</a></li><li><a href="https://chromewebstore.google.com/detail/1ststepai-%E2%80%93-tailor-your-r/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener noreferrer" data-chrome-web-store-url>Chrome extension</a></li><li><a href="/pricing">Pricing</a></li><li><a href="https://partners.1ststep.ai/">Affiliates</a></li></ul>
     </div>
     <div>
       <h2 class="foot-h">Account</h2>
