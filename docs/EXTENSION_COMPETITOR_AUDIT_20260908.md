@@ -10,7 +10,9 @@ Audited September 8, 2026. This is a clean-room product comparison: public produ
 - Reuse of recurring answers, referral/outreach assistance, reminders, and follow-up tracking.
 - Broad job-board/ATS marketing and a persistent browser-side workflow.
 
-Official product references: [features](https://nextraise.ai/features), [job search](https://nextraise.ai/features/linkedin-search), [referrals](https://nextraise.ai/features/insider-referrals), [privacy](https://nextraise.ai/privacy), and [terms](https://nextraise.ai/terms).
+Official product references: [homepage](https://nextraise.ai/), [features](https://nextraise.ai/features), [job search](https://nextraise.ai/features/linkedin-search), [referrals](https://nextraise.ai/features/insider-referrals), [privacy](https://nextraise.ai/privacy), and [terms](https://nextraise.ai/terms).
+
+The homepage makes the product strategy especially clear: one unified feed, per-job qualification scoring, ATS/resume checks, role-specific tailoring, visible application completion, referrals, and tracking. Its strongest efficiency signal is not merely autofill; it is the ordered workflow of deciding whether a role is worth pursuing before spending time tailoring or applying. That reinforces 1stStep's deterministic qualification gate and evidence-backed time-saved gauge. Match explanations should remain traceable to verified applicant evidence rather than adopting an unexplained percentage.
 
 ## Patterns intentionally not adopted
 
