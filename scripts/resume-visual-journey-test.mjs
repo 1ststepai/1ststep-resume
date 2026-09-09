@@ -14,6 +14,8 @@ const required = [
   "Start My Job Agent",
   'href="https://app.1ststep.ai"',
   "https://www.instagram.com/1ststepdotai/",
+  'aria-label="Instagram"',
+  'class="fs-social"',
   "Capture once. Keep moving.",
   "See what you saved.",
   "Estimated time saved",

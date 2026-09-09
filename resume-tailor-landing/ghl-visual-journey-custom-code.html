@@ -699,6 +699,39 @@
     display: flex;
     gap: 19px;
   }
+  .fs-foot-end {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+  }
+  .fs-foot .fs-socials {
+    gap: 10px;
+  }
+  .fs-social {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    color: var(--text);
+    transition:
+      color 0.18s,
+      border-color 0.18s,
+      transform 0.18s;
+  }
+  .fs-social:hover {
+    color: var(--ink);
+    border-color: var(--violet);
+    transform: translateY(-2px);
+  }
+  .fs-social svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+  }
   .fs-mobile-cta {
     display: none;
   }
@@ -817,6 +850,11 @@
     .fs-foot {
       padding-bottom: 64px;
       flex-direction: column;
+    }
+    .fs-foot-end {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 16px;
     }
     .fs-mobile-cta {
       display: flex;
@@ -1160,16 +1198,33 @@
       </div>
       <footer class="fs-foot">
         <span>© 1stStep.ai</span>
-        <nav>
-          <a
-            href="https://www.instagram.com/1ststepdotai/"
-            target="_blank"
-            rel="noopener"
-            >Instagram</a
-          ><a href="https://app.1ststep.ai/privacy">Privacy</a
-          ><a href="https://app.1ststep.ai/terms">Terms</a
-          ><a href="mailto:support@1ststep.ai">Support</a>
-        </nav>
+        <div class="fs-foot-end">
+          <nav class="fs-socials" aria-label="Social media">
+            <a
+              class="fs-social"
+              href="https://www.instagram.com/1ststepdotai/"
+              target="_blank"
+              rel="noopener"
+              aria-label="Instagram"
+              title="Instagram"
+              ><svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="5"></rect>
+                <circle cx="12" cy="12" r="4"></circle>
+                <circle
+                  cx="17.4"
+                  cy="6.6"
+                  r="1"
+                  fill="currentColor"
+                  stroke="none"
+                ></circle></svg
+            ></a>
+          </nav>
+          <nav aria-label="Legal">
+            <a href="https://app.1ststep.ai/privacy">Privacy</a
+            ><a href="https://app.1ststep.ai/terms">Terms</a
+            ><a href="mailto:support@1ststep.ai">Support</a>
+          </nav>
+        </div>
       </footer>
     </div>
   </section>
