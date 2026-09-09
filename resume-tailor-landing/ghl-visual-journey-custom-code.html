@@ -774,11 +774,9 @@
     display: none;
   }
   [data-reveal] {
-    opacity: 0;
-    transform: translateY(10px);
-    transition:
-      opacity 0.5s,
-      transform 0.5s;
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
   [data-reveal].is-visible {
     opacity: 1;
@@ -944,15 +942,9 @@
       min-width: 0;
     }
   }
-  /* Content is immediate; motion is reserved for direct user interactions. */
-  [data-reveal] {
-    opacity: 1 !important;
-    transform: none !important;
-    transition: none !important;
-  }
 </style>
 <main id="fs-journey" data-theme="dark">
-  <nav class="fs-nav">
+  <nav class="fs-nav" aria-label="Primary navigation">
     <div class="fs-wrap fs-nav-in">
       <a class="fs-brand" href="https://app.1ststep.ai"
         >1stStep<span>.ai</span></a
@@ -1055,7 +1047,7 @@
             <div class="fs-job-label">What you’ll do</div>
             <div class="fs-lines"><i></i><i></i><i></i></div>
           </div>
-          <aside class="fs-extension">
+          <aside class="fs-extension" aria-label="Chrome extension preview">
             <div class="fs-ext-head">1stStep<span>.ai</span></div>
             <div class="fs-role">
               <strong>Senior Operations Manager</strong>Northstar Logistics ·
@@ -1099,7 +1091,7 @@
         </button>
       </div>
       <div class="fs-workspace" data-reveal>
-        <aside class="fs-side">
+        <aside class="fs-side" aria-label="Workspace navigation preview">
           <div class="fs-side-brand">1stStep<span>.ai</span></div>
           <div class="is-active">Job Agent</div>
           <div>My Jobs</div>
@@ -1132,7 +1124,7 @@
               </dl>
               <div class="fs-lines"><i></i><i></i><i></i></div>
             </div>
-            <aside class="fs-docs">
+            <aside class="fs-docs" aria-label="Prepared application documents">
               <h3>Your application</h3>
               <div class="fs-doc-row"><span>Résumé</span><b>Prepared</b></div>
               <div class="fs-doc-row">
@@ -1334,7 +1326,7 @@
     };
     function setMeta(attribute, key, value) {
       var selector = "meta[" + attribute + '="' + key + '"]';
-      var nodes = [].slice.call(document.head.querySelectorAll(selector));
+      var nodes = Array.from(document.head.querySelectorAll(selector));
       var node = nodes.shift();
       if (!node) {
         node = document.createElement("meta");
@@ -1369,7 +1361,7 @@
         .forEach(function (node) {
           node.remove();
         });
-      var canonicals = [].slice.call(
+      var canonicals = Array.from(
         document.head.querySelectorAll('link[rel~="canonical"]'),
       );
       var canonical = canonicals.shift();
@@ -1399,18 +1391,22 @@
     var s = "dark";
     try {
       s = localStorage.getItem("1ststep_theme") || "dark";
-    } catch (_) {}
+    } catch (_) {
+      // Storage can be unavailable in privacy modes; the rendered theme still works.
+    }
     theme(s === "light" ? "light" : "dark");
     t.onclick = function () {
       var n = r.dataset.theme === "dark" ? "light" : "dark";
       try {
         localStorage.setItem("1ststep_theme", n);
-      } catch (_) {}
+      } catch (_) {
+        // Storage can be unavailable in privacy modes; the rendered theme still works.
+      }
       theme(n);
     };
-    var a = [].slice.call(r.querySelectorAll("[data-stage]")),
-      b = [].slice.call(r.querySelectorAll("[data-worktab]")),
-      p = [].slice.call(r.querySelectorAll("[data-panel]"));
+    var a = Array.from(r.querySelectorAll("[data-stage]")),
+      b = Array.from(r.querySelectorAll("[data-worktab]")),
+      p = Array.from(r.querySelectorAll("[data-panel]"));
     function show(i) {
       a.forEach(function (x, n) {
         x.classList.toggle("is-active", n === i);
@@ -1442,7 +1438,7 @@
           : "smooth",
       });
     };
-    var q = [].slice.call(r.querySelectorAll("[data-reveal]"));
+    var q = Array.from(r.querySelectorAll("[data-reveal]"));
     if ("IntersectionObserver" in window) {
       var io = new IntersectionObserver(
         function (es) {

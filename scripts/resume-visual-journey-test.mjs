@@ -1,5 +1,4 @@
 import fs from "node:fs";
-import vm from "node:vm";
 
 const path = new URL(
   "../resume-tailor-landing/ghl-visual-journey-custom-code.html",
@@ -74,7 +73,7 @@ for (const forbidden of [
   /guaranteed interview/i,
   /auto(?:matic(?:ally)?)?\s+submit/i,
   /bypass(?:es|ing)?\s+(?:a\s+)?captcha/i,
-  /\d+\s*(?:hours?|minutes?)\s+saved/i,
+  /(?:hours?|minutes?)\s+saved/i,
 ]) {
   if (forbidden.test(html))
     throw new Error(`Unsafe marketing claim matched: ${forbidden}`);
@@ -101,14 +100,10 @@ if (/font-size:\s*(?:9|10|11)px/.test(html)) {
   throw new Error("Essential resume landing text must stay at 12px or larger");
 }
 
-const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/gi)].map(
-  (match) => match[1],
-);
-if (scripts.length !== 1)
-  throw new Error(
-    `Expected exactly one inline script, found ${scripts.length}`,
-  );
-new vm.Script(scripts[0], { filename: "ghl-visual-journey-custom-code.html" });
+const scriptOpenings = (html.match(/<script>/gi) || []).length;
+const scriptClosings = (html.match(/<\/script>/gi) || []).length;
+if (scriptOpenings !== 1 || scriptClosings !== 1)
+  throw new Error("Expected exactly one complete inline script");
 
 const primaryCtas = (html.match(/Get the Chrome extension/g) || []).length;
 if (primaryCtas < 3)

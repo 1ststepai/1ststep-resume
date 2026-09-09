@@ -30,6 +30,7 @@ try {
   document.documentElement.dataset.theme = initialTheme === 'dark' ? 'dark' : 'light';
   document.documentElement.style.colorScheme = document.documentElement.dataset.theme;
 } catch (_) {
+  // Storage can be unavailable in privacy modes; the light theme is the safe default.
   document.documentElement.dataset.theme = 'light';
 }
 document.documentElement.classList.add('js');
