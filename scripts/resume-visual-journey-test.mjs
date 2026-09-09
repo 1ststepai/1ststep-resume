@@ -21,6 +21,14 @@ const required = [
   'data-stage="3"',
   'data-pause',
   'data-replay',
+  'data-theme="dark"',
+  'data-theme-toggle',
+  "localStorage.getItem('1ststep_theme')",
+  'is-motion-paused',
+  '@keyframes fsFloatA',
+  '@keyframes fsExtension',
+  '@keyframes fsTaskPulse',
+  '@keyframes fsGaugeSpin',
 ];
 
 for (const value of required) {
