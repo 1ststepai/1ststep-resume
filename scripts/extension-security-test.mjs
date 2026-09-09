@@ -97,10 +97,10 @@ assert.match(conciergeJs, /event\.data\.type !== '1STSTEP_JOB_CAPTURE'/,
   'concierge must receive explicitly selected Job Agent captures');
 assert.match(conciergeJs, /event\.source !== window \|\| event\.origin !== window\.location\.origin/,
   'concierge capture acknowledgements must be same-document and same-origin');
-assert.match(conciergeJs, /sourceType: 'user-captured'/,
-  'captured jobs must remain visibly distinct from verified employer listings');
-assert.match(conciergeJs, /applyPathActive: false/,
-  'a generic capture must never claim that the employer Apply path was verified');
+assert.match(conciergeJs, /sourceType: verified \? 'direct-employer' : 'user-captured'/,
+  'only server-verified captures may become direct-employer listings');
+assert.match(conciergeJs, /const verified = job\.verification === 'verified' && Boolean\(job\.discoveryRunId\) && job\.applyPathActive/,
+  'browser content alone must never activate the employer Apply path');
 assert.match(conciergeJs, /Job already saved; duplicate suppressed/,
   'a repeated capture must report duplicate suppression instead of claiming it was newly added');
 

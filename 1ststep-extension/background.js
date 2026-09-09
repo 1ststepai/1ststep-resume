@@ -201,7 +201,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.action === 'GET_GREENHOUSE_DOCUMENT') return sendResponse(await relayThroughApp('document', request.payload));
       if (request.action === 'COMPLETE_GREENHOUSE_HANDOFF') return sendResponse(await relayThroughApp('complete', request.payload));
       if (request.action === 'JOB_DETECTED') {
-        await chrome.storage.session.set({ current_job: { site: request.site, jobId: request.jobId, jobTitle: request.jobTitle, company: request.company, jobDescription: request.jobDescription, applyUrl: request.applyUrl, detectedAt: Date.now() } });
+        await chrome.storage.session.set({ current_job: { site: request.site, jobId: request.jobId, jobTitle: request.jobTitle, company: request.company, jobDescription: request.jobDescription, applyUrl: request.applyUrl, location: request.location || '', salaryText: request.salaryText || '', captureMethod: request.captureMethod || '', detectedAt: Date.now() } });
         await setTabCapability(sender?.tab?.id, request);
         return sendResponse({ success: true });
       }

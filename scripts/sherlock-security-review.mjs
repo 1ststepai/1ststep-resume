@@ -20,6 +20,7 @@ const routePolicies = Object.freeze({
   'application-sessions.js': /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/,
   'beta-expiry-check.js': /safeEquals\(authHeader, `Bearer \$\{cronSecret\}`\)/,
   'beta.js': /enforceDurableRateLimit/,
+  'captured-jobs.js': /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/,
   'claude.js': /authenticateApiRequest\(req, \{ allowExtensions: true/,
   'concierge-discovery.js': /authenticateApiRequestOrGuest/,
   'concierge-preview-smoke.js': /VERCEL_ENV === 'production'.*404/,
@@ -79,7 +80,7 @@ assert.match(sessions, /SESSION_TTL_SECONDS = 7 \* 24 \* 60 \* 60/);
 assert.match(sessions, /revokeAllUserSessions/);
 assert.doesNotMatch(Object.entries(apiSources).filter(([file]) => file !== 'application-receipts.js').map(([, source]) => source).join('\n'), /req\.(?:body|query)\??\.tenantId/);
 assert.match(apiSources['application-receipts.js'], /verifyInternalWorkerRequest[\s\S]*const tenantId = String\(req\.body\?\.tenantId/);
-for (const route of ['applicant-vault.js', 'application-audit.js', 'application-package-artifact.js', 'application-package-render.js', 'application-packages.js', 'application-sessions.js', 'concierge-state.js', 'employer-browser-session.js', 'extension-application-handoff.js', 'job-agent-consent.js', 'job-agent-learning.js', 'job-agent-notifications.js', 'job-agent-runs.js', 'job-agent-schedule.js']) {
+for (const route of ['applicant-vault.js', 'application-audit.js', 'application-package-artifact.js', 'application-package-render.js', 'application-packages.js', 'application-sessions.js', 'captured-jobs.js', 'concierge-state.js', 'employer-browser-session.js', 'extension-application-handoff.js', 'job-agent-consent.js', 'job-agent-learning.js', 'job-agent-notifications.js', 'job-agent-runs.js', 'job-agent-schedule.js']) {
   assert.match(apiSources[route], /auth\.subject/, `${route} must resolve tenant ownership from the authenticated subject.`);
 }
 

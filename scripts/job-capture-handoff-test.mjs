@@ -28,8 +28,8 @@ const settle = () => new Promise(resolve => setImmediate(() => setImmediate(reso
 // Shared fake extension platform: one storage, the real background listener,
 // and any number of pages whose bridges talk to it.
 
-function createExtension({ pendingJobs = {} } = {}) {
-  const store = { pendingJobs: structuredClone(pendingJobs) };
+function createExtension({ pendingJobs = {}, session = {} } = {}) {
+  const store = { ...structuredClone(session), pendingJobs: structuredClone(pendingJobs) };
   let messageListener = null;
 
   const storageLocal = {
@@ -321,6 +321,17 @@ const job = id => ({ jobData: { jobTitle: `Role ${id}`, company: `Co ${id}`, job
   assert.ok(ext.store.pendingJobs['cap-1'], 'and the capture must survive');
 }
 
+// B5. Updating from an older package keeps the prior capture/session shapes readable.
+{
+  const legacyJob = { site: 'legacy.example', jobId: 'legacy-123', jobTitle: 'Legacy saved role', company: 'Example Co', jobDescription: 'Legacy description', applyUrl: 'https://legacy.example/jobs/123', detectedAt: Date.now() };
+  const ext = createExtension({ pendingJobs: { 'cap-legacy': job('legacy') }, session: { current_job: legacyJob } });
+  const current = await ext.sendToBackground({ action: 'GET_CURRENT_JOB' });
+  assert.deepEqual(JSON.parse(JSON.stringify(current.job)), legacyJob);
+  const page = attachBridge(ext, { search: '?jobCaptureId=cap-legacy' });
+  await settle();
+  assert.equal(page.captures()[0].data.jobData.jobTitle, 'Role legacy');
+}
+
 // ===========================================================================
 // C. Receivers: exact identity and apply-once
 // ===========================================================================
@@ -383,6 +394,7 @@ function runReceiver(source, { from, to, balanced = false, search }) {
     localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
     URLSearchParams, Date, console, JSON, Object, String, Number, Boolean, Array,
     setTimeout: () => 0, clearTimeout: () => {},
+    fetch: async () => ({ ok: true, json: async () => ({ job: { jobTitle: 'Role 1' } }) }),
     applyJobCapture: jobData => { applied.push(jobData); },
   };
 
@@ -401,8 +413,8 @@ function runReceiver(source, { from, to, balanced = false, search }) {
   vm.createContext(sandbox);
   vm.runInContext(code, sandbox, { filename: 'receiver' });
 
-  const deliver = data => {
-    for (const handler of listeners) handler({ data, origin: ORIGIN, source: windowStub });
+  const deliver = async data => {
+    for (const handler of listeners) await handler({ data, origin: ORIGIN, source: windowStub });
   };
   return { deliver, applied, acks, sessionData };
 }
@@ -412,7 +424,7 @@ const FUNNEL_REGION = {
   to: '</script>',
 };
 const APP_REGION = {
-  from: "    window.addEventListener('message', (event) => {",
+  from: "    window.addEventListener('message', async (event) => {",
   balanced: true,
 };
 
@@ -420,8 +432,8 @@ const APP_REGION = {
 {
   const r = runReceiver(funnelSource, { ...FUNNEL_REGION, search: '?jobCaptureId=cap-1' });
   const payload = { type: '1STSTEP_JOB_CAPTURE', captureId: 'cap-1', jobData: { jobTitle: 'Role 1', jobDescription: 'Real role description' } };
-  r.deliver(payload);
-  r.deliver(payload);
+  await r.deliver(payload);
+  await r.deliver(payload);
   assert.equal(JSON.parse(r.sessionData.get('1ststep_pending_capture')).jobData.jobTitle, 'Role 1', 'legacy funnel must persist the capture for Resume Builder');
   assert.equal(r.acks.length, 2, `funnel must acknowledge both deliveries, acked ${r.acks.length}`);
   assert.deepEqual(r.acks, ['cap-1', 'cap-1']);
@@ -430,14 +442,14 @@ const APP_REGION = {
 // C2. funnel rejects a missing capture id, and a page with no id of its own.
 {
   const r = runReceiver(funnelSource, { ...FUNNEL_REGION, search: '?jobCaptureId=cap-1' });
-  r.deliver({ type: '1STSTEP_JOB_CAPTURE', jobData: { jobTitle: 'Role 1' } });
-  r.deliver({ type: '1STSTEP_JOB_CAPTURE', captureId: '', jobData: { jobTitle: 'Role 1' } });
-  r.deliver({ type: '1STSTEP_JOB_CAPTURE', captureId: 'other', jobData: { jobTitle: 'Role 1' } });
+  await r.deliver({ type: '1STSTEP_JOB_CAPTURE', jobData: { jobTitle: 'Role 1' } });
+  await r.deliver({ type: '1STSTEP_JOB_CAPTURE', captureId: '', jobData: { jobTitle: 'Role 1' } });
+  await r.deliver({ type: '1STSTEP_JOB_CAPTURE', captureId: 'other', jobData: { jobTitle: 'Role 1' } });
   assert.equal(r.applied.length, 0, 'funnel must reject a capture without a matching id');
   assert.equal(r.acks.length, 0, 'and must not acknowledge it');
 
   const noUrlId = runReceiver(funnelSource, { ...FUNNEL_REGION, search: '' });
-  noUrlId.deliver({ type: '1STSTEP_JOB_CAPTURE', captureId: 'cap-1', jobData: { jobTitle: 'Role 1' } });
+  await noUrlId.deliver({ type: '1STSTEP_JOB_CAPTURE', captureId: 'cap-1', jobData: { jobTitle: 'Role 1' } });
   assert.equal(noUrlId.applied.length, 0, 'a page opened without a capture id must accept nothing');
   assert.equal(noUrlId.acks.length, 0, 'and must acknowledge nothing');
 }
@@ -446,22 +458,22 @@ const APP_REGION = {
 {
   const r = runReceiver(appSource, { ...APP_REGION, search: '?jobCaptureId=cap-1' });
   const payload = { type: '1STSTEP_JOB_CAPTURE', captureId: 'cap-1', jobData: { jobTitle: 'Role 1' } };
-  r.deliver(payload);
+  await r.deliver(payload);
   assert.equal(r.acks.length, 1, 'app.js must acknowledge the first delivery');
-  r.deliver(payload);
+  await r.deliver(payload);
   assert.equal(r.acks.length, 2, `app.js must acknowledge both deliveries, acked ${r.acks.length}`);
 }
 
 // C4. app.js rejects a missing capture id.
 {
   const r = runReceiver(appSource, { ...APP_REGION, search: '?jobCaptureId=cap-1' });
-  r.deliver({ type: '1STSTEP_JOB_CAPTURE', jobData: { jobTitle: 'Role 1' } });
-  r.deliver({ type: '1STSTEP_JOB_CAPTURE', captureId: '', jobData: { jobTitle: 'Role 1' } });
-  r.deliver({ type: '1STSTEP_JOB_CAPTURE', captureId: 'other', jobData: { jobTitle: 'Role 1' } });
+  await r.deliver({ type: '1STSTEP_JOB_CAPTURE', jobData: { jobTitle: 'Role 1' } });
+  await r.deliver({ type: '1STSTEP_JOB_CAPTURE', captureId: '', jobData: { jobTitle: 'Role 1' } });
+  await r.deliver({ type: '1STSTEP_JOB_CAPTURE', captureId: 'other', jobData: { jobTitle: 'Role 1' } });
   assert.equal(r.acks.length, 0, 'app.js must not acknowledge a capture without a matching id');
 
   const noUrlId = runReceiver(appSource, { ...APP_REGION, search: '' });
-  noUrlId.deliver({ type: '1STSTEP_JOB_CAPTURE', captureId: 'cap-1', jobData: { jobTitle: 'Role 1' } });
+  await noUrlId.deliver({ type: '1STSTEP_JOB_CAPTURE', captureId: 'cap-1', jobData: { jobTitle: 'Role 1' } });
   assert.equal(noUrlId.acks.length, 0, 'a page opened without a capture id must accept nothing');
 }
 

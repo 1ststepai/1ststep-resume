@@ -286,7 +286,8 @@ async function openInApp(job, btn, mode = 'tailor') {
     site:            job.site            || 'unknown',
     location:        job.location        || '',
     salaryText:      job.salaryText      || '',
-    captureMethod:   job.captureMethod   || 'unknown'
+    captureMethod:   job.captureMethod   || 'unknown',
+    jobId:           job.jobId           || ''
   };
 
   chrome.runtime.sendMessage({ action: 'OPEN_IN_APP', jobData, mode }, (response) => {

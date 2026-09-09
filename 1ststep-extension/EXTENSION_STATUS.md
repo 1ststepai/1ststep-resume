@@ -8,7 +8,8 @@ Implemented locally:
 - Reuse only of active, standard-sensitivity, high-confidence, auto-reusable, user-confirmed or document-verified facts with an exact semantic key.
 - Schema-only scanning, blocked consequential fields, value-free completion, partial-fill recovery, and no submission.
 - Toolbar, keyboard, and context-menu capture share one temporary active-tab path; a per-tab badge reports capture success without background browsing.
-- Captures remain available for 24 hours so users can finish the handoff without repeating the capture.
+- Captures remain on-device for up to 24 hours until acknowledged. Signed-in captures are encrypted in the account for up to 90 days and can be restored by exact capture ID.
+- Known public postings are reverified server-side before Job Agent preparation is enabled; unknown pages remain visibly unverified.
 - The popup offers two clear outcomes: save to My Jobs or use the job in Resume Builder.
 - Greenhouse fill progress stays visible and highlights required fields that still need the applicant.
 - No raw profile, résumé, tier token, local Applied status, or invented fit score in extension storage.
@@ -20,4 +21,4 @@ Not production-enabled:
 - Chrome Web Store packaging/review.
 - Live employer acceptance test; only synthetic fixtures are authorized in this build.
 - Cover-letter or other file-upload automation, final submission, and authoritative receipt capture. The exact approved résumé PDF is supported through a transient integrity-checked handoff.
-- ATS adapters beyond Greenhouse.
+- Additional automated application-form adapters. Universal user-triggered job capture remains available through temporary page access.
