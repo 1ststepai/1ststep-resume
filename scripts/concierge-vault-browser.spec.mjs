@@ -268,6 +268,48 @@ test('saved-info dialog remains usable on mobile', async ({ page }) => {
   expect(dimensions.width).toBeLessThanOrEqual(dimensions.viewport);
 });
 
+test('Career Profile previews canonical facts and requires confirmation before a value-free legacy import', async ({ page }) => {
+  let importRequest = null;
+  let facts = [];
+  const activeConsent = { status: 'active', active: true, code: null, scopes: ['confirmed-profile-storage'], policy: { termsVersion: 'terms-beta-1', privacyVersion: 'privacy-beta-1', authorizationVersion: 'job-agent-beta-1' } };
+  await routeAccountWorkspace(page, { mission: { role: 'Procurement Manager', target: 10 } });
+  await page.route('**/api/session-capabilities', route => route.fulfill({ json: { jobAgentAccess: true, tier: 'complete', sessionAuthentication: 'opaque-session', jobAgentConsent: activeConsent, jobAgentConsentPolicyConfigured: true } }));
+  await page.route('**/api/applicant-vault', route => route.fulfill({ json: { version: 4, vault: grantVaultConsent() } }));
+  await page.route('**/api/career-profile-preview', async route => {
+    if (route.request().method() === 'GET') return route.fulfill({ json: { profileVersion: facts.length ? 1 : 0, updatedAt: null, facts, activeReuseGrantCount: 0 } });
+    const body = route.request().postDataJSON();
+    if (body.action === 'analyze-legacy') return route.fulfill({ json: {
+      legacyVersion: 4,
+      importable: [{ legacyFactId: 'legacy-skills', fieldKey: 'skills', legacyFactVersion: 1 }],
+      reconcile: [{ legacyFactId: 'legacy-location', fieldKey: 'location', legacyFactVersion: 1, targetFields: ['city', 'region', 'country'], reason: 'CAREER_PROFILE_LEGACY_FACT_REQUIRES_RECONCILIATION' }],
+      excluded: [{ legacyFactId: 'legacy-demographics', fieldKey: 'demographics', legacyFactVersion: 1, reason: 'CAREER_PROFILE_FACT_NOT_ALLOWED' }],
+      alreadyPresent: [], createsReuseGrants: false, destructive: false,
+    } });
+    importRequest = { body, idempotencyKey: route.request().headers()['idempotency-key'] };
+    facts = [{ fieldKey: 'skills', value: 'Strategic sourcing and vendor management', version: 1, verificationState: 'user-confirmed', sensitivity: 'standard' }];
+    return route.fulfill({ json: { ok: true, profileVersion: 1, facts, imported: 1, replayed: 0, reuseGrantsCreated: 0 } });
+  });
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await page.locator('#openVault').click();
+  await expect(page.locator('#careerProfilePanel')).toBeVisible();
+  await page.locator('#analyzeLegacyProfile').click();
+  await expect(page.locator('#careerProfileMigrationSummary')).toContainText('1 confirmed fact can move safely');
+  await expect(page.locator('#careerProfileReconciliationList')).toContainText('Location needs your review before saving as City, State or region, Country');
+  await expect(page.locator('#careerProfileReconciliationList')).toContainText('excluded by the Career Profile safety rules');
+  await expect(page.locator('#importLegacyProfile')).toBeDisabled();
+  expect(await page.locator('#careerProfilePanel').textContent()).not.toContain('New Jersey');
+  await page.locator('#confirmLegacyImport').check();
+  await page.locator('#importLegacyProfile').click();
+  await expect(page.locator('#careerProfileList')).toContainText('Strategic sourcing and vendor management');
+  await expect(page.locator('#careerProfileActionStatus')).toContainText('No automatic reuse permission was created');
+  expect(importRequest.body).toEqual({ action: 'import-legacy', legacyVersion: 4, confirmed: true });
+  expect(importRequest.idempotencyKey).toBeTruthy();
+  await page.screenshot({ path: `${process.env.TEMP || '/tmp'}/career-profile-preview-desktop.png` });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: `${process.env.TEMP || '/tmp'}/career-profile-preview-mobile.png` });
+});
+
 test('a stale legacy bearer is never sent to the Job Agent and returns to opaque-session restore', async ({ page }) => {
   let authorizationHeader = null;
   await page.addInitScript(() => localStorage.setItem('1ststep_sub_cache', JSON.stringify({

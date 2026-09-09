@@ -5,7 +5,7 @@ import { dataEncryptionKeyringFromEnvironment } from '../lib/data-encryption-key
 import { enforceDurableRateLimit, sendRateLimitResult } from '../lib/durable-rate-limit.js';
 import { jobAgentPilotAccessForSubject } from '../lib/job-agent-pilot-access.js';
 import { jobAgentTenantId } from '../lib/job-agent-run-store.js';
-import { buildLegacyCareerProfilePlan, publicLegacyCareerProfilePlan } from '../lib/career-profile-legacy-reconciliation.js';
+import { buildLegacyCareerProfilePlan, publicLegacyCareerProfilePlan, reconcileLegacyPlanAgainstCanonical } from '../lib/career-profile-legacy-reconciliation.js';
 import { CareerProfileStoreError, careerProfilePostgresConfiguration, readCareerProfile, writeCareerProfileFacts } from '../lib/career-profile-postgres-store.js';
 
 export const maxDuration = 30;
@@ -65,12 +65,15 @@ export default async function handler(req, res) {
     const legacy = legacyConfiguration(config);
     if (!legacy) return res.status(503).json({ error: 'Legacy reconciliation is unavailable.', code: 'LEGACY_VAULT_NOT_CONFIGURED' });
     const stored = await readApplicantVault({ ...legacy, subject: auth.subject });
-    const plan = buildLegacyCareerProfilePlan(stored.vault);
-    if (action === 'analyze-legacy') return res.status(200).json(publicLegacyCareerProfilePlan(plan, stored.version));
+    const profile = await readCareerProfile({ tenantId, dataEncryptionKey: config.dataEncryptionKey, configuration: config.postgres });
+    const plan = reconcileLegacyPlanAgainstCanonical(buildLegacyCareerProfilePlan(stored.vault), profile.facts);
+    const publicPlan = { ...publicLegacyCareerProfilePlan(plan, stored.version), alreadyPresent: plan.alreadyPresent };
+    if (action === 'analyze-legacy') return res.status(200).json(publicPlan);
+    if (req.body?.confirmed !== true) return res.status(400).json({ error: 'Legacy import requires explicit user confirmation.', code: 'CAREER_PROFILE_USER_CONFIRMATION_REQUIRED' });
     if (!Number.isSafeInteger(req.body?.legacyVersion) || req.body.legacyVersion !== stored.version) return res.status(409).json({ error: 'Legacy vault changed; analyze it again before importing.', code: 'LEGACY_VAULT_VERSION_CONFLICT', legacyVersion: stored.version });
-    if (!plan.importable.length) return res.status(200).json({ ok: true, profileVersion: 0, imported: 0, replayed: 0, reuseGrantsCreated: 0, reconciliation: publicLegacyCareerProfilePlan(plan, stored.version) });
+    if (!plan.importable.length) return res.status(200).json({ ok: true, ...profile, imported: 0, replayed: 0, reuseGrantsCreated: 0, reconciliation: publicPlan });
     const result = await writeCareerProfileFacts({ tenantId, facts: plan.importable.map(fact => ({ ...fact, expectedVersion: 0 })), dataEncryptionKey: config.dataEncryptionKey, idempotencyKey, configuration: config.postgres });
-    return res.status(200).json({ ...result, imported: plan.importable.length - result.replayed, reconciliation: publicLegacyCareerProfilePlan(plan, stored.version) });
+    return res.status(200).json({ ...result, imported: plan.importable.length - result.replayed, reconciliation: publicPlan });
   } catch (error) {
     const safe = publicError(error);
     if (safe.status === 500) console.error(JSON.stringify({ type: 'career-profile-preview-error' }));

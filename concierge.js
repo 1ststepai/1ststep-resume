@@ -95,6 +95,7 @@ let durableRun = loadWorkflowJson(JOB_AGENT_RUN_KEY, null);
 let jobAgentSchedule = { version: 0, schedule: null, enabled: null, status: 'local' };
 let jobAgentNotifications = { version: 0, preference: null, available: null, status: 'local' };
 let applicantVault = { version: 0, vault: null, status: 'local', inFlight: false };
+let careerProfile = { profileVersion: 0, updatedAt: null, facts: [], activeReuseGrantCount: 0, plan: null, status: 'idle', inFlight: false, message: '', error: '' };
 let jobAgentLearning = { version: 0, learning: null, facts: [], status: 'local' };
 let syncedSubscriberView = { jobCards: [], needsYou: [], runState: null };
 let durableApplicationSessions = [];
@@ -467,6 +468,110 @@ async function hydrateCampaignStore() {
 }
 
 function vaultEnabled() { return applicantVault.vault?.consent?.status === 'granted'; }
+
+const CAREER_PROFILE_LABELS = Object.freeze({
+  firstName: 'First name', lastName: 'Last name', preferredName: 'Preferred name', email: 'Email', phone: 'Phone', city: 'City', region: 'State or region', country: 'Country',
+  employment: 'Employment history', education: 'Education', skills: 'Skills', certifications: 'Certifications', languages: 'Languages', linkedinUrl: 'LinkedIn', portfolioUrl: 'Portfolio',
+  authorization: 'Work authorization', sponsorship: 'Sponsorship', contact: 'Contact details', address: 'Address', location: 'Location', licenses: 'Licenses',
+});
+
+function careerProfileLabel(fieldKey) {
+  return CAREER_PROFILE_LABELS[fieldKey] || String(fieldKey || '').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, value => value.toUpperCase());
+}
+
+function renderCareerProfile() {
+  const panel = $('careerProfilePanel');
+  if (!panel) return;
+  panel.hidden = careerProfile.status === 'disabled' || !(hasApiSession() && hasJobAgentAccess());
+  if (panel.hidden) return;
+  const facts = Array.isArray(careerProfile.facts) ? careerProfile.facts : [];
+  $('careerProfileCount').textContent = `${facts.length} saved`;
+  $('careerProfileList').innerHTML = facts.length ? facts.map(fact => `<div class="career-profile-fact"><div><strong>${escapeHtml(careerProfileLabel(fact.fieldKey))}</strong><small>${escapeHtml(fact.value)} · ${escapeHtml(fact.verificationState === 'user-confirmed' ? 'Confirmed by you' : 'Verified from a document')} · version ${Number(fact.version) || 1}</small></div><span>Saved</span></div>`).join('') : '<div class="career-profile-empty">No canonical facts yet. Check your older saved information to move only facts that meet the new safety rules.</div>';
+  const plan = careerProfile.plan;
+  const importable = plan?.importable?.length || 0;
+  const excluded = plan?.excluded?.length || 0;
+  const alreadyPresent = plan?.alreadyPresent?.length || 0;
+  $('analyzeLegacyProfile').disabled = careerProfile.inFlight;
+  $('analyzeLegacyProfile').hidden = Boolean(plan && importable);
+  $('analyzeLegacyProfile').textContent = plan ? 'Check again' : 'Check saved information';
+  $('careerProfileReview').hidden = !plan;
+  const confirmationLabel = $('careerProfileConfirmationText').closest('label');
+  confirmationLabel.hidden = !importable;
+  $('importLegacyProfile').hidden = !importable;
+  $('importLegacyProfile').disabled = careerProfile.inFlight || !$('confirmLegacyImport').checked;
+  if (!plan) {
+    $('careerProfileMigrationSummary').textContent = 'Check the older encrypted backup for facts that can safely move into your Career Profile.';
+    $('careerProfileReconciliationList').innerHTML = '';
+  } else {
+    $('careerProfileMigrationSummary').textContent = importable
+      ? `${importable} confirmed fact${importable === 1 ? '' : 's'} can move safely. Nothing will be overwritten and no automatic reuse permission will be created.`
+      : 'No additional facts can move automatically. Your canonical Career Profile was not changed.';
+    const rows = [
+      ...plan.importable.map(item => `<li><strong>${escapeHtml(careerProfileLabel(item.fieldKey))}</strong> is ready to import.</li>`),
+      ...plan.reconcile.map(item => `<li><strong>${escapeHtml(careerProfileLabel(item.fieldKey))}</strong> needs your review before saving as ${escapeHtml(item.targetFields.map(careerProfileLabel).join(', '))}.</li>`),
+      ...(alreadyPresent ? [`<li>${alreadyPresent} matching fact${alreadyPresent === 1 ? ' is' : 's are'} already in your Career Profile and will not be overwritten.</li>`] : []),
+      ...(excluded ? [`<li>${excluded} saved item${excluded === 1 ? ' was' : 's were'} excluded by the Career Profile safety rules.</li>`] : []),
+    ];
+    $('careerProfileReconciliationList').innerHTML = rows.join('') || '<li>No older saved facts need attention.</li>';
+    $('careerProfileConfirmationText').textContent = `I reviewed this list and want to import ${importable} confirmed fact${importable === 1 ? '' : 's'}.`;
+  }
+  $('careerProfileActionStatus').textContent = careerProfile.error || careerProfile.message || (careerProfile.status === 'loading' ? 'Loading Career Profile…' : '');
+  $('careerProfileActionStatus').dataset.tone = careerProfile.error ? 'error' : '';
+}
+
+async function hydrateCareerProfile() {
+  if (!hasApiSession() || !hasJobAgentAccess() || careerProfile.status === 'disabled') return;
+  careerProfile.status = 'loading';
+  renderCareerProfile();
+  try {
+    const response = await fetchWithTimeout('/api/career-profile-preview', { headers: apiAuthorizationHeaders() }, REQUEST_TIMEOUTS.persistence);
+    const data = await response.json().catch(() => ({}));
+    if (response.status === 404 && data.code === 'CAREER_PROFILE_PREVIEW_ONLY') {
+      careerProfile.status = 'disabled';
+      return;
+    }
+    if (!response.ok) throw new Error(data.error || 'Career Profile is temporarily unavailable.');
+    careerProfile = { ...careerProfile, ...data, status: 'ready', error: '' };
+  } catch (error) {
+    careerProfile.status = 'unavailable';
+    careerProfile.error = error.message;
+  } finally {
+    renderCareerProfile();
+  }
+}
+
+async function careerProfileLegacyAction(action) {
+  if (careerProfile.inFlight) return;
+  careerProfile.inFlight = true;
+  careerProfile.error = '';
+  careerProfile.message = action === 'analyze-legacy' ? 'Checking saved information…' : 'Importing confirmed facts…';
+  renderCareerProfile();
+  try {
+    const response = await fetchWithTimeout('/api/career-profile-preview', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID(), ...apiAuthorizationHeaders() },
+      body: JSON.stringify({ action, ...(action === 'import-legacy' ? { legacyVersion: careerProfile.plan?.legacyVersion, confirmed: true } : {}) }),
+    }, REQUEST_TIMEOUTS.persistence);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(response.status === 409 ? 'Saved information changed. Check it again before importing.' : data.error || 'Career Profile could not be updated.');
+    if (action === 'analyze-legacy') {
+      careerProfile.plan = data;
+      careerProfile.message = 'Review the safety summary below.';
+      $('confirmLegacyImport').checked = false;
+    } else {
+      careerProfile.profileVersion = Number(data.profileVersion) || careerProfile.profileVersion;
+      careerProfile.facts = Array.isArray(data.facts) ? data.facts : careerProfile.facts;
+      careerProfile.plan = null;
+      careerProfile.message = data.imported ? `Imported ${data.imported} confirmed fact${data.imported === 1 ? '' : 's'}. No automatic reuse permission was created.` : 'Your Career Profile was already up to date.';
+      $('confirmLegacyImport').checked = false;
+    }
+  } catch (error) {
+    careerProfile.error = error.message;
+    if (/changed/.test(error.message)) careerProfile.plan = null;
+  } finally {
+    careerProfile.inFlight = false;
+    renderCareerProfile();
+  }
+}
 
 // Names the actual reason encrypted account backup is unavailable. Encryption and durable
 // storage can be fully configured while backup is still blocked by the controlled-beta
@@ -3645,7 +3750,7 @@ function currentWizardStepValid() {
   return !invalid;
 }
 
-function renderAll() { renderMission(); renderDesk(); renderApplicationWorkspace(); renderCampaignConsole(); renderVaultStatus(); renderLearningCenter(); }
+function renderAll() { renderMission(); renderDesk(); renderApplicationWorkspace(); renderCampaignConsole(); renderVaultStatus(); renderCareerProfile(); renderLearningCenter(); }
 
 $('openGuidedLaunch').addEventListener('click', () => openGuidedLaunch({ step: missionState.mission?.role ? 2 : guidedLaunchStep }));
 $('guidedLaunchClose').addEventListener('click', closeGuidedLaunch);
@@ -3946,7 +4051,7 @@ $('resumeRun').addEventListener('click', async () => {
   showToast('Application resumed');
 });
 $('openDesk').addEventListener('click', () => openDesk('pipeline'));
-$('openVault').addEventListener('click', () => { $('vaultOverlay').classList.add('open'); renderVaultStatus(); });
+$('openVault').addEventListener('click', () => { $('vaultOverlay').classList.add('open'); renderVaultStatus(); renderCareerProfile(); if (careerProfile.status === 'idle') hydrateCareerProfile(); });
 function closeVaultDialog() {
   const restoreFocus = $('vaultOverlay').contains(document.activeElement);
   $('vaultOverlay').classList.remove('open');
@@ -3954,6 +4059,9 @@ function closeVaultDialog() {
 }
 $('closeVault').addEventListener('click', closeVaultDialog);
 $('vaultOverlay').addEventListener('click', event => { if (event.target === $('vaultOverlay')) closeVaultDialog(); });
+$('analyzeLegacyProfile').addEventListener('click', () => careerProfileLegacyAction('analyze-legacy'));
+$('confirmLegacyImport').addEventListener('change', renderCareerProfile);
+$('importLegacyProfile').addEventListener('click', () => { if ($('confirmLegacyImport').checked) careerProfileLegacyAction('import-legacy'); });
 $('enableVault').addEventListener('click', async () => { try { await enableApplicantVault({ ask: true }); renderVaultStatus(); } catch (error) { $('vaultStatus').textContent = error.message; } });
 $('exportVault').addEventListener('click', () => {
   if (!vaultEnabled()) return;
@@ -4697,6 +4805,7 @@ async function hydrateAccountWorkflow() {
   initializeAccountWorkflowAuthority();
   await hydrateCampaignStore();
   await hydrateApplicantVault();
+  await hydrateCareerProfile();
   await hydrateJobAgentSchedule();
   await hydrateNeedsYouNotifications();
   await hydrateDurableRun();
