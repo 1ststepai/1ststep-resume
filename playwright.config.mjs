@@ -1,9 +1,5 @@
 import { defineConfig } from '@playwright/test';
 
-<<<<<<< HEAD
-const port = Number(process.env.PORT || 4175);
-const origin = `http://127.0.0.1:${port}`;
-=======
 function browserTestPort() {
   if (!process.env.BROWSER_TEST_PORT) return 4175;
   const port = Number(process.env.BROWSER_TEST_PORT);
@@ -16,7 +12,6 @@ function browserTestPort() {
 const port = browserTestPort();
 const origin = `http://127.0.0.1:${port}`;
 process.env.BROWSER_TEST_ORIGIN = origin;
->>>>>>> 3f149e0 (test: isolate Job Agent browser harness)
 process.env.CONCIERGE_TEST_URL = `${origin}/concierge`;
 
 export default defineConfig({
