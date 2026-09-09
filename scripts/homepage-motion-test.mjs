@@ -5,6 +5,7 @@ import vm from 'node:vm';
 const source = readFileSync(new URL('../home-motion.js', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../home-motion.css', import.meta.url), 'utf8');
+const icon = readFileSync(new URL('../1ststep-ai-icon.png', import.meta.url));
 function element() {
   const values = new Set();
   return { dataset: {}, textContent: '', events: {}, attributes: {}, inert: false, style: { values: {}, setProperty(name, value) { this.values[name] = value; } }, classList: {
@@ -96,6 +97,15 @@ assert.match(html, /Request early access/);
 assert.match(html, /does not currently submit applications on your behalf/);
 assert.equal((html.match(/<h1\b/g) || []).length, 1, 'Homepage must expose exactly one H1');
 assert.match(html, /<h1>Find the right jobs\. Build better applications\. <span class="hero-accent">Faster\.<\/span><\/h1>/);
+assert.match(html, /Capture a job with the extension, prepare tailored documents in your workspace/);
+assert.match(html, /Verified founder test · August 24/);
+assert.match(html, /First-round interview invitation received/);
+assert.match(html, /35 minutes estimated saved/);
+assert.doesNotMatch(html, /fonts\.googleapis\.com/);
+assert.match(html, /<script src="\/site-theme\.js" defer><\/script>/);
+assert(icon.length < 50_000, 'Favicon must stay below 50 KB');
+assert.equal(icon.readUInt32BE(16), 128, 'Favicon width must be 128px');
+assert.equal(icon.readUInt32BE(20), 128, 'Favicon height must be 128px');
 assert.equal((html.match(/Start My Job Agent — Free/g) || []).length, 5, 'Every primary Job Agent CTA uses the canonical label');
 assert.match(html, /href="#how">See How It Works<\/a>/);
 assert.match(html, /<link rel="canonical" href="https:\/\/app\.1ststep\.ai\/">/);
