@@ -9,7 +9,7 @@ const html = fs.readFileSync(path, "utf8");
 const required = [
   'id="fs-journey"',
   "Save time on every application.",
-  "Capture a supported Greenhouse job.",
+  "Capture a supported job page.",
   "Get the Chrome extension",
   "Start My Job Agent",
   'href="https://app.1ststep.ai"',
@@ -28,6 +28,7 @@ const required = [
   'schema.id = "fs-seo-schema"',
   '"@type": "SoftwareApplication"',
   '"@type": "WebPage"',
+  "Captured from job page",
   "Capture once. Keep moving.",
   "See what you saved.",
   "Estimated time saved",

@@ -1,553 +1,732 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>1stStep.ai</title>
-  <style>
-    :root {
-      --brand: #4338CA;
-      --brand-dark: #3730A3;
-      --brand-glow: rgba(67, 56, 202, 0.22);
-      --bg: #F8FAFC;
-      --surface: #FFFFFF;
-      --surface2: #F1F5F9;
-      --border: #E2E8F0;
-      --border2: #CBD5E1;
-      --text: #0F172A;
-      --text2: #475569;
-      --muted: #94A3B8;
-      --green: #059669;
-      --green-light: #ECFDF5;
-      --red: #DC2626;
-      --red-light: #FEF2F2;
-      --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
-      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>1stStep.ai</title>
+    <style>
+      :root {
+        --brand: #4338ca;
+        --brand-dark: #3730a3;
+        --brand-glow: rgba(67, 56, 202, 0.22);
+        --bg: #f8fafc;
+        --surface: #ffffff;
+        --surface2: #f1f5f9;
+        --border: #e2e8f0;
+        --border2: #cbd5e1;
+        --text: #0f172a;
+        --text2: #475569;
+        --muted: #94a3b8;
+        --green: #059669;
+        --green-light: #ecfdf5;
+        --red: #dc2626;
+        --red-light: #fef2f2;
+        --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+        --shadow-sm:
+          0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+      }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
 
-    a:focus-visible,
-    button:focus-visible,
-    input:focus-visible,
-    textarea:focus-visible,
-    select:focus-visible,
-    [tabindex]:focus-visible {
-      outline: 3px solid #FBBF24;
-      outline-offset: 3px;
-    }
+      a:focus-visible,
+      button:focus-visible,
+      input:focus-visible,
+      textarea:focus-visible,
+      select:focus-visible,
+      [tabindex]:focus-visible {
+        outline: 3px solid #fbbf24;
+        outline-offset: 3px;
+      }
 
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      width: 380px;
-      min-height: 300px;
-    }
+      body {
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        width: 380px;
+        min-height: 300px;
+      }
 
-    .container {
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
+      .container {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
 
-    .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 12px;
-    }
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 12px;
+      }
 
-    .logo {
-      font-weight: 700;
-      font-size: 14px;
-      color: var(--brand);
-      letter-spacing: -0.3px;
-    }
+      .logo {
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--brand);
+        letter-spacing: -0.3px;
+      }
 
-    .status-badge {
-      font-size: 11px;
-      padding: 6px 12px;
-      border-radius: 10px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text2);
-      font-weight: 500;
-    }
+      .status-badge {
+        font-size: 11px;
+        padding: 6px 12px;
+        border-radius: 10px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--text2);
+        font-weight: 500;
+      }
 
-    .status-badge.authenticated {
-      background: var(--green-light);
-      border-color: var(--green);
-      color: #065F46;
-    }
+      .status-badge.authenticated {
+        background: var(--green-light);
+        border-color: var(--green);
+        color: #065f46;
+      }
 
-    .job-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
-      display: none;
-      box-shadow: var(--shadow-xs);
-    }
+      .job-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        display: none;
+        box-shadow: var(--shadow-xs);
+      }
 
-    .job-card.visible {
-      display: block;
-    }
+      .job-card.visible {
+        display: block;
+      }
 
-    .job-title {
-      font-weight: 600;
-      font-size: 14px;
-      color: var(--text);
-      margin-bottom: 6px;
-    }
+      .job-title {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--text);
+        margin-bottom: 6px;
+      }
 
-    .job-meta {
-      font-size: 13px;
-      color: var(--text2);
-      display: flex;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
+      .job-meta {
+        font-size: 13px;
+        color: var(--text2);
+        display: flex;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
 
-    .action-buttons {
-      display: flex;
-      gap: 10px;
-    }
+      .action-buttons {
+        display: flex;
+        gap: 10px;
+      }
 
-    button {
-      flex: 1;
-      padding: 10px 12px;
-      border: none;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
+      button {
+        flex: 1;
+        padding: 10px 12px;
+        border: none;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
 
-    .btn-primary {
-      background: var(--brand);
-      color: white;
-    }
+      .btn-primary {
+        background: var(--brand);
+        color: white;
+      }
 
-    .btn-primary:hover {
-      background: var(--brand-dark);
-      box-shadow: var(--shadow-sm);
-    }
+      .btn-primary:hover {
+        background: var(--brand-dark);
+        box-shadow: var(--shadow-sm);
+      }
 
-    .btn-primary:disabled {
-      background: var(--muted);
-      cursor: not-allowed;
-    }
+      .btn-primary:disabled {
+        background: var(--muted);
+        cursor: not-allowed;
+      }
 
-    .btn-secondary {
-      background: var(--surface2);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
+      .btn-secondary {
+        background: var(--surface2);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
 
-    .btn-secondary:hover {
-      background: var(--border);
-      border-color: var(--border2);
-    }
+      .btn-secondary:hover {
+        background: var(--border);
+        border-color: var(--border2);
+      }
 
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 40px 20px;
-      text-align: center;
-    }
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        text-align: center;
+      }
 
-    .empty-state-icon {
-      font-size: 32px;
-      margin-bottom: 12px;
-      opacity: 0.7;
-    }
+      .empty-state-icon {
+        font-size: 32px;
+        margin-bottom: 12px;
+        opacity: 0.7;
+      }
 
-    .empty-state-title {
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: var(--text);
-    }
+      .empty-state-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: var(--text);
+      }
 
-    .empty-state-desc {
-      font-size: 13px;
-      color: var(--text2);
-      line-height: 1.5;
-    }
+      .empty-state-desc {
+        font-size: 13px;
+        color: var(--text2);
+        line-height: 1.5;
+      }
 
-    .auth-section {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
-      text-align: center;
-      box-shadow: var(--shadow-xs);
-    }
+      .auth-section {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        box-shadow: var(--shadow-xs);
+      }
 
-    .auth-title {
-      font-weight: 600;
-      margin-bottom: 8px;
-      font-size: 14px;
-      color: var(--text);
-    }
+      .auth-title {
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 14px;
+        color: var(--text);
+      }
 
-    .auth-desc {
-      font-size: 13px;
-      color: var(--text2);
-      margin-bottom: 12px;
-    }
+      .auth-desc {
+        font-size: 13px;
+        color: var(--text2);
+        margin-bottom: 12px;
+      }
 
-    .settings-link {
-      display: inline-block;
-      padding: 2px 6px;
-      border: 0;
-      background: transparent;
-      color: var(--brand);
-      text-decoration: none;
-      border-bottom: 1px dotted var(--brand);
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 500;
-    }
+      .settings-link {
+        display: inline-block;
+        padding: 2px 6px;
+        border: 0;
+        background: transparent;
+        color: var(--brand);
+        text-decoration: none;
+        border-bottom: 1px dotted var(--brand);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+      }
 
-    .loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 20px;
-      font-size: 13px;
-      color: var(--text2);
-    }
+      .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 20px;
+        font-size: 13px;
+        color: var(--text2);
+      }
 
-    .spinner {
-      width: 12px;
-      height: 12px;
-      border: 2px solid var(--border);
-      border-top-color: var(--brand);
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
-    }
+      .spinner {
+        width: 12px;
+        height: 12px;
+        border: 2px solid var(--border);
+        border-top-color: var(--brand);
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+      }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
 
-    .manual-section {
-      width: 100%;
-      margin-top: 14px;
-      text-align: left;
-    }
+      .manual-section {
+        width: 100%;
+        margin-top: 14px;
+        text-align: left;
+      }
 
-    .manual-label {
-      font-size: 12px;
-      color: var(--text2);
-      margin-bottom: 6px;
-    }
+      .manual-label {
+        font-size: 12px;
+        color: var(--text2);
+        margin-bottom: 6px;
+      }
 
-    .manual-textarea {
-      width: 100%;
-      height: 90px;
-      padding: 8px 10px;
-      border: 1px solid var(--border2);
-      border-radius: 8px;
-      font-size: 12px;
-      font-family: inherit;
-      color: var(--text);
-      background: var(--surface);
-      resize: none;
-      outline: none;
-      transition: border-color 0.15s;
-      display: block;
-    }
+      .manual-textarea {
+        width: 100%;
+        height: 90px;
+        padding: 8px 10px;
+        border: 1px solid var(--border2);
+        border-radius: 8px;
+        font-size: 12px;
+        font-family: inherit;
+        color: var(--text);
+        background: var(--surface);
+        resize: none;
+        outline: none;
+        transition: border-color 0.15s;
+        display: block;
+      }
 
-    .manual-textarea:focus { border-color: var(--brand); }
+      .manual-textarea:focus {
+        border-color: var(--brand);
+      }
 
-    .open-app-link {
-      display: inline-block;
-      margin-top: 10px;
-      font-size: 12px;
-      color: var(--brand);
-      cursor: pointer;
-      border-bottom: 1px dotted var(--brand);
-      padding-bottom: 1px;
-    }
+      .open-app-link {
+        display: inline-block;
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--brand);
+        cursor: pointer;
+        border-bottom: 1px dotted var(--brand);
+        padding-bottom: 1px;
+      }
 
-    .open-app-link:hover { opacity: 0.8; }
+      .open-app-link:hover {
+        opacity: 0.8;
+      }
 
-    .match-line {
-      font-size: 12px;
-      color: var(--text2);
-      margin-bottom: 10px;
-    }
+      .match-line {
+        font-size: 12px;
+        color: var(--text2);
+        margin-bottom: 10px;
+      }
 
-    .match-pct {
-      font-weight: 700;
-      color: var(--brand);
-    }
+      .match-pct {
+        font-weight: 700;
+        color: var(--brand);
+      }
 
-    .pitch {
-      font-size: 13px;
-      color: var(--text);
-      margin-bottom: 6px;
-      line-height: 1.5;
-    }
+      .pitch {
+        font-size: 13px;
+        color: var(--text);
+        margin-bottom: 6px;
+        line-height: 1.5;
+      }
 
-    .urgency {
-      font-size: 12px;
-      color: var(--text2);
-      margin-bottom: 14px;
-    }
+      .urgency {
+        font-size: 12px;
+        color: var(--text2);
+        margin-bottom: 14px;
+      }
 
-    .card-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 10px;
-      font-size: 11px;
-      color: var(--muted);
-    }
+      .card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 10px;
+        font-size: 11px;
+        color: var(--muted);
+      }
 
-    .autofill-link {
-      background: none;
-      border: none;
-      border-bottom: 1px dotted var(--brand);
-      padding: 0;
-      font-size: inherit;
-      font-family: inherit;
-      color: var(--brand);
-      cursor: pointer;
-    }
+      .autofill-link {
+        background: none;
+        border: none;
+        border-bottom: 1px dotted var(--brand);
+        padding: 0;
+        font-size: inherit;
+        font-family: inherit;
+        color: var(--brand);
+        cursor: pointer;
+      }
 
-    .autofill-link:hover { opacity: 0.8; }
+      .autofill-link:hover {
+        opacity: 0.8;
+      }
 
-    .job-info-form {
-      background: #FFFBEB;
-      border: 1px solid #FDE68A;
-      border-radius: 10px;
-      padding: 12px;
-      margin-bottom: 14px;
-    }
+      .job-info-form {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 14px;
+      }
 
-    .job-info-form-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: #92400E;
-      margin-bottom: 8px;
-    }
+      .job-info-form-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #92400e;
+        margin-bottom: 8px;
+      }
 
-    .job-info-input {
-      width: 100%;
-      padding: 8px 10px;
-      border: 1px solid var(--border2);
-      border-radius: 8px;
-      font-size: 13px;
-      font-family: inherit;
-      color: var(--text);
-      background: var(--surface);
-      outline: none;
-      transition: border-color 0.15s;
-      margin-bottom: 8px;
-      display: block;
-    }
+      .job-info-input {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--border2);
+        border-radius: 8px;
+        font-size: 13px;
+        font-family: inherit;
+        color: var(--text);
+        background: var(--surface);
+        outline: none;
+        transition: border-color 0.15s;
+        margin-bottom: 8px;
+        display: block;
+      }
 
-    .job-info-input:focus { border-color: var(--brand); }
+      .job-info-input:focus {
+        border-color: var(--brand);
+      }
 
-    .job-info-input.required-error { border-color: var(--red); }
+      .job-info-input.required-error {
+        border-color: var(--red);
+      }
 
-    .edit-job-link {
-      font-size: 11px;
-      color: var(--muted);
-      cursor: pointer;
-      border-bottom: 1px dotted var(--muted);
-      background: none;
-      border-top: none;
-      border-left: none;
-      border-right: none;
-      padding: 0;
-      font-family: inherit;
-    }
+      .edit-job-link {
+        font-size: 11px;
+        color: var(--muted);
+        cursor: pointer;
+        border-bottom: 1px dotted var(--muted);
+        background: none;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+        padding: 0;
+        font-family: inherit;
+      }
 
-    .edit-job-link:hover { color: var(--text2); }
+      .edit-job-link:hover {
+        color: var(--text2);
+      }
 
-    .tracker-strip {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      padding: 8px 10px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      margin-bottom: 12px;
-    }
+      .tracker-strip {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding: 8px 10px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-bottom: 12px;
+      }
 
-    .tracker-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text2);
-      white-space: nowrap;
-    }
+      .tracker-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text2);
+        white-space: nowrap;
+      }
 
-    .tracker-label.tracked { color: var(--brand); }
+      .tracker-label.tracked {
+        color: var(--brand);
+      }
 
-    .tracker-stage-btns {
-      display: flex;
-      gap: 5px;
-      flex-wrap: wrap;
-    }
+      .tracker-stage-btns {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+      }
 
-    .tracker-stage-btn {
-      flex: none;
-      padding: 3px 9px;
-      font-size: 11px;
-      font-weight: 600;
-      border-radius: 20px;
-      cursor: pointer;
-      border: 1.5px solid var(--border2);
-      background: var(--surface);
-      color: var(--text2);
-      transition: all 0.12s;
-      font-family: inherit;
-    }
+      .tracker-stage-btn {
+        flex: none;
+        padding: 3px 9px;
+        font-size: 11px;
+        font-weight: 600;
+        border-radius: 20px;
+        cursor: pointer;
+        border: 1.5px solid var(--border2);
+        background: var(--surface);
+        color: var(--text2);
+        transition: all 0.12s;
+        font-family: inherit;
+      }
 
-    .tracker-stage-btn:hover { border-color: var(--brand); color: var(--brand); }
+      .tracker-stage-btn:hover {
+        border-color: var(--brand);
+        color: var(--brand);
+      }
 
-    .tracker-stage-btn.active {
-      background: var(--brand);
-      color: white;
-      border-color: var(--brand);
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <div class="logo">1stStep.ai</div>
-      <div class="status-badge" id="statusBadge" role="status" aria-live="polite">Checking...</div>
-    </div>
-
-    <div id="loadingState" class="loading" role="status" aria-live="polite">
-      <div class="spinner"></div>
-      <span>Loading...</span>
-    </div>
-
-    <div id="unauthState" class="auth-section" style="display: none;">
-      <div class="auth-title">Resume tools are available</div>
-      <div class="auth-desc">
-        <button type="button" class="settings-link" id="openAppLink">Open the resume builder</button>. Sign in only if you also want Job Agent review.
+      .tracker-stage-btn.active {
+        background: var(--brand);
+        color: white;
+        border-color: var(--brand);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="logo">1stStep.ai</div>
+        <div
+          class="status-badge"
+          id="statusBadge"
+          role="status"
+          aria-live="polite"
+        >
+          Checking...
+        </div>
       </div>
-    </div>
 
-    <div id="jobState">
-      <div id="jobCard" class="job-card">
-        <div class="job-title" id="jobTitle">—</div>
-        <div class="job-meta">
-          <span id="company">—</span>
-          <span id="site">—</span>
+      <div id="loadingState" class="loading" role="status" aria-live="polite">
+        <div class="spinner"></div>
+        <span>Loading...</span>
+      </div>
+
+      <div id="unauthState" class="auth-section" style="display: none">
+        <div class="auth-title">Resume tools are available</div>
+        <div class="auth-desc">
+          <button type="button" class="settings-link" id="openAppLink">
+            Open the resume builder</button
+          >. Sign in only if you also want Job Agent review.
         </div>
-        <div id="capturedDetails" style="display:none; font-size:12px; color:var(--text2); margin-bottom:8px;"></div>
-        <div id="jobUrl" style="display:none; font-size:11px; color:var(--muted); margin-bottom:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
+      </div>
 
-        <!-- Job info edit form — shown when title is missing or user clicks edit -->
-        <div id="jobInfoForm" class="job-info-form" style="display:none;">
-          <div class="job-info-form-label">We couldn't detect the job title — please confirm:</div>
-          <label class="sr-only" for="jobTitleInput">Job title</label>
-          <input type="text" id="jobTitleInput" class="job-info-input" aria-label="Job title" placeholder="Job Title (required)" autocomplete="off">
-          <label class="sr-only" for="companyInput">Company name</label>
-          <input type="text" id="companyInput" class="job-info-input" aria-label="Company name" placeholder="Company Name (optional)" autocomplete="off" style="margin-bottom:0;">
+      <div id="jobState">
+        <div id="jobCard" class="job-card">
+          <div class="job-title" id="jobTitle">—</div>
+          <div class="job-meta">
+            <span id="company">—</span>
+            <span id="site">—</span>
+          </div>
+          <div
+            id="capturedDetails"
+            style="
+              display: none;
+              font-size: 12px;
+              color: var(--text2);
+              margin-bottom: 8px;
+            "
+          ></div>
+          <div
+            id="jobUrl"
+            style="
+              display: none;
+              font-size: 11px;
+              color: var(--muted);
+              margin-bottom: 12px;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            "
+          ></div>
+
+          <!-- Job info edit form — shown when title is missing or user clicks edit -->
+          <div id="jobInfoForm" class="job-info-form" style="display: none">
+            <div class="job-info-form-label">
+              We couldn't detect the job title — please confirm:
+            </div>
+            <label class="sr-only" for="jobTitleInput">Job title</label>
+            <input
+              type="text"
+              id="jobTitleInput"
+              class="job-info-input"
+              aria-label="Job title"
+              placeholder="Job Title (required)"
+              autocomplete="off"
+            />
+            <label class="sr-only" for="companyInput">Company name</label>
+            <input
+              type="text"
+              id="companyInput"
+              class="job-info-input"
+              aria-label="Company name"
+              placeholder="Company Name (optional)"
+              autocomplete="off"
+              style="margin-bottom: 0"
+            />
+          </div>
+
+          <!-- Tracker strip — shows pipeline status + quick-stage buttons -->
+          <div id="trackerStrip" class="tracker-strip" style="display: none">
+            <span id="trackerLabel" class="tracker-label"
+              >+ Add to Job Tracker</span
+            >
+            <div id="trackerStageBtns" class="tracker-stage-btns"></div>
+          </div>
+
+          <div id="matchLine" class="match-line" style="display: none">
+            <span id="matchPct" class="match-pct"></span>
+            <span id="matchJustification"></span>
+          </div>
+
+          <div class="pitch">
+            Use this page's visible job details in your 1stStep workspace.
+          </div>
+          <div class="urgency">
+            Review the captured title, company, and description before
+            generating anything.
+          </div>
+          <div
+            id="agentConnectionHint"
+            class="urgency"
+            role="status"
+            aria-live="polite"
+            style="display: none"
+          ></div>
+
+          <button class="btn-primary" id="tailorBtn" style="width: 100%">
+            Use in Resume Builder →
+          </button>
+          <button
+            class="btn-secondary"
+            id="coverLetterBtn"
+            style="width: 100%; margin-top: 8px; flex: none"
+          >
+            Draft a cover letter
+          </button>
+          <button
+            class="btn-secondary"
+            id="jobAgentBtn"
+            style="display: none; width: 100%; margin-top: 8px; flex: none"
+          >
+            Review with Job Agent
+          </button>
+
+          <div class="card-footer">
+            <span>Capture is user-triggered · Review before use</span>
+            <div style="display: flex; gap: 10px; align-items: center">
+              <button
+                class="edit-job-link"
+                id="editJobBtn"
+                style="display: none"
+              >
+                Edit job info
+              </button>
+              <button class="autofill-link" id="autofillBtn">
+                Review match &amp; fill
+              </button>
+            </div>
+          </div>
         </div>
 
-        <!-- Tracker strip — shows pipeline status + quick-stage buttons -->
-        <div id="trackerStrip" class="tracker-strip" style="display:none;">
-          <span id="trackerLabel" class="tracker-label">+ Add to Job Tracker</span>
-          <div id="trackerStageBtns" class="tracker-stage-btns"></div>
+        <div id="emptyState" class="empty-state">
+          <div class="empty-state-icon">🔍</div>
+          <div class="empty-state-title">We couldn't read this job page</div>
+          <div class="empty-state-desc">
+            Highlight the job description on the page, then open 1stStep again.
+            We will capture the selected text without copy and paste. Protected
+            PDFs, sign-in walls, and closed frames may still need the fallback
+            below.
+          </div>
+
+          <div class="manual-section" id="manualSection">
+            <label class="manual-label" for="manualJdInput"
+              >Last resort — paste the job description:</label
+            >
+            <textarea
+              id="manualJdInput"
+              class="manual-textarea"
+              aria-label="Job description"
+              placeholder="Paste the full job description here…"
+            ></textarea>
+            <button
+              class="btn-primary"
+              id="manualOpenBtn"
+              style="width: 100%; margin-top: 8px; flex: none"
+            >
+              Use in Resume Builder
+            </button>
+          </div>
+
+          <button
+            class="btn-secondary"
+            id="autofillEmptyBtn"
+            style="width: 100%; margin-top: 10px; flex: none"
+          >
+            Review match &amp; fill
+          </button>
         </div>
+      </div>
 
-        <div id="matchLine" class="match-line" style="display:none;">
-          <span id="matchPct" class="match-pct"></span>
-          <span id="matchJustification"></span>
+      <!-- Momentum Stats -->
+      <div
+        id="statsSection"
+        style="
+          display: none;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          padding: 12px 16px;
+          box-shadow: var(--shadow-xs);
+        "
+      >
+        <div
+          style="
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+          "
+        >
+          Your Momentum
         </div>
-
-        <div class="pitch">Use this page's visible job details in your 1stStep workspace.</div>
-        <div class="urgency">Review the captured title, company, and description before generating anything.</div>
-        <div id="agentConnectionHint" class="urgency" role="status" aria-live="polite" style="display:none;"></div>
-
-        <button class="btn-primary" id="tailorBtn" style="width:100%">Use in Resume Builder →</button>
-        <button class="btn-secondary" id="coverLetterBtn" style="width:100%;margin-top:8px;flex:none;">Draft a cover letter</button>
-        <button class="btn-secondary" id="jobAgentBtn" style="display:none;width:100%;margin-top:8px;flex:none;">Review with Job Agent</button>
-
-        <div class="card-footer">
-          <span>Capture is user-triggered · Review before use</span>
-          <div style="display:flex;gap:10px;align-items:center;">
-            <button class="edit-job-link" id="editJobBtn" style="display:none;">Edit job info</button>
-            <button class="autofill-link" id="autofillBtn">Review match &amp; fill</button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+          <div style="text-align: center; padding: 8px 0">
+            <div
+              id="statTailors"
+              style="font-size: 22px; font-weight: 700; color: var(--brand)"
+            >
+              —
+            </div>
+            <div style="font-size: 11px; color: var(--text2); margin-top: 2px">
+              Tailored this month
+            </div>
+          </div>
+          <div style="text-align: center; padding: 8px 0">
+            <div
+              id="statStreak"
+              style="font-size: 22px; font-weight: 700; color: var(--brand)"
+            >
+              —
+            </div>
+            <div style="font-size: 11px; color: var(--text2); margin-top: 2px">
+              This week
+            </div>
+          </div>
+          <div style="text-align: center; padding: 8px 0">
+            <div
+              id="statBestMatch"
+              style="font-size: 22px; font-weight: 700; color: var(--brand)"
+            >
+              —
+            </div>
+            <div style="font-size: 11px; color: var(--text2); margin-top: 2px">
+              Best match
+            </div>
+          </div>
+          <div style="text-align: center; padding: 8px 0">
+            <div
+              id="statApps"
+              style="font-size: 22px; font-weight: 700; color: var(--brand)"
+            >
+              —
+            </div>
+            <div style="font-size: 11px; color: var(--text2); margin-top: 2px">
+              Applications
+            </div>
           </div>
         </div>
       </div>
-
-      <div id="emptyState" class="empty-state">
-        <div class="empty-state-icon">🔍</div>
-        <div class="empty-state-title">We couldn't read this job page</div>
-        <div class="empty-state-desc">Highlight the job description on the page, then open 1stStep again. We will capture the selected text without copy and paste. Protected PDFs, sign-in walls, and closed frames may still need the fallback below.</div>
-
-        <div class="manual-section" id="manualSection">
-          <label class="manual-label" for="manualJdInput">Last resort — paste the job description:</label>
-          <textarea id="manualJdInput" class="manual-textarea" aria-label="Job description" placeholder="Paste the full job description here…"></textarea>
-          <button class="btn-primary" id="manualOpenBtn" style="width:100%; margin-top:8px; flex:none;">Use in Resume Builder</button>
-        </div>
-
-        <button class="btn-secondary" id="autofillEmptyBtn" style="width:100%; margin-top:10px; flex:none;">Review Greenhouse match &amp; fill</button>
-      </div>
     </div>
 
-    <!-- Momentum Stats -->
-    <div id="statsSection" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;box-shadow:var(--shadow-xs);">
-      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Your Momentum</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <div style="text-align:center;padding:8px 0;">
-          <div id="statTailors" style="font-size:22px;font-weight:700;color:var(--brand);">—</div>
-          <div style="font-size:11px;color:var(--text2);margin-top:2px;">Tailored this month</div>
-        </div>
-        <div style="text-align:center;padding:8px 0;">
-          <div id="statStreak" style="font-size:22px;font-weight:700;color:var(--brand);">—</div>
-          <div style="font-size:11px;color:var(--text2);margin-top:2px;">This week</div>
-        </div>
-        <div style="text-align:center;padding:8px 0;">
-          <div id="statBestMatch" style="font-size:22px;font-weight:700;color:var(--brand);">—</div>
-          <div style="font-size:11px;color:var(--text2);margin-top:2px;">Best match</div>
-        </div>
-        <div style="text-align:center;padding:8px 0;">
-          <div id="statApps" style="font-size:22px;font-weight:700;color:var(--brand);">—</div>
-          <div style="font-size:11px;color:var(--text2);margin-top:2px;">Applications</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="popup.js"></script>
-</body>
+    <script src="popup.js"></script>
+  </body>
 </html>

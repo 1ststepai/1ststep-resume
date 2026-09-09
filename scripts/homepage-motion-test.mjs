@@ -120,6 +120,8 @@ assert.doesNotMatch(html, /40 (?:jobs|applications)|guaranteed interviews/i);
 assert.doesNotMatch(html, /illustrative|fictional|made-up|example only|sample preview/i);
 assert.match(html, /Nothing is submitted here\. You review and submit on the employer’s site\./);
 assert.match(html, /data-chrome-web-store-url/);
+assert.match(html, /Capture a supported job page without copying and pasting\./);
+assert.equal((html.match(/href="https:\/\/partners\.1ststep\.ai\/">Affiliates<\/a>/g) || []).length, 3, 'Affiliates is linked in desktop nav, compact nav, and footer');
 assert.match(html, /mailto:sales@1ststep.ai/);
 for (const publicFile of [
   'index.html',
