@@ -7,7 +7,7 @@ const files = Object.fromEntries(await Promise.all([
   'api/tally-webhook.js', 'api/beta-expiry-check.js', 'api/subscription.js', 'app.js', 'concierge.js', 'vercel.json',
   'api/application-packages.js', 'api/application-package-artifact.js', 'api/application-package-render.js',
   'api/application-sessions.js', 'api/employer-browser-session.js', 'api/extension-application-handoff.js', 'api/user-session.js', 'api/job-agent-notifications.js', 'api/account-data.js',
-  'api/applicant-vault.js', 'api/application-audit.js', 'api/concierge-state.js', 'api/job-agent-consent.js',
+  'api/applicant-vault.js', 'api/career-profile-preview.js', 'api/application-audit.js', 'api/concierge-state.js', 'api/job-agent-consent.js',
   'api/job-agent-operations.js', 'api/job-agent-runs.js', 'api/job-agent-schedule.js', 'api/job-agent-worker.js', 'api/session-capabilities.js',
   'api/application-receipts.js', 'api/application-audit.js', 'lib/internal-worker-auth.js',
 'api/job-agent-discord-relay.js', 'lib/job-agent-discord-relay.js',
@@ -26,7 +26,7 @@ assert.match(files['api/user-session.js'], /authenticateApiRequest/);
 assert.match(files['api/user-session.js'], /revokeAllUserSessions/);
 assert.match(files['api/user-session.js'], /clearAccessSessionCookie/);
 for (const route of [
-  'api/account-data.js', 'api/applicant-vault.js', 'api/application-audit.js', 'api/application-package-artifact.js',
+  'api/account-data.js', 'api/applicant-vault.js', 'api/career-profile-preview.js', 'api/application-audit.js', 'api/application-package-artifact.js',
   'api/application-package-render.js', 'api/application-packages.js', 'api/application-sessions.js', 'api/employer-browser-session.js', 'api/extension-application-handoff.js', 'api/concierge-state.js',
   'api/job-agent-consent.js', 'api/job-agent-notifications.js', 'api/job-agent-operations.js', 'api/job-agent-runs.js',
   'api/job-agent-schedule.js', 'api/session-capabilities.js',

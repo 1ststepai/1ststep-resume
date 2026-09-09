@@ -12,6 +12,8 @@ const routePolicies = Object.freeze({
   'ai.js': /authenticateApiRequestOrGuest/,
   'app-config.js': /analytics: \{ enabled: false \}/,
   'applicant-vault.js': /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/,
+  'career-profile-preview.js': /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/,
+  'career-profile-preview-smoke.js': /careerProfilePostgresConfiguration/,
   'application-audit.js': /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/,
   'application-package-artifact.js': /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/,
   'application-package-render.js': /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/,

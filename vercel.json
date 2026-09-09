@@ -36,6 +36,12 @@
     "api/concierge-preview-smoke.js": {
       "maxDuration": 30
     },
+    "api/career-profile-preview.js": {
+      "maxDuration": 30
+    },
+    "api/career-profile-preview-smoke.js": {
+      "maxDuration": 30
+    },
     "api/job-agent-runs.js": {
       "maxDuration": 45
     },

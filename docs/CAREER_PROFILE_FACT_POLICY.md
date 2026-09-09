@@ -19,3 +19,14 @@ Legacy import is non-destructive. `contact`, `address`, `location`, and `license
 The boundary follows the EEOC's guidance to limit pre-employment information to what is essential for qualification, its separate caution against asking most applicants about citizenship, and the FTC's direction to collect and retain only information with a legitimate business need. These are design inputs, not legal approval: [EEOC pre-employment practices](https://www.eeoc.gov/prohibited-employment-policiespractices), [EEOC citizenship inquiries](https://www.eeoc.gov/pre-employment-inquiries-and-citizenship), [FTC data minimization](https://www.ftc.gov/business-guidance/resources/protecting-personal-information-guide-business).
 
 This contract resolves the minimum-field design portion of P0-1. Storage activation remains blocked until the published Terms and Privacy text accurately describes the encrypted Career Profile, retention, revocation/deletion behavior, processors and user controls, and that revision is reviewed and approved.
+
+## Preview store and reconciliation API
+
+`/api/career-profile-preview` is available only when all of these are true: Vercel is running a Preview deployment, `CAREER_PROFILE_PREVIEW_ENABLED=true`, Postgres is enabled, encryption is configured, and the caller has an opaque authenticated Job Agent session admitted by the pilot gate. It is not linked from the production UI.
+
+- `GET` reads the caller's tenant-scoped canonical profile.
+- `POST action=upsert-fact` requires a safe `Idempotency-Key`, an exact `expectedVersion`, and a fact accepted by this policy.
+- `POST action=analyze-legacy` returns only field names and classifications; it does not return legacy values.
+- `POST action=import-legacy` requires the analyzed Redis vault version. It imports only current active verified allowlisted facts, never deletes or changes Redis, never creates a reuse grant, and fails closed when a canonical lineage already exists.
+
+Each write uses a short serializable transaction with forced-RLS tenant context, locks the fact lineage, appends an immutable encrypted fact version, records version-scoped evidence, and updates the encrypted profile snapshot. Terms/Privacy review and the final revocation/deletion-retention decision remain activation gates; this Preview-only development route does not enable Production Postgres.
