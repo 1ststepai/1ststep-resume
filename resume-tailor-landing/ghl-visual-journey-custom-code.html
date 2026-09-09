@@ -1239,6 +1239,120 @@
 </main>
 <script>
   (function () {
+    var seo = {
+      title: "AI Job Application Assistant & Resume Builder | 1stStep.ai",
+      description:
+        "Capture Greenhouse jobs with the 1stStep.ai Chrome extension, prepare a tailored résumé and cover letter, and review everything before you submit.",
+      url: "https://resume.1ststep.ai/ai-resume-builder",
+      image:
+        "https://assets.cdn.filesafe.space/ER85bbRj2EUSuMtO0uFQ/media/69f033ad717d5dd4e196aeb3.png",
+    };
+    function setMeta(attribute, key, value) {
+      var selector = "meta[" + attribute + '="' + key + '"]';
+      var nodes = [].slice.call(document.head.querySelectorAll(selector));
+      var node = nodes.shift();
+      if (!node) {
+        node = document.createElement("meta");
+        node.setAttribute(attribute, key);
+        document.head.appendChild(node);
+      }
+      node.setAttribute("content", value);
+      nodes.forEach(function (extra) {
+        extra.remove();
+      });
+    }
+    function normalizeSeo() {
+      document.documentElement.lang = "en";
+      document.title = seo.title;
+      setMeta("name", "description", seo.description);
+      setMeta("name", "robots", "index,follow,max-image-preview:large");
+      setMeta("property", "og:title", seo.title);
+      setMeta("property", "og:description", seo.description);
+      setMeta("property", "og:type", "website");
+      setMeta("property", "og:url", seo.url);
+      setMeta("property", "og:site_name", "1stStep.ai");
+      setMeta("property", "og:locale", "en_US");
+      setMeta("property", "og:image", seo.image);
+      setMeta("name", "twitter:card", "summary_large_image");
+      setMeta("name", "twitter:title", seo.title);
+      setMeta("name", "twitter:description", seo.description);
+      setMeta("name", "twitter:image", seo.image);
+      document.head
+        .querySelectorAll(
+          'meta[name="keywords"],meta[property="og:keywords"],meta[property="og:author"],meta[property^="twitter:"]',
+        )
+        .forEach(function (node) {
+          node.remove();
+        });
+      var canonicals = [].slice.call(
+        document.head.querySelectorAll('link[rel~="canonical"]'),
+      );
+      var canonical = canonicals.shift();
+      if (!canonical) {
+        canonical = document.createElement("link");
+        canonical.rel = "canonical";
+        document.head.appendChild(canonical);
+      }
+      canonical.href = seo.url;
+      canonicals.forEach(function (extra) {
+        extra.remove();
+      });
+      document
+        .querySelectorAll(
+          'script[type="application/ld+json"]:not(#fs-seo-schema)',
+        )
+        .forEach(function (node) {
+          if (/1ststep\.ai/i.test(node.textContent || "")) node.remove();
+        });
+      var schema = document.getElementById("fs-seo-schema");
+      if (!schema) {
+        schema = document.createElement("script");
+        schema.id = "fs-seo-schema";
+        schema.type = "application/ld+json";
+        document.head.appendChild(schema);
+      }
+      schema.textContent = JSON.stringify({
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://1ststep.ai/#organization",
+            name: "1stStep.ai",
+            url: "https://1ststep.ai/",
+            sameAs: ["https://www.instagram.com/1ststepdotai/"],
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://resume.1ststep.ai/#website",
+            url: "https://resume.1ststep.ai/",
+            name: "1stStep.ai",
+            publisher: { "@id": "https://1ststep.ai/#organization" },
+          },
+          {
+            "@type": "WebPage",
+            "@id": seo.url + "#webpage",
+            url: seo.url,
+            name: seo.title,
+            description: seo.description,
+            isPartOf: { "@id": "https://resume.1ststep.ai/#website" },
+            about: { "@id": seo.url + "#software" },
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": seo.url + "#software",
+            name: "1stStep.ai Job Agent",
+            url: "https://app.1ststep.ai",
+            applicationCategory: "BusinessApplication",
+            operatingSystem: "Web, Google Chrome",
+            description:
+              "A job application assistant that captures supported jobs, prepares tailored application materials, and keeps the applicant in control of submission.",
+            creator: { "@id": "https://1ststep.ai/#organization" },
+          },
+        ],
+      });
+    }
+    normalizeSeo();
+    window.setTimeout(normalizeSeo, 1000);
     var r = document.getElementById("fs-journey");
     if (!r || r.dataset.ready) return;
     r.dataset.ready = "1";
