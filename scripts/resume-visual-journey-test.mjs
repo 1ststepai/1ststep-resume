@@ -7,6 +7,9 @@ const required = [
   'id="fs-journey"',
   'Turn any job page into your next application.',
   'Get the Chrome extension',
+  'Start My Job Agent',
+  'href="https://app.1ststep.ai"',
+  'https://www.instagram.com/1ststepdotai/',
   'From job page to review-ready packet.',
   'You stay in control. The busywork stays behind.',
   'Starts after your first captured job',
@@ -31,6 +34,10 @@ for (const forbidden of [
   /\d+\s*(?:hours?|minutes?)\s+saved/i,
 ]) {
   if (forbidden.test(html)) throw new Error(`Unsafe marketing claim matched: ${forbidden}`);
+}
+
+if (html.includes('https://app.1ststep.ai/app/resume')) {
+  throw new Error('App CTA must use the canonical https://app.1ststep.ai entry point');
 }
 
 const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
