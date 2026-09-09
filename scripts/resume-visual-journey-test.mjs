@@ -80,7 +80,12 @@ for (const forbidden of [
     throw new Error(`Unsafe marketing claim matched: ${forbidden}`);
 }
 
-if (html.includes("https://app.1ststep.ai/app/resume")) {
+const hrefs = [...html.matchAll(/\bhref\s*=\s*"([^"]+)"/gi)].map((match) => match[1]);
+const hasLegacyAppResumeCta = hrefs.some((href) => {
+  const url = new URL(href, "https://resume.1ststep.ai/");
+  return url.origin === "https://app.1ststep.ai" && url.pathname === "/app/resume";
+});
+if (hasLegacyAppResumeCta) {
   throw new Error(
     "App CTA must use the canonical https://app.1ststep.ai entry point",
   );
@@ -96,7 +101,7 @@ if (/font-size:\s*(?:9|10|11)px/.test(html)) {
   throw new Error("Essential resume landing text must stay at 12px or larger");
 }
 
-const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(
+const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/gi)].map(
   (match) => match[1],
 );
 if (scripts.length !== 1)
