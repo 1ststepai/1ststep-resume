@@ -8,7 +8,7 @@ grant job_agent_backend to current_user;
 grant usage on schema extensions to job_agent_backend;
 
 create extension if not exists pgtap;
-select plan(28);
+select plan(31);
 
 select is(
   (select count(*)::integer
@@ -139,6 +139,38 @@ select throws_ok(
   'a cross-tenant lineage reference is rejected'
 );
 
+select throws_ok(
+  $$insert into applicant_facts (
+      id, tenant_id, fact_key, fact_version, encrypted_value, provenance,
+      confidence, confirmed_at, fact_lineage_id, verification_state, source_type
+    ) values (
+      '11000000-0000-0000-0000-000000000098', repeat('c', 40),
+      'different.key', 1,
+      '{"algorithm":"A256GCM","keyId":"key-1","iv":"QUJDRA==","tag":"QUJDRA==","ciphertext":"QUJDRA=="}'::jsonb,
+      '{}'::jsonb, 0.9, '2026-09-09T12:00:00Z',
+      '10000000-0000-0000-0000-000000000001', 'user-confirmed', 'user'
+    )$$,
+  '23503',
+  null,
+  'a fact key must match its stable lineage key'
+);
+
+select throws_ok(
+  $$insert into applicant_facts (
+      id, tenant_id, fact_key, fact_version, encrypted_value, provenance,
+      confidence, confirmed_at, fact_lineage_id, verification_state, source_type
+    ) values (
+      '11000000-0000-0000-0000-000000000097', repeat('c', 40),
+      'work.authorization', 4,
+      '{"algorithm":"A256GCM","keyId":"key-1","iv":"QUJDRA==","tag":"QUJDRA==","ciphertext":"QUJDRA=="}'::jsonb,
+      '{}'::jsonb, 0.9, '2026-09-09T12:00:00Z',
+      '10000000-0000-0000-0000-000000000001', 'user-confirmed', 'user'
+    )$$,
+  '23514',
+  null,
+  'fact versions cannot skip or move backward in lineage order'
+);
+
 select lives_ok(
   $$insert into applicant_facts (
       id, tenant_id, fact_key, fact_version, encrypted_value, provenance,
@@ -170,6 +202,15 @@ select results_eq(
   $$select id from applicant_facts where fact_lineage_id = '10000000-0000-0000-0000-000000000001' and superseded_at is null$$,
   array['11000000-0000-0000-0000-000000000002'::uuid],
   'the newest fact version is current'
+);
+
+select throws_ok(
+  $$update applicant_facts
+    set encrypted_value = '{"algorithm":"A256GCM","keyId":"key-1","iv":"RUZHSA==","tag":"RUZHSA==","ciphertext":"RUZHSA=="}'::jsonb
+    where id = '11000000-0000-0000-0000-000000000002'$$,
+  '23514',
+  null,
+  'an immutable fact version cannot be rewritten in place'
 );
 
 select lives_ok(

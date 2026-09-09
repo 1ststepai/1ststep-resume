@@ -148,13 +148,27 @@ end $$;
 alter table applicant_facts
   alter column fact_lineage_id set not null,
   alter column verification_state set not null,
-  alter column confirmed_at set not null,
-  add constraint applicant_facts_verification_state_check
-    check (verification_state in ('user-confirmed','document-verified')),
-  add constraint applicant_facts_expiry_check
-    check (expires_at is null or expires_at > confirmed_at),
-  add constraint applicant_facts_superseded_time_check
-    check (superseded_at is null or superseded_at >= created_at);
+  alter column confirmed_at set not null;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'applicant_facts_verification_state_check' and conrelid = 'applicant_facts'::regclass) then
+    alter table applicant_facts add constraint applicant_facts_verification_state_check
+      check (verification_state in ('user-confirmed','document-verified'));
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'applicant_facts_expiry_check' and conrelid = 'applicant_facts'::regclass) then
+    alter table applicant_facts add constraint applicant_facts_expiry_check
+      check (expires_at is null or expires_at > confirmed_at);
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'applicant_facts_superseded_time_check' and conrelid = 'applicant_facts'::regclass) then
+    alter table applicant_facts add constraint applicant_facts_superseded_time_check
+      check (superseded_at is null or superseded_at >= created_at);
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'applicant_facts_revoked_time_check' and conrelid = 'applicant_facts'::regclass) then
+    alter table applicant_facts add constraint applicant_facts_revoked_time_check
+      check (revoked_at is null or revoked_at >= confirmed_at);
+  end if;
+end $$;
 
 alter table applicant_facts enable row level security;
 alter table applicant_facts force row level security;
@@ -171,15 +185,20 @@ begin
   end if;
   if not exists (
     select 1 from pg_constraint
-    where conname = 'applicant_facts_lineage_tenant_fk'
-      and conrelid = 'applicant_facts'::regclass
+    where conname = 'applicant_fact_lineages_tenant_lineage_fact_key_key'
+      and conrelid = 'applicant_fact_lineages'::regclass
   ) then
-    alter table applicant_facts
-      add constraint applicant_facts_lineage_tenant_fk
-      foreign key (tenant_id, fact_lineage_id)
-      references applicant_fact_lineages(tenant_id, id) on delete restrict;
+    alter table applicant_fact_lineages
+      add constraint applicant_fact_lineages_tenant_lineage_fact_key_key
+      unique (tenant_id, id, fact_key);
   end if;
 end $$;
+
+alter table applicant_facts drop constraint if exists applicant_facts_lineage_tenant_fk;
+alter table applicant_facts
+  add constraint applicant_facts_lineage_tenant_fk
+  foreign key (tenant_id, fact_lineage_id, fact_key)
+  references applicant_fact_lineages(tenant_id, id, fact_key) on delete restrict;
 
 create unique index if not exists applicant_facts_tenant_current_lineage_idx
   on applicant_facts (tenant_id, fact_lineage_id)
@@ -194,7 +213,28 @@ language plpgsql
 security invoker
 set search_path = pg_catalog, public
 as $$
+declare
+  latest_version integer;
 begin
+  perform 1
+  from public.applicant_fact_lineages
+  where tenant_id = new.tenant_id
+    and id = new.fact_lineage_id
+    and fact_key = new.fact_key
+  for update;
+  if not found then
+    raise exception 'JA003_FACT_LINEAGE_KEY_MISMATCH' using errcode = '23503';
+  end if;
+
+  select max(fact_version) into latest_version
+  from public.applicant_facts
+  where tenant_id = new.tenant_id
+    and fact_lineage_id = new.fact_lineage_id;
+  if new.fact_version <> coalesce(latest_version, 0) + 1 then
+    raise exception 'JA003_FACT_VERSION_OUT_OF_SEQUENCE expected=% received=%', coalesce(latest_version, 0) + 1, new.fact_version
+      using errcode = '23514';
+  end if;
+
   if new.revoked_at is null and new.superseded_at is null then
     update public.applicant_facts
     set superseded_at = greatest(created_at, new.created_at)
@@ -211,6 +251,40 @@ drop trigger if exists applicant_facts_maintain_current_version_trigger on appli
 create trigger applicant_facts_maintain_current_version_trigger
 before insert on applicant_facts
 for each row execute function applicant_facts_maintain_current_version();
+
+create or replace function applicant_facts_protect_immutable_version()
+returns trigger
+language plpgsql
+security invoker
+set search_path = pg_catalog, public
+as $$
+begin
+  if row(
+    new.id, new.tenant_id, new.fact_key, new.fact_version, new.encrypted_value,
+    new.provenance, new.confidence, new.confirmed_at, new.created_at,
+    new.fact_lineage_id, new.verification_state, new.sensitivity,
+    new.source_type, new.expires_at
+  ) is distinct from row(
+    old.id, old.tenant_id, old.fact_key, old.fact_version, old.encrypted_value,
+    old.provenance, old.confidence, old.confirmed_at, old.created_at,
+    old.fact_lineage_id, old.verification_state, old.sensitivity,
+    old.source_type, old.expires_at
+  ) then
+    raise exception 'JA003_FACT_VERSION_IS_IMMUTABLE' using errcode = '23514';
+  end if;
+  if old.revoked_at is not null and new.revoked_at is distinct from old.revoked_at then
+    raise exception 'JA003_FACT_REVOCATION_IS_IMMUTABLE' using errcode = '23514';
+  end if;
+  if old.superseded_at is not null and new.superseded_at is distinct from old.superseded_at then
+    raise exception 'JA003_FACT_SUPERSESSION_IS_IMMUTABLE' using errcode = '23514';
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists applicant_facts_protect_immutable_version_trigger on applicant_facts;
+create trigger applicant_facts_protect_immutable_version_trigger
+before update on applicant_facts
+for each row execute function applicant_facts_protect_immutable_version();
 
 create table if not exists applicant_profile_versions (
   id uuid primary key default gen_random_uuid(),

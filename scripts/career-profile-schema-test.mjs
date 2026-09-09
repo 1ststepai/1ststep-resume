@@ -8,7 +8,7 @@ const sql = await readFile(new URL('../supabase/migrations/20260909011500_applic
 assert.match(sql, /\nbegin;[\s\S]*alter table applicant_facts disable row level security[\s\S]*alter table applicant_facts force row level security[\s\S]*\ncommit;\s*$/);
 assert.match(sql, /Fact identity model:[\s\S]*fact_lineage_id identifies the stable fact across versions/);
 assert.match(sql, /add column if not exists fact_lineage_id uuid/);
-assert.match(sql, /foreign key \(tenant_id, fact_lineage_id\)[\s\S]*references applicant_fact_lineages\(tenant_id, id\)/);
+assert.match(sql, /foreign key \(tenant_id, fact_lineage_id, fact_key\)[\s\S]*references applicant_fact_lineages\(tenant_id, id, fact_key\)/);
 assert.match(sql, /foreign key \(tenant_id, fact_id, fact_version\)[\s\S]*references applicant_facts\(tenant_id, id, fact_version\)/);
 
 assert.match(sql, /alter table applicant_facts disable row level security/);
@@ -43,6 +43,9 @@ assert.doesNotMatch(sql, /reuse_allowed/);
 assert.match(sql, /applicant_fact_reuse_scopes_identity_idx[\s\S]*where revoked_at is null/);
 assert.match(sql, /applicant_facts_superseded_time_check[\s\S]*superseded_at >= created_at/);
 assert.match(sql, /create trigger applicant_facts_maintain_current_version_trigger[\s\S]*before insert on applicant_facts/);
+assert.match(sql, /for update;[\s\S]*JA003_FACT_VERSION_OUT_OF_SEQUENCE/);
+assert.match(sql, /create trigger applicant_facts_protect_immutable_version_trigger[\s\S]*before update on applicant_facts/);
+assert.match(sql, /JA003_FACT_VERSION_IS_IMMUTABLE/);
 assert.match(sql, /security invoker/);
 assert.doesNotMatch(sql, /security definer/i);
 
