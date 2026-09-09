@@ -9,7 +9,7 @@ Unless a section says otherwise, its status is **RECORDED — NOT STARTED**. The
 
 **Blocks:** durable career-profile storage for real users.
 
-**Status 2026-09-09:** minimum-field design implemented in `lib/career-profile-fact-policy.js` and `docs/CAREER_PROFILE_FACT_POLICY.md`. It is fail closed, separates preferences and permissions from facts, excludes protected/contextual categories, and permits only bounded candidate-confirmed authorization/sponsorship values without automatic reuse. Storage activation remains blocked by P0-2 and P0-3 and by store/API runtime verification.
+**Status 2026-09-09:** development complete; activation blocked. The minimum-field policy and guarded Postgres store/API are implemented and live-verified on the isolated branch Preview. The store is encrypted, tenant-RLS scoped, append-only/versioned, exact-version and idempotency guarded, and creates no reuse grants. The non-destructive legacy path exposes value-free analysis, imports only current active verified allowlisted facts, requires reconciliation for combined legacy fields, and refuses canonical conflicts. Production remains disabled. Activation for real users remains blocked by P0-2 and P0-3.
 
 **Finding.** `lib/applicant-vault-domain.js:17–21` defines a `CONSEQUENTAL_FIELDS` set that includes `criminalHistory`, `disability`, `veteranStatus`, `drugHealth`, `citizenship`, `clearance`, `background`, `sponsorship`, `authorization`, `exportControl`, `restrictiveAgreements`, `demographics` and others. Any of these may be written as a user-confirmed fact and stored encrypted for 365 days.
 
