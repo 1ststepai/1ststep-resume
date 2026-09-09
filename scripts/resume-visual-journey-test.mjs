@@ -16,6 +16,8 @@ const required = [
   "https://www.instagram.com/1ststepdotai/",
   'aria-label="Instagram"',
   'class="fs-social"',
+  'href="https://partners.1ststep.ai"',
+  ">Affiliates</a",
   "Capture once. Keep moving.",
   "See what you saved.",
   "Estimated time saved",
