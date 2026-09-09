@@ -51,7 +51,7 @@ import { acquisitionFunnel, evaluateCandidateFit, extractStructuredRequirements,
 import { JOB_RELEVANCE_POLICY_VERSION, jobTitleMatchesMission, restoredJobCardIsRelevant } from './client/job-mission-relevance.js';
 import { buildAnswerCoachingRequest, summarizePracticeSession } from './client/interview-practice.js';
 import { OPPORTUNITY_PATHS, OPPORTUNITY_SECTORS, mergeAuthoritativeOutcomeEvidence, opportunityPathOutcomeEvidence, rankOpportunityPaths, suggestedOpportunityPaths } from './client/opportunity-paths.js';
-import { authoritativeReceiptCount, canonicalConversation, directSourceCoverage, maskedActivityFeed, missionStats, needsYouKind, statusBadgeClass, statusTab, subscriberStatus as subscriberUiStatus } from './client/subscriber-ui-model.js';
+import { authoritativeReceiptCount, canonicalConversation, directSourceCoverage, estimateJobAgentTimeSaved, formatTimeSaved, maskedActivityFeed, missionStats, needsYouKind, statusBadgeClass, statusTab, subscriberStatus as subscriberUiStatus } from './client/subscriber-ui-model.js';
 import {
   CAMPAIGN_TEMPLATES, addCampaign, campaignMetrics, createCampaignStore, operatingContractText, updateCampaignStatus, updatePersistentCampaign,
 } from './client/persistent-campaign.js';
@@ -116,6 +116,7 @@ let lastDialogTrigger = null;
 let accountWorkflowHydrated = false;
 let pendingJobAgentCapture = null;
 const processedJobCaptureIds = new Set();
+const timeSavedSessionStartedAt = new Date();
 
 function jobCaptureIdFromUrl() {
   return new URLSearchParams(window.location.search).get('jobCaptureId') || '';
@@ -2464,6 +2465,32 @@ function renderCommandCenterEvidence(openActions) {
     : 'No feed or retrieval usage recorded for this view.';
 }
 
+function renderTimeSaved() {
+  const estimate = estimateJobAgentTimeSaved({
+    roles: subscriberRoles(), applicationSessions: durableApplicationSessions, run: durableRun,
+    sessionStartedAt: timeSavedSessionStartedAt,
+  });
+  const totalLabel = formatTimeSaved(estimate.totalMinutes);
+  const weekLabel = formatTimeSaved(estimate.lastSevenDaysMinutes);
+  const sessionLabel = formatTimeSaved(estimate.sessionMinutes);
+  const remainder = estimate.totalMinutes % 60;
+  const nextHourMinutes = estimate.totalMinutes ? (remainder ? 60 - remainder : 60) : 60;
+  $('timeSavedTotal').textContent = totalLabel;
+  $('timeSavedWeek').textContent = weekLabel;
+  $('timeSavedSession').textContent = sessionLabel;
+  $('timeSavedMeter').value = remainder;
+  $('timeSavedMeter').setAttribute('aria-valuetext', `${totalLabel} estimated total; ${nextHourMinutes} minutes to the next saved hour`);
+  $('timeSavedNext').textContent = estimate.totalMinutes
+    ? `${nextHourMinutes} estimated min to your next saved hour`
+    : 'Completed Job Agent work will appear here';
+  $('timeSavedBreakdown').innerHTML = estimate.breakdown.length
+    ? estimate.breakdown.map(item => `<li><span><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.count)} completed · ${escapeHtml(item.explanation)}</small></span><em>${escapeHtml(formatTimeSaved(item.minutes))}</em></li>`).join('')
+    : '<li class="time-saved-empty">No completed, evidence-backed work has been counted yet.</li>';
+  $('jobsTimeSavedTotal').textContent = totalLabel;
+  $('jobsTimeSavedWeek').textContent = `${weekLabel} in the last 7 days`;
+  $('timeSavedCard').classList.toggle('has-savings', estimate.totalMinutes > 0);
+}
+
 function learnedValuePreview(value) {
   if (Array.isArray(value)) return value.join(', ').slice(0, 120);
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
@@ -2786,6 +2813,7 @@ function renderMission() {
   renderGuidedLaunch();
   renderRunState();
   renderCommandCenterEvidence(openActions);
+  renderTimeSaved();
   renderSubscriberJobs();
   renderAgentAccessState();
 }
