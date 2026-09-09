@@ -1,0 +1,159 @@
+<!-- 1stStep.ai visual customer journey landing page -->
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<style>
+  #fs-journey {
+    --fs-ink:#101223; --fs-text:#4f5670; --fs-muted:#737b96; --fs-line:#e4e7f2;
+    --fs-violet:#635bff; --fs-indigo:#4b3ff0; --fs-lilac:#f1efff; --fs-mint:#15965f;
+    --fs-mint-soft:#eaf9f1; --fs-white:#fff; --fs-shadow:0 24px 70px rgba(47,42,110,.12);
+    color:var(--fs-ink); background:#fff; font-family:Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif;
+    line-height:1.5; overflow:hidden; isolation:isolate;
+  }
+  #fs-journey *,#fs-journey *:before,#fs-journey *:after{box-sizing:border-box}
+  #fs-journey a{color:inherit;text-decoration:none}
+  #fs-journey button{font:inherit}
+  #fs-journey a:focus-visible,#fs-journey button:focus-visible{outline:3px solid #9f98ff;outline-offset:4px}
+  #fs-journey .fs-wrap{width:min(1320px,calc(100% - 48px));margin:auto}
+  #fs-journey .fs-nav{position:sticky;top:0;z-index:50;border-bottom:1px solid rgba(228,231,242,.8);background:rgba(255,255,255,.9);backdrop-filter:blur(18px)}
+  #fs-journey .fs-nav-in{height:72px;display:flex;align-items:center;justify-content:space-between;gap:28px}
+  #fs-journey .fs-brand{font-size:26px;font-weight:900;letter-spacing:-.055em}.fs-brand span{color:var(--fs-violet)}
+  #fs-journey .fs-links{display:flex;align-items:center;gap:32px;font-size:14px;font-weight:700}
+  #fs-journey .fs-btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 22px;border-radius:12px;border:1px solid transparent;font-weight:800;transition:transform .2s,box-shadow .2s,background .2s}
+  #fs-journey .fs-btn:hover{transform:translateY(-2px)}
+  #fs-journey .fs-btn-primary{color:#fff;background:linear-gradient(135deg,var(--fs-violet),var(--fs-indigo));box-shadow:0 14px 30px rgba(99,91,255,.24)}
+  #fs-journey .fs-btn-secondary{border-color:var(--fs-line);background:#fff}
+  #fs-journey .fs-chrome{width:22px;height:22px;border-radius:50%;background:conic-gradient(#e94435 0 33%,#f7c642 0 66%,#35a853 0);position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+  #fs-journey .fs-chrome:after{content:"";position:absolute;inset:6px;border-radius:50%;background:#4285f4;border:2px solid white}
+  #fs-journey h1,#fs-journey h2,#fs-journey h3,#fs-journey p{margin-top:0}
+  #fs-journey h1{font-size:clamp(48px,6vw,82px);line-height:.98;letter-spacing:-.065em;margin-bottom:28px;max-width:690px}
+  #fs-journey h2{font-size:clamp(38px,5vw,66px);line-height:1;letter-spacing:-.055em;margin-bottom:18px}
+  #fs-journey .fs-lede{color:var(--fs-text);font-size:clamp(18px,2vw,22px);line-height:1.55;max-width:660px}
+  #fs-journey .fs-hero{min-height:940px;padding:80px 0 70px;position:relative}
+  #fs-journey .fs-hero-grid{display:grid;grid-template-columns:.83fr 1.17fr;gap:42px;align-items:center}
+  #fs-journey .fs-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin:34px 0 20px}
+  #fs-journey .fs-text-link{color:var(--fs-violet);font-weight:850;border-bottom:1px solid currentColor;padding-bottom:2px}
+  #fs-journey .fs-truth{color:var(--fs-muted);font-size:14px}
+  #fs-journey .fs-scene{position:relative;min-height:720px;perspective:1400px}
+  #fs-journey .fs-browser,#fs-journey .fs-workspace{position:absolute;border:1px solid var(--fs-line);border-radius:20px;background:#fff;box-shadow:var(--fs-shadow);overflow:hidden}
+  #fs-journey .fs-browser{top:0;right:0;width:92%;height:430px;transform:rotateY(-2deg)}
+  #fs-journey .fs-workspace{right:6%;bottom:0;width:84%;height:330px;transform:rotateY(2deg)}
+  #fs-journey .fs-browserbar{height:58px;background:#f7f8fc;border-bottom:1px solid var(--fs-line);display:flex;align-items:center;gap:10px;padding:0 16px}
+  #fs-journey .fs-dots{display:flex;gap:7px}.fs-dots i{display:block;width:11px;height:11px;border-radius:50%;background:#ff6b66}.fs-dots i:nth-child(2){background:#ffc24b}.fs-dots i:nth-child(3){background:#34c77b}
+  #fs-journey .fs-address{height:32px;flex:1;border:1px solid #e8eaf2;border-radius:9px;background:#fff;color:#8b91a7;font-size:11px;padding:8px 12px}
+  #fs-journey .fs-job{padding:30px 38px;width:70%}.fs-job h3{font-size:25px;margin-bottom:4px;letter-spacing:-.035em}.fs-job p{color:var(--fs-text);font-size:13px}.fs-lines{display:grid;gap:8px;margin-top:22px}.fs-lines i{display:block;height:8px;border-radius:8px;background:#eceef5}.fs-lines i:nth-child(2){width:92%}.fs-lines i:nth-child(3){width:77%}.fs-lines i:nth-child(4){width:86%}
+  #fs-journey .fs-extension{position:absolute;right:20px;top:78px;width:260px;padding:18px;border:1px solid #d9ddeb;border-radius:16px;background:rgba(255,255,255,.96);box-shadow:0 20px 48px rgba(31,30,89,.17);z-index:4}
+  #fs-journey .fs-ext-head{font-size:17px;font-weight:900;margin-bottom:16px}.fs-ext-head span{color:var(--fs-violet)}
+  #fs-journey .fs-role{padding:12px;border:1px solid var(--fs-line);border-radius:10px;font-size:12px}.fs-role strong{display:block;font-size:13px}.fs-success{margin-top:10px;padding:10px;border-radius:9px;background:var(--fs-mint-soft);color:#087746;font-size:12px;font-weight:800}
+  #fs-journey .fs-ext-button{display:block;width:100%;border:0;border-radius:9px;background:var(--fs-violet);color:white;font-weight:800;padding:11px;margin-top:10px}
+  #fs-journey .fs-flow{position:absolute;z-index:5;right:25%;top:392px;width:280px;height:126px;border-right:22px solid var(--fs-violet);border-bottom:22px solid var(--fs-violet);border-radius:0 0 70px 0;filter:drop-shadow(0 12px 12px rgba(99,91,255,.2))}
+  #fs-journey .fs-flow:after{content:"";position:absolute;left:-3px;bottom:-39px;border:20px solid transparent;border-top-color:var(--fs-violet)}
+  #fs-journey .fs-side{width:140px;padding:24px 15px;border-right:1px solid var(--fs-line);height:100%;float:left}.fs-side strong{font-size:16px}.fs-side strong span{color:var(--fs-violet)}.fs-side div{font-size:11px;color:var(--fs-text);padding:9px 7px;margin-top:8px;border-radius:7px}.fs-side div:first-of-type{background:var(--fs-lilac);color:var(--fs-violet);font-weight:800;margin-top:22px}
+  #fs-journey .fs-job-in{margin-left:140px;padding:28px}.fs-job-in small{color:var(--fs-muted)}.fs-job-in h3{font-size:20px;margin:4px 0 16px}.fs-choice-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.fs-choice{border:1px solid var(--fs-line);border-radius:11px;padding:15px;font-size:11px;font-weight:800}.fs-choice b{display:block;color:var(--fs-violet);font-size:22px;margin-bottom:12px}
+  #fs-journey .fs-scroll{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);font-size:12px;color:var(--fs-muted);text-align:center}.fs-scroll:after{content:"↓";display:block;font-size:24px;animation:fsBob 1.6s infinite}
+  @keyframes fsBob{50%{transform:translateY(7px)}}
+
+  #fs-journey .fs-chapter{padding:110px 0;scroll-margin-top:72px}
+  #fs-journey .fs-center{text-align:center}.fs-center .fs-lede{margin-left:auto;margin-right:auto}
+  #fs-journey .fs-stage-rail{display:grid;grid-template-columns:repeat(4,1fr);margin:60px 0 30px;position:relative}
+  #fs-journey .fs-stage-rail:before{content:"";position:absolute;left:7%;right:7%;top:21px;height:3px;background:linear-gradient(90deg,var(--fs-violet) var(--fs-progress,0%),#dfe2f0 0)}
+  #fs-journey .fs-stage-tab{position:relative;z-index:1;border:0;background:transparent;cursor:pointer;color:var(--fs-text);font-weight:850;display:flex;align-items:center;gap:12px;text-align:left}
+  #fs-journey .fs-stage-tab span{width:44px;height:44px;display:grid;place-items:center;border-radius:50%;background:#eef0f7;color:#69708a;border:5px solid white;box-shadow:0 0 0 1px #e5e7f0}
+  #fs-journey .fs-stage-tab.is-active span,#fs-journey .fs-stage-tab.is-done span{background:var(--fs-violet);color:#fff;box-shadow:0 0 0 1px var(--fs-violet)}
+  #fs-journey .fs-stage-tab.is-done span{background:var(--fs-mint);box-shadow:0 0 0 1px var(--fs-mint)}
+  #fs-journey .fs-pipeline{min-height:560px;display:grid;grid-template-columns:.9fr 1.15fr 1.15fr .85fr;gap:16px;align-items:center;position:relative}
+  #fs-journey .fs-panel{min-height:430px;border:1px solid var(--fs-line);border-radius:18px;background:#fff;box-shadow:0 16px 45px rgba(40,37,92,.08);padding:20px;transition:transform .55s,opacity .55s,box-shadow .55s}
+  #fs-journey .fs-panel:not(.is-active){transform:translateY(24px);opacity:.45;box-shadow:none}
+  #fs-journey .fs-panel-head{font-size:14px;font-weight:900;margin-bottom:18px}.fs-panel-head span{color:var(--fs-violet)}
+  #fs-journey .fs-mini-job{font-size:12px}.fs-mini-job h3{font-size:18px;margin:12px 0 4px}.fs-status{margin-top:26px;padding:11px;border-radius:9px;background:var(--fs-mint-soft);color:#087746;font-size:12px;font-weight:850}
+  #fs-journey .fs-compare{display:grid;grid-template-columns:1fr 1fr;gap:10px}.fs-doc{border:1px solid var(--fs-line);border-radius:10px;padding:12px}.fs-doc strong{display:block;font-size:11px;margin-bottom:14px}.fs-doc i{display:block;height:7px;background:#e9ebf2;border-radius:6px;margin:8px 0}.fs-doc .violet{background:#c9c4ff}
+  #fs-journey .fs-letter{border:1px solid var(--fs-line);border-radius:11px;padding:16px;min-height:310px}.fs-letter i{display:block;height:7px;background:#e8eaf1;border-radius:5px;margin:9px 0}.fs-letter i:nth-child(3),.fs-letter i:nth-child(5){background:#cac6ff}
+  #fs-journey .fs-ready{display:flex;flex-direction:column;justify-content:center;text-align:center}.fs-ready-mark{width:74px;height:74px;margin:60px auto 28px;display:grid;place-items:center;border-radius:22px;background:var(--fs-lilac);color:var(--fs-violet);font-size:34px}.fs-ready .fs-btn{margin-top:25px}
+  #fs-journey .fs-controls{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:30px}.fs-controls button{border:1px solid var(--fs-line);border-radius:10px;background:#fff;padding:10px 15px;font-weight:800;cursor:pointer}.fs-controls button:first-child{background:var(--fs-violet);color:#fff;border-color:var(--fs-violet)}
+  #fs-journey .fs-safety-line{text-align:center;color:var(--fs-text);font-size:15px;margin-top:24px}
+
+  #fs-journey .fs-outcome{background:linear-gradient(180deg,#fff 0,#fafaff 100%)}
+  #fs-journey .fs-review-rail{display:grid;grid-template-columns:repeat(4,1fr);margin:50px 0 28px}.fs-review-step{display:flex;gap:10px;align-items:center;color:#6d748e;font-weight:850}.fs-review-step b{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#e9ebf5}.fs-review-step.is-done b{background:var(--fs-mint);color:#fff}.fs-review-step.is-current b{background:var(--fs-violet);color:#fff}
+  #fs-journey .fs-review-grid{display:grid;grid-template-columns:1.35fr .8fr 1.1fr .75fr;gap:14px;align-items:stretch}
+  #fs-journey .fs-review-card{border:1px solid var(--fs-line);border-radius:18px;background:#fff;padding:20px;min-height:470px;box-shadow:0 16px 44px rgba(40,37,92,.07)}
+  #fs-journey .fs-resume-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.fs-prepared{color:#087746;background:var(--fs-mint-soft);padding:4px 8px;border-radius:6px;font-size:10px;font-weight:850}.fs-paper-title{font-size:18px;font-weight:900}.fs-paper-label{font-size:9px;letter-spacing:.12em;font-weight:900;margin-top:22px}.fs-paper-lines i{display:block;height:7px;background:#e7e9f1;border-radius:4px;margin:8px 0}.fs-paper-lines i:nth-child(2n){width:84%}
+  #fs-journey .fs-decision h3{font-size:18px}.fs-decision-step{position:relative;margin:24px 0;padding-left:40px;font-size:12px;color:var(--fs-text)}.fs-decision-step b{position:absolute;left:0;top:0;width:27px;height:27px;border-radius:50%;display:grid;place-items:center;background:#eef0f7}.fs-decision-step.done b{background:var(--fs-mint);color:#fff}.fs-decision-step.current{padding:13px 12px 13px 50px;background:var(--fs-lilac);border-radius:10px}.fs-decision-step.current b{left:12px;top:13px;background:var(--fs-violet);color:#fff}
+  #fs-journey .fs-gauge-card{display:flex;flex-direction:column}.fs-gauge{width:150px;height:150px;border-radius:50%;margin:30px auto 16px;background:conic-gradient(var(--fs-violet) var(--fs-time,0%),#eeeefe 0);display:grid;place-items:center;position:relative}.fs-gauge:after{content:"";position:absolute;inset:14px;border-radius:50%;background:#fff}.fs-gauge span{position:relative;z-index:1;width:102px;text-align:center;font-size:12px;font-weight:850}.fs-gauge-note{font-size:11px;color:var(--fs-muted);text-align:center}.fs-safety{margin-top:auto;border-top:1px solid var(--fs-line);padding-top:16px}.fs-safety div{font-size:11px;margin:10px 0;color:var(--fs-text)}
+  #fs-journey .fs-close{margin-top:80px;border-radius:24px;background:linear-gradient(135deg,#7169ff,#4f42ed);padding:56px 30px;color:#fff;text-align:center;box-shadow:0 28px 70px rgba(70,59,220,.25)}.fs-close h3{font-size:clamp(25px,3vw,39px);letter-spacing:-.035em}.fs-close .fs-actions{justify-content:center;margin-bottom:0}.fs-close .fs-btn-primary{background:#fff;color:var(--fs-violet);box-shadow:none}#fs-journey .fs-close .fs-btn.fs-btn-secondary{color:#fff;background:transparent;border-color:rgba(255,255,255,.6)}
+  #fs-journey .fs-foot{display:flex;justify-content:space-between;gap:20px;padding:28px 0 36px;color:var(--fs-muted);font-size:12px}.fs-foot nav{display:flex;gap:20px}
+  #fs-journey .fs-mobile-cta{display:none}
+  #fs-journey [data-reveal]{transform:translateY(24px);transition:transform .7s cubic-bezier(.2,.7,.2,1)}#fs-journey [data-reveal].is-visible{transform:none}
+
+  @media(max-width:980px){
+    #fs-journey .fs-links a:not(.fs-btn){display:none}#fs-journey .fs-hero{min-height:auto;padding-top:52px}#fs-journey .fs-hero-grid{grid-template-columns:1fr}#fs-journey .fs-scene{min-height:680px;margin-top:10px}#fs-journey .fs-pipeline{grid-template-columns:1fr 1fr}#fs-journey .fs-review-grid{grid-template-columns:1fr 1fr}#fs-journey .fs-stage-rail,#fs-journey .fs-review-rail{grid-template-columns:1fr 1fr;gap:18px}#fs-journey .fs-stage-rail:before{display:none}
+  }
+  @media(max-width:640px){
+    #fs-journey .fs-wrap{width:min(100% - 28px,1320px)}#fs-journey .fs-nav-in{height:62px}#fs-journey .fs-brand{font-size:22px}#fs-journey .fs-links .fs-btn{display:none}#fs-journey h1{font-size:48px}#fs-journey h2{font-size:39px}#fs-journey .fs-hero{padding-top:38px}#fs-journey .fs-scene{min-height:600px}#fs-journey .fs-browser{width:100%;height:340px}.fs-job{padding:22px!important;width:72%!important}.fs-job h3{font-size:19px!important}#fs-journey .fs-extension{width:210px;right:8px;top:72px;padding:12px}#fs-journey .fs-flow{top:315px;right:16%;width:180px;height:100px;border-width:0 17px 17px 0}#fs-journey .fs-workspace{width:96%;right:0;height:250px}#fs-journey .fs-side{display:none}#fs-journey .fs-job-in{margin:0;padding:20px}.fs-choice-row{grid-template-columns:1fr}.fs-choice:nth-child(n+2){display:none}#fs-journey .fs-scroll{display:none}#fs-journey .fs-chapter{padding:76px 0}#fs-journey .fs-stage-rail,#fs-journey .fs-review-rail{display:flex;overflow:auto;padding-bottom:8px}#fs-journey .fs-stage-tab,#fs-journey .fs-review-step{min-width:170px}#fs-journey .fs-pipeline,#fs-journey .fs-review-grid{grid-template-columns:1fr}#fs-journey .fs-panel{min-height:340px}#fs-journey .fs-panel:not(.is-active){display:none}#fs-journey .fs-review-card{min-height:390px}#fs-journey .fs-close{margin-top:52px;padding:42px 18px}#fs-journey .fs-foot{padding-bottom:90px;flex-direction:column}#fs-journey .fs-mobile-cta{display:flex;position:fixed;z-index:60;left:12px;right:12px;bottom:12px;min-height:54px;border-radius:13px;background:var(--fs-violet);color:#fff;align-items:center;justify-content:center;gap:10px;font-weight:900;box-shadow:0 15px 34px rgba(69,56,212,.34)}
+  }
+  @media(prefers-reduced-motion:reduce){#fs-journey *,#fs-journey *:before,#fs-journey *:after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}#fs-journey [data-reveal]{transform:none}}
+</style>
+
+<main id="fs-journey">
+  <nav class="fs-nav" aria-label="Primary"><div class="fs-wrap fs-nav-in">
+    <a class="fs-brand" href="https://app.1ststep.ai" aria-label="1stStep.ai home">1stStep<span>.ai</span></a>
+    <div class="fs-links"><a href="#fs-how">How it works</a><a href="#fs-safety">Safety</a><a href="#fs-pricing">Pricing</a><a class="fs-btn fs-btn-primary" href="https://chromewebstore.google.com/detail/1ststepai-job-agent/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener noreferrer"><i class="fs-chrome" aria-hidden="true"></i>Get the Chrome extension</a></div>
+  </div></nav>
+
+  <section class="fs-hero"><div class="fs-wrap fs-hero-grid">
+    <div data-reveal><h1>Turn any job page into your next application.</h1><p class="fs-lede">Capture the role in one click. 1stStep prepares your résumé, cover letter, and Job Agent review—without copy and paste.</p>
+      <div class="fs-actions"><a class="fs-btn fs-btn-primary" href="https://chromewebstore.google.com/detail/1ststepai-job-agent/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener noreferrer"><i class="fs-chrome" aria-hidden="true"></i>Get the Chrome extension</a><a class="fs-text-link" href="https://app.1ststep.ai/app/resume">Open Resume Builder →</a></div>
+      <p class="fs-truth">You review. 1stStep never submits for you.</p>
+    </div>
+    <div class="fs-scene" aria-label="A job moves from a browser page into the 1stStep workspace" data-reveal>
+      <div class="fs-browser"><div class="fs-browserbar"><span class="fs-dots"><i></i><i></i><i></i></span><span class="fs-address">careers.example.com/jobs/senior-operations-manager</span></div><div class="fs-job"><h3>Senior Operations Manager</h3><p>Northstar Logistics · Remote · Full-time</p><div class="fs-lines"><i></i><i></i><i></i><i></i></div></div><div class="fs-extension"><div class="fs-ext-head">1stStep<span>.ai</span></div><div class="fs-role"><strong>Senior Operations Manager</strong>Northstar Logistics</div><div class="fs-success">✓ Job captured</div><button class="fs-ext-button" type="button" data-demo-open>View in 1stStep →</button></div></div>
+      <div class="fs-flow" aria-hidden="true"></div>
+      <div class="fs-workspace"><aside class="fs-side"><strong>1stStep<span>.ai</span></strong><div>My Jobs</div><div>Résumé</div><div>Cover Letters</div><div>Job Agent</div></aside><div class="fs-job-in"><small>Captured from this job page · Just now</small><h3>Senior Operations Manager</h3><div class="fs-choice-row"><div class="fs-choice"><b>□</b>Tailor résumé →</div><div class="fs-choice"><b>✎</b>Create cover letter →</div><div class="fs-choice"><b>↗</b>Send to Job Agent →</div></div></div></div>
+      <a class="fs-scroll" href="#fs-how">See how it works</a>
+    </div>
+  </div></section>
+
+  <section class="fs-chapter" id="fs-how"><div class="fs-wrap fs-center">
+    <div data-reveal><h2>From job page to review-ready packet.</h2><p class="fs-lede">1stStep carries the role into your workflow and prepares the next useful step.</p></div>
+    <div class="fs-stage-rail" style="--fs-progress:25%" role="tablist" aria-label="Preparation journey">
+      <button class="fs-stage-tab is-active" role="tab" aria-selected="true" data-stage="0"><span>1</span>Role captured</button><button class="fs-stage-tab" role="tab" aria-selected="false" data-stage="1"><span>2</span>Résumé tailored</button><button class="fs-stage-tab" role="tab" aria-selected="false" data-stage="2"><span>3</span>Cover letter drafted</button><button class="fs-stage-tab" role="tab" aria-selected="false" data-stage="3"><span>✓</span>Ready for your review</button>
+    </div>
+    <div class="fs-pipeline" data-reveal>
+      <article class="fs-panel is-active"><div class="fs-panel-head">1stStep<span>.ai</span> · Capture</div><div class="fs-mini-job"><small>Current job page</small><h3>Senior Operations Manager</h3><p>Northstar Logistics</p><div class="fs-lines"><i></i><i></i><i></i><i></i></div><div class="fs-status">✓ Role captured</div></div></article>
+      <article class="fs-panel"><div class="fs-panel-head">Tailoring your résumé</div><div class="fs-compare"><div class="fs-doc"><strong>Your résumé</strong><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="fs-doc"><strong>For this role</strong><i class="violet"></i><i></i><i class="violet"></i><i></i><i class="violet"></i><i></i></div></div><div class="fs-status">Relevant experience reframed</div></article>
+      <article class="fs-panel"><div class="fs-panel-head">Drafting your cover letter</div><div class="fs-letter"><strong>Dear Hiring Team,</strong><i></i><i class="violet"></i><i></i><i class="violet"></i><i></i><i></i><i></i></div><div class="fs-status">✓ Cover letter drafted</div></article>
+      <article class="fs-panel fs-ready"><div class="fs-ready-mark">▤</div><h3>Ready for your review</h3><p class="fs-truth">Résumé and cover letter prepared.</p><a class="fs-btn fs-btn-primary" href="https://app.1ststep.ai/app/resume">Review in 1stStep</a></article>
+    </div>
+    <p class="fs-safety-line">No invented experience. Nothing is sent without you.</p><div class="fs-controls"><button type="button" data-replay>↻ Replay journey</button><button type="button" data-pause aria-pressed="false">Ⅱ Pause</button></div>
+  </div></section>
+
+  <section class="fs-chapter fs-outcome" id="fs-safety"><div class="fs-wrap fs-center">
+    <div data-reveal><h2>You stay in control. The busywork stays behind.</h2><p class="fs-lede">Review the packet, handle any employer-only questions, and decide what happens next.</p></div>
+    <div class="fs-review-rail" aria-label="Application progress"><div class="fs-review-step is-done"><b>✓</b>Captured</div><div class="fs-review-step is-done"><b>✓</b>Prepared</div><div class="fs-review-step is-current"><b>3</b>Needs your review</div><div class="fs-review-step"><b>4</b>You submit</div></div>
+    <div class="fs-review-grid" data-reveal>
+      <article class="fs-review-card"><div class="fs-resume-head"><strong>Your résumé</strong><span class="fs-prepared">Prepared</span></div><div class="fs-paper-title">Senior Operations Manager</div><div class="fs-paper-label">PROFESSIONAL SUMMARY</div><div class="fs-paper-lines"><i></i><i></i></div><div class="fs-paper-label">KEY SKILLS</div><div class="fs-paper-lines"><i></i><i></i></div><div class="fs-paper-label">PROFESSIONAL EXPERIENCE</div><div class="fs-paper-lines"><i></i><i></i><i></i><i></i><i></i></div></article>
+      <article class="fs-review-card fs-decision"><h3>Your review</h3><p class="fs-truth">This is your packet. Review, make edits, and choose what happens next.</p><div class="fs-decision-step done"><b>✓</b><strong>Résumé prepared</strong></div><div class="fs-decision-step done"><b>✓</b><strong>Cover letter prepared</strong></div><div class="fs-decision-step current"><b>3</b><strong>Review and make changes</strong><br>Edit content and add employer-only details.</div><div class="fs-decision-step"><b>4</b><strong>You submit</strong><br>Apply on the employer’s site when ready.</div></article>
+      <article class="fs-review-card"><div class="fs-resume-head"><strong>Your cover letter</strong><span class="fs-prepared">Prepared</span></div><div class="fs-paper-title">Dear Hiring Team,</div><div class="fs-paper-lines"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></article>
+      <aside class="fs-review-card fs-gauge-card"><strong>Time returned to you</strong><div class="fs-gauge"><span>Starts after your first captured job</span></div><p class="fs-gauge-note">Based on completed capture and preparation steps—not applications or hiring outcomes.</p><div class="fs-safety"><strong>Your privacy and safety</strong><div>⌑ &nbsp; No passwords</div><div>◇ &nbsp; No CAPTCHA bypass</div><div>⊘ &nbsp; No automatic submission</div></div></aside>
+    </div>
+    <div class="fs-close" id="fs-pricing"><h3>Start with free résumé tools. Unlock Job Agent when you’re ready.</h3><div class="fs-actions"><a class="fs-btn fs-btn-primary" href="https://chromewebstore.google.com/detail/1ststepai-job-agent/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener noreferrer"><i class="fs-chrome" aria-hidden="true"></i>Get the Chrome extension</a><a class="fs-btn fs-btn-secondary" href="https://app.1ststep.ai/app/resume">Open Resume Builder</a></div></div>
+    <footer class="fs-foot"><span>© 1stStep.ai</span><nav aria-label="Legal"><a href="https://app.1ststep.ai/privacy">Privacy</a><a href="https://app.1ststep.ai/terms">Terms</a><a href="mailto:support@1ststep.ai">Support</a></nav></footer>
+  </div></section>
+  <a class="fs-mobile-cta" href="https://chromewebstore.google.com/detail/1ststepai-job-agent/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener noreferrer"><i class="fs-chrome" aria-hidden="true"></i>Get the Chrome extension</a>
+</main>
+
+<script>
+(function(){
+  var root=document.getElementById('fs-journey'); if(!root||root.dataset.ready)return; root.dataset.ready='true';
+  var tabs=[].slice.call(root.querySelectorAll('[data-stage]')); var panels=[].slice.call(root.querySelectorAll('.fs-pipeline .fs-panel')); var rail=root.querySelector('.fs-stage-rail'); var pause=root.querySelector('[data-pause]'); var timer=null; var current=0; var paused=false; var reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function show(index,user){current=(index+tabs.length)%tabs.length; tabs.forEach(function(tab,i){var done=i<current;tab.classList.toggle('is-active',i===current);tab.classList.toggle('is-done',done);tab.setAttribute('aria-selected',String(i===current));});panels.forEach(function(panel,i){panel.classList.toggle('is-active',i===current)});if(rail)rail.style.setProperty('--fs-progress',((current+1)/tabs.length*100)+'%');if(user)restart();}
+  function tick(){if(!paused&&!document.hidden)show((current+1)%tabs.length,false)}
+  function restart(){clearInterval(timer);if(!reduced)timer=setInterval(tick,2600)}
+  tabs.forEach(function(tab,i){tab.addEventListener('click',function(){show(i,true)});tab.addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();var n=e.key==='ArrowRight'?i+1:i-1;tabs[(n+tabs.length)%tabs.length].focus();show(n,true)}})});
+  root.querySelector('[data-replay]').addEventListener('click',function(){paused=false;pause.setAttribute('aria-pressed','false');pause.textContent='Ⅱ Pause';show(0,true)});
+  pause.addEventListener('click',function(){paused=!paused;pause.setAttribute('aria-pressed',String(paused));pause.textContent=paused?'▶ Play':'Ⅱ Pause'});
+  var reveals=[].slice.call(root.querySelectorAll('[data-reveal]')); if('IntersectionObserver'in window){var io=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting)entry.target.classList.add('is-visible')})},{threshold:.15});reveals.forEach(function(el){io.observe(el)})}else{reveals.forEach(function(el){el.classList.add('is-visible')})}
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)restart()});
+  function attribution(){var params=new URLSearchParams(location.search);var data={};['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(k){if(params.get(k))data[k]=params.get(k).slice(0,160)});return data}
+  root.addEventListener('click',function(e){var el=e.target.closest('a,button');if(!el)return;var payload=Object.assign({event:'LANDING_CTA_CLICKED',label:(el.textContent||'').trim().slice(0,80),section:(el.closest('section')||{}).id||'hero'},attribution());try{window.dataLayer=window.dataLayer||[];window.dataLayer.push(payload);if(typeof window.gtag==='function')window.gtag('event',payload.event,payload)}catch(_){}});
+  show(reduced?3:0,false); if(reduced){paused=true;pause.setAttribute('aria-pressed','true');pause.textContent='▶ Play'}else restart();
+})();
+</script>
