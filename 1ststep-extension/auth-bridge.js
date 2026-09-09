@@ -61,7 +61,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 // once the correct entry was already gone -- at which point it delivered a
 // different job's data to the page.
 
-const CAPTURE_TTL_MS = 15 * 60 * 1000;
+const CAPTURE_TTL_MS = 24 * 60 * 60 * 1000;
 
 function captureIdFromUrl() {
   return new URLSearchParams(window.location.search).get('jobCaptureId') || '';

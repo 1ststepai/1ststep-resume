@@ -256,36 +256,6 @@
       to { transform: rotate(360deg); }
     }
 
-    .manual-section {
-      width: 100%;
-      margin-top: 14px;
-      text-align: left;
-    }
-
-    .manual-label {
-      font-size: 12px;
-      color: var(--text2);
-      margin-bottom: 6px;
-    }
-
-    .manual-textarea {
-      width: 100%;
-      height: 90px;
-      padding: 8px 10px;
-      border: 1px solid var(--border2);
-      border-radius: 8px;
-      font-size: 12px;
-      font-family: inherit;
-      color: var(--text);
-      background: var(--surface);
-      resize: none;
-      outline: none;
-      transition: border-color 0.15s;
-      display: block;
-    }
-
-    .manual-textarea:focus { border-color: var(--brand); }
-
     .open-app-link {
       display: inline-block;
       margin-top: 10px;
@@ -486,11 +456,11 @@
 
         <!-- Job info edit form — shown when title is missing or user clicks edit -->
         <div id="jobInfoForm" class="job-info-form" style="display:none;">
-          <div class="job-info-form-label">We couldn't detect the job title — please confirm:</div>
+          <div class="job-info-form-label">Confirm the job details:</div>
           <label class="sr-only" for="jobTitleInput">Job title</label>
           <input type="text" id="jobTitleInput" class="job-info-input" aria-label="Job title" placeholder="Job Title (required)" autocomplete="off">
           <label class="sr-only" for="companyInput">Company name</label>
-          <input type="text" id="companyInput" class="job-info-input" aria-label="Company name" placeholder="Company Name (optional)" autocomplete="off" style="margin-bottom:0;">
+          <input type="text" id="companyInput" class="job-info-input" aria-label="Company name" placeholder="Company Name (required)" autocomplete="off" style="margin-bottom:0;">
         </div>
 
         <!-- Tracker strip — shows pipeline status + quick-stage buttons -->
@@ -504,17 +474,16 @@
           <span id="matchJustification"></span>
         </div>
 
-        <div class="pitch">Use this page's visible job details in your 1stStep workspace.</div>
-        <div class="urgency">Review the captured title, company, and description before generating anything.</div>
+        <div class="pitch">Save this job once. 1stStep prepares the next steps in your application workflow.</div>
+        <div class="urgency">You review before anything is sent.</div>
         <div id="agentConnectionHint" class="urgency" role="status" aria-live="polite" style="display:none;"></div>
 
-        <button class="btn-primary" id="tailorBtn" style="width:100%">Use in Resume Builder →</button>
-        <button class="btn-secondary" id="coverLetterBtn" style="width:100%;margin-top:8px;flex:none;">Draft a cover letter</button>
-        <button class="btn-secondary" id="jobAgentBtn" style="display:none;width:100%;margin-top:8px;flex:none;">Review with Job Agent</button>
+        <button class="btn-primary" id="tailorBtn" style="width:100%">Save to My Jobs</button>
+        <button class="btn-secondary" id="jobAgentBtn" style="display:none;width:100%;margin-top:8px;flex:none;">Use in Resume Builder</button>
         <div id="fillResult" class="fill-result" role="status" aria-live="polite"></div>
 
         <div class="card-footer">
-          <span>Capture is user-triggered · Review before use</span>
+            <span>Job details only · no form answers read</span>
           <div style="display:flex;gap:10px;align-items:center;">
             <button class="edit-job-link" id="editJobBtn" style="display:none;">Edit job info</button>
             <button class="autofill-link" id="autofillBtn">Review match &amp; fill</button>
@@ -523,17 +492,12 @@
       </div>
 
       <div id="emptyState" class="empty-state">
-        <div class="empty-state-icon">🔍</div>
-        <div class="empty-state-title">We couldn't read this job page</div>
-        <div class="empty-state-desc">Highlight the job description on the page, then open 1stStep again. We will capture the selected text without copy and paste. Protected PDFs, sign-in walls, and closed frames may still need the fallback below.</div>
-
-        <div class="manual-section" id="manualSection">
-          <label class="manual-label" for="manualJdInput">Last resort — paste the job description:</label>
-          <textarea id="manualJdInput" class="manual-textarea" aria-label="Job description" placeholder="Paste the full job description here…"></textarea>
-          <button class="btn-primary" id="manualOpenBtn" style="width:100%; margin-top:8px; flex:none;">Use in Resume Builder</button>
-        </div>
-
-        <button class="btn-secondary" id="autofillEmptyBtn" style="width:100%; margin-top:10px; flex:none;">Review Greenhouse match &amp; fill</button>
+        <div class="empty-state-icon">↻</div>
+        <div class="empty-state-title">Open a complete job posting</div>
+        <div class="empty-state-desc">Try again, or highlight the job description before reopening 1stStep. No copying and pasting required.</div>
+        <button class="btn-primary" id="retryCaptureBtn" style="width:100%; margin-top:14px; flex:none;">Try this page again</button>
+        <button class="btn-secondary" id="openJobsBtn" style="width:100%; margin-top:8px; flex:none;">Open My Jobs</button>
+        <button class="btn-secondary" id="autofillEmptyBtn" style="display:none"></button>
       </div>
     </div>
 

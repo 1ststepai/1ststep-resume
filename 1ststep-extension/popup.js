@@ -5,7 +5,7 @@
 const APP_URL = 'https://app.1ststep.ai';
 
 // Keep in sync with background.js MODES
-const MODES = { TAILOR: 'tailor', COVER_LETTER: 'coverLetter', JOB_AGENT: 'jobAgent' };
+const MODES = { TAILOR: 'tailor', JOB_AGENT: 'jobAgent' };
 
 const statusBadge    = document.getElementById('statusBadge');
 const loadingState   = document.getElementById('loadingState');
@@ -23,6 +23,8 @@ const autofillBtn    = document.getElementById('autofillBtn');
 const autofillEmptyBtn = document.getElementById('autofillEmptyBtn');
 const openAppLink    = document.getElementById('openAppLink');
 const fillResultEl   = document.getElementById('fillResult');
+const retryCaptureBtn = document.getElementById('retryCaptureBtn');
+const openJobsBtn = document.getElementById('openJobsBtn');
 
 // ─── AUTH ────────────────────────────────────────────────────
 
@@ -41,7 +43,7 @@ async function checkAuth() {
 
 async function init() {
   try {
-    const auth = await checkAuth();
+    const [auth, job] = await Promise.all([checkAuth(), getCurrentJob()]);
 
     unauthState.style.display = 'none';
     statusBadge.textContent = auth.jobAgentAccess
@@ -49,7 +51,6 @@ async function init() {
       : auth.code === 'JOB_AGENT_APP_BRIDGE_UNAVAILABLE' ? 'Reconnect Agent' : 'Resume Tools';
     statusBadge.classList.toggle('authenticated', auth.jobAgentAccess);
 
-    const job = await getCurrentJob();
     if (job) {
       showJobCard(job, auth);
     } else {
@@ -79,15 +80,17 @@ function showEmptyState(auth) {
   jobCard.classList.remove('visible');
   emptyState.style.display   = 'flex';
 
-  // Wire manual paste → open in app
-  const manualOpenBtn = document.getElementById('manualOpenBtn');
-  if (manualOpenBtn) {
-    manualOpenBtn.onclick = () => {
-      const jd = document.getElementById('manualJdInput')?.value?.trim();
-      if (!jd) { manualOpenBtn.textContent = 'Paste a description first'; setTimeout(() => { manualOpenBtn.textContent = 'Use in Resume Builder'; }, 2000); return; }
-      openInApp({ jobTitle: '', company: '', jobDescription: jd, applyUrl: '', site: 'manual' }, manualOpenBtn);
-    };
-  }
+  if (retryCaptureBtn) retryCaptureBtn.onclick = async () => {
+    retryCaptureBtn.disabled = true;
+    retryCaptureBtn.textContent = 'Checking this page…';
+    const job = await getCurrentJob();
+    if (job) showJobCard(job, auth);
+    else {
+      retryCaptureBtn.textContent = 'No complete job found';
+      setTimeout(() => { retryCaptureBtn.textContent = 'Try this page again'; retryCaptureBtn.disabled = false; }, 2200);
+    }
+  };
+  if (openJobsBtn) openJobsBtn.onclick = () => chrome.tabs.create({ url: `${APP_URL}/concierge#jobs` });
 
   // Auto-fill still works without a detected job
   if (autofillEmptyBtn && auth?.jobAgentAccess) {
@@ -112,10 +115,11 @@ function showJobCard(job, auth) {
   }
 
   const titleMissing = !job.jobTitle || job.jobTitle === 'Unknown Role';
+  const companyMissing = !job.company;
 
   jobTitleEl.textContent = job.jobTitle || 'Unknown Role';
   companyEl.textContent  = job.company  || '';
-  siteEl.textContent     = (job.site    || 'unknown').toUpperCase();
+  siteEl.textContent     = (job.site || 'Job posting').replace(/^www\./i, '');
   if (capturedDetailsEl) {
     capturedDetailsEl.textContent = [job.location, job.salaryText].filter(Boolean).join(' · ');
     capturedDetailsEl.style.display = capturedDetailsEl.textContent ? 'block' : 'none';
@@ -147,8 +151,8 @@ function showJobCard(job, auth) {
   if (companyInput)  companyInput.value  = job.company || '';
 
   // Show edit form immediately if title unknown; show edit link otherwise
-  if (jobInfoForm) jobInfoForm.style.display = titleMissing ? 'block' : 'none';
-  if (editJobBtn)  editJobBtn.style.display  = titleMissing ? 'none'  : 'inline';
+  if (jobInfoForm) jobInfoForm.style.display = titleMissing || companyMissing ? 'block' : 'none';
+  if (editJobBtn)  editJobBtn.style.display  = titleMissing || companyMissing ? 'none' : 'inline';
 
   if (editJobBtn) {
     editJobBtn.onclick = () => {
@@ -181,39 +185,34 @@ function showJobCard(job, auth) {
 
   function validateAndOpen(btn, mode = MODES.TAILOR) {
     const title = jobTitleInput?.value.trim() || job.jobTitle || '';
-    if (!title || title === 'Unknown Role') {
+    const company = companyInput?.value.trim() || job.company || '';
+    if (!title || title === 'Unknown Role' || !company) {
       if (jobInfoForm) jobInfoForm.style.display = 'block';
-      if (jobTitleInput) {
+      if ((!title || title === 'Unknown Role') && jobTitleInput) {
         jobTitleInput.classList.add('required-error');
         jobTitleInput.focus();
         jobTitleInput.placeholder = 'Job Title is required';
       }
+      if (!company && companyInput) {
+        companyInput.classList.add('required-error');
+        if (title && title !== 'Unknown Role') companyInput.focus();
+        companyInput.placeholder = 'Company Name is required';
+      }
       return;
     }
     if (jobTitleInput) jobTitleInput.classList.remove('required-error');
+    if (companyInput) companyInput.classList.remove('required-error');
     openInApp(buildJob(), btn, mode);
   }
 
-  tailorBtn.onclick = () => validateAndOpen(tailorBtn);
-
-  const coverLetterBtn = document.getElementById('coverLetterBtn');
-  if (coverLetterBtn) {
-    coverLetterBtn.onclick = () => {
-      const title = jobTitleInput?.value.trim() || job.jobTitle || '';
-      if (!title || title === 'Unknown Role') {
-        if (jobInfoForm) jobInfoForm.style.display = 'block';
-        if (jobTitleInput) { jobTitleInput.classList.add('required-error'); jobTitleInput.focus(); }
-        return;
-      }
-      if (jobTitleInput) jobTitleInput.classList.remove('required-error');
-      openInApp(buildJob(), coverLetterBtn, MODES.COVER_LETTER);
-    };
-  }
+  tailorBtn.textContent = auth?.jobAgentAccess ? 'Save to My Jobs' : 'Use in Resume Builder';
+  tailorBtn.onclick = () => validateAndOpen(tailorBtn, auth?.jobAgentAccess ? MODES.JOB_AGENT : MODES.TAILOR);
 
   const jobAgentBtn = document.getElementById('jobAgentBtn');
   if (jobAgentBtn && auth?.jobAgentAccess) {
     jobAgentBtn.style.display = 'block';
-    jobAgentBtn.onclick = () => validateAndOpen(jobAgentBtn, MODES.JOB_AGENT);
+    jobAgentBtn.textContent = 'Use in Resume Builder';
+    jobAgentBtn.onclick = () => validateAndOpen(jobAgentBtn, MODES.TAILOR);
   } else if (jobAgentBtn) {
     jobAgentBtn.style.display = 'none';
   }

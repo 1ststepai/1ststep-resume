@@ -73,7 +73,7 @@ async function getJobAgentStatus() {
 // change. The content-script bridge reads pendingJobs for delivery but never
 // writes it.
 
-const CAPTURE_TTL_MS = 15 * 60 * 1000;
+const CAPTURE_TTL_MS = 24 * 60 * 60 * 1000;
 let pendingJobsMutation = Promise.resolve();
 
 function expirePendingJobs(pendingJobs, now = Date.now()) {

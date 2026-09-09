@@ -255,7 +255,7 @@ const job = id => ({ jobData: { jobTitle: `Role ${id}`, company: `Co ${id}`, job
 // A7. An expired capture is not delivered.
 {
   const stale = job(1);
-  stale.createdAt = Date.now() - (16 * 60 * 1000);
+  stale.createdAt = Date.now() - (25 * 60 * 60 * 1000);
   const ext = createExtension({ pendingJobs: { 'cap-1': stale } });
   const page = attachBridge(ext, { search: '?jobCaptureId=cap-1' });
   await settle();

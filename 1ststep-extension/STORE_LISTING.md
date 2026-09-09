@@ -1,13 +1,13 @@
-# Draft controlled-beta store listing
+# Draft Chrome Web Store listing
 
-## 1stStep.ai — capture a job, tailor truthfully
+## 1stStep.ai Job Agent
 
-Open a job posting, click 1stStep (or use the page menu/keyboard shortcut), review the detected title, company, location, pay disclosure, and description, then send it to the Resume Builder, cover-letter workflow, or supervised Job Agent review. A `JOB` badge confirms successful capture. Capture includes JobPosting structured data and dedicated handling for Workday, Lever, Ashby, SmartRecruiters, and Greenhouse. On an unusual layout, highlight the description and click 1stStep again—no copy and paste. Manual paste is the last fallback. The extension reads only the page you select when you invoke it; it does not monitor general browsing or request permanent access to every site.
+Save a job posting to My Jobs in one click—without copying and pasting the description. 1stStep captures the visible job details, opens your Job Agent, and prepares the next step. You can also send the job directly to Resume Builder.
 
-For approved Greenhouse applications, invited Job Agent users can separately review the verified match and fill only confirmed ordinary fields. A visible completion summary reports how many approved fields were filled, highlights required fields that still need the applicant, and confirms that nothing was submitted. 1stStep pauses for passwords, OTPs, CAPTCHAs, identity checks, non-résumé uploads, unusual questions, and every final submission.
+On supported application pages, 1stStep can fill an approved résumé and ordinary verified fields after you review the match. It pauses for passwords, one-time codes, CAPTCHAs, identity checks, sensitive questions, unusual questions, and final submission.
 
-The extension stores no profile, résumé, auth token, employer answer, or local Applied status. It never submits an application. 1stStep counts Submitted only after separate authoritative employer-receipt verification.
+The extension does not store your profile, résumé, sign-in token, answers, or application status. It never marks an application Submitted without verified employer receipt.
 
-Job capture supports ordinary HTTP(S) pages with visible job content, including accessible embedded job frames, and does not require Job Agent access. It cannot bypass sign-in walls and may require manual paste for protected PDFs, inaccessible frames, or closed components. Form filling remains limited to standard hosted Greenhouse requisitions and requires an invited Job Agent account, completed fact vault, approved role package, and an open signed-in `app.1ststep.ai` tab.
+Job capture works on ordinary web pages with visible job content. Protected pages and inaccessible embedded content may prevent capture. Filling requires a supported page, an eligible Job Agent account, approved information, and an open signed-in `app.1ststep.ai` tab.
 
 Do not publish this listing until product-owner approval, counsel/ATS terms review, privacy disclosure review, supervised synthetic acceptance evidence, store packaging review, and a separately authorized release decision are complete.

@@ -6,10 +6,10 @@ This package has two explicit user flows: capture the visible job page into the 
 
 1. Open a job posting and click the extension, press `Alt+Shift+1`, or use the page menu to send the job directly to Resume Builder or Job Agent review.
 2. The extension uses the temporary `activeTab` grant to inspect that page only. It prefers JobPosting structured data, then adapters for Workday, Lever, Ashby, SmartRecruiters, and Greenhouse, then visible job-description containers. Accessible embedded frames are checked only during that click. It does not request permanent access to every website.
-3. Review or correct the captured title, company, location, pay disclosure, and description, then choose Resume Builder, cover letter, or Job Agent review. If the layout is unusual, highlight the description and click the extension again; manual paste remains the last fallback.
-4. A unique capture is kept locally for up to 15 minutes and removed only after the matching 1stStep page confirms it was saved.
+3. Review or correct the captured title and company, then choose Job Agent or Resume Builder. If the layout is unusual, highlight the description and click the extension again.
+4. A unique capture is kept locally for up to 24 hours and removed only after the matching 1stStep page confirms it was saved.
 
-After an explicit capture, the toolbar badge shows `JOB` when a posting was found or `?` when the page needs highlighted text/manual review. Greenhouse fill results remain visible on the page: approved-field progress, highlighted required fields that still need the applicant, and an explicit reminder that nothing was submitted.
+After an explicit capture, the toolbar badge shows `JOB` when a posting was found or `?` when the page needs highlighted-text review. Fill results remain visible on supported pages: approved-field progress, highlighted required fields that still need the applicant, and an explicit reminder that nothing was submitted.
 
 Capture works on ordinary HTTP(S) pages whose job details are available in the rendered document or an accessible embedded frame. It cannot bypass sign-in walls, read browser-internal pages, or guarantee extraction from protected PDFs, inaccessible frames, or closed shadow roots.
 

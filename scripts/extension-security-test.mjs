@@ -107,11 +107,14 @@ assert.match(conciergeJs, /Job already saved; duplicate suppressed/,
 assert.deepEqual(manifest.host_permissions.sort(), ['https://*.greenhouse.io/*', 'https://app.1ststep.ai/*'].sort());
 assert.equal(manifest.permissions.includes('scripting'), true);
 assert.equal(manifest.permissions.includes('contextMenus'), true);
+assert.equal(manifest.permissions.includes('tabs'), false);
+assert.equal(manifest.permissions.includes('sidePanel'), false);
+assert.equal('side_panel' in manifest, false);
 assert.equal(manifest.permissions.includes('cookies'), false);
 assert.equal(manifest.host_permissions.includes('<all_urls>'), false);
 assert.equal(manifest.content_scripts[0].all_frames, false);
 assert.equal('web_accessible_resources' in manifest, false);
-assert.equal(manifest.description.toLowerCase().includes('greenhouse'), true);
+assert.equal(manifest.description.toLowerCase().includes('greenhouse'), false);
 
 assert.match(files['content.js'], /sendResponse\(\{ success: true, reviewRequired: true, matchAssessment, filled: 0, submitted: false/);
 assert.ok(files['content.js'].indexOf('reviewRequired: true') < files['content.js'].indexOf('if (await fillApprovedResume'), 'match review must happen before document or ordinary-field mutation');
