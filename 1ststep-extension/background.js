@@ -3,6 +3,8 @@ const APP_URL = 'https://app.1ststep.ai';
 const MODES = { TAILOR: 'tailor', COVER_LETTER: 'coverLetter', JOB_AGENT: 'jobAgent' };
 const JOB_AGENT_STATUS_CACHE_KEY = 'jobAgentStatusCache';
 const JOB_AGENT_STATUS_CACHE_TTL_MS = 5 * 60 * 1000;
+const CONTEXT_MENU_RESUME = 'firststep-capture-resume';
+const CONTEXT_MENU_AGENT = 'firststep-capture-agent';
 
 function compactJobAgentCapabilities(value = {}) {
   return {
@@ -109,6 +111,81 @@ function consumeCapture(captureId) {
   });
 }
 
+function captureScore(candidate) {
+  const methodPriority = {
+    'structured-job-posting': 5,
+    'greenhouse-job-data': 4,
+    'workday-visible': 3,
+    'lever-visible': 3,
+    'ashby-visible': 3,
+    'smartrecruiters-visible': 3,
+    'selected-text': 2,
+    'visible-page': 1,
+  };
+  return (methodPriority[candidate?.captureMethod] || 0) * 100_000
+    + String(candidate?.jobDescription || '').length
+    + (candidate?.jobTitle ? 500 : 0)
+    + (candidate?.company ? 250 : 0);
+}
+
+function normalizeCapturedCandidate(candidate, tab) {
+  if (!candidate?.jobDescription) return null;
+  let pageSite = candidate.site || 'job-page';
+  try { pageSite = new URL(tab?.url || candidate.applyUrl).hostname.replace(/^www\./, ''); } catch (_) {}
+  return {
+    ...candidate,
+    applyUrl: tab?.url || candidate.applyUrl || '',
+    site: pageSite,
+  };
+}
+
+async function captureJobFromTab(tab) {
+  if (!Number.isInteger(tab?.id) || !/^https?:\/\//i.test(String(tab.url || ''))) return null;
+  let injected;
+  try {
+    injected = await chrome.scripting.executeScript({
+      target: { tabId: tab.id, allFrames: true },
+      files: ['generic-capture.js'],
+    });
+  } catch (_) {
+    injected = await chrome.scripting.executeScript({
+      target: { tabId: tab.id, allFrames: false },
+      files: ['generic-capture.js'],
+    });
+  }
+  return (injected || [])
+    .map(frame => normalizeCapturedCandidate(frame?.result, tab))
+    .filter(Boolean)
+    .sort((left, right) => captureScore(right) - captureScore(left))[0] || null;
+}
+
+async function setTabCapability(tabId, job = null) {
+  if (!Number.isInteger(tabId)) return;
+  await chrome.action.setBadgeBackgroundColor({ tabId, color: job ? '#4F46E5' : '#64748B' });
+  await chrome.action.setBadgeText({ tabId, text: job ? 'JOB' : '?' });
+  await chrome.action.setTitle({
+    tabId,
+    title: job
+      ? `1stStep.ai detected ${job.jobTitle || 'a job'} — click to review`
+      : '1stStep.ai could not read a job here — highlight the description and try again',
+  });
+}
+
+async function openCapturedJob(jobData, mode = MODES.TAILOR) {
+  const jobCaptureId = crypto.randomUUID();
+  await mutatePendingJobs(pendingJobs => {
+    expirePendingJobs(pendingJobs);
+    pendingJobs[jobCaptureId] = { jobData, mode, createdAt: Date.now() };
+  });
+  const targetUrl = mode === MODES.JOB_AGENT
+    ? `${APP_URL}/concierge?jobCaptureId=${jobCaptureId}&mode=${mode}`
+    : `${APP_URL}/app/resume?jobCaptureId=${jobCaptureId}&mode=${mode}`;
+  const tabs = await chrome.tabs.query({ url: `${APP_URL}/*` });
+  if (tabs.length) await chrome.tabs.update(tabs[0].id, { active: true, url: targetUrl });
+  else await chrome.tabs.create({ url: targetUrl });
+  return { success: true, jobCaptureId };
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   (async () => {
     try {
@@ -125,6 +202,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.action === 'COMPLETE_GREENHOUSE_HANDOFF') return sendResponse(await relayThroughApp('complete', request.payload));
       if (request.action === 'JOB_DETECTED') {
         await chrome.storage.session.set({ current_job: { site: request.site, jobId: request.jobId, jobTitle: request.jobTitle, company: request.company, jobDescription: request.jobDescription, applyUrl: request.applyUrl, detectedAt: Date.now() } });
+        await setTabCapability(sender?.tab?.id, request);
         return sendResponse({ success: true });
       }
       if (request.action === 'GET_CURRENT_JOB') {
@@ -139,20 +217,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const consumed = await consumeCapture(request.captureId);
         return sendResponse({ success: true, consumed });
       }
+      if (request.action === 'CAPTURE_ACTIVE_TAB') {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const job = await captureJobFromTab(tab);
+        await setTabCapability(tab?.id, job);
+        return sendResponse({ success: true, job });
+      }
       if (request.action === 'OPEN_IN_APP') {
-        const jobCaptureId = crypto.randomUUID();
-        const mode = request.mode || MODES.TAILOR;
-        await mutatePendingJobs(pendingJobs => {
-          expirePendingJobs(pendingJobs);
-          pendingJobs[jobCaptureId] = { jobData: request.jobData, mode, createdAt: Date.now() };
-        });
-        const targetUrl = mode === MODES.JOB_AGENT
-          ? `${APP_URL}/concierge?jobCaptureId=${jobCaptureId}&mode=${mode}`
-          : `${APP_URL}/app/resume?jobCaptureId=${jobCaptureId}&mode=${mode}`;
-        const tabs = await chrome.tabs.query({ url: `${APP_URL}/*` });
-        if (tabs.length) await chrome.tabs.update(tabs[0].id, { active: true, url: targetUrl });
-        else await chrome.tabs.create({ url: targetUrl });
-        return sendResponse({ success: true, jobCaptureId });
+        return sendResponse(await openCapturedJob(request.jobData, request.mode || MODES.TAILOR));
       }
       sendResponse({ success: false, error: 'Unknown action' });
     } catch (error) {
@@ -163,5 +235,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 chrome.runtime.onInstalled.addListener(details => {
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({ id: CONTEXT_MENU_RESUME, title: 'Use this job in 1stStep Resume Builder', contexts: ['page', 'selection'] });
+    chrome.contextMenus.create({ id: CONTEXT_MENU_AGENT, title: 'Review this job with 1stStep Job Agent', contexts: ['page', 'selection'] });
+  });
   if (details.reason === 'install') chrome.tabs.create({ url: `${APP_URL}/concierge?welcome=extension` });
+});
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (![CONTEXT_MENU_RESUME, CONTEXT_MENU_AGENT].includes(info.menuItemId)) return;
+  (async () => {
+    const job = await captureJobFromTab(tab);
+    await setTabCapability(tab?.id, job);
+    if (!job) return;
+    await openCapturedJob(job, info.menuItemId === CONTEXT_MENU_AGENT ? MODES.JOB_AGENT : MODES.TAILOR);
+  })().catch(() => setTabCapability(tab?.id, null));
 });

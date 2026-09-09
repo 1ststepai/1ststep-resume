@@ -5,6 +5,7 @@
 - `scripting`: injects the packaged, local-only job capture script into that user-selected active tab. It does not load remote code or run in the background on arbitrary sites.
 - `tabs`: locates the user-selected page and the open signed-in 1stStep tab, or opens the correct 1stStep workspace.
 - `sidePanel`: retained for the packaged shell; it only directs the user to the account-backed workspace.
+- `contextMenus`: adds explicit “Use this job” and “Review with Job Agent” actions to the page menu. Those clicks use the same temporary `activeTab` capture path as the toolbar and do not enable background monitoring.
 - `https://*.greenhouse.io/*`: value-free schema detection and user-initiated filling on the exact verified hosted Greenhouse requisition.
 - `https://app.1ststep.ai/*`: same-origin signed-session bridge. The extension never receives the session cookie or token.
 

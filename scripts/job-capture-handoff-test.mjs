@@ -58,7 +58,13 @@ function createExtension({ pendingJobs = {} } = {}) {
     },
     storage: { local: storageLocal, session: storageSession },
     tabs: { async query() { return []; }, async create() {}, async update() {}, sendMessage() {} },
-    action: { async setBadgeText() {}, async setBadgeBackgroundColor() {} },
+    action: { async setBadgeText() {}, async setBadgeBackgroundColor() {}, async setTitle() {} },
+    scripting: { async executeScript() { return []; } },
+    contextMenus: {
+      removeAll(callback) { callback?.(); },
+      create() {},
+      onClicked: { addListener() {} },
+    },
   };
 
   const sandbox = {

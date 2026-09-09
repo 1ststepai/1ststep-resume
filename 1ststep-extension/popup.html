@@ -441,6 +441,18 @@
       color: white;
       border-color: var(--brand);
     }
+
+    .fill-result {
+      display: none;
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 9px;
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      color: #3730a3;
+      font-size: 12px;
+      line-height: 1.4;
+    }
   </style>
 </head>
 <body>
@@ -499,6 +511,7 @@
         <button class="btn-primary" id="tailorBtn" style="width:100%">Use in Resume Builder →</button>
         <button class="btn-secondary" id="coverLetterBtn" style="width:100%;margin-top:8px;flex:none;">Draft a cover letter</button>
         <button class="btn-secondary" id="jobAgentBtn" style="display:none;width:100%;margin-top:8px;flex:none;">Review with Job Agent</button>
+        <div id="fillResult" class="fill-result" role="status" aria-live="polite"></div>
 
         <div class="card-footer">
           <span>Capture is user-triggered · Review before use</span>
