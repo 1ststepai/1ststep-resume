@@ -708,26 +708,27 @@
     gap: 10px;
   }
   .fs-social {
-    width: 34px;
-    height: 34px;
+    width: 30px;
+    height: 30px;
     display: grid;
     place-items: center;
-    border: 1px solid var(--line);
-    border-radius: 9px;
+    border: 0;
+    border-radius: 7px;
     color: var(--text);
     transition:
       color 0.18s,
-      border-color 0.18s,
       transform 0.18s;
   }
   .fs-social:hover {
     color: var(--ink);
-    border-color: var(--violet);
     transform: translateY(-2px);
   }
   .fs-social svg {
-    width: 17px;
-    height: 17px;
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+  }
+  .fs-social-instagram svg {
     fill: none;
     stroke: currentColor;
     stroke-width: 1.8;
@@ -1202,9 +1203,21 @@
           <nav class="fs-socials" aria-label="Social media">
             <a
               class="fs-social"
+              href="https://x.com/1ststepai"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="X"
+              title="X"
+              ><svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817-5.966 6.817H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.451-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"
+                ></path></svg
+            ></a>
+            <a
+              class="fs-social fs-social-instagram"
               href="https://www.instagram.com/1ststepdotai/"
               target="_blank"
-              rel="noopener"
+              rel="noopener noreferrer"
               aria-label="Instagram"
               title="Instagram"
               ><svg viewBox="0 0 24 24" aria-hidden="true">
@@ -1217,6 +1230,30 @@
                   fill="currentColor"
                   stroke="none"
                 ></circle></svg
+            ></a>
+            <a
+              class="fs-social"
+              href="https://www.linkedin.com/company/105262286/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+              title="LinkedIn"
+              ><svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.86-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.34V8.99h3.41v1.56h.05c.47-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.29ZM5.33 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12ZM7.11 20.45H3.55V8.99h3.56v11.46Z"
+                ></path></svg
+            ></a>
+            <a
+              class="fs-social"
+              href="https://www.youtube.com/@1ststepdotai"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="YouTube"
+              title="YouTube"
+              ><svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.75 15.5v-7l6.5 3.5-6.5 3.5Z"
+                ></path></svg
             ></a>
           </nav>
           <nav aria-label="Footer links">
