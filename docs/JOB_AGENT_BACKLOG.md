@@ -1,13 +1,15 @@
 # Job Agent — Prioritized Backlog
 
 Source: `docs/JOB_AGENT_DATA_FLOW_DISCLOSURE.md` (2026-09-01).
-Status of every item below: **RECORDED — NOT STARTED.** Nothing here has been designed, implemented, or mitigated. These are open items, not resolved ones.
+Unless a section says otherwise, its status is **RECORDED — NOT STARTED**. These are open items, not proof of Production readiness.
 
 ---
 
 ## P0-1 — Protected-category fields in the applicant vault
 
 **Blocks:** durable career-profile storage for real users.
+
+**Status 2026-09-09:** minimum-field design implemented in `lib/career-profile-fact-policy.js` and `docs/CAREER_PROFILE_FACT_POLICY.md`. It is fail closed, separates preferences and permissions from facts, excludes protected/contextual categories, and permits only bounded candidate-confirmed authorization/sponsorship values without automatic reuse. Storage activation remains blocked by P0-2 and P0-3 and by store/API runtime verification.
 
 **Finding.** `lib/applicant-vault-domain.js:17–21` defines a `CONSEQUENTAL_FIELDS` set that includes `criminalHistory`, `disability`, `veteranStatus`, `drugHealth`, `citizenship`, `clearance`, `background`, `sponsorship`, `authorization`, `exportControl`, `restrictiveAgreements`, `demographics` and others. Any of these may be written as a user-confirmed fact and stored encrypted for 365 days.
 
