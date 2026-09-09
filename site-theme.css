@@ -102,6 +102,8 @@ html[data-theme="light"] body[data-page="concierge"] .jobs-head p{font-size:14px
 html[data-theme="light"] body[data-page="concierge"] .jobs-section-head h3{font-size:18px}
 html[data-theme="light"] body[data-page="concierge"] .jobs-section-head p{font-size:14px}
 html[data-theme="light"] body[data-page="concierge"] .simple-job-meta{font-size:13px}
+html[data-theme="light"] body[data-page="concierge"] .agent-footer a{color:#52657d}
+html[data-theme="light"] body[data-page="concierge"] .agent-footer a:hover{color:#25364a}
 
 html[data-theme="light"] body[data-page="pricing"],html[data-theme="light"] body[data-page="legal"]{
   --dark:#f8fafc;--dark2:#fff;--dark3:#f1f5f9;--border:#d8e0ec;--text:#0f172a;--muted:#52627a;--blue:#4f46e5;
