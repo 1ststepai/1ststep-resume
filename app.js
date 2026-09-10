@@ -6852,11 +6852,6 @@ ${desc}`;
     // -- Subscription Verification ---------------------------------------------
     const SUB_CACHE_KEY = '1ststep_sub_cache';
     const SUB_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
-    const SUBSCRIPTION_TIERS = new Set(['free', 'essential', 'complete', 'pro']);
-    const SUBSCRIPTION_STATUSES = new Set([
-      '', 'active', 'trialing', 'owner_access', 'owner_verified_access',
-      'legacy_access_free', 'no_active_subscription', 'verification_code_sent', 'verification_required',
-    ]);
     let subscriptionRestoreChallenge = '';
 
     function hasActiveSubscription() {
@@ -6897,14 +6892,27 @@ ${desc}`;
         const resp = await fetch(`/api/subscription?email=${encodeURIComponent(email)}`, fetchOptions);
         if (!resp.ok) return null;
         const data = await resp.json();
-        const tier = SUBSCRIPTION_TIERS.has(data.tier) ? data.tier : 'free';
-        const status = SUBSCRIPTION_STATUSES.has(data.status) ? data.status : '';
-        const parsedExpiresInDays = Number(data.expiresInDays);
-        const expiresInDays = Number.isInteger(parsedExpiresInDays) && parsedExpiresInDays >= 0 && parsedExpiresInDays <= 3660
-          ? parsedExpiresInDays
-          : null;
+        let tier = 'free';
+        switch (data.tier) {
+          case 'essential': tier = 'essential'; break;
+          case 'complete': tier = 'complete'; break;
+          case 'pro': tier = 'pro'; break;
+          default: tier = 'free';
+        }
+        let status = '';
+        switch (data.status) {
+          case 'active': status = 'active'; break;
+          case 'trialing': status = 'trialing'; break;
+          case 'owner_access': status = 'owner_access'; break;
+          case 'owner_verified_access': status = 'owner_verified_access'; break;
+          case 'legacy_access_free': status = 'legacy_access_free'; break;
+          case 'no_active_subscription': status = 'no_active_subscription'; break;
+          case 'verification_code_sent': status = 'verification_code_sent'; break;
+          case 'verification_required': status = 'verification_required'; break;
+          default: status = '';
+        }
         // Cache the result
-        localStorage.setItem(SUB_CACHE_KEY, JSON.stringify({ email: String(email).trim().toLowerCase().slice(0, 254), tier, ts: Date.now(), expiresInDays, status }));
+        localStorage.setItem(SUB_CACHE_KEY, JSON.stringify({ email: String(email).trim().toLowerCase().slice(0, 254), tier, ts: Date.now(), status }));
         _applySubscriptionTier(tier, true);
         return { ...data, tier };
       } catch (err) {

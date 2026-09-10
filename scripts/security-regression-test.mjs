@@ -414,12 +414,14 @@ assert.doesNotMatch(appSource, /const \{ jobData, resumeText, mode, captureId \}
   'The extension capture bridge must not accept resume PII.');
 assert.doesNotMatch(appSource, /sessionStorage\.setItem\('1ststep_resume', resumeText\)/,
   'Untrusted extension messages must not write resume PII to browser storage.');
-assert.match(appSource, /SUBSCRIPTION_TIERS\.has\(data\.tier\) \? data\.tier : 'free'/,
-  'Subscription API tiers must be allowlisted before browser caching.');
-assert.match(appSource, /SUBSCRIPTION_STATUSES\.has\(data\.status\) \? data\.status : ''/,
-  'Subscription API statuses must be allowlisted before browser caching.');
+assert.match(appSource, /switch \(data\.tier\)[\s\S]{0,500}case 'pro':\s+tier = 'pro'/,
+  'Subscription API tiers must be mapped to literal values before browser caching.');
+assert.match(appSource, /switch \(data\.status\)[\s\S]{0,800}case 'verification_required':\s+status = 'verification_required'/,
+  'Subscription API statuses must be mapped to literal values before browser caching.');
 assert.doesNotMatch(appSource, /localStorage\.setItem\(SUB_CACHE_KEY,[^\n]+data\./,
   'Raw subscription API fields must not flow into browser storage.');
+assert.doesNotMatch(appSource, /localStorage\.setItem\(SUB_CACHE_KEY,[^\n]*expiresInDays/,
+  'Untrusted subscription expiry values must not be persisted in browser storage.');
 assert.match(appSource, /el\.textContent = String\(msg \|\| ''\)/,
   'Resume-analysis status must render model output as text.');
 assert.match(appSource, /tag\.textContent = value\.trim\(\)\.slice\(0, 100\)/,
