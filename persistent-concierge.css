@@ -662,3 +662,17 @@ body:has(.agent-app){background:#fff}
   .swipe-job-controls{display:grid;gap:14px;margin-top:16px;text-align:center}.swipe-position{display:flex;justify-content:space-between;color:#64748b;font-size:15px}.swipe-position strong{font-weight:600}.swipe-actions{display:grid;grid-template-columns:1fr 1.35fr;gap:12px}.swipe-actions button{display:flex;min-height:58px;align-items:center;justify-content:center;gap:8px;border:1px solid #cbd5e1;border-radius:12px;background:#f8fafc;color:#475569;font:700 15px/1 Inter,system-ui,sans-serif}.swipe-actions button span{font-size:25px;font-weight:400}.swipe-actions .swipe-prepare{border-color:#4338ca;background:#4338ca;color:#fff}.swipe-job-controls p,.swipe-job-controls small{margin:0;color:#64748b}.swipe-job-controls p{font-size:14px}.swipe-job-controls small{font-size:13px}.swipe-undo,.swipe-review-complete button{justify-self:center;border:0;background:transparent;color:#4338ca;font:650 14px/1.4 Inter,system-ui,sans-serif;text-decoration:underline;text-underline-offset:4px}.swipe-review-complete{min-height:360px;place-content:center;gap:12px;text-align:center}.swipe-review-complete strong{font-size:22px;color:#172033}.swipe-review-complete small{color:#64748b}
 }
 @media(prefers-reduced-motion:reduce){.swipe-job-card{transition:none!important}}
+
+/* Shared mobile foundation: safe areas, native-sized targets, and one full-screen task. */
+@media(max-width:720px){
+  .jobs-shell,.needs-sheet,.vault-shell,.guided-launch-shell{height:100vh;max-height:100vh}
+  @supports(height:100dvh){.jobs-shell,.needs-sheet,.vault-shell,.guided-launch-shell{height:100dvh;max-height:100dvh}}
+  .jobs-head,.needs-sheet>header,.vault-head{padding-top:max(16px,env(safe-area-inset-top));padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}
+  .guided-launch-header{height:auto;min-height:60px;padding-top:env(safe-area-inset-top);padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}
+  .jobs-body,.needs-sheet-body,.vault-body{padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right));padding-bottom:max(24px,calc(16px + env(safe-area-inset-bottom)));overscroll-behavior:contain}
+  .job-tabs{padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}
+  .needs-sheet{border:0;box-shadow:none}
+  .needs-sheet-body{background:#fff}
+  #jobsOverlay :where(button,[role="tab"]),#needsYouOverlay button,#vaultOverlay .vault-head button,#vaultOverlay .vault-body button,#guidedLaunchOverlay button{min-height:48px}
+  .guided-launch-form{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+}

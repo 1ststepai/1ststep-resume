@@ -112,6 +112,8 @@ let careerStoryActive = false;
 let activePackageRoleId = '';
 let activeJobTab = 'Matches';
 let jobsDialogTrigger = null;
+let needsDialogTrigger = null;
+let guidedLaunchDialogTrigger = null;
 const passedMatchIds = new Set();
 let lastPassedMatchId = '';
 let swipeGesture = null;
@@ -1863,6 +1865,7 @@ function renderGuidedLaunch() {
 }
 
 function openGuidedLaunch(options = {}) {
+  guidedLaunchDialogTrigger = document.activeElement;
   if (Number.isInteger(options.step)) guidedLaunchStep = Math.min(6, Math.max(0, options.step));
   if (guidedLaunchStep > 1 && !hasResume()) guidedLaunchStep = 1;
   guidedLaunchOpen = true;
@@ -1877,10 +1880,11 @@ function openGuidedLaunch(options = {}) {
 }
 
 function closeGuidedLaunch() {
+  const restoreFocus = $('guidedLaunchOverlay').contains(document.activeElement);
   guidedLaunchOpen = false;
   saveGuidedLaunchDraft();
   renderGuidedLaunch();
-  $('openGuidedLaunch')?.focus();
+  if (restoreFocus) (guidedLaunchDialogTrigger?.offsetParent !== null ? guidedLaunchDialogTrigger : $('openGuidedLaunch'))?.focus();
 }
 
 function advanceGuidedLaunch() {
@@ -2754,8 +2758,12 @@ function closeJobs() {
   $('jobsOverlay').classList.remove('open');
   if (restoreFocus) (jobsDialogTrigger?.offsetParent !== null ? jobsDialogTrigger : document.querySelector('#appMenu > summary'))?.focus();
 }
-function openNeedsYou() { renderNeedsYouQueue(); $('needsYouOverlay').classList.add('open'); $('closeNeedsYou').focus(); }
-function closeNeedsYou() { $('needsYouOverlay').classList.remove('open'); }
+function openNeedsYou() { needsDialogTrigger = document.activeElement; renderNeedsYouQueue(); $('needsYouOverlay').classList.add('open'); $('closeNeedsYou').focus(); }
+function closeNeedsYou() {
+  const restoreFocus = $('needsYouOverlay').contains(document.activeElement);
+  $('needsYouOverlay').classList.remove('open');
+  if (restoreFocus) (needsDialogTrigger?.offsetParent !== null ? needsDialogTrigger : document.querySelector('#appMenu > summary'))?.focus();
+}
 
 function renderAgentConfiguration() {
   const mission = missionState.mission || {};

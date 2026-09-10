@@ -149,6 +149,50 @@ test('mobile subscriber workspace keeps navigation and theme control in flow', a
   await page.screenshot({ path: join(tmpdir(), '1ststep-mobile-workspace-navigation.png'), fullPage: true });
 });
 
+test('mobile core sheets use safe full-screen layouts and Android-sized targets', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${base}/concierge?uiFixture=subscriber`, { waitUntil: 'networkidle' });
+
+  const expectMobileSheet = async selector => {
+    const layout = await page.locator(selector).evaluate(el => {
+      const box = el.getBoundingClientRect();
+      const controls = [...el.querySelectorAll('button')].filter(control => control.offsetParent !== null);
+      return {
+        height: Math.round(box.height),
+        viewportHeight: innerHeight,
+        noHorizontalOverflow: document.documentElement.scrollWidth <= innerWidth,
+        targets: controls.map(control => ({ label: control.textContent.trim(), height: Math.round(control.getBoundingClientRect().height) })),
+      };
+    });
+    expect(layout.height).toBeLessThanOrEqual(layout.viewportHeight);
+    expect(layout.noHorizontalOverflow).toBe(true);
+    expect(layout.targets.length).toBeGreaterThan(0);
+    expect(layout.targets.filter(target => target.height < 48)).toEqual([]);
+  };
+
+  await page.locator('#appMenu > summary').click();
+  await page.locator('#openNeedsYouMenu').click();
+  await expect(page.locator('.needs-sheet')).toBeVisible();
+  await expectMobileSheet('.needs-sheet');
+  await page.screenshot({ path: join(tmpdir(), '1ststep-mobile-needs-you-guidelines.png') });
+  await page.locator('#closeNeedsYou').click();
+  await expect(page.locator('#appMenu > summary')).toBeFocused();
+
+  await page.locator('#appMenu > summary').click();
+  await page.locator('#openVault').click();
+  await expect(page.locator('.vault-shell')).toBeVisible();
+  await expectMobileSheet('.vault-shell');
+  await page.screenshot({ path: join(tmpdir(), '1ststep-mobile-career-profile-guidelines.png') });
+  await page.locator('#closeVault').click();
+  await expect(page.locator('#appMenu > summary')).toBeFocused();
+
+  await page.locator('#openGuidedLaunch').evaluate(button => button.click());
+  await expect(page.locator('.guided-launch-shell')).toBeVisible();
+  await expectMobileSheet('.guided-launch-shell');
+  await page.screenshot({ path: join(tmpdir(), '1ststep-mobile-preferences-guidelines.png') });
+  await page.locator('#guidedLaunchClose').click();
+});
+
 test('reduced motion keeps workspace progress visible without animation', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(`${base}/app/resume`);
