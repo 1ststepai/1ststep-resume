@@ -4,3 +4,4 @@
 - Replaced the stale feature-era roadmap with current app/extension priorities and explicit release evidence.
 - Kept one source of truth because all four requested surfaces live in the same repository despite separate deployments.
 - Runtime health remains unknown without authenticated protected evidence; no deployment or production service was changed.
+- Wired a small deterministic contract test into `npm run smoke` instead of adding a separate framework or dependency.
