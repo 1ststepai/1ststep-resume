@@ -49,7 +49,7 @@ document.documentElement.classList.add('js');
     <nav class="nav-links" aria-label="Primary">
       <a href="#paths">Product</a>
       <a href="#how">How it works</a>
-      <a href="#details">Good to know</a>
+      <a href="#faq">Good to know</a>
       <a href="/pricing">Pricing</a>
       <a href="https://partners.1ststep.ai/">Affiliates</a>
     </nav>
@@ -63,7 +63,7 @@ document.documentElement.classList.add('js');
   <nav class="nav-sheet" id="navSheet" aria-label="Primary, compact">
     <a href="#paths">Product</a>
     <a href="#how">How it works</a>
-    <a href="#details">Good to know</a>
+    <a href="#faq">Good to know</a>
     <a href="/pricing">Pricing</a>
     <a href="https://partners.1ststep.ai/">Affiliates</a>
     <a href="/app">Sign in</a>
@@ -85,10 +85,14 @@ document.documentElement.classList.add('js');
         <a class="btn btn-quiet btn-lg" href="#how">See How It Works</a>
       </div>
       <div class="hero-evidence" aria-label="Product evidence">
-        <article>
-          <span>Verified founder test · August 24</span>
+        <article class="interview-proof">
+          <span>Verified founder test · August 24, 2026</span>
           <strong>First-round interview invitation received</strong>
-          <p>A role worked through with 1stStep was followed by an interview invitation. The employer made the decision.</p>
+          <p>A LogicSource role worked through with 1stStep led to a live phone interview. The employer made the decision.</p>
+          <div class="proof-receipt" aria-label="LogicSource interview invitation received August 24 for a 30-minute interview on August 25, 2026">
+            <span class="proof-date" aria-hidden="true"><b>AUG</b><strong>24</strong></span>
+            <span class="proof-receipt-copy"><small>INTERVIEW INVITATION</small><b>LogicSource</b><em>Aug 25 · 1:00–1:30 PM</em></span>
+          </div>
         </article>
         <article class="time-proof" data-motion-scene>
           <div class="time-proof-dial" role="img" aria-label="35 minutes saved on Evan's LogicSource application task">
@@ -238,13 +242,6 @@ document.documentElement.classList.add('js');
   </div>
 </section>
 
-<section class="compact-details" id="details" aria-labelledby="detailsTitle"><div class="wrap wrap-narrow">
-  <h2 id="detailsTitle">A few things worth knowing.</h2>
-  <details id="inside"><summary>How the agent helps</summary><p>It checks roles, prepares documents from your confirmed experience, and puts missing answers in one place. You review and submit applications yourself.</p></details>
-  <details id="compare"><summary>Job Agent or Résumé Builder?</summary><p>Use the Job Agent for your search, or the Résumé Builder when you already have a role in mind. Both keep you in control.</p></details>
-  <details id="security"><summary>Your information and your control</summary><p>No invented experience. Passwords and security codes are not reusable facts. You can correct your information and withdraw permission. 1stStep does not currently submit applications on your behalf.</p><a href="/privacy">Read our privacy policy</a></details>
-</div></section>
-
 <!-- ── FAQ ────────────────────────────────────────────────────────────────── -->
 <section id="faq" class="band">
   <div class="wrap wrap-narrow">
@@ -253,29 +250,11 @@ document.documentElement.classList.add('js');
       <h2>Straight answers.</h2>
     </div>
     <div class="faq reveal">
-      <details><summary>Will it apply for me without asking?</summary><div class="faq-body">No. Your agent prepares the materials. You review them and submit the application yourself.</div></details>
-      <details><summary>Does it need my passwords?</summary><div class="faq-body">No. Employer passwords are never asked for or kept as reusable facts. If a site makes you sign in, that step is handed to you.</div></details>
-      <details><summary>What happens at a security code or CAPTCHA?</summary><div class="faq-body">It stops and puts the step in your list. It does not try to solve CAPTCHAs, and it does not store one-time codes.</div></details>
+      <details><summary>Will it apply for me without asking?</summary><div class="faq-body">No. Your agent prepares the materials. You review them and submit the application yourself. 1stStep does not currently submit applications on your behalf, and you can pause a run or withdraw permission at any time.</div></details>
+      <details><summary>What happens at a sign-in, security code, or CAPTCHA?</summary><div class="faq-body">That step is handed to you. Employer passwords are never kept as reusable facts, one-time codes are not stored, and the agent does not try to solve CAPTCHAs.</div></details>
       <details><summary>Will the résumé sound like a robot wrote it?</summary><div class="faq-body">It is built from facts you confirmed and written for that specific job. Nothing is invented, and the output stays plain and ATS-safe rather than padded with buzzwords.</div></details>
-      <details><summary>How does it pick jobs?</summary><div class="faq-body">Against the criteria and confirmed facts you set. Roles under your stated bar are filtered out rather than counted toward a quota. Protected characteristics are never used for ranking.</div></details>
-      <details><summary>How are applications counted?</summary><div class="faq-body">Only when the employer confirms receipt. Written, ready, and waiting on you are tracked separately and never counted as submitted.</div></details>
-      <details><summary>How do I actually send the application?</summary><div class="faq-body">Review your prepared résumé and cover letter, then submit them on the employer’s website. 1stStep does not currently submit applications on your behalf.</div></details>
+      <details><summary>How does it pick and count jobs?</summary><div class="faq-body">It checks the criteria and confirmed facts you set. Roles under your stated bar are filtered out. An application counts as submitted only when the employer confirms receipt.</div></details>
       <details><summary>What does it cost?</summary><div class="faq-body"><strong>1stStep Complete will be $39/month</strong> when paid access opens. One membership includes the resume builder, cover-letter tools, tracker, extension workflow, and Job Agent. Early access is free by invitation, and there is no paid checkout today. Any later subscription requires your separate agreement.</div></details>
-      <details><summary>Can I stop it?</summary><div class="faq-body">Yes, at any time. You can pause a run, edit or delete confirmed facts, withdraw permission, and ask for your data to be deleted.</div></details>
-    </div>
-  </div>
-</section>
-
-<!-- ── Close ──────────────────────────────────────────────────────────────── -->
-<section class="close">
-  <div class="wrap">
-    <div class="close-inner reveal">
-      <h2>Start with one job, or hand over the search.</h2>
-      <p>Start with your résumé. Keep control of every next step.</p>
-      <div class="hero-cta center">
-        <a class="btn btn-primary btn-lg" href="/concierge">Start My Job Agent — Free</a>
-        <a class="btn btn-quiet btn-lg" href="#details">Good to know</a>
-      </div>
     </div>
   </div>
 </section>
@@ -357,17 +336,12 @@ document.documentElement.classList.add('js');
         {
           "@type": "Question",
           "name": "Will it apply for me without asking?",
-          "acceptedAnswer": { "@type": "Answer", "text": "No. Your agent prepares the materials. You review them and submit the application yourself." }
+          "acceptedAnswer": { "@type": "Answer", "text": "No. Your agent prepares the materials. You review them and submit the application yourself. 1stStep does not currently submit applications on your behalf, and you can pause a run or withdraw permission at any time." }
         },
         {
           "@type": "Question",
-          "name": "Does it need my passwords?",
-          "acceptedAnswer": { "@type": "Answer", "text": "No. Employer passwords are never asked for or kept as reusable facts. If a site makes you sign in, that step is handed to you." }
-        },
-        {
-          "@type": "Question",
-          "name": "What happens at a security code or CAPTCHA?",
-          "acceptedAnswer": { "@type": "Answer", "text": "It stops and puts the step in your list. It does not try to solve CAPTCHAs, and it does not store one-time codes." }
+          "name": "What happens at a sign-in, security code, or CAPTCHA?",
+          "acceptedAnswer": { "@type": "Answer", "text": "That step is handed to you. Employer passwords are never kept as reusable facts, one-time codes are not stored, and the agent does not try to solve CAPTCHAs." }
         },
         {
           "@type": "Question",
@@ -376,28 +350,13 @@ document.documentElement.classList.add('js');
         },
         {
           "@type": "Question",
-          "name": "How does it pick jobs?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Against the criteria and confirmed facts you set. Roles under your stated bar are filtered out rather than counted toward a quota. Protected characteristics are never used for ranking." }
-        },
-        {
-          "@type": "Question",
-          "name": "How are applications counted?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Only when the employer confirms receipt. Written, ready, and waiting on you are tracked separately and never counted as submitted." }
-        },
-        {
-          "@type": "Question",
-          "name": "How do I actually send the application?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Review your prepared résumé and cover letter, then submit them on the employer's website. 1stStep does not currently submit applications on your behalf." }
+          "name": "How does it pick and count jobs?",
+          "acceptedAnswer": { "@type": "Answer", "text": "It checks the criteria and confirmed facts you set. Roles under your stated bar are filtered out. An application counts as submitted only when the employer confirms receipt." }
         },
         {
           "@type": "Question",
           "name": "What does it cost?",
           "acceptedAnswer": { "@type": "Answer", "text": "1stStep Complete will be $39/month when paid access opens. One membership includes the resume builder, cover-letter tools, tracker, extension workflow, and Job Agent. Early access is free by invitation, and there is no paid checkout today. Any later subscription requires your separate agreement." }
-        },
-        {
-          "@type": "Question",
-          "name": "Can I stop it?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Yes, at any time. You can pause a run, edit or delete confirmed facts, withdraw permission, and ask for your data to be deleted." }
         }
       ]
     }
