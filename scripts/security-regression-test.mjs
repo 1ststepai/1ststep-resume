@@ -403,4 +403,20 @@ assert.match(files['lib/job-agent-production-environment-report.js'], /performsE
 assert.match(files['lib/job-agent-production-environment-report.js'], /authoritativeProductionRuntimeEvidence:\s*authoritativeProductionRuntimeEvidence\s*===\s*true/);
 assert.doesNotMatch(files['scripts/production-environment-shape-report.mjs'], /process\.env\[[^\]]+\]|process\.env\.[A-Z0-9_]+/);
 
+const appSource = files['app.js'];
+assert.doesNotMatch(appSource, /tierToken/,
+  'Browser code must not store, export, or transmit the legacy bearer credential.');
+assert.doesNotMatch(appSource, /window\.postMessage\(\{ source: 'app', action: 'SYNC_PROFILE' \}/,
+  'The retired wildcard profile bridge must remain absent.');
+assert.doesNotMatch(appSource, /localStorage\.setItem\((?:RESUME_KEY|'1ststep_resume')/,
+  'Resume PII must remain session-scoped.');
+assert.match(appSource, /el\.textContent = String\(msg \|\| ''\)/,
+  'Resume-analysis status must render model output as text.');
+assert.match(appSource, /tag\.textContent = value\.trim\(\)\.slice\(0, 100\)/,
+  'LinkedIn model keywords must render as bounded text nodes.');
+assert.doesNotMatch(appSource, /parsed\.keywords\.map\([^\n]+innerHTML|innerHTML = msg/,
+  'Model-generated values must not flow into innerHTML.');
+assert.match(appSource, /\^\(\?:\\s\*\[=\+\\-@\]\|\[\\t\\r\\n\]\)/,
+  'CSV export must neutralize spreadsheet formula prefixes.');
+
 console.log('Security regression tests passed.');

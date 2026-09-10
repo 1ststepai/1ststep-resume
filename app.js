@@ -67,10 +67,7 @@ function collapseLetterSpacing(text) {
     const APP_GA_ID = 'G-RYPRPJDLVE';
     const PRO_TIER_ALIASES = new Set(['essential', 'complete', 'pro']);
     function authenticatedJsonHeaders() {
-      try {
-        const token = JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}').tierToken || '';
-        return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
-      } catch { return { 'Content-Type': 'application/json' }; }
+      return { 'Content-Type': 'application/json' };
     }
     const PRO_FEATURE_COPY = {
       coverLetter: {
@@ -2867,8 +2864,8 @@ ${resume.slice(0, 3000)}
       const appHasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
       if (!appHasResume && resumeText) {
         document.getElementById('resumeText').value = resumeText;
-        // Also save to localStorage so it persists across reloads
-        try { localStorage.setItem('1ststep_resume', resumeText); } catch (_) {}
+        // Keep candidate PII session-scoped; durable cloud persistence uses authenticated stores.
+        try { sessionStorage.setItem('1ststep_resume', resumeText); } catch (_) {}
       }
 
       const jobText = document.getElementById('jobText');
@@ -2990,7 +2987,7 @@ ${resume.slice(0, 3000)}
     //   'linkedin'    - LinkedIn profile optimizer (counts against monthly limit)
     //   'utility'     - internal helper calls (salary estimates, profile parse, etc.) - NOT counted
     // -- Profile helper - returns the saved profile object (or empty obj if none) --
-    // Used by callClaude() to send userEmail + tierToken on every API call.
+    // Used by callClaude() to send the account email on every API call.
     // PROFILE_KEY is defined lower in the file; use the literal string here to
     // avoid TDZ (temporal dead zone) since const declarations are not hoisted.
     function loadProfile() {
@@ -3004,7 +3001,6 @@ ${resume.slice(0, 3000)}
         window.location.hostname === '127.0.0.1';
 
       const _prof = loadProfile();
-      const _subCache = JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || '{}');
       const body = {
         model,
         max_tokens: maxTokens,
@@ -3012,7 +3008,6 @@ ${resume.slice(0, 3000)}
         messages: [{ role: 'user', content: userMessage }],
         callType,
         userEmail: _prof?.email || '',
-        tierToken: _subCache?.tierToken || '',
       };
 
       if (isLocal && window.location.protocol === 'file:') {
@@ -3022,7 +3017,7 @@ ${resume.slice(0, 3000)}
       // Deployed on Vercel - use the server-side proxy (API key stays secret).
       const resp = await fetch('/api/claude', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(_subCache?.tierToken ? { Authorization: `Bearer ${_subCache.tierToken}` } : {}) },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
       if (!resp.ok) {
@@ -4847,7 +4842,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       el.style.background = c.bg;
       el.style.border = `1px solid ${c.border}`;
       el.style.color = c.color;
-      el.innerHTML = msg;
+      el.textContent = String(msg || '');
     }
 
     async function analyzeResumeForJobSearch() {
@@ -4855,7 +4850,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       let resume = sanitizeResumeText(getJobSearchResume());
 
       if (!resume) {
-        setAnalyzeStatus('No resume found. Paste your resume above, or go to <strong>Resume Tailor</strong> and add it there first.', 'warning');
+        setAnalyzeStatus('No resume found. Paste your resume above, or go to Resume Tailor and add it there first.', 'warning');
         document.getElementById('jsResumePaste').style.display = 'block';
         document.getElementById('jsResumeText').focus();
         return;
@@ -4869,7 +4864,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       const hasEnoughWords = realWords.length >= 40;
 
       if (wordRatio < 0.45 || !hasEnoughWords) {
-        setAnalyzeStatus('Your uploaded file could not be read as text. Please <strong>paste your resume as plain text</strong> into the box above instead of uploading a file.', 'warning');
+        setAnalyzeStatus('Your uploaded file could not be read as text. Please paste your resume as plain text into the box above instead of uploading a file.', 'warning');
         document.getElementById('jsResumePaste').style.display = 'block';
         document.getElementById('jsResumeLoaded').style.display = 'none';
         document.getElementById('jsResumeText').focus();
@@ -4943,7 +4938,10 @@ ${_resumeSlice}
         }
 
         // Auto-fill keywords
-        const bestQuery = data.best_search_query || data.suggested_titles?.[0] || '';
+        const boundedModelText = (value, maxLength = 200) => typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
+        const bestQuery = boundedModelText(data.best_search_query || data.suggested_titles?.[0] || '');
+        const experienceLevel = boundedModelText(data.experience_level, 40);
+        const industry = boundedModelText(data.industry, 100);
         const genericTitles = ['general professional', 'office worker', 'employee', 'worker', 'professional'];
         if (!bestQuery || genericTitles.includes(bestQuery.toLowerCase())) {
           throw new Error('Resume content could not be read clearly. Please paste your resume as plain text into the box above.');
@@ -4953,7 +4951,7 @@ ${_resumeSlice}
         updateQuickLinks();
 
         // Show success status
-        setAnalyzeStatus(`- Detected: <strong>${bestQuery}</strong>${data.experience_level ? ` - ${data.experience_level}-level` : ''}${data.industry ? ` - ${data.industry}` : ''}`, 'success');
+        setAnalyzeStatus(`Detected: ${bestQuery}${experienceLevel ? ` - ${experienceLevel}-level` : ''}${industry ? ` - ${industry}` : ''}`, 'success');
 
         document.getElementById('jobLoading').classList.remove('visible');
 
@@ -4986,7 +4984,7 @@ ${_resumeSlice}
           if (errMsg === 'Failed to fetch') {
             errMsg = 'Network error - could not reach Claude API. Check your internet connection and that your API key is valid.';
           }
-          setAnalyzeStatus(`Error ${escHtml(errMsg)}`, 'error');
+          setAnalyzeStatus(`Error ${errMsg}`, 'error');
         }
       } finally {
         btn.disabled = false;
@@ -5385,9 +5383,7 @@ ${_resumeSlice}
       if (IS_LOCAL_DEV && window.location.protocol === 'file:') {
         throw new Error('Job search requires the local server so provider keys remain server-side.');
       }
-      const subCache = JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}');
       res = await fetch(`/api/jobs?${params}`, {
-        headers: subCache.tierToken ? { Authorization: `Bearer ${subCache.tierToken}` } : {},
         signal: AbortSignal.timeout(12_000),
       });
 
@@ -6563,10 +6559,14 @@ ${desc}`;
     function exportApplicationsCSV() {
       if (!applications.length) { showToast('No applications to export'); return; }
       const headers = ['Title', 'Company', 'Location', 'Salary', 'Status', 'Applied Date', 'Follow-Up Date', 'Contact Name', 'Contact Email', 'Notes', 'Job URL'];
+      const spreadsheetSafeCell = value => {
+        const raw = String(value || '');
+        return /^(?:\s*[=+\-@]|[\t\r\n])/.test(raw) ? `'${raw}` : raw;
+      };
       const rows = applications.map(a => [
         a.title, a.company, a.location, a.salary, a.status,
         a.appliedDate, a.followUpDate, a.contactName, a.contactEmail, a.notes, a.jobUrl
-      ].map(v => `"${String(v || '').replace(/"/g, '""')}"`));
+      ].map(v => `"${spreadsheetSafeCell(v).replace(/"/g, '""')}"`));
 
       const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
       const blob = new Blob([csv], { type: 'text/csv' });
@@ -6593,14 +6593,8 @@ ${desc}`;
     function saveResume(data) {
       const resumeJson = JSON.stringify(data);
       sessionStorage.setItem(RESUME_KEY, resumeJson);
-      // Sync to extension: keep temp copy in localStorage for content script to read
-      localStorage.setItem(RESUME_KEY, resumeJson);
+      localStorage.removeItem(RESUME_KEY);
       syncActivePositioningContext();
-      
-      // Trigger extension sync
-      try {
-        window.postMessage({ source: 'app', action: 'SYNC_PROFILE' }, '*');
-      } catch (e) { /* extension not installed */ }
     }
     function loadResume() {
       const fromSession = sessionStorage.getItem(RESUME_KEY);
@@ -6784,14 +6778,6 @@ ${desc}`;
       // Auto-verify Stripe subscription whenever email is saved
       verifySubscription(p.email);
       
-      // -- Sync profile to Chrome extension ------------------------------------
-      // Tell content script to relay profile to chrome.storage.sync
-      if (window.parent !== window || window === top) {
-        try {
-          window.postMessage({ source: 'app', action: 'SYNC_PROFILE' }, '*');
-        } catch (e) { /* extension not installed */ }
-      }
-
       // -- Notify on new signup -----------------------------------------------
       if (isNewSignup) {
         trackProductEvent('profile_created');
@@ -6918,7 +6904,7 @@ ${desc}`;
         const data = await resp.json();
         const tier = data.tier || 'free';
         // Cache the result
-        localStorage.setItem(SUB_CACHE_KEY, JSON.stringify({ email, tier, ts: Date.now(), tierToken: data.tierToken || '', expiresInDays: data.expiresInDays ?? null, status: data.status || '' }));
+        localStorage.setItem(SUB_CACHE_KEY, JSON.stringify({ email, tier, ts: Date.now(), expiresInDays: data.expiresInDays ?? null, status: data.status || '' }));
         _applySubscriptionTier(tier, true);
         return { ...data, tier };
       } catch (err) {
@@ -7232,9 +7218,21 @@ Rules:
 
         // Render keyword tags
         const tagContainer = document.getElementById('liKeywordTags');
-        if (parsed.keywords && parsed.keywords.length) {
-          tagContainer.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600">TOP LINKEDIN KEYWORDS</div>' +
-            parsed.keywords.map(k => `<span style="display:inline-block;background:rgba(99,102,241,0.12);color:#a5b4fc;border:1px solid rgba(99,102,241,0.25);border-radius:100px;padding:3px 10px;font-size:11px;margin:2px 3px 2px 0">${k}</span>`).join('');
+        tagContainer.replaceChildren();
+        const keywordValues = Array.isArray(parsed.keywords)
+          ? parsed.keywords.filter(value => typeof value === 'string').slice(0, 20)
+          : [];
+        if (keywordValues.length) {
+          const heading = document.createElement('div');
+          heading.style.cssText = 'font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600';
+          heading.textContent = 'TOP LINKEDIN KEYWORDS';
+          tagContainer.appendChild(heading);
+          keywordValues.forEach(value => {
+            const tag = document.createElement('span');
+            tag.style.cssText = 'display:inline-block;background:rgba(99,102,241,0.12);color:#a5b4fc;border:1px solid rgba(99,102,241,0.25);border-radius:100px;padding:3px 10px;font-size:11px;margin:2px 3px 2px 0';
+            tag.textContent = value.trim().slice(0, 100);
+            tagContainer.appendChild(tag);
+          });
         }
 
         document.getElementById('liLoading').style.display = 'none';
@@ -7502,7 +7500,7 @@ ${job.jd.slice(0, 1000)}
     //
     // localStorage keys used:
     //   1ststep_beta        - { email, expiresAt, grantedAt }
-    //   1ststep_sub_cache   - { email, tier, ts, tierToken } (shared with verifySubscription)
+    //   1ststep_sub_cache   - non-secret subscription display metadata
 
     const BETA_KEY = '1ststep_beta';
 
@@ -7913,7 +7911,6 @@ ${job.jd.slice(0, 1000)}
             tier: accessTier,
             status: data.status || 'legacy_access_free',
             ts: Date.now(),
-            tierToken: data.tierToken || '',
           }));
           localStorage.setItem(PROFILE_KEY, JSON.stringify({
             ...(JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}')),
@@ -8046,16 +8043,12 @@ ${job.jd.slice(0, 1000)}
         const role = src.jobTitle || '';
         const company = src.company || '';
 
-        let tierToken = '';
-        try { tierToken = JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}').tierToken || ''; } catch { }
-
         const r = await fetch('/api/claude', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: 'claude-haiku-4-5-20251001',
             max_tokens: 3200,
-            tierToken,
             messages: [{
               role: 'user',
               content: `You are an expert career coach preparing a candidate for a job interview. Analyze the job description and the candidate's tailored resume, then generate a complete interview cheat sheet.
@@ -8324,9 +8317,6 @@ ${resume.slice(0, 4000)}`,
         // -- Step 2: Claude cleans it into a proper resume ---------------------
         // LinkedIn PDF exports have odd formatting - Claude normalizes it into
         // clean plain-text resume format ready for the tailoring engine.
-        let tierToken = '';
-        try { tierToken = JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}').tierToken || ''; } catch { }
-
         const cleanedResume = await callClaude(
           `You are a resume formatter. The user has exported their LinkedIn profile as a PDF.
 The extracted text may have formatting issues, repeated words, or LinkedIn-specific labels.
@@ -8767,16 +8757,12 @@ Output plain text only - no markdown, no asterisks, no hashtags.`,
     }
 
     async function parseResumeForTemplate(text) {
-      let tierToken = '';
-      try { tierToken = JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}').tierToken || ''; } catch { }
-
       const r = await fetch('/api/claude', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 2000,
-          tierToken,
           messages: [{
             role: 'user',
             content: `Parse this resume into a JSON object. Output ONLY valid JSON - no markdown fences, no explanation.\n\nUse this schema exactly:\n{"name":"","email":"","phone":"","location":"","linkedin":"","website":"","title":"","summary":"","experience":[{"company":"","title":"","dates":"","location":"","bullets":[]}],"education":[{"school":"","degree":"","field":"","dates":"","location":"","gpa":""}],"skills":[],"certifications":[]}\n\nResume text:\n${text.slice(0, 8000)}`,
@@ -9088,12 +9074,11 @@ ${_PRINT_BTN}
     // ===========================================================================
     // -- DATA BACKUP & RESTORE --------------------------------------------------
     // Lets users download a JSON snapshot of all their localStorage data so they
-    // can restore it on another browser/device without losing their subscription
-    // token, applications, or tailoring history.
+    // can restore it on another browser/device without losing application or
+    // tailoring history. Authentication credentials are intentionally excluded.
     // ===========================================================================
 
     const _BACKUP_KEYS = [
-      '1ststep_sub_cache',   // tier token + email - MOST IMPORTANT
       '1ststep_tier',        // current subscription tier
       '1ststep_profile',     // saved name / email for profile
       '1ststep_applications',// application tracker entries
