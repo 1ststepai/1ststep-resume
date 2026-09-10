@@ -30,7 +30,7 @@ function applyHeaders(req, res, env = process.env) {
 function adminAuthorized(req, env = process.env) {
   const expected = Buffer.from(String(env.ADMIN_SECRET || ''));
   const provided = Buffer.from(String(req.headers?.['x-admin-secret'] || ''));
-  return expected.length >= 16 && expected.length === provided.length && timingSafeEqual(expected, provided);
+  return expected.length >= 8 && expected.length === provided.length && timingSafeEqual(expected, provided);
 }
 
 function publicOriginAllowed(req, env = process.env) {
