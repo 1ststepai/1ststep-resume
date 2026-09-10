@@ -628,6 +628,10 @@ body.needs-attention #reviewAttentionNow{margin-top:18px}
 #guidedLaunchSaveStatus[data-state="pending"]{color:#1d4ed8}
 #guidedLaunchSaveStatus[data-state="synced"]{color:#15803d}
 #guidedLaunchSaveStatus[data-state="unavailable"],#guidedLaunchSaveStatus[data-state="conflict"]{color:#b45309}
+html[data-theme="dark"] body[data-page="concierge"] .guided-launch-progress span{color:var(--agent-body)!important}
+html[data-theme="dark"] body[data-page="concierge"] #guidedLaunchSaveStatus[data-state="pending"]{color:#93c5fd!important}
+html[data-theme="dark"] body[data-page="concierge"] #guidedLaunchSaveStatus[data-state="synced"]{color:#86efac!important}
+html[data-theme="dark"] body[data-page="concierge"] #guidedLaunchSaveStatus[data-state="unavailable"],html[data-theme="dark"] body[data-page="concierge"] #guidedLaunchSaveStatus[data-state="conflict"]{color:#fcd34d!important}
 .guided-answer-grid button:focus-visible,.guided-launch-stage .opportunity-path:focus-visible{outline-color:#0f766e!important;box-shadow:0 0 0 2px #ccfbf1!important}
 .path-scan-status,.sector-role-decision,.resume-fact-review,.never-include-review{display:grid;gap:8px;margin:14px 0;padding:14px 16px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc;color:#172033}
 .path-scan-status[hidden],.sector-role-decision[hidden],.resume-fact-review[hidden]{display:none}
