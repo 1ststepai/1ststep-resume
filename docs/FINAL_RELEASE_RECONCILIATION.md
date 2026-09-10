@@ -11,10 +11,10 @@ This branch is source- and local-test-ready, but **not production-release-ready*
 | Source | Evidence used | Access/result |
 |---|---|---|
 | Local Git repositories and registered worktrees | Fresh fetch/status/log/ref/merge-base inspection; exhaustive inventory and dirty-path decisions in `docs/REPOSITORY_RECONCILIATION.md` | Accessible. 6 independent repositories plus the invalid empty umbrella `.git` marker; 44 registered product worktrees before this new isolated release worktree. |
-| GitHub | Open PR metadata, merge state, checks, branch heads | Accessible through `gh`. PR #72 was green but behind; PR #79 was green; older PRs remain intentionally separate. |
+| GitHub | Open PR metadata, merge state, checks, branch heads | Accessible through `gh`. Replacement release PR [#80](https://github.com/1ststepai/1ststep-resume/pull/80) is open and mergeable at `2be4174`; its deterministic 13-layer gate, CodeQL, static QA, dependency audit, and Vercel checks passed. PR #72 and PR #79 remain intentionally separate and must not also be merged. |
 | Codex task history | 20 recent 1stStep task threads, their final reports, and key intermediate evidence | Accessible for the latest bounded task listing. Older/unlisted conversations are not guaranteed accessible and are therefore not claimed reviewed. |
 | Local documentation and artifacts | 1,561 candidate README/roadmap/architecture/audit/handoff/report files; 271 unique contents after hashing and 1,290 duplicate worktree copies | Key unique current release documents and relevant handoffs were reviewed. Duplicate copies were not reread as independent evidence. |
-| Vercel | Project/deployment metadata, aliases, status, and environment **names only** | Accessible. Secret values were neither requested nor printed. Exact Git SHA for the current production deployment remains unavailable. |
+| Vercel | Project/deployment metadata, aliases, status, and environment **names only** | Accessible. Preview deployment `dpl_E7h1ghMHF31tqAFFQN7Tfn1iF6M9` is Ready and GitHub deployment `6371383461` binds it to exact release HEAD `2be4174`. Its root, `/job-agent`, and `/partners.html` returned HTTP 200. Secret values were neither requested nor printed. Exact Git SHA for the current production deployment remains unavailable. |
 | Live public sites | HEAD requests to `app.1ststep.ai`, `resume.1ststep.ai`, and `partners.1ststep.ai` | All returned HTTP 200 on 2026-09-10; this proves reachability, not source parity or authenticated behavior. |
 | Chrome Web Store | Prior audit evidence and current repository release metadata | Published store state remains v1.3.2 per the preceding reconciliation. No publication action occurred. |
 | Secrets | File metadata/hashes, ignore policy, environment names | Two unversioned Google OAuth JSON files remain quarantined outside the workspace. Values were not opened. Root `.env` values were not printed. Rotation/revocation state is unknown. |
@@ -76,10 +76,12 @@ This branch is source- and local-test-ready, but **not production-release-ready*
 | TypeScript / ESLint | Unavailable in the authoritative package: no standalone `typecheck` or `lint` script. This is not recorded as a pass. |
 | Production environment-name audit | Fail for release readiness: 89 of 126 required names absent; values not validated. |
 | Public domains | HTTP 200 for app, resume, and partners; authenticated and source-parity proof still missing. |
+| PR #80 CI | Pass at `2be4174`: deterministic 13-layer gate, CodeQL, static QA, production dependency audit, and Vercel checks. |
+| Exact release Preview | Ready: `dpl_E7h1ghMHF31tqAFFQN7Tfn1iF6M9`, bound through GitHub deployment `6371383461` to `2be4174`; public root, Job Agent, and partners routes returned HTTP 200. Authenticated persistence is still untested. |
 
 ## Release commits and source of truth
 
-The intended PR is this branch against `origin/main`. The meaningful release commits are:
+The replacement release PR is [#80](https://github.com/1ststepai/1ststep-resume/pull/80), this branch against `origin/main`. The meaningful release commits are:
 
 - `2c360e5` — merge verified extension v1.6 source (contains PR #72 ancestry)
 - `bce8eb9` — Job Agent trust and reliability gates
@@ -92,12 +94,11 @@ After review, this branch—not PR #72, PR #79, the dirty primary checkout, a de
 
 ## Exact next actions and approvals
 
-1. Push this clean branch and open one replacement release PR. Do not merge PR #72 or PR #79 separately afterward.
+1. Review PR #80 as the single replacement release PR. Do not merge PR #72 or PR #79 separately afterward.
 2. Deliberately configure the consolidated branch's Preview environment by copying the approved **names/secret references** from the verified PR #72 Preview scope; do not print or replace values. This environment mutation requires owner approval.
-3. Deploy the exact PR head to Preview, bind the deployment ID and asset hashes, and run: installed extension v1.6 capture → authenticated app → active consent → durable My Jobs readback → refresh → sign out → sign in → readback → duplicate capture replay. A one-time sign-in code and active account consent require owner participation.
+3. On exact Ready Preview `dpl_E7h1ghMHF31tqAFFQN7Tfn1iF6M9`, bind the extension ZIP asset hash and run: installed extension v1.6 capture → authenticated app → active consent → durable My Jobs readback → refresh → sign out → sign in → readback → duplicate capture replay. A one-time sign-in code and active account consent require owner participation.
 4. Obtain live two-tenant isolation evidence and verify required Redis/encryption/audit configuration without exposing values.
 5. Resolve all production environment-name gaps appropriate to the selected controlled-beta scope and produce signed launch/recovery/support evidence. Keep final-submission/provider execution disabled unless separately approved.
 6. Verify the exact production deployment source before any promotion. Production deployment remains blocked until steps 2–5 pass.
 7. Before Chrome Web Store publication, verify the exact v1.6 ZIP digest, manifest permissions, disclosure/legal packet, installed behavior, and final authenticated E2E. Store publication remains a separate approval.
 8. Identify the Google OAuth projects/consumers and decide whether to rotate/revoke the quarantined clients. No release should claim those credentials rotated until Google confirms it.
-
