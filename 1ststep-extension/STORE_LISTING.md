@@ -1,13 +1,15 @@
-# Draft controlled-beta store listing
+# Draft Chrome Web Store listing
 
-## 1stStep.ai — capture a job, tailor truthfully
+## 1stStep.ai Job Agent
 
-Open a job posting, click 1stStep, review the detected title, company, location, pay disclosure, and description, then send it to the Resume Builder, cover-letter workflow, or supervised Job Agent review. Capture includes JobPosting structured data and dedicated handling for Workday, Lever, Ashby, SmartRecruiters, and Greenhouse. On an unusual layout, highlight the description and click 1stStep again—no copy and paste. Manual paste is the last fallback. The extension reads only the page you select when you click it; it does not monitor general browsing or request permanent access to every site.
+Save a job posting to My Jobs in one click—without copying and pasting the description. 1stStep captures the visible job details, opens your Job Agent, and prepares the next step. You can also send the job directly to Resume Builder.
 
-For approved Greenhouse applications, invited Job Agent users can separately review the verified match and fill only confirmed ordinary fields. 1stStep pauses for passwords, OTPs, CAPTCHAs, identity checks, non-résumé uploads, unusual questions, and every final submission.
+On declared Greenhouse job pages, the extension detects the listing locally while enabled, rechecks after in-page navigation, and shows a shortcut to open the job in 1stStep.ai. On other websites it reads the current page only after you click the extension or its page-menu action. That user-triggered read may inspect embedded frames when a listing is rendered inside one. The page URL and selected listing content are sent to 1stStep.ai only after you choose Resume Builder, Job Agent, or supervised filling.
 
-The extension stores no profile, résumé, auth token, employer answer, or local Applied status. It never submits an application. 1stStep counts Submitted only after separate authoritative employer-receipt verification.
+On supported application pages, 1stStep can fill an approved résumé and ordinary verified fields after you review the match. It pauses for passwords, one-time codes, CAPTCHAs, identity checks, sensitive questions, unusual questions, and final submission.
 
-Job capture supports ordinary HTTP(S) pages with visible job content, including accessible embedded job frames, and does not require Job Agent access. It cannot bypass sign-in walls and may require manual paste for protected PDFs, inaccessible frames, or closed components. Form filling remains limited to standard hosted Greenhouse requisitions and requires an invited Job Agent account, completed fact vault, approved role package, and an open signed-in `app.1ststep.ai` tab.
+Chrome extension storage does not keep your profile, résumé, sign-in token, answers, or application status. Approved values and an approved résumé may pass through the extension transiently during a supervised fill. It never marks an application Submitted without verified employer receipt.
 
-Do not publish this listing until product-owner approval, counsel/ATS terms review, privacy disclosure review, supervised synthetic acceptance evidence, store packaging review, and a separately authorized release decision are complete.
+With a signed-in account and current Job Agent data consent, jobs you save to your account remain available when you return. Each account-backed capture holds the listing's title, employer, location, URL, description text, capture method, and verification status; it is encrypted and expires automatically after 90 days. You can export or delete these records, and account deletion removes them. Without that authorization, a Resume Builder handoff remains only in local extension storage for up to 24 hours while delivery is pending. Uninstalling the extension does not delete jobs already saved to your account.
+
+Job capture works on ordinary web pages with visible job content. Protected pages and inaccessible embedded content may prevent capture. Filling requires a supported page, an eligible Job Agent account, approved information, and an open signed-in `app.1ststep.ai` tab.

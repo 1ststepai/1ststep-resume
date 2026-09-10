@@ -61,16 +61,16 @@ If featured, CWS uses this. Same design as small tile, scaled up, with room for 
 
 Chrome Web Store shows these in the listing carousel. Ship at least 3; 5 is ideal.
 
-### Screenshot 1 — "Click one button, fill an application"
+### Screenshot 1 — "Save a job without copy and paste"
 **Composition:**
-- Left 60% (~768px): Full Greenhouse apply page screenshot with multiple fields filled (green checkmarks next to filled fields, or just the filled state)
-- Right 40% (~512px): The extension popup floating over, showing "✓ 12/15" on the Auto-fill button
-- Top banner (90px tall): "Apply in seconds, not minutes" in Inter 700, 36px, brand color
+- Left 60% (~768px): A synthetic public job page with a visible title, company, and description
+- Right 40% (~512px): The extension popup showing the detected job and both destination buttons
+- Top banner (90px tall): "Save the job. Skip the copy and paste." in Inter 700, 36px, brand color
 
 **How to capture:**
-1. Open a Greenhouse apply page (e.g. any Airbnb Careers job)
+1. Open the synthetic job-page fixture; do not use a real employer brand in store artwork
 2. Click the 1stStep extension icon
-3. Click "Auto-fill This Form" and wait for "✓ N/M"
+3. Confirm the detected title and the Resume Builder / Job Agent choices
 4. Take a full-page screenshot in Chrome (Ctrl+Shift+P → "Capture full size screenshot")
 5. Composite the popup in Figma/Canva with the text banner on top
 
@@ -80,20 +80,19 @@ Chrome Web Store shows these in the listing carousel. Ship at least 3; 5 is idea
 - Header: "AI rewrites your resume to match each job description"
 - Source: use your existing app.1ststep.ai resume tailor screen
 
-### Screenshot 3 — "Works on every major ATS"
+### Screenshot 3 — "Capture jobs across the web"
 **Composition:**
-- Centered headline: "Works where you apply"
-- Greenhouse only. The controlled release supports no other ATS; do not show logos for unsupported platforms.
-- Logos in grayscale or monochrome on brand background strip
-- Small footer: "— and more every month"
+- Centered headline: "Capture visible job posts across the web"
+- Show neutral browser-page cards, not third-party logos or claims of universal form automation
+- Small footer: "Application filling is available on supported pages"
 
 ### Screenshot 4 — "Your data, your account" (trust / privacy)
 **Composition:**
 - Left: diagram of data flow — You → 1stStep account → extension (no 3rd parties)
 - Right: 3 trust bullets:
   - "Profile stored in your 1stStep.ai account"
-  - "No data sold. No ad tracking. Ever."
-  - "Uninstall clears everything"
+  - "Captured jobs are encrypted in your account"
+  - "Delete or export saved captures with your account data"
 
 ### Screenshot 5 — "How it works" (3-step flow)
 **Composition:**

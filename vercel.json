@@ -39,6 +39,9 @@
     "api/job-agent-runs.js": {
       "maxDuration": 45
     },
+    "api/captured-jobs.js": {
+      "maxDuration": 20
+    },
     "api/job-agent-worker.js": {
       "maxDuration": 60,
       "includeFiles": "node_modules/{@napi-rs,pdfjs-dist,pdfkit}/**/*"

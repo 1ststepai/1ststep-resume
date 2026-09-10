@@ -17,6 +17,138 @@ function authoritativeReceipt(value) {
   return Boolean(value && value.simulated !== true && (value.confirmationId || value.receivedAt || value.reference));
 }
 
+export const TIME_SAVED_BASELINES = Object.freeze({
+  completedSearch: 10,
+  organizedJob: 2,
+  verifiedJob: 3,
+  preparedPackage: 20,
+  filledOrdinaryField: 1,
+  trackedReceipt: 2,
+});
+export const TIME_SAVED_MODEL_VERSION = 'job-agent-time-saved-v1';
+
+const VERIFIED_TIME_SAVED_STATUSES = new Set([
+  'Verified', 'Verified - Package Preparation', 'Package Ready', 'Awaiting Approval', 'Submitted', 'Interview',
+]);
+
+function timeSavedRoleKey(role = {}, index = 0) {
+  const provider = String(role.sourceProvider || '').trim().toLowerCase();
+  const requisition = String(role.requisitionId || '').trim().toLowerCase();
+  if (provider && requisition) return `${provider}:${requisition}`;
+  try {
+    const url = new URL(role.directEmployerUrl || role.sourceUrl || '');
+    url.hash = '';
+    ['utm_source', 'utm_medium', 'utm_campaign', 'gh_src'].forEach(key => url.searchParams.delete(key));
+    return url.href.replace(/\/$/, '').toLowerCase();
+  } catch {
+    return String(role.id || `role-${index}`);
+  }
+}
+
+function timeSavedAt(value) {
+  const parsed = new Date(value || 0).getTime();
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+export function estimateJobAgentTimeSaved({ roles = [], applicationSessions = [], run = null, now = new Date(), sessionStartedAt = null } = {}) {
+  const events = [];
+  const add = (key, label, count, minutes, at, explanation) => {
+    if (!count || !minutes) return;
+    events.push({ key, label, count, minutes, at: at || null, explanation });
+  };
+
+  const uniqueRoles = new Map();
+  roles.forEach((role, index) => {
+    if (!role || typeof role !== 'object') return;
+    const key = timeSavedRoleKey(role, index);
+    if (!uniqueRoles.has(key)) uniqueRoles.set(key, role);
+  });
+
+  for (const [key, role] of uniqueRoles) {
+    const roleAt = role.updatedAt || role.createdAt || null;
+    if (role.id && role.directEmployerUrl) {
+      add(`organized:${key}`, 'Jobs captured and organized', 1, TIME_SAVED_BASELINES.organizedJob, role.createdAt || roleAt,
+        `${TIME_SAVED_BASELINES.organizedJob} min per saved job`);
+    }
+    const verified = role.applyPathActive === true && Boolean(role.discoveryRunId || role.sourceType === 'direct-employer')
+      || VERIFIED_TIME_SAVED_STATUSES.has(role.status) && Boolean(role.requisitionId && role.directEmployerUrl);
+    if (verified) {
+      add(`verified:${key}`, 'Employer listings verified', 1, TIME_SAVED_BASELINES.verifiedJob, roleAt,
+        `${TIME_SAVED_BASELINES.verifiedJob} min per verified job`);
+    }
+    const prepared = Boolean(role.packageDraft?.generatedAt)
+      || ['Package Ready', 'Awaiting Approval'].includes(role.status);
+    if (prepared) {
+      add(`package:${key}`, 'Application packages prepared', 1, TIME_SAVED_BASELINES.preparedPackage,
+        role.packageDraft?.generatedAt || roleAt, `${TIME_SAVED_BASELINES.preparedPackage} min per completed package`);
+    }
+  }
+
+  applicationSessions.forEach((session, index) => {
+    if (!session || typeof session !== 'object') return;
+    const completed = session.workerExecution?.status === 'completed';
+    const reconciled = (session.timeline || []).find(item => item?.kind === 'TRANSMISSION_RECONCILED_FIELDS_PRESENT');
+    const transmitted = session.transmissionAttempt?.transmittedFieldKeys || session.workerExecution?.stagedFieldKeys || [];
+    const fieldCount = completed || reconciled ? Math.min(10, new Set(transmitted).size || Number(reconciled?.metadata?.stagedFieldCount) || 0) : 0;
+    if (fieldCount) {
+      add(`fields:${session.id || index}`, 'Routine form fields completed', fieldCount,
+        fieldCount * TIME_SAVED_BASELINES.filledOrdinaryField,
+        session.workerExecution?.completedAt || reconciled?.at || session.transmissionAttempt?.transmittedAt || session.updatedAt,
+        `${TIME_SAVED_BASELINES.filledOrdinaryField} min per confirmed ordinary field, capped at 10 per application`);
+    }
+  });
+
+  const receiptKeys = new Set();
+  [...roles, ...applicationSessions].forEach((item, index) => {
+    if (!authoritativeReceipt(item?.receipt)) return;
+    const key = String(item.receipt.confirmationId || item.receipt.reference || item.packageRunId || item.id || `receipt-${index}`);
+    if (receiptKeys.has(key)) return;
+    receiptKeys.add(key);
+    add(`receipt:${key}`, 'Employer confirmations tracked', 1, TIME_SAVED_BASELINES.trackedReceipt,
+      item.receipt.verifiedAt || item.receipt.receivedAt || item.receipt.submittedAt || item.updatedAt,
+      `${TIME_SAVED_BASELINES.trackedReceipt} min per authoritative employer receipt`);
+  });
+
+  const sourceChecks = Array.isArray(run?.result?.sourceSummary) ? run.result.sourceSummary.length : 0;
+  if (run?.status === 'Finished' && run?.taskType === 'direct_employer_discovery' && sourceChecks > 0) {
+    add(`search:${run.id || run.result?.completedAt || 'latest'}`, 'Direct-employer search completed', 1,
+      TIME_SAVED_BASELINES.completedSearch, run.result?.completedAt || run.updatedAt,
+      `${TIME_SAVED_BASELINES.completedSearch} min per completed multi-source search`);
+  }
+
+  const nowMs = timeSavedAt(now) || Date.now();
+  const weekStart = nowMs - (7 * 24 * 60 * 60 * 1000);
+  const sessionStart = timeSavedAt(sessionStartedAt);
+  const sum = predicate => events.filter(event => predicate(event)).reduce((total, event) => total + event.minutes, 0);
+  const breakdown = [...new Map(events.map(event => [event.label, event])).values()].map(first => {
+    const matching = events.filter(event => event.label === first.label);
+    return {
+      label: first.label,
+      count: matching.reduce((total, event) => total + event.count, 0),
+      minutes: matching.reduce((total, event) => total + event.minutes, 0),
+      explanation: first.explanation,
+    };
+  }).sort((a, b) => b.minutes - a.minutes || a.label.localeCompare(b.label));
+
+  return {
+    estimated: true,
+    modelVersion: TIME_SAVED_MODEL_VERSION,
+    totalMinutes: sum(() => true),
+    lastSevenDaysMinutes: sum(event => timeSavedAt(event.at) >= weekStart && timeSavedAt(event.at) <= nowMs),
+    sessionMinutes: sessionStart ? sum(event => timeSavedAt(event.at) >= sessionStart && timeSavedAt(event.at) <= nowMs) : 0,
+    completedEventCount: events.length,
+    breakdown,
+  };
+}
+
+export function formatTimeSaved(minutes = 0) {
+  const safe = Math.max(0, Math.floor(Number(minutes) || 0));
+  if (safe < 60) return `${safe} min`;
+  const hours = Math.floor(safe / 60);
+  const remainder = safe % 60;
+  return `${hours} hr${hours === 1 ? '' : 's'}${remainder ? ` ${remainder} min` : ''}`;
+}
+
 export function authoritativeReceiptCount(items = [], onDate = null) {
   const receiptKeys = new Set();
   const expectedDay = onDate ? new Date(onDate).toDateString() : '';
