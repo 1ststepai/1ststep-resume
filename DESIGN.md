@@ -1,6 +1,6 @@
 # 1stStep.ai — Design System
 
-Scope: the marketing homepage (`index.html`, `home-motion.css`, `home-motion.js`), served at `/`.
+Scope: the marketing homepage (`index.html`, `home-motion-1f7df326a312.css`, `home-motion-4e0eecde7df1.js`), served at `/`.
 The authenticated workspace (`app.html`, `app.js`, `style.css`), served at `/app/resume` since 2026-09-04 (previously `/app`), keeps
 its own established styling and is **not** governed by this document.
 
@@ -17,7 +17,7 @@ certifications or compliance attestations that have not been independently verif
 ## Color
 
 Light theme, derived from the logo (`1ststep-logo.png`: mark `#6366F1`, wordmark
-`#0F172A`). Defined as custom properties on `:root` in `home-motion.css`.
+`#0F172A`). Defined as custom properties on `:root` in `home-motion-1f7df326a312.css`.
 
 The logo colour itself is `--brand` and is used **only** for the mark. Interactive
 blues are darkened one and two steps so they meet AA as fill and as text.
@@ -136,7 +136,7 @@ from and evidence of permission to use it). `role` is optional.
 </script>
 ```
 
-Add this **before** `/home-motion.js` in `index.html`. Entries missing any required field are
+Add this **before** `/home-motion-4e0eecde7df1.js` in `index.html`. Entries missing any required field are
 skipped. While the array is empty the quotes grid stays hidden and the truthful
 product-principle block renders instead — that is the current production state.
 
@@ -152,7 +152,7 @@ workspace DOM IDs.
 **never redirects** — not for returning users, not for deep links, not for anyone.
 `/app` rewrites to `/concierge.html` (the Job Agent) as of 2026-09-04. The legacy workspace `app.html` is served at `/app/resume` as a temporary compatibility surface while its callers and authenticated flows are mapped.
 
-**Changed 2026-08-31:** the forward guard in `home-motion.js` was removed entirely. Deep
+**Changed 2026-08-31:** the forward guard in `home-motion-4e0eecde7df1.js` was removed entirely. Deep
 links now address the workspace directly instead of bouncing through `/`:
 
 - job capture → `/app?jobCaptureId=…&mode=…` (`1ststep-extension/background.js`)

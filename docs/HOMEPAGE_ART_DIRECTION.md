@@ -2,7 +2,7 @@
 
 Original decorative image generated using the built-in image-generation tool on September 7, 2026. No competitor imagery, logos, testimonials or metrics were copied. The HTML previews are synthetic and stop before transmission.
 
-Asset: `home-momentum.jpg` (1536 × 1024, JPEG quality 85, 136,641 bytes). Added explicitly to the public asset allowlist. The original PNG remains in the operator's generated-images folder; the application uses only the repository asset.
+Asset: `home-momentum-90ff283f0fd8.jpg` (1536 × 1024, JPEG quality 85, 136,641 bytes). Added explicitly to the public asset allowlist. The original PNG remains in the operator's generated-images folder; the application uses only the repository asset.
 
 ## Generation prompt
 

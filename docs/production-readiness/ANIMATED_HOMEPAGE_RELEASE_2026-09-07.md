@@ -6,7 +6,7 @@ This package makes the latest `app.1ststep.ai` homepage and supervised Job Agent
 
 - Branch: `codex/finish-staged-candidate-20260907`
 - Combined implementation baseline: `48454f976d8aeee2550cdbbbce334dd3eddc72a1`
-- Homepage animation assets: `index.html`, `home-motion.css`, `home-motion.js`, and `home-momentum.jpg`
+- Homepage animation assets: `index.html`, `home-motion-1f7df326a312.css`, `home-motion-4e0eecde7df1.js`, and `home-momentum-90ff283f0fd8.jpg`
 - Automatic Vercel deployment for this branch: disabled in `vercel.json`
 - Job Agent billing and dedicated checkout: hard-disabled in source
 - Final employer submission: fail-closed unless its complete approval, provider, durable execution, and receipt-evidence controls validate
