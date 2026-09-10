@@ -1,17 +1,17 @@
 # Repository reconciliation — 2026-09-10
 
-This is the read-only-first hygiene and release-readiness record for the local `1stStep.ai` umbrella workspace. Git, GitHub, Chrome Web Store, Vercel, tests, and on-disk state were freshly inspected on 2026-09-10. No merge, reset, force-push, production deployment, extension publication, pricing change, OAuth change, provider activation, or applicant-data operation was performed.
+This is the read-only-first hygiene and release-readiness record for the local `1stStep.ai` umbrella workspace. Git, GitHub, Chrome Web Store, Vercel, tests, and on-disk state were freshly inspected on 2026-09-10. No merge, reset, force-push, production deployment, extension publication, pricing change, OAuth credential rotation, provider activation, or applicant-data operation was performed.
 
 ## Executive result
 
 - The source of truth for `app.1ststep.ai`, the Chrome extension, `resume.1ststep.ai`, and `partners.1ststep.ai` is `1ststepai/1ststep-resume`.
 - The authoritative repository has 44 registered worktrees. It started with 12 dirty worktrees and finishes with 8. Four were cleaned only after their changes were proven generated or already preserved in merged commits.
 - Current `origin/main` is `8a6ba82`. Its smoke, public build, and 17-test extension release suite pass.
-- PR #72 is the v1.6 durable-capture candidate at `5c30d77`; smoke, build, and its 23-test extension release suite pass. It is seven commits behind `main` and is not released.
+- PR #72 is the selected v1.6 durable-capture candidate at `5c30d77`; its complete `release:gate`, production build, and 23-test extension browser suite pass. A fresh controlled ZIP reproduced the supplied SHA-256 `72491347f92a416d76d0e81f097aa0516d277587bfa304fadb20c22d42f44fff`. It is seven commits behind `main` and is not released.
 - PR #79 is the operating-system/reconciliation branch. It is clean, three commits ahead of `main` before this reconciliation update, and all GitHub checks were green at inspection time.
 - The Chrome Web Store remains v1.3.2. `main` is v1.5.0, PR #72 is v1.6.0, and the mixed primary checkout currently says v1.4.0. That four-way drift blocks extension release.
 - Three production aliases return HTTP 200 from Ready Vercel deployments, but Vercel exposes no Git commit SHA for those deployments. Live source parity is therefore `unknown`, not proven.
-- No high-confidence live credential signature was found in tracked current files. Real `.env*.local` and `.vercel` environment files are ignored. Two Google OAuth client-secret JSON files and a root `.env` exist outside any valid repository in the umbrella directory; their values were not read or printed.
+- No high-confidence live credential signature was found in tracked current files. Real `.env*.local` and `.vercel` environment files are ignored. Two Google OAuth client-secret JSON files were moved, without opening or changing them, from the unversioned umbrella directory to `C:\Users\evanp\.1ststep-private\oauth-quarantine\2026-09-10`; the unversioned root `.env` remains in place and was not opened.
 
 ## Independent repository inventory
 
@@ -147,7 +147,7 @@ Remote refs were fetched and pruned. Old remote branches remain because they bac
 | PR | State at inspection | Dirty-primary overlap | Decision |
 |---|---|---:|---|
 | #79 operating system | clean, 8 checks green | 1 file (`package.json`) | Keep; this reconciliation updates it. No merge without approval. |
-| #72 extension v1.6 | behind, 8 checks green | 25 files | Highest-risk overlap. Rebase/retest only after selecting a clean source; do not copy from primary. |
+| #72 extension v1.6 | behind, 8 checks green | 25 files | Selected release candidate. A merge-tree simulation against `origin/main` is conflict-free, but the branch is still seven commits behind. Update it only through an explicitly approved integration choice, then rerun the full gate; do not copy from primary. |
 | #60 theme stack | draft, unstable | 23 files | Preserve; review against current main and close/supersede only with owner approval. |
 | #59 staged candidate | draft, clean relative to its non-main base | 71 files | Major source of primary overlap; not a safe main merge. |
 | #58 extension disclosures | draft, dirty merge state | 3 files | Remote head is `924cd75`, while local branch is 15 commits ahead and dirty. Superseded in part by #72; owner review needed. |
@@ -195,6 +195,8 @@ Every remaining dirty path is covered below. Directory globs mean every file rep
 | AgentTeam `39e2855e` | Removed `.queue-npm-cache/` | npm debug/update cache only, 61,862 bytes; `vercel.json` candidate remains untouched. |
 | `comprehensive-ux-audit-20260908` | Created local commit `acad40b` | Preserved 18 unique audit documents on their focused existing branch. Not pushed. |
 | `main-website` | Created local branch and commit `a0e7f10` | Preserved 11-file tested agency-site conversion/revenue-systems work. Not pushed. |
+| Umbrella OAuth files | Moved two unversioned Google OAuth JSON files into `C:\Users\evanp\.1ststep-private\oauth-quarantine\2026-09-10` | Recoverable quarantine by exact path; byte sizes and SHA-256 digests were recorded without reading or printing credential contents. No credential was rotated or revoked. |
+| PR #72 controlled artifact | Rebuilt ignored `dist/1ststep-job-agent-extension-v1.6.0.zip` | Deterministic build produced 11 files, 50,407 bytes, and the exact supplied SHA-256. The source worktree remained clean. |
 
 No stash was created or consumed. No branch or remote ref was deleted.
 
@@ -203,7 +205,7 @@ No stash was created or consumed. No branch or remote ref was deleted.
 - Tracked environment templates: `.env.example` only. They contain names/documentation and were not treated as secrets.
 - Ignored real environment files were observed by metadata only, including `.env.local` and `.vercel/.env.*.local` in several worktrees. Their values were never opened or printed. Ignore rules cover `.env*.local` and `.vercel`.
 - Important ignored build/runtime paths in the clean main worktree: `.public-web/`, `.vercel/`, `node_modules/`, `partners-landing/.vercel/`, `resume-tailor-landing/standalone/.vercel/`, and `test-results/`.
-- Unversioned umbrella risks: root `.env` (399 bytes) and two Google OAuth client-secret JSON files (405 and 406 bytes). Required action: owner should move them into an approved secret store or a clearly ignored private configuration directory; do not alter OAuth credentials as part of repository cleanup.
+- Unversioned umbrella risk remaining: root `.env` (399 bytes), which was left in place and unopened because `.env*` files must not be deleted or moved without a confirmed consumer plan. The two Google OAuth client-secret JSON files (405 and 406 bytes) are now quarantined outside the workspace. Their recorded SHA-256 digests are `566CBBAFF88A1F9D1B89E0F996F422D089E5FB5B884F5C10142DA039666611E0` and `BF8AFDFCC248A7A660A772AA83972063B9DF46E8E536F207512F0269EF230C03`; these identify files without exposing their contents. Rotation/revocation remains an owner-approved external action.
 - Vercel mappings are `1ststep-resume` for app/API, `1ststep-resume-landing` for resume, and `1ststep-growth-finder` for partners. The three custom domains return HTTP 200 and Ready deployment state.
 - Current production deployment IDs: app `dpl_EN3RYuPEvEkTGfMQPvWwXWTSFxHR`, resume `dpl_2UC7e3oFPiwLC4JJCz1mUV9r2DDb`, partners `dpl_3qctMKn1Cm7jT77gLGSGZwe9oZQr`. Their metadata has no Git SHA/ref, so exact release/source parity is unknown.
 
@@ -217,6 +219,8 @@ No stash was created or consumed. No branch or remote ref was deleted.
 | PR #72 at `5c30d77` | `npm run smoke` | pass, 6 allowlisted warnings |
 | PR #72 at `5c30d77` | `npm run build` | pass, 70 public assets |
 | PR #72 at `5c30d77` | `npm run test:extension-release` | pass, persistence/replay/isolation/verification/promotion gates plus 23 browser tests |
+| PR #72 at `5c30d77` | `npm run release:gate` | pass: web, extension, production-readiness, database-evidence, capacity, rollback, preview-log, CI-policy, AI-use, source-inventory, and release-preflight gates |
+| PR #72 at `5c30d77` | `npm run build:extension:controlled` | pass; v1.6.0 ZIP, 11 files, 50,407 bytes, SHA-256 `72491347f92a416d76d0e81f097aa0516d277587bfa304fadb20c22d42f44fff`, no candidate values |
 | dirty primary | `npm run smoke` | pass; not evidence that mixed changes are releasable |
 | legal/store detached candidate | `node scripts/privacy-policy-drift-test.mjs` | pass |
 | partner hardening before duplicate cleanup | `node scripts/partner-site-hardening-test.mjs` | pass |
@@ -229,13 +233,14 @@ The authoritative package provides no standalone `lint` or `typecheck` script, s
 
 ## Release readiness and exact next actions
 
-1. **Do not release the extension yet.** Choose PR #72 as the only v1.6 candidate, reconcile its seven-commit main drift in a clean branch, rerun all release tests, build the controlled artifact, record its digest, and perform a signed-in real Greenhouse capture through My Jobs. Production deploy and Web Store publication need explicit approval.
+1. **PR #72 is the selected v1.6 candidate, but do not release it yet.** Its current head and artifact are verified. Choose an explicit branch-integration option to reconcile its seven-commit drift from clean `origin/main`, then rerun `release:gate` and rebuild/checksum the artifact on the integrated head. Merge, force-push, deployment, and Web Store publication still require explicit approval.
 2. **Do not commit the primary checkout wholesale.** Assign ownership to the five primary bundles above, recreate each from current `origin/main`, compare against the relevant open PR, and preserve only the non-duplicated patch.
 3. **Resolve legal/CSP candidates separately.** Owner approval is required before changing public privacy/terms/store disclosures or CSP. Select one of the duplicate CSP worktrees and one legal review branch.
 4. **Prove deployment parity.** The three Vercel deployments are Ready but not bound to visible Git SHAs. Before any promotion, verify exact source/assets against the intended commit and protected runtime evidence. Current production database/encryption/worker/tenant health remains unknown.
-5. **Protect umbrella secrets.** Move the root `.env` and two Google OAuth client-secret files to an approved private secret location without changing credentials; then decide whether the empty umbrella `.git` marker should be removed or initialized deliberately.
+5. **Complete secret handling.** The two Google OAuth files are quarantined; identify every consumer and rotate/revoke the credentials only with explicit approval. Preserve the root `.env` until its consumers are known. Then decide whether the empty umbrella `.git` marker should be removed or initialized deliberately.
 6. **Review local preservation commits.** `acad40b` and `a0e7f10` are local only. Push them only if preview/deployment side effects are explicitly acceptable.
 7. **Triage stale PRs and branches.** Close/supersede old PRs only after confirming no unique patch remains. No branch deletion is required for product correctness, but the current branch/worktree sprawl makes release mistakes materially more likely.
+8. **Run the remaining real user-flow proof.** From the integrated v1.6 candidate, complete one extension capture through authenticated `app.1ststep.ai` into My Jobs and verify persisted state after reload. Sending an OTP or signing into the user account requires a separate explicit request; no OTP was sent during this pass.
 
 ## Ponytail hygiene finding
 
