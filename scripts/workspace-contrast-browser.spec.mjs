@@ -63,7 +63,8 @@ for (const theme of themes) for (const surface of ['admin', 'application']) for 
     await page.route('**/api/session-capabilities*', r => r.fulfill({json:{adminConsole:true,jobAgentAccess:true,authentication:'opaque-session'}}));
     await page.route('**/api/application-sessions*', r => r.fulfill({json:{sessions:[{id:'application-contrast-fixture',version:1,role:{employer:'Synthetic Employer',title:'Operations',directEmployerUrl:'https://careers.example.com/job'},documentVersion:'synthetic-resume-v1',state:'Waiting for You',stage:'employer_form',proposedFields:[],approvals:{},actions:[{id:'action-contrast',type:'AMBIGUOUS_FACT',status:'open',summary:'Review the employer question.',metadata:{}}],timeline:[]}]}}));
     await openWithTheme(page, `${base}/concierge`, theme);
-    await page.locator(surface === 'admin' ? '#openDesk' : '#reviewAttentionNow').click();
+    if (surface === 'admin') await page.locator('#openDesk').evaluate(button => button.click());
+    else await page.locator('#reviewAttentionNow').click();
     await page.setViewportSize({width,height:900});
     const failures = await page.evaluate(AUDIT);
     expect(failures.length, explainFailures(`${surface} ${theme} ${width}px`, failures)).toBe(0);

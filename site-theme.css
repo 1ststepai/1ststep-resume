@@ -94,6 +94,7 @@ html[data-theme="dark"] body[data-page="concierge"] .access-measurement :is(stro
 html[data-theme="dark"] body[data-page="concierge"] .guided-launch-stage h2{color:var(--agent-ink)!important}
 html[data-theme="dark"] body[data-page="concierge"] .guided-launch-footer p{color:var(--agent-body)!important}
 html[data-theme="dark"] body[data-page="concierge"] #packageReviewOverlay :is(.package-more summary,.package-not-sent){color:#cbd5e1!important}
+html[data-theme="dark"] body[data-page="concierge"] :is(.swipe-position,.swipe-job-controls p,.swipe-job-controls small){color:var(--agent-body)!important}
 
 html[data-theme="light"] body[data-page="concierge"] :is(.jobs-head h2,.jobs-section-head h3,.simple-job-card h4){color:#172033!important}
 html[data-theme="light"] body[data-page="concierge"] .jobs-head>div>span{color:#3730a3!important;font-size:12px}
