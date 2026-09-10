@@ -79,7 +79,7 @@ const sandbox = {
 };
 sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
-vm.runInContext(source, sandbox, { filename: 'background.js' });
+vm.runInContext(source, sandbox, { filename: 'background.js' }); // NOSONAR -- fixed checked-in extension source in an isolated test harness
 
 assert.ok(installedListener && contextClickListener && messageListener);
 installedListener({ reason: 'update' });

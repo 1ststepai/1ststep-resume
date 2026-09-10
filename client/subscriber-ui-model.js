@@ -119,7 +119,7 @@ export function estimateJobAgentTimeSaved({ roles = [], applicationSessions = []
   const nowMs = timeSavedAt(now) || Date.now();
   const weekStart = nowMs - (7 * 24 * 60 * 60 * 1000);
   const sessionStart = timeSavedAt(sessionStartedAt);
-  const sum = predicate => events.filter(predicate).reduce((total, event) => total + event.minutes, 0);
+  const sum = predicate => events.filter(event => predicate(event)).reduce((total, event) => total + event.minutes, 0);
   const breakdown = [...new Map(events.map(event => [event.label, event])).values()].map(first => {
     const matching = events.filter(event => event.label === first.label);
     return {

@@ -21,8 +21,9 @@ const tableStart = policy.indexOf('<strong>Permissions used.</strong>');
 assert.ok(tableStart > 0, 'privacy.html must keep the extension permissions table');
 const table = policy.slice(tableStart, policy.indexOf('</table>', tableStart));
 const documented = [...table.matchAll(/<td><strong>([^<]+)<\/strong><\/td>/g)].map(match => match[1].trim());
-const declared = [...manifest.permissions].sort();
-const listed = documented.filter(name => name !== 'Declared site access').sort();
+const byName = (left, right) => left.localeCompare(right);
+const declared = [...manifest.permissions].sort(byName);
+const listed = documented.filter(name => name !== 'Declared site access').sort(byName);
 assert.deepEqual(listed, declared,
   `permissions table must match manifest.json exactly (documented: ${listed}, manifest: ${declared})`);
 assert.ok(documented.includes('Declared site access'),

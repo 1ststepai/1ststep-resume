@@ -2863,7 +2863,7 @@ ${resume.slice(0, 3000)}
     // the account-backed capture by its exact URL identity.
     setTimeout(async () => {
       const captureId = new URLSearchParams(window.location.search).get('jobCaptureId') || '';
-      if (!captureId) return;
+      if (!/^[A-Za-z0-9:_-]{8,160}$/.test(captureId)) return;
       try {
         if (sessionStorage.getItem('1ststep_capture_applied') === captureId) return;
         const response = await fetch(`/api/captured-jobs?id=${encodeURIComponent(captureId)}`, { credentials: 'same-origin' });

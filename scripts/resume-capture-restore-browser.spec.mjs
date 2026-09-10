@@ -28,6 +28,17 @@ test('Resume Builder restores an acknowledged account-backed capture without the
   await expect(page.locator('#jobContextLabel')).toContainText('Example Co');
 });
 
+test('Resume Builder rejects an unsafe capture identifier before requesting account data', async ({ page }) => {
+  let captureReadRequested = false;
+  await page.route('**/api/**', route => {
+    if (route.request().url().includes('/api/captured-jobs')) captureReadRequested = true;
+    return route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+  });
+  await page.goto(`${origin}/app/resume?jobCaptureId=${encodeURIComponent('invalid&id=other')}&mode=tailor`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(1_500);
+  expect(captureReadRequested).toBe(false);
+});
+
 test('extension installation link shows one concise next action', async ({ page }) => {
   await page.route('**/api/**', route => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
   await page.route('**/api/app-config', route => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
