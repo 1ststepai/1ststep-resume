@@ -292,11 +292,29 @@
       ]
     },
     {
+      "source": "/pricing",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' https://buy.stripe.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.tailwindcss.com https://widgets.leadconnectorhq.com https://stcdn.leadconnectorhq.com https://services.leadconnectorhq.com https://js.stripe.com https://www.googletagmanager.com https://easyfunnel.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.bunny.net; font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net; img-src 'self' data: https:; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://www.google.com https://services.leadconnectorhq.com https://services.msgsndr.com https://widgets.leadconnectorhq.com https://stcdn.leadconnectorhq.com https://nominatim.openstreetmap.org https://ipapi.co https://easyfunnel.co; frame-src https://js.stripe.com https://buy.stripe.com; worker-src blob: https://cdnjs.cloudflare.com;"
+        }
+      ]
+    },
+    {
+      "source": "/pricing.html",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' https://buy.stripe.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.tailwindcss.com https://widgets.leadconnectorhq.com https://stcdn.leadconnectorhq.com https://services.leadconnectorhq.com https://js.stripe.com https://www.googletagmanager.com https://easyfunnel.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.bunny.net; font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net; img-src 'self' data: https:; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://www.google.com https://services.leadconnectorhq.com https://services.msgsndr.com https://widgets.leadconnectorhq.com https://stcdn.leadconnectorhq.com https://nominatim.openstreetmap.org https://ipapi.co https://easyfunnel.co; frame-src https://js.stripe.com https://buy.stripe.com; worker-src blob: https://cdnjs.cloudflare.com;"
+        }
+      ]
+    },
+    {
       "source": "/index.html",
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'sha256-tlru7lmslzVtATPDH03eEYkZfwJmBxhEcmDmYMliHqE=' 'sha256-szQLzwZcO98P21QjTSzE0gLx2KOWAUeMBAHoTdkn5hc='; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src 'none'; worker-src 'self'; manifest-src 'self'; media-src 'none'; upgrade-insecure-requests"
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'sha256-tlru7lmslzVtATPDH03eEYkZfwJmBxhEcmDmYMliHqE=' 'sha256-szQLzwZcO98P21QjTSzE0gLx2KOWAUeMBAHoTdkn5hc=' https://easyfunnel.co; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; style-src-attr 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://easyfunnel.co; connect-src 'self' https://easyfunnel.co; frame-src 'none'; worker-src 'self'; manifest-src 'self'; media-src 'none'; upgrade-insecure-requests"
         },
         {
           "key": "Cache-Control",
@@ -309,7 +327,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'sha256-tlru7lmslzVtATPDH03eEYkZfwJmBxhEcmDmYMliHqE=' 'sha256-szQLzwZcO98P21QjTSzE0gLx2KOWAUeMBAHoTdkn5hc='; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src 'none'; worker-src 'self'; manifest-src 'self'; media-src 'none'; upgrade-insecure-requests"
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'sha256-tlru7lmslzVtATPDH03eEYkZfwJmBxhEcmDmYMliHqE=' 'sha256-szQLzwZcO98P21QjTSzE0gLx2KOWAUeMBAHoTdkn5hc=' https://easyfunnel.co; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; style-src-attr 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://easyfunnel.co; connect-src 'self' https://easyfunnel.co; frame-src 'none'; worker-src 'self'; manifest-src 'self'; media-src 'none'; upgrade-insecure-requests"
         }
       ]
     }

@@ -68,7 +68,7 @@ async function auditContrast(page) {
       const style = getComputedStyle(element);
       if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
       if (!element.getClientRects().length) return false;
-      return hasOwnText(element) || element.matches('input,textarea,select,button');
+      return hasOwnText(element) || element.matches('input,textarea,select') || (element.matches('button') && (element.innerText || '').trim());
     });
     const failures = [];
     for (const element of candidates) {
