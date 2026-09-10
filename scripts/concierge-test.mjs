@@ -56,7 +56,7 @@ assert.equal(conciergeStateGuidance({ hasResume: true, mission, counts: { 'Packa
 const conciergeHtml = await readFile(new URL('../concierge.html', import.meta.url), 'utf8');
 const conciergeJs = await readFile(new URL('../concierge.js', import.meta.url), 'utf8');
 const conciergeCss = await readFile(new URL('../persistent-concierge.css', import.meta.url), 'utf8');
-assert.match(conciergeHtml, /persistent-concierge\.css\?v=20260910-agent-status-1/, 'Job Agent must refresh the stylesheet containing the Agent Status visibility fix');
+assert.match(conciergeHtml, /persistent-concierge\.css\?v=20260910-trust-remediation-2/, 'Job Agent must refresh the stylesheet containing the integrated Agent Status and trust fixes');
 assert.match(conciergeCss, /body\.needs-attention #agentProgress:not\(\[open\]\)/, 'Agent Status must become visible when opened while an item Needs You');
 assert.doesNotMatch(conciergeHtml, /<style\b|\sstyle\s*=|\son[a-z]+\s*=/i, 'Job Agent HTML must remain compatible with its no-inline CSP');
 assert.doesNotMatch(conciergeJs, /\.style\.|\.cssText\b|setAttribute\(\s*['"]style['"]/i, 'Job Agent JavaScript must not create inline styles');
