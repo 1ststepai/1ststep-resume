@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://partners.1ststep.ai/sitemap.xml
