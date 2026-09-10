@@ -1612,6 +1612,10 @@ async function submitAgentAccess(event) {
   const message = $('agentAccessMessage');
   const button = $('verifyAgentAccess');
   button.disabled = true;
+  button.textContent = agentRestoreChallenge ? 'Verifying…' : 'Sending code…';
+  message.textContent = agentRestoreChallenge
+    ? 'Verifying your code…'
+    : 'Sending a one-time code…';
   message.className = '';
   try {
     if (!agentRestoreChallenge) {
@@ -1658,6 +1662,7 @@ async function submitAgentAccess(event) {
   } catch (error) {
     message.textContent = error.message || 'Access verification is unavailable right now.';
     message.className = 'warn';
+    button.textContent = agentRestoreChallenge ? 'Verify existing access' : 'Email me a code';
   } finally {
     button.disabled = hasJobAgentAccess();
   }
