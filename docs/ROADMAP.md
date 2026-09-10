@@ -11,7 +11,7 @@ This is the execution queue for the app, Chrome extension, resume site, partner 
 - Chrome Web Store release: v1.3.2. `main` manifest: v1.5.0. Open PR #72: v1.6 durable-capture candidate, mergeable with green reported checks.
 - Local main baseline passed `npm run smoke`, `npm run build`, and `npm run test:extension-release` (17 browser tests). These checks do not prove production persistence or store compatibility.
 - The unauthenticated readiness request returned `AUTH_REQUIRED`; production database, encryption, worker, and tenant-isolation runtime health are therefore `unknown` in this pass.
-- Forty-three registered worktrees were inspected. Eight contained tracked or untracked changes; none were modified. The operating-system branch uses a new clean worktree from `origin/main`.
+- Forty-four registered worktrees were inspected. Twelve were dirty before reconciliation and eight remain dirty after only generated or already-preserved duplicate changes were cleaned. The operating-system branch uses a clean worktree from `origin/main`.
 
 ## Now
 
@@ -104,10 +104,12 @@ This is the execution queue for the app, Chrome extension, resume site, partner 
 ### 2026-09-10 — Ecosystem reset and operating-system baseline
 
 - Inspected four Git markers: the authoritative `1ststep-resume` repository, an unrelated commission prototype, a broader corporate-site repository, and an uninitialized release staging repository. The four requested product surfaces resolve to the authoritative repository.
-- Inspected all 43 registered worktrees and preserved all dirty state.
+- Inspected all 44 registered worktrees. Preserved unique and blocked work; cleaned four worktrees only where generated output or exact merged duplicates were proven.
 - Verified source branch, remotes, manifests, PR #72, deployment projects/aliases, live HTTP state, public pricing, auth boundaries, schema/RLS source, extension capture flow, and available test commands.
 - Established these operating documents on a clean branch from current `origin/main`.
 - Added `scripts/operating-system-contract-test.mjs` to the standard smoke command so future changes cannot silently remove the required operating files or core approval/receipt rules.
 - Baseline checks passed: smoke, public build, and extension release suite with 17 browser tests.
 - Independently checked PR #72 at `5c30d77`: its extension release suite passed 23 browser tests plus captured-job persistence, replay, tenant-isolation, public-source verification, closed/fail-closed behavior, and promotion tests; smoke and build also passed.
 - Remaining risk: protected production runtime health and authenticated end-to-end behavior are still unknown.
+- Recorded the complete repository, branch, worktree, PR, environment-file, deployment, and dirty-change audit in `docs/REPOSITORY_RECONCILIATION.md`.
+- Preserved the unique comprehensive UX audit as local commit `acad40b` and the tested agency-site work as local commit `a0e7f10`; neither was pushed.
