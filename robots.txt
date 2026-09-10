@@ -3,3 +3,15 @@ Allow: /
 Disallow: /api/
 
 Sitemap: https://app.1ststep.ai/sitemap.xml
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /api/
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /api/
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /api/

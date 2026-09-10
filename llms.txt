@@ -1,0 +1,35 @@
+# 1stStep.ai
+
+> 1stStep.ai is a supervised AI job-search product. It checks whether roles are still open, prepares role-specific resumes and cover letters from facts the user confirms, and keeps the applicant in control of anything sent to an employer.
+
+## Canonical pages
+
+- [1stStep.ai home](https://app.1ststep.ai/): Product overview, controls, and current beta information.
+- [Job Agent](https://app.1ststep.ai/concierge): Start and manage the supervised job-search workflow.
+- [Pricing](https://app.1ststep.ai/pricing): Current access and pricing information.
+- [Where to find app.1ststep.ai](https://app.1ststep.ai/where-to-find-1ststep-ai/): Public profiles and external listings verified by 1stStep.ai.
+- [Privacy](https://app.1ststep.ai/privacy): Privacy practices.
+- [Terms](https://app.1ststep.ai/terms): Terms of service.
+
+## Product boundaries
+
+- 1stStep.ai prepares tailored application materials from facts the user confirms.
+- The Chrome extension supports supervised review and user-approved ordinary-field filling on supported Greenhouse pages.
+- The applicant handles employer sign-in, passwords, passkeys, one-time codes, CAPTCHAs, signatures, attestations, sensitive questions, and final submission.
+- An application is not described as submitted until employer receipt is confirmed.
+
+## Verified external profiles
+
+- [Chrome Web Store](https://chromewebstore.google.com/detail/1ststepai-job-agent/gnbjcmennlcbkmakameknfcnioohnjkp)
+- [LinkedIn](https://www.linkedin.com/company/1ststep-ai)
+- [AISO Tools](https://aisotools.com/tool/1ststepai-job-agent)
+- [BetaList](https://betalist.com/startups/1ststep)
+- [Peerlist](https://peerlist.io/company/1ststep_ai)
+- [CurlShip](https://curlship.com/l/2944)
+- [BestAIAgents](https://bestaiagents.ai/agent/1ststep.ai-job-agent)
+- [Product demo on YouTube](https://www.youtube.com/shorts/5WCJcfwF5Q8)
+
+## Contact
+
+- Support: support@1ststep.ai
+- Sales: sales@1ststep.ai
