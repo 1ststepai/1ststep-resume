@@ -27,6 +27,8 @@ Record verified ecosystem changes here. Entries are append-only within each date
 - Preserved 18 unique audit documents in local commit `acad40b` and tested agency-site work in local commit `a0e7f10`; neither commit was pushed or deployed.
 - Recorded unresolved extension version drift: Web Store v1.3.2, `main` v1.5.0, PR #72 v1.6.0, and the mixed primary checkout v1.4.0.
 - Recorded exact production deployment IDs and source parity as unknown because Vercel deployment metadata exposed no Git SHA.
+- Rechecked PR #80's branch-scoped Clerk configuration on Ready Preview `dpl_5knK1Mh6MD2FP9WEndz6rZbhBfva`; Clerk remains disabled despite the corrected enable flag, so one or more opaque sensitive values must be re-entered before authenticated testing.
+- Removed the temporary EasyFunnel widget from app Production and restored the exact clean `origin/main` public artifact; no chatbot or vendor marketing remains live.
 
 ## Historical state recognized by this baseline
 

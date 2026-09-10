@@ -114,3 +114,10 @@ This is the execution queue for the app, Chrome extension, resume site, partner 
 - Remaining risk: protected production runtime health and authenticated end-to-end behavior are still unknown.
 - Recorded the complete repository, branch, worktree, PR, environment-file, deployment, and dirty-change audit in `docs/REPOSITORY_RECONCILIATION.md`.
 - Preserved the unique comprehensive UX audit as local commit `acad40b` and the tested agency-site work as local commit `a0e7f10`; neither was pushed.
+
+### 2026-09-10 — Preview Clerk configuration recheck
+
+- Verified all four Clerk variable names are scoped to PR #80 and reset the non-secret enable flag to exact lowercase `true`.
+- Rebuilt exact-source Preview `dpl_5knK1Mh6MD2FP9WEndz6rZbhBfva`; Clerk remains disabled while restore access is available, isolating the remaining blocker to an opaque Clerk value.
+- Kept Production on the exact clean `origin/main` tree and removed the temporary EasyFunnel widget completely.
+- Next: re-enter the matching Clerk development publishable key, secret key, and complete PEM JWT public key, then re-run the content-free gate before OTP.
