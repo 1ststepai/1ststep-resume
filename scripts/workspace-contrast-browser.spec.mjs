@@ -3,6 +3,19 @@ import { test, expect } from '@playwright/test';
 const testOrigin = new URL(process.env.CONCIERGE_TEST_URL || 'http://127.0.0.1:4175/concierge').origin;
 const base = testOrigin;
 const themes = ['light', 'dark'];
+const activeConsent = { status: 'active', active: true, code: null, scopes: ['direct-employer-discovery', 'confirmed-profile-storage', 'ai-document-preparation', 'application-workspace'] };
+
+async function routeApprovedEmptyAccount(page) {
+  const state = {
+    version: 1, campaigns: [], activeCampaignId: '', runs: [], items: [], humanActions: [], evidence: [], transitions: [],
+    workspace: { version: 1, mission: {}, onboardingDraft: null, dailyGoal: { target: 10, updatedAt: null } },
+    subscriberView: { version: 1, runState: null, jobCards: [], needsYou: [] },
+  };
+  await page.route('**/api/session-capabilities', route => route.fulfill({ json: { jobAgentAccess: true, tier: 'complete', sessionAuthentication: 'opaque-session', pilotAccess: { enforced: true, allowed: true }, jobAgentConsent: activeConsent, jobAgentConsentPolicyConfigured: true } }));
+  await page.route('**/api/job-agent-consent', route => route.fulfill({ json: { consent: activeConsent, version: 1, policyConfigured: true } }));
+  await page.route('**/api/applicant-vault', route => route.fulfill({ json: { version: 1, vault: { consent: { status: 'granted' }, facts: [], documents: [] } } }));
+  await page.route('**/api/concierge-state', route => route.fulfill({ json: { version: 1, state } }));
+}
 
 const explainFailures = (label, failures) => [
   `${label}: ${failures.length} contrast failure(s)`,
@@ -74,6 +87,7 @@ for (const theme of themes) for (const surface of ['admin', 'application']) for 
 for (const theme of themes) for (const width of [375, 1440]) {
   test(`resume overlay ${theme} readable and mobile nav meets rendered floor at ${width}px`, async ({page}) => {
     await page.setViewportSize({width,height:900});
+    await routeApprovedEmptyAccount(page);
     await openWithTheme(page, `${base}/concierge`, theme);
     if(width === 375) {
       const buttons = await page.locator('.agent-header nav button:visible').evaluateAll(nodes => nodes.map(n => ({font:parseFloat(getComputedStyle(n).fontSize),height:n.getBoundingClientRect().height})));
@@ -82,6 +96,7 @@ for (const theme of themes) for (const width of [375, 1440]) {
     }
     await page.locator('#openGuidedLaunch').click();
     await page.locator('[data-guided-goal="best-fit"]').click();
+    await page.locator('#guidedLaunchNext').click();
     await page.locator('#quickUploadResume').click();
     await expect(page.locator('#resumeOverlay')).toHaveClass(/open/);
     const failures = await page.evaluate(AUDIT);
