@@ -25,6 +25,7 @@
     "test:ci-policy": "node scripts/ci-workflow-policy-test.mjs",
     "db:reconcile": "node scripts/reconcile-job-agent-migrations.mjs write",
     "db:reconcile:check": "node scripts/reconcile-job-agent-migrations.mjs check",
+    "db:affiliate:migrate": "node scripts/migrate-affiliate-program.mjs",
     "audit:database-evidence": "node scripts/database-evidence-inventory.mjs print",
     "security:isolated-data-preflight": "node scripts/isolated-data-readiness-preflight.mjs",
     "security:database-runtime-evidence": "node scripts/job-agent-database-runtime-evidence.mjs",
