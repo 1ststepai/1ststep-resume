@@ -160,7 +160,7 @@
       border-radius: 12px;
       overflow-x: auto;
     }
-    .affiliate-section table { min-width: 880px; }
+    .affiliate-section table { min-width: 940px; }
     table { width: 100%; border-collapse: collapse; }
     thead th {
       padding: 12px 18px;
@@ -309,8 +309,8 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Partner</th><th>Status</th><th>Referrals</th><th>Paid referrals</th><th>Pending</th><th>Payable</th><th>Paid</th><th>Actions</th></tr></thead>
-          <tbody id="affiliate-tbody"><tr id="affiliate-empty"><td colspan="8">Loading…</td></tr></tbody>
+          <thead><tr><th>Partner</th><th>Status</th><th>Clicks</th><th>Signups</th><th>Conversions</th><th>Pending</th><th>Payable</th><th>Paid</th><th>Actions</th></tr></thead>
+          <tbody id="affiliate-tbody"><tr id="affiliate-empty"><td colspan="9">Loading…</td></tr></tbody>
         </table>
       </div>
     </section>
@@ -360,9 +360,9 @@
       const data = await res.json();
       renderStats(data);
       try {
-        const affiliateRes = await fetch('/api/affiliates?view=admin', { headers });
+        const affiliateRes = await fetch('/api/affiliates?view=admin', { credentials: 'same-origin' });
         if (affiliateRes.ok) renderAffiliates(await affiliateRes.json());
-        else renderAffiliateUnavailable();
+        else renderAffiliateUnavailable(affiliateRes.status === 401 || affiliateRes.status === 409 ? 'Sign in to app.1ststep.ai with an administrator account, then reload this dashboard.' : 'Affiliate data unavailable.');
       } catch (_) {
         renderAffiliateUnavailable();
       }
@@ -389,29 +389,30 @@
       : 'Referral tracking is active. Commission accrual remains disabled until the paid-program policy is explicitly activated.';
     const tbody = document.getElementById('affiliate-tbody');
     if (!data.partners?.length) {
-      tbody.innerHTML = '<tr id="affiliate-empty"><td colspan="8">No registered partners yet.</td></tr>';
+      tbody.innerHTML = '<tr id="affiliate-empty"><td colspan="9">No registered partners yet.</td></tr>';
       return;
     }
     tbody.innerHTML = data.partners.map(partner => `
       <tr>
-        <td class="name">${esc(partner.name)}<div class="email">${esc(partner.email)}</div><div class="date">${esc(partner.code)}</div></td>
+        <td class="name">${esc(partner.name)}<div class="date">${esc(partner.code)}</div></td>
         <td><span class="badge ${partner.status === 'active' ? 'badge-paid' : partner.status === 'pending' ? 'badge-beta' : 'badge-free'}">${esc(partner.status)}</span></td>
+        <td>${Number(partner.clicks || 0).toLocaleString()}</td>
         <td>${Number(partner.referrals || 0).toLocaleString()}</td>
-        <td>${Number(partner.paidReferrals || 0).toLocaleString()}</td>
+        <td>${Number(partner.conversions || 0).toLocaleString()}</td>
         <td class="money">${dollars(partner.pendingCents)}</td>
         <td class="money">${dollars(Math.max(0, Number(partner.payableCents || 0)))}</td>
         <td class="money">${dollars(partner.paidCents)}</td>
         <td><div class="row-actions">
-          ${partner.status !== 'active' ? `<button data-affiliate-action="approve" data-code="${esc(partner.code)}">Approve</button>` : `<button data-affiliate-action="suspend" data-code="${esc(partner.code)}">Suspend</button>`}
+          ${partner.status !== 'active' ? `<button data-affiliate-action="approve" data-code="${esc(partner.code)}">Approve</button>${partner.status === 'pending' ? `<button data-affiliate-action="reject" data-code="${esc(partner.code)}">Reject</button>` : ''}` : `<button data-affiliate-action="suspend" data-code="${esc(partner.code)}">Suspend</button>`}
           <button data-affiliate-action="record-payout" data-code="${esc(partner.code)}" ${Number(partner.payableCents || 0) < Number(data.minimumPayoutCents || Infinity) ? 'disabled' : ''}>Record payout</button>
         </div></td>
       </tr>`).join('');
     tbody.querySelectorAll('[data-affiliate-action]').forEach(button => button.addEventListener('click', () => runAffiliateAction(button)));
   }
 
-  function renderAffiliateUnavailable() {
-    document.getElementById('affiliate-note').textContent = 'Affiliate ledger unavailable. No zero-value assumption has been made.';
-    document.getElementById('affiliate-tbody').innerHTML = '<tr id="affiliate-empty"><td colspan="8">Affiliate data unavailable.</td></tr>';
+  function renderAffiliateUnavailable(message = 'Affiliate ledger unavailable. No zero-value assumption has been made.') {
+    document.getElementById('affiliate-note').textContent = message;
+    document.getElementById('affiliate-tbody').innerHTML = '<tr id="affiliate-empty"><td colspan="9">Affiliate data unavailable.</td></tr>';
   }
 
   async function runAffiliateAction(button) {
@@ -422,8 +423,8 @@
     button.disabled = true;
     try {
       const response = await fetch('/api/affiliates?view=admin', {
-        method: 'POST', headers: { 'content-type': 'application/json', 'x-admin-secret': secret },
-        body: JSON.stringify({ action, code, reference }),
+        method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action, code, reference, idempotencyKey: crypto.randomUUID() }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Affiliate action failed.');

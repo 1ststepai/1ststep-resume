@@ -36,7 +36,7 @@ const redis = new FakeRedis();
 const partitionSecret = 'partition-session-test-secret'.padEnd(48, 'x');
 const dataEncryptionKey = Buffer.alloc(32, 7).toString('base64');
 const now = new Date('2026-08-29T18:00:00.000Z');
-const first = await createUserSession({ redis, subject: 'Person@Example.com', tier: 'complete', entitlements: ['job-agent-controlled-beta'], partitionSecret, dataEncryptionKey, now, ttlSeconds: 3600 });
+const first = await createUserSession({ redis, subject: 'Person@Example.com', accountId: 'user_Person123', tier: 'complete', entitlements: ['job-agent-controlled-beta'], partitionSecret, dataEncryptionKey, now, ttlSeconds: 3600 });
 assert.match(first.token, /^s1\.[A-Za-z0-9_-]{43}$/);
 assert.equal(first.subject, 'person@example.com');
 assert.equal(first.tier, 'complete');
@@ -45,6 +45,7 @@ assert.ok(![...redis.values.values()][0].includes('person@example.com'), 'Redis 
 
 const restored = await readUserSession({ redis, token: first.token, partitionSecret, dataEncryptionKey, now: new Date(now.getTime() + 1000) });
 assert.equal(restored.subject, 'person@example.com');
+assert.equal(restored.accountId, 'user_Person123');
 assert.equal(restored.authentication, 'opaque-session');
 assert.deepEqual(restored.entitlements, ['job-agent-controlled-beta']);
 assert.equal(await readUserSession({ redis, token: first.token, partitionSecret: 'wrong'.padEnd(48, 'x'), dataEncryptionKey, now }), null);

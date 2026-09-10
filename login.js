@@ -36,7 +36,12 @@ export async function initializeLoginPage({
       const response = await fetchImpl('/api/user-session?action=clerk-exchange', {
         method: 'POST', credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: '{}', signal: timeout(25000),
+        body: JSON.stringify({ referral: (() => {
+          try {
+            const value = JSON.parse(storage.getItem('1ststep_referral_attribution') || '{}');
+            return { referralCode: String(value.referralCode || '').slice(0, 40), capturedAt: value.capturedAt || '' };
+          } catch { return {}; }
+        })() }), signal: timeout(25000),
       });
       const data = await response.json();
       if (!response.ok || !data.signedIn) throw new Error(data.error || 'We could not finish signing you in. Please try again.');

@@ -4,6 +4,7 @@ import { enforceDurableRateLimit, sendRateLimitResult } from '../lib/durable-rat
 import { authenticateClerkIdentity } from '../lib/clerk-identity.js';
 import { identityEmailHash, postgresTenantStoreConfiguration, upsertClerkTenantIdentity } from '../lib/postgres-tenant-store.js';
 import { jobAgentTenantId } from '../lib/job-agent-run-store.js';
+import { affiliateProgramConfiguration, recordAffiliateSignup } from '../lib/affiliate-program.js';
 import { sendVerifiedSubscriptionSession } from './subscription.js';
 
 export const maxDuration = 15;
@@ -48,9 +49,17 @@ export default async function handler(req, res) {
     } catch {
       return res.status(503).json({ error: 'Account storage is temporarily unavailable.', code: 'POSTGRES_IDENTITY_WRITE_FAILED' });
     }
+    const referral = req.body?.referral || {};
+    if (referral.referralCode) {
+      try {
+        await recordAffiliateSignup({ code: referral.referralCode, appUserId: identity.providerSubject, capturedAt: referral.capturedAt }, { configuration: affiliateProgramConfiguration() });
+      } catch (error) {
+        console.error(JSON.stringify({ type: 'affiliate-attribution-error', name: error?.name || 'unknown' }));
+      }
+    }
     return sendVerifiedSubscriptionSession(
       clerkSubscriptionRequest(req), res, identity.subject,
-      { signedIn: true, identityProvider: 'clerk', email: identity.subject },
+      { signedIn: true, identityProvider: 'clerk', email: identity.subject, accountId: identity.providerSubject },
     );
   }
 
@@ -82,7 +91,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ signedOut: true, allDevices });
   }
 
-  const replacement = await createUserSession({ ...runtime, subject: auth.subject, tier: auth.tier, entitlements: auth.entitlements, maxSessions: 21 });
+  const replacement = await createUserSession({ ...runtime, subject: auth.subject, accountId: auth.accountId, tier: auth.tier, entitlements: auth.entitlements, maxSessions: 21 });
   await revokeUserSession({ ...runtime, token: auth.sessionToken, subject: auth.subject });
   setAccessSessionCookie(res, replacement.token, { maxAgeSeconds: replacement.maxAgeSeconds });
   return res.status(200).json({ renewed: true, session: 'http-only-revocable', sessionExpiresAt: replacement.expiresAt });

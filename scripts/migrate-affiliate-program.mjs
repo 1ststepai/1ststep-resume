@@ -20,8 +20,21 @@ const rows = await sql`
   from information_schema.tables
   where table_schema = 'public' and table_name = any(${[
     'affiliate_partners', 'affiliate_attributions', 'affiliate_customers',
-    'affiliate_commission_entries', 'affiliate_payouts', 'affiliate_payout_items',
+    'affiliate_clicks', 'affiliate_commission_entries', 'affiliate_payouts', 'affiliate_payout_items', 'affiliate_audit_events',
   ]})`;
 
-if (Number(rows?.[0]?.table_count) !== 6) throw new Error('Affiliate schema verification failed.');
-console.log('Affiliate schema applied and verified (6 tables).');
+if (Number(rows?.[0]?.table_count) !== 8) throw new Error('Affiliate schema verification failed.');
+
+const [identityColumn, uniqueIdentityIndex, attributionColumn] = await Promise.all([
+  sql`select is_nullable from information_schema.columns where table_schema = 'public' and table_name = 'affiliate_partners' and column_name = 'app_user_id'`,
+  sql`select indexdef from pg_indexes where schemaname = 'public' and tablename = 'affiliate_partners' and indexdef ilike '%unique%app_user_id%'`,
+  sql`select is_nullable from information_schema.columns where table_schema = 'public' and table_name = 'affiliate_attributions' and column_name = 'referred_app_user_hash'`,
+]);
+
+if (identityColumn?.[0]?.is_nullable !== 'NO'
+  || !/unique/i.test(String(uniqueIdentityIndex?.[0]?.indexdef || ''))
+  || attributionColumn?.[0]?.is_nullable !== 'NO') {
+  throw new Error('Affiliate account ownership constraints were not applied.');
+}
+
+console.log('Affiliate schema applied and verified (8 tables, immutable account ownership constraints active).');

@@ -26,6 +26,7 @@ import { accessSessionToken, clearAccessSessionCookie, isOriginAllowed, setAcces
 import { createUserSession, readUserSession, revokeAllUserSessions, revokeUserSession, userSessionRuntimeConfiguration } from '../lib/user-session-store.js';
 import { jobAgentEntitlementsForSubscription } from '../lib/job-agent-entitlement.js';
 import { isAdministratorSubject } from '../lib/admin-subject.js';
+import { affiliateProgramConfiguration, bindAffiliateStripeCustomer } from '../lib/affiliate-program.js';
 
 // ── Tier token helpers ────────────────────────────────────────────────────────
 // A tierToken is: base64(email + "|" + tier + "|" + expiry) + "." + HMAC
@@ -50,9 +51,10 @@ async function sendSignedSession(req, res, email, tier, fields = {}) {
     const runtime = userSessionRuntimeConfiguration();
     if (runtime) {
       const entitlements = jobAgentEntitlementsForSubscription({ client: 'job-agent', tier, env: process.env });
-      const session = await createUserSession({ ...runtime, subject: email, tier, entitlements });
+      const session = await createUserSession({ ...runtime, subject: email, accountId: fields.accountId, tier, entitlements });
       setAccessSessionCookie(res, session.token, { maxAgeSeconds: session.maxAgeSeconds });
-      return res.status(200).json({ tier, ...fields, session: 'http-only-revocable', sessionExpiresAt: session.expiresAt });
+      const { accountId: _accountId, ...publicFields } = fields;
+      return res.status(200).json({ tier, ...publicFields, session: 'http-only-revocable', sessionExpiresAt: session.expiresAt });
     }
     if (process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production') {
       return res.status(503).json({ tier: 'free', error: 'Secure signed-user sessions are temporarily unavailable.' });
@@ -573,6 +575,13 @@ export async function sendVerifiedSubscriptionSession(req, res, email, identityF
 
     // Check each customer for an active subscription
     for (const customer of customers.data) {
+      if (identityFields.accountId) {
+        try {
+          await bindAffiliateStripeCustomer({ appUserId: identityFields.accountId, customerId: customer.id }, { configuration: affiliateProgramConfiguration() });
+        } catch (error) {
+          console.error(JSON.stringify({ type: 'affiliate-customer-bind-error', name: error?.name || 'unknown' }));
+        }
+      }
       const subscriptions = await stripe.subscriptions.list({
         customer: customer.id,
         status:   'active', // Only consider active subscriptions

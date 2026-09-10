@@ -210,6 +210,14 @@ function collapseLetterSpacing(text) {
         };
         localStorage.setItem('firststep_referral_code', ref);
         localStorage.setItem('1ststep_referral_attribution', JSON.stringify(attribution));
+        const clickKey = `1ststep_affiliate_click_${ref}`;
+        if (!localStorage.getItem(clickKey)) {
+          const clickId = crypto.randomUUID();
+          fetch('/api/affiliates', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'click', code: ref, clickId }),
+          }).then(response => { if (response.ok) localStorage.setItem(clickKey, clickId); }).catch(() => {});
+        }
       } catch {}
     }
 
@@ -6626,6 +6634,7 @@ ${desc}`;
     function openProfileModal() {
       _loadProfileToForm();
       document.getElementById('profileModal').classList.add('visible');
+      loadAffiliateAccount();
       // Update completeness bar with existing saved values
       updateProfileCompleteness();
       // Show auto-fill banner if resume is loaded and at least one key field is empty
@@ -6640,6 +6649,68 @@ ${desc}`;
     function closeProfileModal() {
       document.getElementById('profileModal').classList.remove('visible');
     }
+
+    const affiliateMoney = cents => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format((Number(cents) || 0) / 100);
+    function affiliateApplicationMarkup(message = '') {
+      return `${message ? `<p style="color:var(--red);margin:0 0 10px">${escHtml(message)}</p>` : ''}
+        <p style="margin:0 0 10px">Apply from this signed-in account. Approval is required before a referral link or payout setup is available.</p>
+        <div class="profile-grid"><div class="full"><label for="affiliateName">Display or business name</label><input id="affiliateName" maxlength="120" autocomplete="organization"></div>
+        <div class="full"><label for="affiliateCode">Preferred referral code</label><input id="affiliateCode" maxlength="40" placeholder="career-coach-sarah"></div></div>
+        <label style="display:flex;gap:8px;margin:10px 0"><input id="affiliateTerms" type="checkbox" style="width:auto"> <span>I accept the <a href="https://partners.1ststep.ai/#program-terms" target="_blank" rel="noopener">beta partner terms</a> and understand beta referrals do not earn commission.</span></label>
+        <button class="btn-modal-save" type="button" data-affiliate-action="apply">Become a Partner</button>`;
+    }
+    function renderAffiliateAccount(data) {
+      const root = document.getElementById('affiliateAccountContent');
+      if (!data?.partner) { root.innerHTML = affiliateApplicationMarkup(); return; }
+      const p = data.partner;
+      if (p.status !== 'active') {
+        root.innerHTML = `<p style="margin:0"><strong>${escHtml(p.name)}</strong> · ${escHtml(p.code)}</p><p style="margin:4px 0 0">Application status: <strong>${escHtml(p.status)}</strong>. ${p.status === 'rejected' ? 'You may update and resubmit the application.' : 'Your referral dashboard opens after admin approval.'}</p>${p.status === 'rejected' ? affiliateApplicationMarkup() : ''}`;
+        return;
+      }
+      const link = `https://app.1ststep.ai/?ref=${encodeURIComponent(p.code)}&utm_source=partner&utm_medium=referral`;
+      const payouts = (data.payouts || []).map(item => `<li>${affiliateMoney(item.amountCents)} · ${new Date(item.paidAt).toLocaleDateString()}</li>`).join('') || '<li>No payouts recorded.</li>';
+      root.innerHTML = `<p style="margin:0 0 8px"><strong>Affiliate Dashboard</strong> · Approved</p>
+        <p style="margin:0 0 8px">Referral code: <strong>${escHtml(p.code)}</strong></p>
+        <label for="affiliateLink">Your referral link</label><input id="affiliateLink" readonly value="${escHtml(link)}"><button type="button" class="btn-modal-cancel" data-affiliate-action="copy" style="margin-top:6px">Copy link</button>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px 0">
+          <span><b>${p.clicks}</b><small style="display:block">Clicks</small></span><span><b>${p.referrals}</b><small style="display:block">Signups</small></span><span><b>${p.conversions}</b><small style="display:block">Conversions</small></span>
+          <span><b>${affiliateMoney(p.pendingCents)}</b><small style="display:block">Pending</small></span><span><b>${affiliateMoney(p.payableCents)}</b><small style="display:block">Payable</small></span><span><b>${affiliateMoney(p.paidCents)}</b><small style="display:block">Paid</small></span>
+        </div>
+        <p style="margin:8px 0">Payout setup: <strong>${p.payoutConfigured ? 'configured' : 'needed'}</strong></p>
+        <div style="display:flex;gap:6px"><input id="affiliatePayoutEmail" type="email" autocomplete="email" placeholder="PayPal payout email"><button type="button" class="btn-modal-save" data-affiliate-action="payout">Save payout</button></div>
+        <p style="margin:10px 0 4px"><a href="https://partners.1ststep.ai/#program-terms" target="_blank" rel="noopener">Terms</a> · <a href="mailto:support@1ststep.ai?subject=Affiliate%20support">Support</a></p><ul style="margin:4px 0;padding-left:18px">${payouts}</ul>`;
+    }
+    async function loadAffiliateAccount() {
+      const root = document.getElementById('affiliateAccountContent');
+      root.textContent = 'Checking your partner access…';
+      try {
+        const response = await fetch('/api/affiliates?view=mine', { credentials: 'same-origin' });
+        const data = await response.json();
+        if (response.status === 401 || response.status === 409) {
+          root.innerHTML = '<p style="margin:0 0 10px">Sign in or create your standard 1stStep.ai account to become a partner.</p><a class="btn-modal-save" href="/login.html">Log In</a> <a class="btn-modal-cancel" href="/login.html?mode=sign-up">Sign Up</a>';
+          return;
+        }
+        if (!response.ok) throw new Error(data.error || 'Affiliate dashboard unavailable.');
+        renderAffiliateAccount(data);
+      } catch (error) { root.textContent = error.message || 'Affiliate dashboard unavailable. No zero-value assumption was made.'; }
+    }
+    async function runAffiliateAccountAction(action) {
+      if (action === 'copy') {
+        await navigator.clipboard.writeText(document.getElementById('affiliateLink').value);
+        showToast('Referral link copied'); return;
+      }
+      const body = action === 'apply'
+        ? { action, name: document.getElementById('affiliateName')?.value, code: document.getElementById('affiliateCode')?.value, acceptedTerms: document.getElementById('affiliateTerms')?.checked, idempotencyKey: crypto.randomUUID() }
+        : { action: 'payout-details', method: 'paypal', destination: document.getElementById('affiliatePayoutEmail')?.value, idempotencyKey: crypto.randomUUID() };
+      const response = await fetch('/api/affiliates?view=mine', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Affiliate action failed.');
+      await loadAffiliateAccount();
+    }
+    document.getElementById('affiliateAccount')?.addEventListener('click', event => {
+      const action = event.target.closest('[data-affiliate-action]')?.dataset.affiliateAction;
+      if (action) runAffiliateAccountAction(action).catch(error => showToast(error.message || 'Affiliate action failed', 'warning'));
+    });
 
     function signOutAndClear() {
       if (!confirm('This will remove all your saved data (resume, account info, tailor history) from this device. Continue?')) return;

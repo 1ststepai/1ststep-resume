@@ -17,7 +17,6 @@
 export const maxDuration = 10;
 import { applyApiHeaders, authenticateApiRequest, hasJsonContentType, isOriginAllowed, requestIp } from '../lib/api-security.js';
 import { enforceDurableRateLimit, sendRateLimitResult } from '../lib/durable-rate-limit.js';
-import { affiliateProgramConfiguration, recordAffiliateSignup } from '../lib/affiliate-program.js';
 
 // ── HTML escape helper (EMAIL-01: prevents XSS in admin email) ───────────────
 function escHtml(s) {
@@ -197,21 +196,9 @@ export default async function handler(req, res) {
     results.ghl = 'skipped';
   }
 
-  // ── 2. Durable affiliate attribution ──────────────────────────────────────
-  // GHL remains the CRM view; the dedicated ledger is the accounting source.
-  if (referralCode) {
-    try {
-      const attribution = await recordAffiliateSignup({
-        code: referralCode,
-        email,
-        capturedAt: referral.capturedAt,
-      }, { configuration: affiliateProgramConfiguration() });
-      results.affiliate = attribution.recorded ? 'recorded' : attribution.reason;
-    } catch (err) {
-      console.error(JSON.stringify({ type: 'affiliate-signup-error', name: err?.name || 'unknown' }));
-      results.affiliate = 'error';
-    }
-  }
+  // Durable affiliate attribution occurs only after Clerk verifies the account
+  // and supplies its immutable internal user ID.
+  if (referralCode) results.affiliate = 'awaiting-authenticated-account';
 
   // ── 3. Admin email via Resend ─────────────────────────────────────────────
   const resendKey = process.env.RESEND_API_KEY;
