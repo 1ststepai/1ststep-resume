@@ -54,11 +54,11 @@ async function init() {
     if (job) {
       showJobCard(job, auth);
     } else {
-      showEmptyState(auth);
+      await showEmptyState(auth);
     }
   } catch (err) {
     console.error('[1stStep] Init error:', err);
-    showEmptyState(null);
+    await showEmptyState(null);
   } finally {
     loadingState.style.display = 'none';
   }
@@ -74,7 +74,7 @@ function showUnauthState() {
   openAppLink.addEventListener('click', () => chrome.tabs.create({ url: `${APP_URL}/app/resume` }));
 }
 
-function showEmptyState(auth) {
+async function showEmptyState(auth) {
   loadingState.style.display = 'none';
   jobState.style.display     = 'block';
   jobCard.classList.remove('visible');
@@ -92,8 +92,14 @@ function showEmptyState(auth) {
   };
   if (openJobsBtn) openJobsBtn.onclick = () => chrome.tabs.create({ url: `${APP_URL}/concierge#jobs` });
 
-  // Auto-fill still works without a detected job
-  if (autofillEmptyBtn && auth?.jobAgentAccess) {
+  // A failed capture can still leave a supported Greenhouse application that
+  // the server-authorized fill path can inspect. Never offer that action on an
+  // unsupported host, where no fill content script exists.
+  const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  let greenhousePage = false;
+  try { greenhousePage = /(^|\.)greenhouse\.io$/i.test(new URL(activeTab?.url || '').hostname); } catch (_) {}
+  if (autofillEmptyBtn && auth?.jobAgentAccess && greenhousePage) {
+    autofillEmptyBtn.style.display = 'inline';
     autofillEmptyBtn.onclick = () => autofillPage(auth, autofillEmptyBtn);
   } else if (autofillEmptyBtn) {
     autofillEmptyBtn.style.display = 'none';

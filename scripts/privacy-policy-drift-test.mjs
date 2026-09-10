@@ -5,8 +5,9 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
-const [policy, manifestSource, storeSource, justifications, listing] = await Promise.all([
+const [policy, terms, manifestSource, storeSource, justifications, listing] = await Promise.all([
   read('privacy.html'),
+  read('terms.html'),
   read('1ststep-extension/manifest.json'),
   read('lib/captured-job-store.js'),
   read('1ststep-extension/PERMISSION_JUSTIFICATIONS.md'),
@@ -69,4 +70,39 @@ for (const [name, doc] of [['PERMISSION_JUSTIFICATIONS.md', justifications], ['S
   assert.ok(new RegExp(`${ttlDays}\\s*days`).test(doc), `${name} must state the ${ttlDays}-day capture retention window`);
 }
 
-console.log(`Privacy policy drift tests passed (${declared.length} permissions, ${ttlDays}-day capture retention, 3 documents).`);
+// Removed v1.6 paths must not survive in legal or store-facing descriptions.
+for (const [name, doc] of [['privacy.html', policy], ['terms.html', terms], ['STORE_LISTING.md', listing]]) {
+  assert.doesNotMatch(doc, /provide a job description manually|paste a job description manually/i,
+    `${name} must not advertise the removed manual-paste path`);
+  assert.doesNotMatch(doc, /cover-letter preparation|cover-letter shortcut/i,
+    `${name} must not advertise the removed extension cover-letter path`);
+}
+
+// The local handoff and consented account record are different storage paths.
+assert.match(policy, /local capture handoff for up to 24 hours/i,
+  'privacy.html must disclose the pending local capture window');
+assert.match(policy, /signed in[\s\S]{0,160}current Job Agent data-consent/i,
+  'privacy.html must condition durable capture storage on current account consent');
+assert.match(terms, /pending local capture handoff for up to 24 hours/i,
+  'terms.html must disclose the pending local capture window');
+assert.match(listing, /Resume Builder handoff remains only in local extension storage for up to 24 hours/i,
+  'STORE_LISTING.md must distinguish the non-durable Resume Builder handoff');
+
+// Google treats locally handled website content as user data. Keep the automatic
+// declared-host behavior and explicit-action behavior visible before install.
+assert.match(listing, /declared Greenhouse job pages[\s\S]{0,160}detects the listing locally while enabled/i,
+  'STORE_LISTING.md must disclose local detection on declared Greenhouse pages');
+assert.match(listing, /other websites[\s\S]{0,120}only after you click/i,
+  'STORE_LISTING.md must disclose explicit user action on other websites');
+assert.doesNotMatch(policy, /field (?:labels|schema)[\s\S]{0,80}options/i,
+  'privacy.html must not claim application-field options are transmitted');
+assert.doesNotMatch(terms, /labels, types, and options/i,
+  'terms.html must not claim application-field options are transmitted');
+assert.match(policy, /five-minute cache[\s\S]{0,180}Job Agent access/i,
+  'privacy.html must disclose the short-lived Job Agent capability cache');
+assert.match(justifications, /five-minute session cache[\s\S]{0,160}account tier/i,
+  'PERMISSION_JUSTIFICATIONS.md must disclose the short-lived Job Agent capability cache');
+assert.match(policy, /including embedded frames/i,
+  'privacy.html must disclose user-triggered capture inside embedded frames');
+
+console.log(`Privacy policy drift tests passed (${declared.length} permissions, ${ttlDays}-day capture retention, aligned release disclosures).`);

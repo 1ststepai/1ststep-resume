@@ -14,10 +14,10 @@ const completeJob = {
   location: 'Newark, NJ',
 };
 
-async function openPopup(page, job = completeJob) {
+async function openPopup(page, job = completeJob, activeUrl = job?.applyUrl || 'https://careers.example.com/') {
   const html = await readFile(new URL('popup.html', extensionRoot), 'utf8');
   const script = await readFile(new URL('popup.js', extensionRoot), 'utf8');
-  await page.addInitScript((capturedJob) => {
+  await page.addInitScript(({ capturedJob, currentUrl }) => {
     globalThis.__runtimeMessages = [];
     globalThis.chrome = {
       runtime: {
@@ -35,7 +35,7 @@ async function openPopup(page, job = completeJob) {
       },
       tabs: {
         query(_query, callback) {
-          const tabs = [{ id: 1, url: capturedJob?.applyUrl || 'https://careers.example.com/' }];
+          const tabs = [{ id: 1, url: currentUrl }];
           callback?.(tabs);
           return Promise.resolve(tabs);
         },
@@ -46,7 +46,7 @@ async function openPopup(page, job = completeJob) {
         create() {},
       },
     };
-  }, job);
+  }, { capturedJob: job, currentUrl: activeUrl });
   await page.route('https://extension.test/popup.html', route => route.fulfill({ contentType: 'text/html', body: html }));
   await page.route('https://extension.test/popup.js', route => route.fulfill({ contentType: 'text/javascript', body: script }));
   await page.goto('https://extension.test/popup.html');
@@ -79,4 +79,13 @@ test('popup requires a company before handoff', async ({ page }) => {
   await page.locator('#tailorBtn').click();
   await expect(page.locator('#companyInput')).toBeFocused();
   await expect(page.locator('#companyInput')).toHaveClass(/required-error/);
+});
+
+test('empty state offers autofill only on a supported Greenhouse page', async ({ page }) => {
+  await openPopup(page, null, 'https://careers.example.com/jobs/123');
+  await expect(page.locator('#autofillEmptyBtn')).toBeHidden();
+
+  await page.reload();
+  await openPopup(page, null, 'https://boards.greenhouse.io/example/jobs/123');
+  await expect(page.locator('#autofillEmptyBtn')).toBeVisible();
 });
