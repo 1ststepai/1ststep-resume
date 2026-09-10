@@ -18,10 +18,13 @@ const readyEnvironment = {
 assert.deepEqual(publicAuthenticationConfiguration(readyEnvironment), { restoreAccessAvailable: true, ...clerkDisabled });
 assert.deepEqual(publicAuthenticationConfiguration({ ...readyEnvironment, RESEND_FROM: '' }), { restoreAccessAvailable: false, ...clerkDisabled });
 assert.deepEqual(publicAuthenticationConfiguration({ ...readyEnvironment, BETA_DATA_ENCRYPTION_KEY: '' }), { restoreAccessAvailable: false, ...clerkDisabled });
-const clerkReady = { ...readyEnvironment, CLERK_IDENTITY_ENABLED: 'true', CLERK_SECRET_KEY: 'synthetic-clerk-secret', CLERK_JWT_KEY: 'synthetic-public-key', CLERK_PUBLISHABLE_KEY: 'pk_live_fixture' };
-assert.deepEqual(publicAuthenticationConfiguration(clerkReady).clerk, { enabled: true, publishableKey: 'pk_live_fixture' });
+const clerkReady = { ...readyEnvironment, VERCEL_ENV: 'preview', CLERK_IDENTITY_ENABLED: 'true', CLERK_SECRET_KEY: 'synthetic-clerk-secret', CLERK_JWT_KEY: 'synthetic-public-key', CLERK_PUBLISHABLE_KEY: 'pk_test_fixture' };
+assert.deepEqual(publicAuthenticationConfiguration(clerkReady).clerk, { enabled: true, publishableKey: 'pk_test_fixture' });
 assert.equal(JSON.stringify(publicAuthenticationConfiguration(clerkReady)).includes('synthetic-clerk-secret'), false);
 assert.equal(publicAuthenticationConfiguration({ ...clerkReady, CLERK_JWT_KEY: '' }).clerk.enabled, false);
+assert.equal(publicAuthenticationConfiguration({ ...clerkReady, VERCEL_ENV: 'production' }).clerk.enabled, false);
+assert.equal(publicAuthenticationConfiguration({ ...clerkReady, VERCEL_ENV: 'production', CLERK_PUBLISHABLE_KEY: 'pk_live_fixture' }).clerk.enabled, true);
+assert.equal(publicAuthenticationConfiguration({ ...clerkReady, CLERK_PUBLISHABLE_KEY: 'pk_live_fixture' }).clerk.enabled, false);
 
 function responseCapture() {
   const capture = { statusCode: null, headers: {}, body: null };
