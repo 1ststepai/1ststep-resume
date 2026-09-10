@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 const files = Object.fromEntries(await Promise.all([
   'api/ai.js', 'api/claude.js', 'api/jobs.js', 'api/concierge-discovery.js',
   'api/notify-signup.js', 'api/track-event.js', 'api/ghl-stage.js', 'api/app-config.js',
-  'api/tally-webhook.js', 'api/beta-expiry-check.js', 'api/subscription.js', 'app.js', 'concierge.js', 'vercel.json',
+  'api/tally-webhook.js', 'api/beta-expiry-check.js', 'api/subscription.js', 'api/captured-jobs.js', 'app.js', 'concierge.js', 'vercel.json',
   'api/application-packages.js', 'api/application-package-artifact.js', 'api/application-package-render.js',
   'api/application-sessions.js', 'api/employer-browser-session.js', 'api/extension-application-handoff.js', 'api/user-session.js', 'api/job-agent-notifications.js', 'api/account-data.js',
   'api/applicant-vault.js', 'api/application-audit.js', 'api/concierge-state.js', 'api/job-agent-consent.js',
@@ -13,7 +13,7 @@ const files = Object.fromEntries(await Promise.all([
 'api/job-agent-discord-relay.js', 'lib/job-agent-discord-relay.js',
 'lib/employer-browser-worker.js', 'lib/extension-application-handoff.js', 'lib/controlled-extension-release.js', 'lib/employer-browser-task-worker.js', 'lib/employer-browser-task-store.js', 'lib/employer-browser-session-provider.js', 'lib/employer-browser-session-store.js', 'lib/employer-browser-session-lifecycle.js', 'lib/employer-browser-session-cleanup.js', 'lib/job-agent-authorization-shutdown.js', 'lib/employer-receipt-verifier.js', 'lib/application-receipt-ingestion.js', 'lib/application-receipt-capture-provider.js', 'lib/application-receipt-evidence-provider.js', 'lib/application-receipt-task-store.js', 'lib/application-receipt-task-worker.js', 'lib/application-submission-provider.js', 'lib/application-submission-task-store.js', 'lib/application-submission-task-worker.js', 'lib/application-session-domain.js', 'lib/discovery-package-binding.js', 'lib/job-card-freshness-worker.js',
   'lib/application-package-worker.js', 'lib/application-package-render-sandbox.js', 'lib/job-agent-object-storage.js',
-  'lib/data-encryption-keyring.js', 'lib/tenant-campaign-store.js', 'lib/applicant-vault-store.js', 'lib/job-agent-consent-store.js', 'lib/job-agent-pilot-access.js', 'lib/job-agent-entitlement.js', 'lib/job-agent-spend-ledger.js',
+  'lib/data-encryption-keyring.js', 'lib/tenant-campaign-store.js', 'lib/applicant-vault-store.js', 'lib/captured-job-store.js', 'lib/captured-job-verification.js', 'lib/job-agent-consent-store.js', 'lib/job-agent-pilot-access.js', 'lib/job-agent-entitlement.js', 'lib/job-agent-spend-ledger.js',
   'lib/job-agent-schedule-store.js', 'lib/job-agent-notification-store.js', 'lib/application-needs-you-notifier.js', 'lib/job-agent-operator-alert-outbox.js', 'lib/job-agent-run-store.js', 'lib/user-session-store.js', 'lib/application-session-store.js', 'lib/application-follow-up-store.js',
   'lib/account-data-deletion.js', 'lib/account-data-export-builder.js', 'lib/account-data-export-task.js', 'lib/encrypted-record-maintenance.js', 'lib/encrypted-record-recovery.js', 'lib/job-agent-object-storage-drill.js', 'scripts/reencrypt-job-agent-records.mjs', 'scripts/encrypted-record-recovery-drill.mjs', 'scripts/job-agent-object-storage-drill.mjs',
 'lib/application-audit-head-export.js', 'lib/application-audit-archive-provider.js', 'lib/job-agent-launch-manifest.js', 'lib/job-agent-launch-evidence.js', 'lib/job-agent-release-record.js', 'lib/job-agent-support-ownership.js', 'lib/job-agent-production-environment-report.js', 'api/job-agent-readiness.js', 'scripts/build-controlled-extension.mjs', 'scripts/sherlock-security-review.mjs', 'scripts/production-launch-manifest-report.mjs', 'scripts/production-environment-shape-report.mjs', 'scripts/production-security-gate.mjs', 'scripts/job-agent-pilot-tenant-id.mjs', 'scripts/sign-job-agent-launch-evidence.mjs',
@@ -29,8 +29,11 @@ for (const route of [
   'api/account-data.js', 'api/applicant-vault.js', 'api/application-audit.js', 'api/application-package-artifact.js',
   'api/application-package-render.js', 'api/application-packages.js', 'api/application-sessions.js', 'api/employer-browser-session.js', 'api/extension-application-handoff.js', 'api/concierge-state.js',
   'api/job-agent-consent.js', 'api/job-agent-notifications.js', 'api/job-agent-operations.js', 'api/job-agent-runs.js',
-  'api/job-agent-schedule.js', 'api/session-capabilities.js',
+  'api/job-agent-schedule.js', 'api/session-capabilities.js', 'api/captured-jobs.js',
 ]) assert.match(files[route], /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/, `${route} must reject legacy bearer sessions`);
+assert.match(files['api/captured-jobs.js'], /verifyCapturedPublicJob/);
+assert.match(files['api/captured-jobs.js'], /requireJobAgentPolicyLevel\(JOB_AGENT_POLICY_LEVELS\.DATA_CONSENT/);
+assert.match(files['lib/captured-job-store.js'], /encryptJsonEnvelope/);
 assert.match(files['concierge.js'], /return \{ 'X-1stStep-Client': 'job-agent' \};/);
 assert.doesNotMatch(files['concierge.js'].match(/function apiAuthorizationHeaders\(\)[\s\S]*?\n\}/)?.[0] || '', /Bearer|tierToken|subscription/);
 assert.match(files['lib/job-agent-discord-relay.js'], /JOB_AGENT_DISCORD_ALERTS_APPROVED/);

@@ -6,8 +6,8 @@ export default defineConfig({
   use: { headless: true },
   webServer: {
     command: 'node scripts/static-test-server.mjs',
-    cwd: '..',
+    cwd: process.cwd(),
     url: 'http://127.0.0.1:4175/concierge',
-    reuseExistingServer: true,
+    reuseExistingServer: false,
   },
 });

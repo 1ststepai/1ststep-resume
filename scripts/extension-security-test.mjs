@@ -30,16 +30,26 @@ assert.match(files['auth-bridge.js'], /SYNC_JOB_AGENT_STATUS/);
 assert.match(files['background.js'], /JOB_AGENT_STATUS_CACHE_TTL_MS = 5 \* 60 \* 1000/);
 assert.match(files['background.js'], /sender\?\.url[\s\S]*APP_URL/,
   'only a 1stStep app page may update the short-lived capability cache');
-assert.doesNotMatch(files['background.js'], /jobAgentStatusCache[\s\S]{0,300}(?:email|subject|resume|document)/i,
+const capabilityCacheSource = files['background.js'].slice(
+  files['background.js'].indexOf('function compactJobAgentCapabilities'),
+  files['background.js'].indexOf('function relayToTab'),
+);
+assert.doesNotMatch(capabilityCacheSource, /(?:email|subject|resume|document)/i,
   'the capability cache must not retain identity or application content');
 assert.doesNotMatch(files['background.js'], /chrome\.storage\.(?:local|session)\.set\([^\n]*(?:document|contentBase64|resumeDocument)/);
-assert.match(files['popup.js'], /chrome\.scripting\.executeScript/,
-  'generic capture must run only after the user opens the popup on the active tab');
-assert.match(files['popup.js'], /files: \['generic-capture\.js'\]/);
-assert.match(files['popup.js'], /allFrames: true/,
+assert.match(files['popup.js'], /CAPTURE_ACTIVE_TAB/,
+  'popup capture must delegate to the single user-triggered capture path');
+assert.match(files['background.js'], /chrome\.scripting\.executeScript/,
+  'generic capture must run only after the user opens the popup or chooses a context-menu action');
+assert.match(files['background.js'], /files: \['generic-capture\.js'\]/);
+assert.match(files['background.js'], /allFrames: true/,
   'user-triggered capture must inspect accessible job frames without permanent host access');
-assert.match(files['popup.js'], /allFrames: false/,
+assert.match(files['background.js'], /allFrames: false/,
   'protected frames must fall back to the selected top-level page');
+assert.match(files['background.js'], /CONTEXT_MENU_RESUME/);
+assert.match(files['background.js'], /CONTEXT_MENU_AGENT/);
+assert.match(files['background.js'], /setBadgeText\(\{ tabId, text: job \? 'JOB' : '\?' \}\)/,
+  'explicit capture must leave a visible per-tab capability result');
 assert.match(files['popup.js'], /JOB_AGENT_APP_BRIDGE_UNAVAILABLE[\s\S]*Reconnect Agent/,
   'a stale app bridge must be shown as a reconnect problem, not silently downgraded to Resume Tools');
 assert.match(files['popup.html'], /id="agentConnectionHint"[\s\S]*aria-live="polite"/,
@@ -87,24 +97,32 @@ assert.match(conciergeJs, /event\.data\.type !== '1STSTEP_JOB_CAPTURE'/,
   'concierge must receive explicitly selected Job Agent captures');
 assert.match(conciergeJs, /event\.source !== window \|\| event\.origin !== window\.location\.origin/,
   'concierge capture acknowledgements must be same-document and same-origin');
-assert.match(conciergeJs, /sourceType: 'user-captured'/,
-  'captured jobs must remain visibly distinct from verified employer listings');
-assert.match(conciergeJs, /applyPathActive: false/,
-  'a generic capture must never claim that the employer Apply path was verified');
+assert.match(conciergeJs, /sourceType: verified \? 'direct-employer' : 'user-captured'/,
+  'only server-verified captures may become direct-employer listings');
+assert.match(conciergeJs, /const verified = job\.verification === 'verified' && Boolean\(job\.discoveryRunId\) && job\.applyPathActive/,
+  'browser content alone must never activate the employer Apply path');
 assert.match(conciergeJs, /Job already saved; duplicate suppressed/,
   'a repeated capture must report duplicate suppression instead of claiming it was newly added');
 
 assert.deepEqual(manifest.host_permissions.sort(), ['https://*.greenhouse.io/*', 'https://app.1ststep.ai/*'].sort());
 assert.equal(manifest.permissions.includes('scripting'), true);
+assert.equal(manifest.permissions.includes('contextMenus'), true);
+assert.equal(manifest.permissions.includes('tabs'), false);
+assert.equal(manifest.permissions.includes('sidePanel'), false);
+assert.equal('side_panel' in manifest, false);
+assert.equal(manifest.permissions.includes('cookies'), false);
 assert.equal(manifest.host_permissions.includes('<all_urls>'), false);
 assert.equal(manifest.content_scripts[0].all_frames, false);
 assert.equal('web_accessible_resources' in manifest, false);
-assert.equal(manifest.description.toLowerCase().includes('greenhouse'), true);
+assert.equal(manifest.description.toLowerCase().includes('greenhouse'), false);
 
 assert.match(files['content.js'], /sendResponse\(\{ success: true, reviewRequired: true, matchAssessment, filled: 0, submitted: false/);
 assert.ok(files['content.js'].indexOf('reviewRequired: true') < files['content.js'].indexOf('if (await fillApprovedResume'), 'match review must happen before document or ordinary-field mutation');
 assert.match(files['content.js'], /confirmPrecision: true|msg\.confirmPrecision === true/);
 assert.match(files['popup.js'], /btn\.dataset\.precisionReviewed = 'true'/);
 assert.match(files['popup.html'], /Review match &amp; fill/);
+assert.match(files['popup.html'], /id="fillResult"[\s\S]*aria-live="polite"/);
+assert.match(files['content.js'], /data-firststep-needs-review/);
+assert.match(files['content.js'], /Nothing was submitted/);
 
 console.log('Controlled Greenhouse extension uses transient server-authorized values and integrity-checked resume bytes, requires match evidence and explicit review before fill, stores no raw profile or document data, performs no AI field guessing, keeps narrow hosts, and never submits.');

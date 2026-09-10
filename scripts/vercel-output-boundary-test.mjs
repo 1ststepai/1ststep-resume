@@ -156,6 +156,7 @@ for (const requiredFunction of [
   'health.func',
   'app-config.func',
   'concierge-state.func',
+  'captured-jobs.func',
   'job-agent-runs.func',
   'user-session.func',
   'health/live.func',
@@ -166,7 +167,7 @@ for (const requiredFunction of [
   assert(functionNames.has(requiredFunction), `Expected serverless API function missing: api/${requiredFunction}`);
 }
 assert(functionNames.has('job-agent-discord-relay.func'), 'Expected serverless API function missing: api/job-agent-discord-relay.func');
-assert.equal(functionNames.size, 42, `Unexpected API function count: ${functionNames.size}`);
+assert.equal(functionNames.size, 43, `Unexpected API function count: ${functionNames.size}`);
 
 const outputConfig = JSON.parse(await readFile(path.join(outputRoot, 'config.json'), 'utf8'));
 const routeText = JSON.stringify(outputConfig.routes || []);

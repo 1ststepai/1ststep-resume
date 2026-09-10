@@ -2808,7 +2808,7 @@ ${resume.slice(0, 3000)}
       document.getElementById('extPostGenNudge').style.display = 'none';
     });
 
-    window.addEventListener('message', (event) => {
+    window.addEventListener('message', async (event) => {
       if (event.source !== window || event.origin !== window.location.origin) return;
       if (!event.data || event.data.type !== '1STSTEP_JOB_CAPTURE') return;
       const { jobData, resumeText, mode, captureId } = event.data;
@@ -2819,6 +2819,15 @@ ${resume.slice(0, 3000)}
       // outright rather than being treated as 'probably ours'.
       const _urlCaptureId = new URLSearchParams(window.location.search).get('jobCaptureId') || '';
       if (!_urlCaptureId || !captureId || captureId !== _urlCaptureId) return;
+
+      let _durableCaptureSaved = false;
+      try {
+        const _captureResponse = await fetch('/api/captured-jobs', {
+          method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ captureId, job: jobData }),
+        });
+        _durableCaptureSaved = _captureResponse.ok;
+      } catch (_) {}
 
       // Re-delivery of a capture already applied is acknowledged again but must
       // not redo the work below.
@@ -2849,7 +2858,7 @@ ${resume.slice(0, 3000)}
 
       // Acknowledge only after the capture is saved. Without this the browser
       // helper keeps the job rather than dropping it.
-      if (_capturePersisted && captureId) {
+      if (_capturePersisted && _durableCaptureSaved && captureId) {
         try { window.postMessage({ type: '1STSTEP_JOB_CAPTURE_ACK', version: '1', captureId }, window.location.origin); } catch (_) {}
       }
 
@@ -2904,6 +2913,20 @@ ${resume.slice(0, 3000)}
       }
       updateWhatsNextGuide();
     });
+
+    // If the extension has already retired its short-lived browser copy, restore
+    // the account-backed capture by its exact URL identity.
+    setTimeout(async () => {
+      const captureId = new URLSearchParams(window.location.search).get('jobCaptureId') || '';
+      if (!/^[A-Za-z0-9:_-]{8,160}$/.test(captureId)) return;
+      try {
+        if (sessionStorage.getItem('1ststep_capture_applied') === captureId) return;
+        const response = await fetch(`/api/captured-jobs?id=${encodeURIComponent(captureId)}`, { credentials: 'same-origin' });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !payload.job) return;
+        window.postMessage({ type: '1STSTEP_JOB_CAPTURE', version: '1', captureId, jobData: payload.job, mode: 'tailor' }, window.location.origin);
+      } catch (_) {}
+    }, 1200);
 
     // -- Tier ------------------------------------------------------------------
     // setTier() controls the OUTPUT MODE only (what to generate this session).
