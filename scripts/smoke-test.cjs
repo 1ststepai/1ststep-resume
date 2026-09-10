@@ -53,7 +53,7 @@ const apiBeta = fs.existsSync(path.join(ROOT, 'api', 'beta.js'))
 section('HTML structure');
 
 if (html) {
-  if (/<link[^>]+href=["']\/?style\.css["']/.test(html)) pass('style.css linked in <head>');
+  if (/<link[^>]+href=["']\/?style\.css(?:\?[^"']+)?["']/.test(html)) pass('style.css linked in <head>');
   else fail('style.css NOT linked in <head>');
 
   if (/<script[^>]+src=["']\/?app\.js(?:\?[^"']*)?["']/.test(html)) pass('app.js linked before </body>');
@@ -214,6 +214,15 @@ if (js) {
 
 // ── 5. Required global functions ──────────────────────────────────────────────
 section('Workflow guidance smoke');
+
+if (/id="welcomePasteBtn"/.test(html) && /id="welcomeLinkedInBtn"/.test(html) && /id="welcomeBuildBtn"/.test(html)) pass('Resume onboarding offers upload, paste, LinkedIn, and build paths');
+else fail('Resume onboarding is missing a clear resume input path');
+if (/function _saveWelcomePastedResume\(\)/.test(js) && /text\.length < 200/.test(js)) pass('Pasted resume onboarding validates useful resume text');
+else fail('Pasted resume onboarding validation is missing');
+if (/function updateResumeFocusState\(/.test(js) && /resume-focus-resume-first/.test(css) && /resume-focus-building/.test(css)) pass('Resume workspace progressively reveals secondary controls');
+else fail('Resume workspace focus states are missing');
+if (!/Used by job seekers to land/.test(html)) pass('Unverified interview outcome claim is absent');
+else fail('Unverified interview outcome claim is still present');
 
 if (html) {
   if (/id="continueToJobAgentBtn"/.test(html)) pass('Resume workspace has a clear Job Agent handoff');

@@ -30,6 +30,32 @@ test('resume chooser hides unavailable capability, stacks on mobile, and opens b
   expect(errors).toEqual([]);
 });
 
+test('resume chooser exposes honest input paths and validates pasted resume text', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.route('**/api/**', route => route.fulfill({ status: 401, contentType: 'application/json', body: '{}' }));
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto(`${base}/app/resume`);
+  await page.locator('#welcomeResumeProductBtn').click();
+  await expect(page.locator('body')).toHaveClass(/resume-focus-resume-first/);
+  await expect(page.locator('#quickSidebar')).toBeHidden();
+  await expect(page.locator('#advancedPanel')).toBeHidden();
+  await expect(page.locator('#welcomeUploadBtn')).toContainText('Upload a file');
+  await expect(page.locator('#welcomePasteBtn')).toBeVisible();
+  await expect(page.locator('#welcomeLinkedInBtn')).toBeVisible();
+  await expect(page.locator('#welcomeBuildBtn')).toContainText('Build from scratch');
+  await page.locator('#welcomePasteBtn').click();
+  await page.locator('#welcomePasteInput').fill('Too short');
+  await page.locator('#welcomePasteSaveBtn').click();
+  await expect(page.locator('#welcomePasteError')).toContainText('at least 200 characters');
+  await page.locator('#welcomePasteInput').fill('Experienced operations professional. '.repeat(8));
+  await page.locator('#welcomePasteSaveBtn').click();
+  await expect(page.locator('#welcomeStep2')).toBeVisible();
+  await expect(page.locator('body')).toHaveClass(/resume-focus-needs-input/);
+  await expect(page.locator('#applicationChecklistCard')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
 for (const width of [375, 390, 720]) {
   test(`mobile navigation has readable labels and usable targets at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
