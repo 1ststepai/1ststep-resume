@@ -1,350 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>1stStep.ai Founder Partner Program</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232563eb'/%3E%3Ctext x='32' y='42' font-family='Arial,sans-serif' font-size='32' font-weight='700' text-anchor='middle' fill='white'%3E1%3C/text%3E%3C/svg%3E" />
-  <style>
-    * { box-sizing: border-box; }
-    :root {
-      --ink: #0f172a;
-      --text: #334155;
-      --muted: #64748b;
-      --line: #dbe3ef;
-      --soft: #f8fafc;
-      --panel: #ffffff;
-      --blue: #2563eb;
-      --green: #10b981;
-      --amber: #f59e0b;
-      --red: #ef4444;
-      --navy: #172554;
-      --shadow: 0 18px 55px rgba(15, 23, 42, 0.11);
-    }
-
-    body {
-      margin: 0;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--ink);
-      background: var(--soft);
-      line-height: 1.5;
-    }
-
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 5;
-      background: rgba(255, 255, 255, 0.94);
-      border-bottom: 1px solid var(--line);
-      backdrop-filter: blur(14px);
-    }
-
-    .bar, main {
-      width: min(1180px, calc(100% - 32px));
-      margin: 0 auto;
-    }
-
-    .bar {
-      min-height: 68px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-
-    .brand {
-      font-weight: 900;
-      font-size: 20px;
-      color: var(--blue);
-    }
-
-    .brand span { color: var(--ink); }
-
-    main {
-      padding: 28px 0 56px;
-      display: grid;
-      gap: 18px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
-      gap: 18px;
-      align-items: start;
-    }
-
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      box-shadow: var(--shadow);
-      padding: 22px;
-    }
-
-    h1, h2, h3, p { margin-top: 0; }
-    h1 { font-size: clamp(30px, 4vw, 52px); line-height: 1.02; margin-bottom: 12px; letter-spacing: 0; }
-    h2 { font-size: 22px; margin-bottom: 14px; }
-    h3 { font-size: 15px; margin-bottom: 8px; }
-    p { color: var(--text); }
-
-    .hero {
-      display: grid;
-      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-      gap: 20px;
-      align-items: center;
-      padding: 30px;
-      background: linear-gradient(135deg, #ffffff 0%, #eef6ff 100%);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-    }
-
-    .hero p { font-size: 17px; max-width: 680px; }
-
-    .eyebrow {
-      color: var(--blue);
-      font-size: 12px;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 10px;
-    }
-
-    .notice {
-      border-left: 4px solid var(--amber);
-      background: #fffbeb;
-      color: #78350f;
-      padding: 13px 14px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-    label {
-      display: block;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      font-weight: 900;
-      color: var(--muted);
-      margin: 14px 0 6px;
-    }
-
-    input, select, textarea {
-      width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 11px 12px;
-      font: inherit;
-      color: var(--ink);
-      background: #fff;
-    }
-
-    textarea {
-      min-height: 92px;
-      resize: vertical;
-    }
-
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .btns {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 16px;
-    }
-
-    button, .btn {
-      border: 0;
-      border-radius: 8px;
-      padding: 10px 13px;
-      font: inherit;
-      font-weight: 900;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      min-height: 42px;
-    }
-
-    .primary { background: var(--blue); color: #fff; }
-    .secondary { background: #e2e8f0; color: var(--ink); }
-    .green { background: var(--green); color: #fff; }
-    .danger { background: #fee2e2; color: #991b1b; }
-
-    .error {
-      display: none;
-      margin-top: 8px;
-      color: var(--red);
-      font-size: 13px;
-      font-weight: 800;
-    }
-
-    .success {
-      color: var(--green);
-      font-size: 13px;
-      font-weight: 900;
-      min-height: 20px;
-      margin-top: 8px;
-    }
-
-    .link-box {
-      display: none;
-      margin-top: 14px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #f8fafc;
-      padding: 14px;
-    }
-
-    .link-output {
-      overflow-wrap: anywhere;
-      color: var(--navy);
-      font-weight: 800;
-      margin: 0;
-    }
-
-    .audience-list, .feature-list, .terms-list {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px 20px;
-      list-style: none;
-      padding: 0;
-    }
-
-    .audience-list li, .feature-list li, .terms-list li {
-      margin: 0;
-      padding: 10px 12px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #fff;
-      color: var(--text);
-      font-weight: 700;
-    }
-
-    .search-list, .prospect-list {
-      display: grid;
-      gap: 10px;
-    }
-
-    .search-card, .prospect-card {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 14px;
-      background: #fff;
-    }
-
-    .search-card p, .prospect-card p {
-      margin-bottom: 10px;
-      font-size: 14px;
-      color: var(--text);
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
-      margin-top: 14px;
-    }
-
-    .stat {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #fff;
-      padding: 13px;
-    }
-
-    .stat strong {
-      display: block;
-      font-size: 24px;
-      line-height: 1;
-    }
-
-    .stat span {
-      display: block;
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 900;
-      margin-top: 7px;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .meta {
-      font-size: 12px;
-      color: var(--muted);
-      font-weight: 800;
-    }
-
-    .template {
-      white-space: pre-wrap;
-      background: #0f172a;
-      color: #e2e8f0;
-      border-radius: 8px;
-      padding: 14px;
-      font-size: 14px;
-    }
-
-    .status {
-      display: inline-flex;
-      align-items: center;
-      border-radius: 999px;
-      padding: 4px 9px;
-      background: #e0f2fe;
-      color: #075985;
-      font-size: 12px;
-      font-weight: 900;
-      margin-bottom: 10px;
-    }
-
-    .status.sent {
-      background: #dcfce7;
-      color: #166534;
-    }
-
-    .empty {
-      border: 1px dashed var(--line);
-      border-radius: 8px;
-      padding: 18px;
-      color: var(--muted);
-      text-align: center;
-      font-weight: 700;
-    }
-
-    @media (max-width: 860px) {
-      .grid, .hero { grid-template-columns: 1fr; }
-      .stats { grid-template-columns: 1fr 1fr; }
-      .row { grid-template-columns: 1fr; }
-      .audience-list, .feature-list, .terms-list { grid-template-columns: 1fr; }
-      .bar { align-items: flex-start; flex-direction: column; padding: 14px 0; }
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1stStep.ai Partner Program — Earn by Helping Job Seekers</title>
+  <meta name="description" content="Join the 1stStep.ai partner program. Create a referral link during beta and earn 30% recurring commission on eligible paid subscriptions when paid access opens.">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="canonical" href="https://partners.1ststep.ai/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="1stStep.ai Partner Program — Earn by Helping Job Seekers">
+  <meta property="og:description" content="Create a partner link during beta. Planned commissions begin only on eligible paid subscriptions after paid access opens.">
+  <meta property="og:url" content="https://partners.1ststep.ai/">
+  <meta property="og:image" content="https://partners.1ststep.ai/assets/og-partners-068da7c0c547.png">
+  <meta property="og:image:alt" content="1stStep.ai AI Job Agent product preview">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="1stStep.ai Partner Program — Earn by Helping Job Seekers">
+  <meta name="twitter:description" content="Create a partner link during beta. Planned commissions begin only on eligible paid subscriptions after paid access opens.">
+  <meta name="twitter:image" content="https://partners.1ststep.ai/assets/og-partners-068da7c0c547.png">
+  <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"WebPage","name":"1stStep.ai Partner Program","url":"https://partners.1ststep.ai/","description":"Create a 1stStep.ai partner link during beta. Planned commissions begin only on eligible paid subscriptions after paid access opens.","about":{"@type":"SoftwareApplication","name":"1stStep.ai Job Agent","applicationCategory":"BusinessApplication","operatingSystem":"Web, Chrome"},"publisher":{"@type":"Organization","name":"1stStep.ai","url":"https://app.1ststep.ai/"}}
+  </script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232563eb'/%3E%3Ctext x='32' y='42' font-family='Arial,sans-serif' font-size='32' font-weight='700' text-anchor='middle' fill='white'%3E1%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/assets/partner-669b4327f0fa.css">
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
   <header>
     <div class="bar">
-      <div class="brand">1stStep<span>.ai</span> Founder Partners</div>
-      <div class="meta">Partner registration is open during controlled beta</div>
+      <a class="brand" href="https://app.1ststep.ai"><span class="brand-badge">1st</span>Step<span class="brand-dot">.ai</span></a>
+      <nav class="partner-nav" aria-label="Primary navigation">
+        <a href="#how-it-works">How it works</a>
+        <a href="#partner-tools">Partner tools</a>
+        <a href="#program-terms">Terms</a>
+      </nav>
+      <div class="nav-actions">
+        <a class="btn secondary" href="https://app.1ststep.ai" target="_blank" rel="noopener">Try 1stStep.ai</a>
+        <a class="btn primary" href="#partner-link">Become a partner</a>
+      </div>
+      <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="mobileNav">Menu</button>
     </div>
+    <nav class="mobile-nav" id="mobileNav" aria-label="Mobile navigation" hidden>
+      <a href="#how-it-works">How it works</a><a href="#partner-tools">Partner tools</a><a href="#program-terms">Terms</a><a href="#partner-link">Become a partner</a>
+    </nav>
   </header>
 
-  <main>
+  <main id="main">
     <section class="hero">
-      <div>
-        <div class="eyebrow">Founder partner offer</div>
-        <h1>Build your partner link now. Paid referrals begin when Job Agent checkout opens.</h1>
-        <p>Job Agent is in a free controlled beta and is planned at $39/month when paid access opens. Partner links can collect referral attribution now; beta signups do not create commissions or payouts.</p>
+      <div class="hero-copy reveal">
+        <h1>Earn when your audience takes their next step.</h1>
+        <p>Recommend an AI Job Agent that helps people find suitable roles, prepare better applications, and stay in control. Create your partner link now; commissions begin only when paid access opens.</p>
         <div class="btns">
-          <a class="btn primary" href="#partner-link">Create My Partner Link</a>
-          <a class="btn secondary" href="https://app.1ststep.ai" target="_blank" rel="noopener">Try 1stStep.ai First</a>
+          <a class="btn primary hero-primary" href="#partner-link">Create my partner link <span aria-hidden="true">→</span></a>
+          <a class="btn secondary" href="https://app.1ststep.ai" target="_blank" rel="noopener">Try 1stStep.ai first</a>
         </div>
       </div>
-      <div class="notice">Referral payouts are paused during the free controlled beta. When paid checkout launches, eligible new paid referrals can qualify under the published partner terms.</div>
+      <div class="hero-flow reveal" role="img" aria-label="How a partner referral works">
+        <article class="flow-card flow-link"><span class="flow-icon" aria-hidden="true">↗</span><div><strong>Your partner link</strong><small>Share useful job-search help</small></div></article>
+        <div class="flow-path" aria-hidden="true"><span></span></div>
+        <article class="flow-card flow-agent"><span class="flow-mark" aria-hidden="true">1st</span><div><strong>AI Job Agent</strong><small>They join free during beta</small></div></article>
+        <div class="flow-path" aria-hidden="true"><span></span></div>
+        <article class="flow-card flow-ledger"><span class="flow-bars" aria-hidden="true"><i></i><i></i><i></i></span><div><strong>Commission ledger</strong><small>Begins with paid access</small></div></article>
+      </div>
+    </section>
+
+    <aside class="beta-notice reveal" role="note"><span aria-hidden="true">i</span><div><strong>Partner program in beta</strong><p>Create and share your link now. Beta signups may be attributed, but they do not accrue commission. No payouts are active today.</p></div></aside>
+
+    <section class="launch-terms reveal" aria-labelledby="launchTermsTitle">
+      <div class="section-heading compact"><h2 id="launchTermsTitle">Planned paid-launch terms</h2><p>Simple, recurring economics—clearly labeled before checkout exists.</p></div>
+      <div class="term-rail">
+        <article><strong>30%</strong><span>Recurring commission</span><p>On eligible paid subscription payments.</p></article>
+        <article><strong>60 days</strong><span>Attribution window</span><p>Planned from the referred visitor’s first visit.</p></article>
+        <article><strong>Monthly</strong><span>Payout cycle</span><p>After a 30-day payment confirmation period.</p></article>
+        <article><strong>$50</strong><span>Minimum payout</span><p>Planned threshold after paid launch.</p></article>
+      </div>
+      <p class="terms-caveat">These terms are planned and may be updated before paid launch. Beta signups do not accrue commission.</p>
+    </section>
+
+    <section class="how-section reveal" id="how-it-works" aria-labelledby="howTitle">
+      <div class="section-heading"><h2 id="howTitle">Three steps. Very little admin.</h2><p>Create your link, share it where you already help job seekers, and keep your outreach organized.</p></div>
+      <div class="how-flow">
+        <article><span>01</span><h3>Create your link</h3><p>Choose a short partner code and get a trackable 1stStep.ai link in seconds.</p></article>
+        <article><span>02</span><h3>Share thoughtfully</h3><p>Use it in videos, newsletters, coaching resources, and communities where it is genuinely useful.</p></article>
+        <article><span>03</span><h3>Earn after launch</h3><p>When paid access opens, eligible referred subscriptions can earn recurring commission under the final terms.</p></article>
+      </div>
+      <p class="audience-line"><strong>Built for career coaches, résumé writers, recruiters, creators, schools, and job-search communities.</strong><span>No exclusivity. No minimum audience size.</span></p>
+    </section>
+
+    <section class="tools-heading reveal" id="partner-tools">
+      <div class="section-heading"><h2>Everything you need to share thoughtfully.</h2><p>Build your link, find people already looking for job-search help, and keep outreach organized without spam.</p></div>
     </section>
 
     <section class="grid" id="partner-link">
@@ -354,25 +97,25 @@
         <div class="row">
           <div>
             <label for="partnerName">Partner Name</label>
-            <input id="partnerName" placeholder="Career Coach Sarah">
+            <input id="partnerName" type="text" placeholder="Career Coach Sarah">
           </div>
           <div>
             <label for="referralCode">Partner Code</label>
-            <input id="referralCode" placeholder="career-coach-sarah" maxlength="80">
+            <input id="referralCode" type="text" placeholder="career-coach-sarah" maxlength="80">
             <div id="codeError" class="error" role="alert"></div>
             <div class="meta">Examples: career-coach-sarah, resumehelp101, jobsearchclub</div>
           </div>
         </div>
         <div class="btns">
-          <button class="primary" id="savePartnerBtn">Create My Partner Link</button>
+          <button class="primary" id="savePartnerBtn" type="button">Create My Partner Link</button>
         </div>
         <div id="generatedLinkBox" class="link-box" aria-live="polite">
           <label for="referralLink">Referral Link</label>
-          <input id="referralLink" readonly>
+          <input id="referralLink" type="url" readonly>
           <p id="referralLinkText" class="link-output"></p>
           <p class="meta">Your referral code is included in the link. When someone signs up through your link, 1stStep.ai records your code so referrals can be reviewed.</p>
           <div class="btns">
-            <button class="secondary" id="copyReferralBtn">Copy Link</button>
+            <button class="secondary" id="copyReferralBtn" type="button">Copy Link</button>
             <a class="btn secondary" id="testReferralBtn" href="https://app.1ststep.ai" target="_blank" rel="noopener">Test Link</a>
           </div>
           <div id="copyStatus" class="success" aria-live="polite"></div>
@@ -380,19 +123,20 @@
       </div>
 
       <div class="panel">
-        <h2>Founder Partner Bonus</h2>
+        <div class="eyebrow">Your earning model</div>
+        <h2>Recurring value, without mystery math</h2>
         <div class="stats">
           <div class="stat"><strong>$39</strong><span>Planned Job Agent price / month</span></div>
-          <div class="stat"><strong>$10</strong><span>Planned monthly founder bonus</span></div>
-          <div class="stat"><strong>500</strong><span>Eligible referred paid users</span></div>
-          <div class="stat"><strong>12 mo.</strong><span>Commission period</span></div>
+          <div class="stat"><strong>30%</strong><span>Planned recurring commission</span></div>
+          <div class="stat"><strong>$11.70</strong><span>Example per active month</span></div>
+          <div class="stat"><strong>Ongoing</strong><span>While an eligible referral stays paid</span></div>
         </div>
-        <p style="margin-top: 14px; margin-bottom: 0;">These terms apply only after paid Job Agent checkout opens. After the first 500 eligible referred paid users, the planned standard partner rate is 20% recurring for 12 months. Minimum payout threshold: $50.</p>
-        <p class="meta" style="margin-top: 10px; margin-bottom: 0;">No beta signup creates a payout. Final referral eligibility is reviewed after a referred customer starts and maintains an eligible paid subscription.</p>
+        <p class="spaced-copy">At the planned $39 monthly price, a 30% commission is $11.70 for each eligible payment. The calculator below shows examples—not promises.</p>
+        <p class="meta spaced-meta">No beta signup creates a payout. Final referral eligibility is reviewed after a referred customer starts and maintains an eligible paid subscription.</p>
       </div>
     </section>
 
-    <section class="grid">
+    <section class="grid supporting-details reveal">
       <div class="panel">
         <div class="eyebrow">Who this is for</div>
         <h2>Built for people who already help job seekers</h2>
@@ -410,45 +154,46 @@
       </div>
       <div class="panel">
         <div class="eyebrow">How it works</div>
-        <h2>Simple referral tracking</h2>
+        <h2>Transparent referral tracking</h2>
         <ol>
           <li>Create your partner code.</li>
           <li>Share your referral link with job seekers.</li>
           <li>When someone signs up through your link, your code is captured.</li>
           <li>During controlled beta, attribution is recorded but no commission accrues.</li>
           <li>After paid checkout opens, an eligible new paid Job Agent subscription can qualify for commission.</li>
-          <li>Payouts are reviewed monthly after payments clear and the refund period passes.</li>
+          <li>Planned payouts are reviewed monthly after a 30-day payment confirmation period.</li>
         </ol>
       </div>
     </section>
 
-    <section class="panel">
+    <section class="panel product-panel reveal">
       <div class="eyebrow">What you're promoting</div>
-      <h2>A job application workflow, not another AI chat</h2>
-      <p>1stStep.ai helps people go from job post to tailored resume, cover letter, and interview prep without bouncing between prompts, documents, and generic AI chats.</p>
-      <p>It is built around tailoring, saving, and organizing each application.</p>
+      <h2>A guided job-search workflow—not another blank AI chat</h2>
+      <p>1stStep.ai helps people find suitable roles or bring in one they found, then prepares a role-specific résumé and cover letter from experience they have confirmed.</p>
+      <p>They review and submit every application themselves. The Chrome extension captures supported job pages without copying and pasting.</p>
       <ul class="feature-list">
-        <li>Upload a resume</li>
-        <li>Paste a job description</li>
-        <li>Generate a tailored resume</li>
-        <li>Create a matching cover letter</li>
-        <li>Prepare for interviews</li>
-        <li>Save role-specific versions</li>
-        <li>Organize job applications</li>
+        <li>Capture supported job pages</li>
+        <li>Review extracted job details</li>
+        <li>Build role-specific materials</li>
+        <li>Keep applications organized</li>
+        <li>See what needs human review</li>
+        <li>Track progress and time saved</li>
       </ul>
     </section>
 
-    <section class="grid">
+    <section class="tool-section reveal" id="audience-finder">
+      <div class="tool-intro"><div><span class="tool-kicker">Audience finder</span><h2>Find public conversations where help is relevant.</h2></div><p>These tools build public-search links. You choose where to look and who to contact; nothing is posted or sent automatically.</p></div>
+      <div class="grid">
       <div class="panel">
         <h2>Search Builder</h2>
         <div class="row">
           <div>
             <label for="role">Role / Field</label>
-            <input id="role" value="marketing manager" placeholder="marketing manager, software engineer, product manager">
+            <input id="role" type="text" value="marketing manager" placeholder="marketing manager, software engineer, product manager">
           </div>
           <div>
             <label for="location">Location</label>
-            <input id="location" value="United States" placeholder="United States, New York, Remote">
+            <input id="location" type="text" value="United States" placeholder="United States, New York, Remote">
           </div>
         </div>
         <div class="row">
@@ -471,10 +216,10 @@
           </div>
         </div>
         <label for="keywords">Extra Keywords</label>
-        <input id="keywords" value="#OpenToWork hiring laid off job search" placeholder="#OpenToWork, laid off, job search">
+        <input id="keywords" type="text" value="#OpenToWork hiring laid off job search" placeholder="#OpenToWork, laid off, job search">
         <div class="btns">
-          <button class="primary" id="buildBtn">Build Search Links</button>
-          <button class="secondary" id="copyDmBtn">Copy Subject + DM</button>
+          <button class="primary" id="buildBtn" type="button">Build Search Links</button>
+          <button class="secondary" id="copyDmBtn" type="button">Copy Subject + DM</button>
         </div>
       </div>
 
@@ -482,9 +227,12 @@
         <h2>Search Links</h2>
         <div id="searchList" class="search-list"></div>
       </div>
+      </div>
     </section>
 
-    <section class="grid">
+    <section class="tool-section reveal" id="outreach-queue">
+      <div class="tool-intro"><div><span class="tool-kicker">Outreach queue</span><h2>Keep personal outreach organized.</h2></div><p>Prospects stay in this browser. Review every draft before you send it on the source platform.</p></div>
+      <div class="grid">
       <div class="panel">
         <h2>Save Prospect</h2>
         <label for="resultPaste">Paste Search Results</label>
@@ -495,20 +243,20 @@ Hiral Shah's Post
 United States ... #OpenToWork #CyberSecurity ...
 https://www.linkedin.com/posts/..."></textarea>
         <div class="btns">
-          <button class="primary" id="parseBtn">Create DM Queue</button>
+          <button class="primary" id="parseBtn" type="button">Create DM Queue</button>
         </div>
         <label for="name">Name</label>
-        <input id="name" placeholder="Jane Smith">
+        <input id="name" type="text" placeholder="Jane Smith">
         <label for="profile">Profile URL</label>
-        <input id="profile" placeholder="https://www.linkedin.com/in/...">
+        <input id="profile" type="url" placeholder="https://www.linkedin.com/in/...">
         <label for="field">Field</label>
-        <input id="field" placeholder="Marketing, Tech, Product, Sales">
+        <input id="field" type="text" placeholder="Marketing, Tech, Product, Sales">
         <label for="note">Personalization Note</label>
         <textarea id="note" placeholder="Saw your post about looking for lifecycle marketing roles."></textarea>
         <div class="btns">
-          <button class="green" id="saveBtn">Save Prospect</button>
-          <button class="secondary" id="exportBtn">Export CSV</button>
-          <button class="danger" id="clearBtn">Clear List</button>
+          <button class="green" id="saveBtn" type="button">Save Prospect</button>
+          <button class="secondary" id="exportBtn" type="button">Export CSV</button>
+          <button class="danger" id="clearBtn" type="button">Clear List</button>
         </div>
       </div>
 
@@ -516,33 +264,53 @@ https://www.linkedin.com/posts/..."></textarea>
         <h2>Outreach Template</h2>
         <div id="template" class="template"></div>
         <div class="btns">
-          <button class="secondary" id="copyTemplateBtn">Copy Subject + DM</button>
+          <button class="secondary" id="copyTemplateBtn" type="button">Copy Subject + DM</button>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <section class="panel reveal">
+      <h2>DM Queue</h2>
+      <div id="dmConsole" class="prospect-list"></div>
+      <div class="btns">
+        <button class="secondary" id="copyAllBtn" type="button">Copy All Unsent Messages</button>
+      </div>
+      <h2 class="prospects-title">Prospects</h2>
+      <div id="prospects" class="prospect-list"></div>
+    </section>
+
+    <section class="calculator-section reveal" id="calculator" aria-labelledby="calculatorTitle">
+      <div class="section-heading"><div class="eyebrow">Earnings calculator</div><h2 id="calculatorTitle">Model the recurring potential.</h2><p>Explore the planned economics using the expected $39 monthly price and 30% commission.</p></div>
+      <div class="calculator-card">
+        <div class="calculator-controls">
+          <label for="referralRange">Active referred subscribers <span id="referralCount">10</span></label>
+          <input id="referralRange" type="range" min="1" max="100" value="10" step="1">
+          <label for="activeMonthsRange">Average active months <span id="activeMonths">6</span></label>
+          <input id="activeMonthsRange" type="range" min="1" max="24" value="6" step="1">
+        </div>
+        <div class="calculator-result" aria-live="polite">
+          <span>Illustrative total</span>
+          <strong id="commissionEstimate">$702</strong>
+          <p><b id="monthlyPotential">$117</b> illustrative commission per active month</p>
+          <small>Estimate only. Not a guarantee of earnings. Commission starts only on eligible payments after paid access opens.</small>
         </div>
       </div>
     </section>
 
-    <section class="panel">
-      <h2>DM Queue</h2>
-      <div id="dmConsole" class="prospect-list"></div>
-      <div class="btns">
-        <button class="secondary" id="copyAllBtn">Copy All Unsent Messages</button>
-      </div>
-      <h2 style="margin-top: 24px;">Prospects</h2>
-      <div id="prospects" class="prospect-list"></div>
-    </section>
-
-    <section class="panel">
+    <section class="panel terms-panel reveal" id="program-terms">
       <div class="eyebrow">Beta partner terms</div>
       <h2>Readable program terms</h2>
       <ul class="terms-list">
         <li>Partner payouts are paused during the free controlled beta; beta signups are not commissionable.</li>
-        <li>Planned Founder Partner Bonus after paid launch: $10/month per eligible active referred Job Agent subscriber.</li>
-        <li>Applies to the first 500 eligible partner-referred paid users across the program.</li>
-        <li>Commission period: up to 12 months per referred subscriber.</li>
+        <li>Planned paid-launch commission: 30% of eligible subscription payments.</li>
+        <li>Planned commission duration: recurring while the eligible referred customer remains actively paid.</li>
+        <li>Planned attribution window: 60 days from the referred visitor's first tracked visit.</li>
         <li>Planned Job Agent paid launch price: $39/month.</li>
-        <li>After the first 500 eligible referred paid users, the standard partner commission becomes 20% recurring for 12 months.</li>
         <li>Minimum payout threshold: $50.</li>
-        <li>Payouts reviewed monthly after payments clear.</li>
+        <li>Planned payouts: monthly by PayPal after a 30-day payment confirmation period.</li>
+        <li>A partner-facing referral ledger is planned; the current beta records referral codes for review.</li>
+        <li>An audience discount may be offered at paid launch and will be published before it is active.</li>
         <li>Applies only to eligible new paid Job Agent customers after checkout opens.</li>
         <li>User must remain actively subscribed.</li>
         <li>Refunds and chargebacks are not commissionable.</li>
@@ -552,466 +320,27 @@ https://www.linkedin.com/posts/..."></textarea>
         <li>Program terms may change during beta.</li>
       </ul>
     </section>
+
+    <section class="faq-section reveal" aria-labelledby="faqTitle">
+      <div class="section-heading"><div class="eyebrow">Questions, answered</div><h2 id="faqTitle">Partner program FAQ</h2></div>
+      <div class="faq-list">
+        <details><summary>Can I earn commission during the free beta?</summary><p>No. Your referral code can be recorded now, but beta signups do not accrue commission and no payouts are active.</p></details>
+        <details><summary>Do I need a large audience?</summary><p>No. Relevance and trust matter more than reach. The program is designed for individual coaches and writers as well as larger communities.</p></details>
+        <details><summary>How will paid referrals be attributed?</summary><p>Your current link carries a unique referral code. A 60-day attribution window and partner ledger are planned for paid launch; final tracking rules will be published before commissions begin.</p></details>
+        <details><summary>Can I send automated direct messages?</summary><p>No. The audience finder opens public searches and the local queue drafts messages. You must review and send outreach yourself, and you should follow each platform's rules.</p></details>
+        <details><summary>When will payouts start?</summary><p>Only after paid Job Agent checkout opens. The planned cycle is monthly after a 30-day payment confirmation period and a $50 minimum balance.</p></details>
+      </div>
+    </section>
+
+    <section class="final-cta reveal">
+      <div><span class="eyebrow">Start during beta</span><h2>Help job seekers move forward—and build your place in the partner program.</h2><p>Create your unique link today. No fees, no exclusivity, and no commission claims before paid access opens.</p></div>
+      <a class="btn primary" href="#partner-link">Create my partner link <span aria-hidden="true">→</span></a>
+    </section>
   </main>
 
-  <script>
-    const STORE_KEY = 'firststep_outreach_prospects';
-    const PARTNER_KEY = 'firststep_growth_partner';
-    const APP_BASE_URL = 'https://app.1ststep.ai/';
-    const $ = id => document.getElementById(id);
-
-    function encode(q) {
-      return encodeURIComponent(q.replace(/\s+/g, ' ').trim());
-    }
-
-    function googleFreshnessParam(days) {
-      if (days === '7') return '&tbs=qdr:w';
-      if (days === '30') return '&tbs=qdr:m';
-      return '';
-    }
-
-    function normalizePartnerCode(value) {
-      return String(value || '')
-        .trim()
-        .toLowerCase()
-        .replace(/[\s_]+/g, '-')
-        .replace(/[^a-z0-9-]/g, '')
-        .replace(/-+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 40)
-        .replace(/^-+|-+$/g, '');
-    }
-
-    function loadPartner() {
-      try { return JSON.parse(localStorage.getItem(PARTNER_KEY) || '{}'); } catch { return {}; }
-    }
-
-    function savePartner(partner) {
-      localStorage.setItem(PARTNER_KEY, JSON.stringify(partner));
-    }
-
-    function setCodeError(message) {
-      const el = $('codeError');
-      if (!el) return;
-      el.textContent = message || '';
-      el.style.display = message ? 'block' : 'none';
-    }
-
-    function getPartner({ showErrors = false } = {}) {
-      const current = loadPartner();
-      const partnerName = $('partnerName')?.value.trim() || current.partnerName || '';
-      const rawCode = $('referralCode')?.value || current.referralCode || '';
-      const referralCode = normalizePartnerCode(rawCode);
-      if (!referralCode && showErrors) {
-        setCodeError('Enter a partner code using letters, numbers, spaces, underscores, or hyphens.');
-      } else {
-        setCodeError('');
-      }
-      return { partnerName, referralCode };
-    }
-
-    function referralLink(partner = getPartner()) {
-      const code = normalizePartnerCode(partner.referralCode || '');
-      const params = new URLSearchParams({
-        ref: code,
-        utm_source: 'partner',
-        utm_medium: 'referral',
-        utm_campaign: 'growth_finder'
-      });
-      return `${APP_BASE_URL}?${params.toString()}`;
-    }
-
-    function renderGeneratedLink(partner) {
-      const link = referralLink(partner);
-      $('referralCode').value = partner.referralCode;
-      $('referralLink').value = link;
-      $('referralLinkText').textContent = link;
-      $('testReferralBtn').href = link;
-      $('generatedLinkBox').style.display = 'block';
-      $('copyStatus').textContent = '';
-      return link;
-    }
-
-    function hydratePartnerForm() {
-      const partner = loadPartner();
-      $('partnerName').value = partner.partnerName || '';
-      $('referralCode').value = partner.referralCode || '';
-      if (partner.referralCode) renderGeneratedLink(partner);
-    }
-
-    function getSubject() {
-      return 'A job application workflow that may help';
-    }
-
-    function getMessage(name = '[Name]', item = {}) {
-      const signal = item.platform === 'Reddit' ? 'your post about the job search' : 'your #OpenToWork post';
-      const partner = getPartner();
-      const link = item.referralLink || (partner.referralCode ? referralLink(partner) : 'https://app.1ststep.ai');
-      return `Hey ${name}, saw ${signal}. 1stStep.ai helps turn a job post into a tailored resume, matching cover letter, and interview prep in one workflow. Might be useful here: ${link}`;
-    }
-
-    function getTemplate(name = '[Name]', item = {}) {
-      return `Subject: ${getSubject()}\n\n${getMessage(name, item)}`;
-    }
-
-    function prospectTemplate(item) {
-      const firstName = String(item.name || '[Name]').trim().split(/\s+/)[0] || '[Name]';
-      return getTemplate(firstName, item);
-    }
-
-    function buildQueries() {
-      const role = $('role').value.trim() || 'marketing manager';
-      const location = $('location').value.trim();
-      const keywords = $('keywords').value.trim() || '#OpenToWork';
-      const days = $('days').value;
-      const platform = $('platform').value;
-      const freshness = googleFreshnessParam(days);
-      const core = `"open to work" OR "#OpenToWork" ${role} ${location} ${keywords}`;
-      const searches = [];
-
-      if (platform === 'linkedin' || platform === 'google') {
-        searches.push({
-          title: 'Google: LinkedIn posts and profiles',
-          hint: 'Best free starting point. Open results manually and qualify fit before messaging.',
-          url: `https://www.google.com/search?q=${encode(`site:linkedin.com/in OR site:linkedin.com/posts ${core}`)}${freshness}`
-        });
-        searches.push({
-          title: 'Google: LinkedIn exact phrase',
-          hint: 'Narrower search for explicit #OpenToWork language.',
-          url: `https://www.google.com/search?q=${encode(`site:linkedin.com/posts "#OpenToWork" "${role}" "${location}"`)}${freshness}`
-        });
-      }
-
-      if (platform === 'x' || platform === 'google') {
-        searches.push({
-          title: 'Google: X / Twitter public posts',
-          hint: 'Useful for people who announce layoffs or job searches publicly.',
-          url: `https://www.google.com/search?q=${encode(`site:x.com OR site:twitter.com ${core}`)}${freshness}`
-        });
-      }
-
-      if (platform === 'reddit' || platform === 'google') {
-        searches.push({
-          title: 'Google: Reddit job-search threads',
-          hint: 'Find public Reddit discussions where a helpful, no-link-first reply can work.',
-          url: `https://www.google.com/search?q=${encode(`site:reddit.com/r/careerguidance OR site:reddit.com/r/resumes OR site:reddit.com/r/jobs ${role} ${location} "resume" OR "not getting interviews" OR "laid off"`)}${freshness}`
-        });
-      }
-
-      searches.push({
-        title: 'LinkedIn manual search',
-        hint: 'Paste the generated query into LinkedIn search manually. Do not automate scraping.',
-        url: `https://www.linkedin.com/search/results/content/?keywords=${encode(`#OpenToWork ${role} ${location}`)}`
-      });
-
-      return searches;
-    }
-
-    function renderSearches() {
-      const list = $('searchList');
-      list.innerHTML = '';
-      buildQueries().forEach(item => {
-        const card = document.createElement('article');
-        card.className = 'search-card';
-        card.innerHTML = `
-          <h3>${item.title}</h3>
-          <p>${item.hint}</p>
-          <a class="btn primary" href="${item.url}" target="_blank" rel="noopener">Open Search</a>
-        `;
-        list.appendChild(card);
-      });
-    }
-
-    function loadProspects() {
-      try { return JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); } catch { return []; }
-    }
-
-    function saveProspects(items) {
-      localStorage.setItem(STORE_KEY, JSON.stringify(items));
-      renderStats();
-    }
-
-    function renderProspects() {
-      const items = loadProspects();
-      const box = $('prospects');
-      renderDmConsole(items);
-      if (!items.length) {
-        box.innerHTML = '<div class="empty">No prospects saved yet.</div>';
-        return;
-      }
-      box.innerHTML = '';
-      items.forEach((item, index) => {
-        const card = document.createElement('article');
-        card.className = 'prospect-card';
-        const status = item.status || 'NEW';
-        card.innerHTML = `
-          <h3>${escapeHtml(item.name || 'Unnamed prospect')}</h3>
-          <div class="status ${['DM_SENT', 'SIGNED_UP'].includes(status) ? 'sent' : ''}">${escapeHtml(status)}</div>
-          <p>${escapeHtml(item.note || '')}</p>
-          <div class="meta">${escapeHtml(item.platform || 'Prospect')} · ${escapeHtml(item.field || '')}</div>
-          <div class="template">${escapeHtml(item.template || prospectTemplate(item))}</div>
-          <div class="btns">
-            <a class="btn secondary" href="${escapeAttr(item.profile || '#')}" target="_blank" rel="noopener">Open Profile</a>
-            <button class="primary" data-open-copy="${index}">Open + Copy</button>
-            <button class="secondary" data-copy="${index}">Copy Subject + DM</button>
-            <button class="green" data-sent="${index}">Mark DM Sent</button>
-            <button class="green" data-signup="${index}">Mark Signup</button>
-            <button class="danger" data-remove="${index}">Remove</button>
-          </div>
-        `;
-        box.appendChild(card);
-      });
-      box.querySelectorAll('[data-open-copy]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const item = loadProspects()[Number(btn.dataset.openCopy)];
-          copyText(item.template || prospectTemplate(item));
-          if (item.profile) window.open(item.profile, '_blank', 'noopener');
-        });
-      });
-      box.querySelectorAll('[data-copy]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const item = loadProspects()[Number(btn.dataset.copy)];
-          copyText(item.template || prospectTemplate(item));
-        });
-      });
-      box.querySelectorAll('[data-sent]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const next = loadProspects();
-          next[Number(btn.dataset.sent)].status = 'DM_SENT';
-          next[Number(btn.dataset.sent)].dmSentAt = new Date().toISOString();
-          saveProspects(next);
-          renderProspects();
-        });
-      });
-      box.querySelectorAll('[data-signup]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const next = loadProspects();
-          next[Number(btn.dataset.signup)].status = 'SIGNED_UP';
-          next[Number(btn.dataset.signup)].signedUpAt = new Date().toISOString();
-          saveProspects(next);
-          renderProspects();
-        });
-      });
-      box.querySelectorAll('[data-remove]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const next = loadProspects();
-          next.splice(Number(btn.dataset.remove), 1);
-          saveProspects(next);
-          renderProspects();
-        });
-      });
-    }
-
-    function renderDmConsole(items) {
-      const box = $('dmConsole');
-      const nextIndex = items.findIndex(item => !['DM_SENT', 'SIGNED_UP'].includes(item.status || 'NEW'));
-      if (nextIndex < 0) {
-        box.innerHTML = '<div class="empty">No unsent messages. Nice.</div>';
-        return;
-      }
-      const item = items[nextIndex];
-      box.innerHTML = `
-        <article class="prospect-card">
-          <h3>Next: ${escapeHtml(item.name || 'Unnamed prospect')}</h3>
-          <div class="meta">${escapeHtml(item.platform || 'Prospect')} · ${escapeHtml(item.field || '')}</div>
-          <div class="template">${escapeHtml(item.template || prospectTemplate(item))}</div>
-          <div class="btns">
-            <button class="primary" id="nextOpenCopy">Open Profile + Copy Message</button>
-            <button class="green" id="nextSent">Mark DM Sent</button>
-          </div>
-        </article>
-      `;
-      $('nextOpenCopy').addEventListener('click', () => {
-        copyText(item.template || prospectTemplate(item));
-        if (item.profile) window.open(item.profile, '_blank', 'noopener');
-      });
-      $('nextSent').addEventListener('click', () => {
-        const next = loadProspects();
-        next[nextIndex].status = 'DM_SENT';
-        next[nextIndex].dmSentAt = new Date().toISOString();
-        saveProspects(next);
-        renderProspects();
-      });
-    }
-
-    function renderStats() {
-      const partner = getPartner();
-      if (partner.referralCode && $('referralLink')) {
-        $('referralLink').value = referralLink(partner);
-      }
-    }
-
-    function escapeHtml(value) {
-      return String(value || '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-    }
-
-    function escapeAttr(value) {
-      return escapeHtml(value).replace(/`/g, '&#96;');
-    }
-
-    function parseResult(raw) {
-      const text = String(raw || '').trim();
-      const compact = text.replace(/\s+/g, ' ');
-      const urlMatch = text.match(/https?:\/\/[^\s]+(?:linkedin\.com|x\.com|twitter\.com|reddit\.com)[^\s]*/i);
-      let name = '';
-      const linkedinName = text.match(/LinkedIn\s*-\s*([^\n|]+?)(?:\s+\d+\s+reactions|\n|$)/i);
-      const postName = text.match(/([A-Z][A-Za-z .'-]{2,80})'s Post/);
-      const xName = text.match(/(?:X|Twitter)\s*-\s*@?([A-Za-z0-9_]{2,30})/i);
-      const redditName = text.match(/(?:reddit\.com\/user\/|u\/)([A-Za-z0-9_-]{2,30})/i);
-      if (linkedinName) name = linkedinName[1].trim();
-      if (!name && postName) name = postName[1].trim();
-      if (!name && xName) name = `@${xName[1].trim().replace(/^@/, '')}`;
-      if (!name && redditName) name = redditName[1].trim();
-      const url = urlMatch ? urlMatch[0] : '';
-      const platform = /reddit\.com/i.test(url || text) ? 'Reddit' : (/x\.com|twitter\.com/i.test(url || text) ? 'X' : 'LinkedIn');
-      return {
-        name,
-        profile: url,
-        platform,
-        field: $('role').value.trim(),
-        note: compact.slice(0, 240),
-      };
-    }
-
-    function splitPastedResults(raw) {
-      const text = String(raw || '').trim();
-      if (!text) return [];
-      const blocks = text.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
-      if (blocks.length > 1) return blocks;
-      return text
-        .split(/(?=\n(?:LinkedIn|X|Twitter|Reddit)\s*-)|(?=\nhttps?:\/\/(?:www\.)?(?:linkedin|x|twitter|reddit)\.com)/i)
-        .map(s => s.trim())
-        .filter(Boolean);
-    }
-
-    function buildProspectItem(source) {
-      const partner = getPartner();
-      const item = {
-        name: source.name || '',
-        profile: source.profile || '',
-        partnerName: partner.partnerName || '',
-        referralCode: partner.referralCode || '',
-        referralLink: partner.referralCode ? referralLink(partner) : '',
-        field: source.field || '',
-        note: source.note || '',
-        subject: getSubject(),
-        template: '',
-        status: 'NEW',
-        savedAt: new Date().toISOString()
-      };
-      item.template = prospectTemplate(item);
-      return item;
-    }
-
-    function saveItem(item) {
-      if (!item.name && !item.profile) return false;
-      const items = loadProspects();
-      items.unshift(item);
-      saveProspects(items);
-      renderProspects();
-      return true;
-    }
-
-    function parseAndSaveProspect() {
-      const parsed = splitPastedResults($('resultPaste').value).map(block => buildProspectItem(parseResult(block)));
-      const valid = parsed.filter(item => item.name || item.profile);
-      if (!valid.length) return;
-      const items = loadProspects();
-      const first = valid[0];
-      saveProspects([...valid.reverse(), ...items]);
-      $('name').value = first.name;
-      $('profile').value = first.profile;
-      $('field').value = first.field;
-      $('note').value = first.note;
-      $('template').textContent = first.template;
-      renderProspects();
-    }
-
-    function saveProspect() {
-      const item = buildProspectItem({
-        name: $('name').value.trim(),
-        profile: $('profile').value.trim(),
-        field: $('field').value.trim(),
-        note: $('note').value.trim()
-      });
-      if (!saveItem(item)) return;
-      ['name', 'profile', 'field', 'note'].forEach(id => $(id).value = '');
-    }
-
-    function exportCsv() {
-      const rows = [['Partner', 'Referral Code', 'Referral Link', 'Name', 'Profile URL', 'Platform', 'Field', 'Note', 'Subject', 'Template', 'Status', 'DM Sent At', 'Signed Up At', 'Saved At'], ...loadProspects().map(item => [
-        item.partnerName, item.referralCode, item.referralLink, item.name, item.profile, item.platform, item.field, item.note, item.subject || getSubject(), item.template || prospectTemplate(item), item.status || 'NEW', item.dmSentAt, item.signedUpAt, item.savedAt
-      ])];
-      const csv = rows.map(row => row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(',')).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `firststep-outreach-prospects-${new Date().toISOString().slice(0, 10)}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    async function copyText(text) {
-      try {
-        await navigator.clipboard.writeText(text);
-        return true;
-      } catch {
-        try {
-          const textarea = document.createElement('textarea');
-          textarea.value = text;
-          textarea.setAttribute('readonly', '');
-          textarea.style.position = 'fixed';
-          textarea.style.top = '-1000px';
-          document.body.appendChild(textarea);
-          textarea.select();
-          const ok = document.execCommand('copy');
-          textarea.remove();
-          return ok;
-        } catch {
-          return false;
-        }
-      }
-    }
-
-    $('buildBtn').addEventListener('click', renderSearches);
-    $('copyDmBtn').addEventListener('click', () => copyText(getTemplate()));
-    $('copyTemplateBtn').addEventListener('click', () => copyText(getTemplate()));
-    $('savePartnerBtn').addEventListener('click', () => {
-      const partner = getPartner({ showErrors: true });
-      if (!partner.referralCode) return;
-      savePartner(partner);
-      renderGeneratedLink(partner);
-      renderStats();
-    });
-    $('copyReferralBtn').addEventListener('click', async () => {
-      const link = $('referralLink').value || referralLink(getPartner());
-      const copied = await copyText(link);
-      $('copyStatus').textContent = copied ? 'Copied!' : 'Copy failed. Select the link and copy it manually.';
-    });
-    $('parseBtn').addEventListener('click', parseAndSaveProspect);
-    $('saveBtn').addEventListener('click', saveProspect);
-    $('copyAllBtn').addEventListener('click', () => {
-      const messages = loadProspects()
-        .filter(item => !['DM_SENT', 'SIGNED_UP'].includes(item.status || 'NEW'))
-        .map(item => item.template || prospectTemplate(item));
-      copyText(messages.join('\n\n---\n\n'));
-    });
-    $('exportBtn').addEventListener('click', exportCsv);
-    $('clearBtn').addEventListener('click', () => {
-      if (confirm('Clear all saved prospects?')) {
-        saveProspects([]);
-        renderProspects();
-      }
-    });
-    $('referralCode').addEventListener('input', () => setCodeError(''));
-
-    $('template').textContent = getTemplate();
-    hydratePartnerForm();
-    renderSearches();
-    renderProspects();
-    renderStats();
-  </script>
+  <footer>
+    <div class="footer-inner"><a class="brand" href="https://app.1ststep.ai"><span class="brand-badge">1st</span>Step<span class="brand-dot">.ai</span></a><p>Find suitable roles. Prepare better applications. You review and submit.</p><div><a href="#program-terms">Program terms</a><a href="https://app.1ststep.ai" target="_blank" rel="noopener">Open app</a><button id="motionToggle" type="button" aria-pressed="false">Pause motion</button></div></div>
+  </footer>
+  <script src="/assets/partner-8de6b3b95a1d.js" defer></script>
 </body>
 </html>
-
