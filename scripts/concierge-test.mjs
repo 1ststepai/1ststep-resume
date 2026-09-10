@@ -56,6 +56,7 @@ assert.equal(conciergeStateGuidance({ hasResume: true, mission, counts: { 'Packa
 const conciergeHtml = await readFile(new URL('../concierge.html', import.meta.url), 'utf8');
 const conciergeJs = await readFile(new URL('../concierge.js', import.meta.url), 'utf8');
 const conciergeCss = await readFile(new URL('../persistent-concierge.css', import.meta.url), 'utf8');
+assert.match(conciergeCss, /body\.needs-attention #agentProgress:not\(\[open\]\)/, 'Agent Status must become visible when opened while an item Needs You');
 assert.doesNotMatch(conciergeHtml, /<style\b|\sstyle\s*=|\son[a-z]+\s*=/i, 'Job Agent HTML must remain compatible with its no-inline CSP');
 assert.doesNotMatch(conciergeJs, /\.style\.|\.cssText\b|setAttribute\(\s*['"]style['"]/i, 'Job Agent JavaScript must not create inline styles');
 assert.match(conciergeHtml, /mammoth\.browser\.min\.js" integrity="sha384-[A-Za-z0-9+/=]+" crossorigin="anonymous"/);

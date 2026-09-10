@@ -320,13 +320,13 @@
     :root {
       --ink: #11142d;
       --text: #4f536c;
-      --muted: #73778e;
+      --muted: #62677f;
       --line: #e8e7f2;
       --soft: #faf9ff;
       --panel: #ffffff;
       --blue: #6558e8;
       --blue-dark: #4b3fd1;
-      --green: #20a777;
+      --green: #147d5a;
       --amber: #f0a43c;
       --navy: #11142d;
       --lilac: #f2efff;
@@ -458,7 +458,7 @@
     .final-cta::after { content: ""; position: absolute; width: 300px; height: 300px; right: -90px; top: -140px; border-radius: 50%; background: rgba(117,101,255,.35); }
     .final-cta > * { position: relative; z-index: 1; }.final-cta h2 { color: #fff; max-width: 800px; }.final-cta p { color: #c6c8d9; margin: 0; }.final-cta .eyebrow { color: #9c92ff; }
     footer { background: #0c0e20; color: #c6c8d9; padding: 44px 0; }
-    .footer-inner { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 32px; }.footer-inner .brand { color: #fff; }.footer-inner p { color: #9da0b6; margin: 0; text-align: center; }.footer-inner > div { display: flex; align-items: center; gap: 18px; }.footer-inner a, .footer-inner button { color: #c6c8d9; background: none; box-shadow: none; padding: 0; min-height: 44px; font-size: 13px; }
+    .footer-inner { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 32px; }.footer-inner .brand { color: #fff; }.footer-inner .brand-dot { color: #7c72f2; }.footer-inner p { color: #9da0b6; margin: 0; text-align: center; }.footer-inner > div { display: flex; align-items: center; gap: 18px; }.footer-inner a, .footer-inner button { color: #c6c8d9; background: none; box-shadow: none; padding: 0; min-height: 44px; font-size: 13px; }
     .reveal { opacity: 0; transform: translateY(22px); transition: opacity .65s ease, transform .65s ease; }.reveal.is-visible { opacity: 1; transform: none; }
     @keyframes floatCard { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
     .motion-paused *, .motion-paused *::before, .motion-paused *::after { animation-play-state: paused !important; transition-duration: 0s !important; scroll-behavior: auto !important; }
