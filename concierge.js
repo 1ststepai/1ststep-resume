@@ -4077,6 +4077,30 @@ function closeVaultDialog() {
   $('vaultOverlay').classList.remove('open');
   if (restoreFocus) document.querySelector('#appMenu > summary')?.focus();
 }
+
+function enableMobileSwipeDismiss(handle, dismiss) {
+  let gesture = null;
+  handle?.addEventListener('pointerdown', event => {
+    if (!matchMedia('(max-width:720px)').matches || event.target.closest('button,a,input,select,textarea')) return;
+    gesture = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY };
+    handle.setPointerCapture?.(event.pointerId);
+  });
+  handle?.addEventListener('pointerup', event => {
+    if (!gesture || gesture.pointerId !== event.pointerId) return;
+    const x = event.clientX - gesture.startX;
+    const y = event.clientY - gesture.startY;
+    gesture = null;
+    if (y > 72 && Math.abs(y) > Math.abs(x)) dismiss();
+  });
+  handle?.addEventListener('pointercancel', () => { gesture = null; });
+}
+
+[
+  [document.querySelector('.jobs-head'), closeJobs],
+  [document.querySelector('.needs-sheet > header'), closeNeedsYou],
+  [document.querySelector('.vault-head'), closeVaultDialog],
+  [document.querySelector('.guided-launch-header'), closeGuidedLaunch],
+].forEach(([handle, dismiss]) => enableMobileSwipeDismiss(handle, dismiss));
 $('closeVault').addEventListener('click', closeVaultDialog);
 $('vaultOverlay').addEventListener('click', event => { if (event.target === $('vaultOverlay')) closeVaultDialog(); });
 $('analyzeLegacyProfile').addEventListener('click', () => careerProfileLegacyAction('analyze-legacy'));
@@ -4232,7 +4256,9 @@ $('saveResume').addEventListener('click', async () => {
     setResumeMessage(`Resume available in this tab · ${text.length.toLocaleString()} characters.`, 'good');
     showToast('Resume saved');
     $('quickUseSavedResume').hidden = false;
-    renderMission();
+    closeResumeSetup();
+    if (guidedLaunchOpen && GUIDED_LAUNCH_STAGES[guidedLaunchStep] === 'resume') advanceGuidedLaunch();
+    else renderMission();
     addMessage('assistant', '<strong>Your resume is saved.</strong> I can use it as the master version, build readiness answers from it after your confirmation, and send role-specific tailoring through the existing Resume Tailor.');
     try {
       const cloudBackupAllowed = localStorage.getItem(VAULT_PREFERENCE_KEY) !== 'device-only';

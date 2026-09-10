@@ -675,6 +675,7 @@ body:has(.agent-app){background:#fff}
   .needs-sheet-body{background:#fff}
   #jobsOverlay :where(button,[role="tab"]),#needsYouOverlay button,#vaultOverlay .vault-head button,#vaultOverlay .vault-body button,#guidedLaunchOverlay button{min-height:48px}
   .guided-launch-form{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+  .jobs-head,.needs-sheet>header,.vault-head,.guided-launch-header{touch-action:pan-x}
 }
 
 /* Onboarding should ask for decisions, not expose search diagnostics or document editors. */

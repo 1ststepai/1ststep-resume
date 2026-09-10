@@ -193,6 +193,30 @@ test('mobile core sheets use safe full-screen layouts and Android-sized targets'
   await page.locator('#guidedLaunchClose').click();
 });
 
+test('saving a resume closes setup and mobile sheets also dismiss with a downward swipe', async ({ page }) => {
+  await page.route('**/api/**', route => route.fulfill({ status: 401, contentType: 'application/json', body: '{}' }));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${base}/concierge?uiFixture=subscriber`, { waitUntil: 'networkidle' });
+
+  await page.locator('#openResumeSetup').evaluate(button => button.click());
+  await expect(page.locator('#resumeOverlay')).toHaveClass(/open/);
+  await page.locator('#resumeEditor').evaluate((editor, value) => { editor.value = value; }, 'Verified resume content. '.repeat(12));
+  await page.locator('#saveResume').evaluate(button => button.click());
+  await expect(page.locator('#resumeOverlay')).not.toHaveClass(/open/);
+  await expect(page.locator('.agent-toast')).toHaveText('Resume saved');
+  await page.screenshot({ path: join(tmpdir(), '1ststep-mobile-resume-saved-closed.png') });
+
+  await page.locator('#appMenu > summary').click();
+  await page.locator('#openNeedsYouMenu').click();
+  await expect(page.locator('#needsYouOverlay')).toHaveClass(/open/);
+  const header = await page.locator('.needs-sheet > header').boundingBox();
+  await page.mouse.move(header.x + header.width / 2, header.y + 20);
+  await page.mouse.down();
+  await page.mouse.move(header.x + header.width / 2, header.y + 120, { steps: 5 });
+  await page.mouse.up();
+  await expect(page.locator('#needsYouOverlay')).not.toHaveClass(/open/);
+});
+
 test('reduced motion keeps workspace progress visible without animation', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(`${base}/app/resume`);
