@@ -109,4 +109,5 @@ This is the execution queue for the app, Chrome extension, resume site, partner 
 - Established these operating documents on a clean branch from current `origin/main`.
 - Added `scripts/operating-system-contract-test.mjs` to the standard smoke command so future changes cannot silently remove the required operating files or core approval/receipt rules.
 - Baseline checks passed: smoke, public build, and extension release suite with 17 browser tests.
+- Independently checked PR #72 at `5c30d77`: its extension release suite passed 23 browser tests plus captured-job persistence, replay, tenant-isolation, public-source verification, closed/fail-closed behavior, and promotion tests; smoke and build also passed.
 - Remaining risk: protected production runtime health and authenticated end-to-end behavior are still unknown.
