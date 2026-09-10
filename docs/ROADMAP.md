@@ -9,6 +9,7 @@ This is the execution queue for the app, Chrome extension, resume site, partner 
 - `app.1ststep.ai`, `resume.1ststep.ai`, and `partners.1ststep.ai` returned HTTP 200 from Ready production deployments.
 - Public pricing is aligned: invitation-only free beta, future 1stStep Complete at $39/month, no active paid checkout, and no automatic conversion.
 - Chrome Web Store release: v1.3.2. `main` manifest: v1.5.0. Open PR #72: v1.6 durable-capture candidate, mergeable with green reported checks.
+- Consolidated candidate: `release/consolidated-job-agent-v1.6-20260910`, assembled and locally gated but blocked from Preview E2E and production by environment readiness.
 - Local main baseline passed `npm run smoke`, `npm run build`, and `npm run test:extension-release` (17 browser tests). These checks do not prove production persistence or store compatibility.
 - The unauthenticated readiness request returned `AUTH_REQUIRED`; production database, encryption, worker, and tenant-isolation runtime health are therefore `unknown` in this pass.
 - Forty-four registered worktrees were inspected. Twelve were dirty before reconciliation and eight remain dirty after only generated or already-preserved duplicate changes were cleaned. The operating-system branch uses a clean worktree from `origin/main`.
@@ -45,9 +46,9 @@ This is the execution queue for the app, Chrome extension, resume site, partner 
 ### N4. Greenhouse capture reliability release
 
 - **Owner:** Chrome extension, app, and shared platform
-- **Status:** Built in PR #72; not on `main`; not published
+- **Status:** Assembled on the consolidated release branch; not on `main`, not deployed, and not published
 - **Acceptance criteria:** From a real supported Greenhouse listing, a signed-in user captures once; the exact job appears exactly once in My Jobs; it survives refresh and sign-out/sign-in; replay and concurrent delivery return the same record; unsupported, closed, unverifiable, auth, consent, storage, and network failures are visible and honest; the extension retires its transient copy only after durable acknowledgement; account export/deletion includes the record; the extension never submits.
-- **Dependencies:** N1 and N2 runtime evidence; PR #72 review; public ATS source allowlist; compatible app deployment and controlled extension artifact.
+- **Dependencies:** N1 and N2 runtime evidence; consolidated release PR review; public ATS source allowlist; compatible app deployment and controlled extension artifact.
 - **External blockers:** Authenticated supervised Greenhouse fixture, explicit production deployment approval, and Chrome Web Store owner publication.
 - **Security/release risks:** Published v1.3.2/main v1.5.0/candidate v1.6 fragmentation; 90-day captured-record retention; server/app/extension version skew; a local passing fixture is not employer-page proof.
 

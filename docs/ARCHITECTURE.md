@@ -7,7 +7,7 @@
 | Product | Source | Production target | Current verified release state on 2026-09-10 |
 |---|---|---|---|
 | App and APIs | Repository root, `api/`, `lib/`, `client/`, `concierge.*`, `app.*` | Vercel `1ststep-resume`; alias `app.1ststep.ai`; output `.public-web` | Ready production deployment observed; current runtime dependencies not authenticated in this pass |
-| Chrome extension | `1ststep-extension/` plus controlled-build scripts and app APIs | Chrome Web Store item `gnbjcmennlcbkmakameknfcnioohnjkp` | Store v1.3.2; main v1.5.0; PR #72 v1.6 candidate |
+| Chrome extension | `1ststep-extension/` plus controlled-build scripts and app APIs | Chrome Web Store item `gnbjcmennlcbkmakameknfcnioohnjkp` | Store v1.3.2; main v1.5.0; PR #72 v1.6 source assembled on the consolidated release branch |
 | Resume site | `resume-tailor-landing/standalone/` | Vercel `1ststep-resume-landing`; alias `resume.1ststep.ai` | Ready static production deployment observed |
 | Partner site | `partners-landing/` | Vercel `1ststep-growth-finder`; alias `partners.1ststep.ai` | Ready static production deployment observed |
 
@@ -35,7 +35,7 @@ Checked-in schema and migration parity do not prove that production has the role
 6. Current-device and all-device sign-out revoke server sessions. Sensitive lifecycle actions require a recent opaque session.
 7. The extension content script on `app.1ststep.ai` may synchronize minimized capabilities through Chrome messaging; it never receives or stores the cookie/token.
 
-Legacy signed tier bearer tokens remain a migration compatibility path in some app APIs. New Job Agent data routes require the opaque session.
+Legacy signed tier bearer tokens remain a server-side migration compatibility path in some APIs. The consolidated browser client no longer stores, exports, or transmits that credential; Job Agent data routes require the opaque session.
 
 ## Extension capture flow
 
@@ -43,11 +43,11 @@ Legacy signed tier bearer tokens remain a migration compatibility path in some a
 
 The user invokes capture on a supported page. The content script extracts bounded job data, sends it to the background worker, and receives an exact capture ID. The background worker serializes storage mutations and opens an app URL containing that ID. The app-origin bridge posts only the matching capture into the page. Main currently persists the handoff in session storage before acknowledgement; this survives refresh in the tab but is not account-backed cross-session persistence.
 
-### PR #72 candidate behavior
+### Consolidated v1.6 candidate behavior
 
 Before acknowledgement, the app sends the exact capture to authenticated `/api/captured-jobs`. That route requires an opaque session and data-consent policy, rate-limits requests, verifies a supported public ATS source when possible, encrypts the record in a tenant-scoped Redis key, and atomically makes capture-ID replay return the existing record. A verified listing is promoted into the existing direct-employer discovery/My Jobs flow with a stable `capture_<id>` idempotency key. The app can restore the exact durable capture after the transient extension copy is gone. Records expire after 90 days and participate in account export/deletion.
 
-The candidate must not be called released until a real signed-in Greenhouse capture is verified through My Jobs, refresh, sign-out/sign-in, duplicate replay, failure behavior, deployment parity, controlled artifact digest, and Chrome Web Store publication.
+PR #72's durable-capture source is preserved in `release/consolidated-job-agent-v1.6-20260910` together with current main, trust remediation, security fixes, and release documentation. The candidate must not be called released until a real signed-in capture is verified through My Jobs, refresh, sign-out/sign-in, duplicate replay, failure behavior, deployment parity, controlled artifact digest, and Chrome Web Store publication.
 
 ## Data ownership and authorization boundaries
 
