@@ -8,6 +8,8 @@ On supported application pages, 1stStep can fill an approved résumé and ordina
 
 The extension does not store your profile, résumé, sign-in token, answers, or application status. It never marks an application Submitted without verified employer receipt.
 
+Jobs you save are kept in your 1stStep.ai account so they are there when you come back. Each saved job holds the listing's title, employer, location, URL, and description text, is encrypted, and expires automatically after 90 days. You can export or delete your saved jobs at any time, and deleting your account removes them. Uninstalling the extension does not delete jobs you already saved.
+
 Job capture works on ordinary web pages with visible job content. Protected pages and inaccessible embedded content may prevent capture. Filling requires a supported page, an eligible Job Agent account, approved information, and an open signed-in `app.1ststep.ai` tab.
 
 Do not publish this listing until product-owner approval, counsel/ATS terms review, privacy disclosure review, supervised synthetic acceptance evidence, store packaging review, and a separately authorized release decision are complete.

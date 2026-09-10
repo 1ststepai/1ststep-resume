@@ -129,7 +129,7 @@
 
 <main>
   <h1>Privacy Policy</h1>
-  <p class="subtitle">Last updated: September 4, 2026</p>
+  <p class="subtitle">Last updated: September 9, 2026</p>
 
   <div class="highlight-box">
     <strong>The short version:</strong> We collect only what is necessary to provide the service and the Chrome extension's single purpose. We do not sell your data, use it for advertising, or use your resume to train AI models. The extension does not collect employer passwords, one-time codes, CAPTCHA answers, signatures, or protected-trait answers, and it never submits an application. Your payment information is handled by Stripe, and we never see your full card number.
@@ -162,7 +162,7 @@
     </tr>
     <tr>
       <td><strong>Supported-page content</strong></td>
-      <td>On supported Greenhouse pages: the active page URL, job listing content, and the labels, types, options, and internal references of ordinary application fields</td>
+      <td>When you invoke the extension on a job page: the active page URL, the job listing content on that page (or the text you highlight), and, on supported application pages, the labels, types, options, and internal references of ordinary application fields</td>
       <td>To identify the exact job, show the user what can be filled, and return only approved values for that application</td>
     </tr>
     <tr>
@@ -256,7 +256,7 @@
 
   <h2>5. Data Retention</h2>
   <p>Encrypted applicant-vault records, consent records, preferences, and schedules may be retained for up to 365 days after their most recent use. Application runs, generated-document objects, notifications, and related workflow records generally expire within 30 to 90 days. Content-free operational and spend measurements generally expire within 8 days, and signed extension handoff tokens expire within minutes.</p>
-  <p>The extension keeps the currently detected job in Chrome session storage for the browser session. A captured job awaiting delivery to the app is designed to be short-lived and removed after acknowledged delivery or expiry; because browser cleanup runs when the extension is active, an expired entry may remain locally until the next cleanup event, until you clear extension data, or until you uninstall the extension. Approved candidate values and resume bytes returned for a fill are used transiently and are not saved by the extension as a reusable profile.</p>
+  <p>The extension keeps the currently detected job in Chrome session storage for the browser session. <strong>When you send a captured job to 1stStep.ai, that job is saved to your account as a durable record</strong> containing its title, employer, location, job URL, description text, capture method, and listing-verification status. The record is encrypted at rest, scoped to your account, and expires automatically 90 days after capture. It is not a transient handoff: it is not deleted when you close the tab, sign out, or uninstall the extension. You can export or delete these records at any time as described in Section 6, and account deletion removes them. A local copy may also remain in Chrome storage until the next extension cleanup event, until you clear extension data, or until you uninstall the extension. Approved candidate values and resume bytes returned for a fill are used transiently and are not saved by the extension as a reusable profile.</p>
   <p>Revoking an individual saved fact prevents its future use but may retain its prior encrypted version until the containing vault expires or the account is deleted. An account-deletion request removes the active tenant records and private objects controlled by 1stStep, subject to provider processing time and records that must be retained for security, payment, tax, dispute, or other legal obligations. Some payment and email-suppression records are maintained by the applicable provider under its own retention requirements.</p>
 
   <h2>6. Your Privacy Rights</h2>
@@ -295,19 +295,19 @@
 
   <h2>7. Cookies and Local Storage</h2>
   <p>1stStep.ai uses a secure, HTTP-only session cookie for signed-in access and may use browser <code>localStorage</code> or <code>sessionStorage</code> for device-local workflow state. Information is transmitted to our servers when you request cloud backup, matching, tailoring, extension handoff, application preparation, export, deletion, or another server-backed feature.</p>
-  <p>The Chrome extension uses Chrome session storage for the currently detected job and Chrome local storage for a short-lived captured-job handoff. The extension authenticates server requests through the open <code>app.1ststep.ai</code> tab and its HTTP-only session cookie; it does not read or store that cookie, a bearer token, passwords, complete applicant-vault records, or reusable resume documents. Stripe may set cookies for fraud prevention and payment processing.</p>
+  <p>The Chrome extension uses Chrome session storage for the currently detected job and Chrome local storage for the capture handoff. A job you send to 1stStep.ai is additionally saved server-side under your account for up to 90 days, as described in Section 5. The extension authenticates server requests through the open <code>app.1ststep.ai</code> tab and its HTTP-only session cookie; it does not read or store that cookie, a bearer token, passwords, complete applicant-vault records, or reusable resume documents. Stripe may set cookies for fraud prevention and payment processing.</p>
 
   <h2>8. Chrome Extension</h2>
-  <p><strong>Single purpose.</strong> The extension's single purpose is to help a signed-in user review a supported Greenhouse job, understand its match assessment, and fill ordinary application fields with values the user has already confirmed. It is not a general browsing monitor, job-board scraper, credential manager, or autonomous application-submission tool.</p>
+  <p><strong>Single purpose.</strong> The extension's single purpose is to help a signed-in user capture a job listing they are already viewing, review its match assessment in 1stStep.ai, and fill ordinary application fields with values the user has already confirmed. It is not a general browsing monitor, job-board scraper, credential manager, or autonomous application-submission tool.</p>
   <p><strong>Complete functional outline.</strong> The extension:</p>
   <ul>
     <li>Opens the 1stStep.ai setup page after installation so the user can sign in and configure the Job Agent.</li>
-    <li>Recognizes supported Greenhouse job and application pages and extracts the active job title, company, location, description, requisition context, and page URL.</li>
+    <li>Reads the job listing on the page you are viewing when you invoke it, using tuned extraction for Greenhouse, Lever, Workday, Ashby, and SmartRecruiters and a general fallback that reads the visible listing or the text you highlight, and extracts the job title, company, location, description, requisition context, and page URL.</li>
     <li>Shows the detected job in the extension interface and lets the user correct a missing title or company.</li>
     <li>Lets the user paste a job description manually when a supported page does not provide one.</li>
     <li>Adds a visible 1stStep.ai action on supported job pages and can open the detected job in the 1stStep.ai resume-tailoring, cover-letter, or application-preparation workflow.</li>
     <li>Checks through an open 1stStep.ai tab whether the user has an authenticated session and access to Job Agent features. The extension does not read or store the HTTP-only session cookie.</li>
-    <li>Uses a unique, short-lived capture identifier to deliver a selected job to the correct 1stStep.ai page and removes the captured job after acknowledged delivery or expiry.</li>
+    <li>Uses a unique capture identifier to deliver a selected job to the correct 1stStep.ai page, and saves that job to your 1stStep.ai account as an encrypted record that expires after 90 days so it stays available across sessions and devices.</li>
     <li>When the user requests filling, scans the supported application page for eligible text, email, telephone, URL, select, textarea, and approved resume-upload fields.</li>
     <li>Excludes hidden controls, password controls, submit controls, checkboxes, radio buttons, credentials, government identifiers, protected-trait questions, compensation acceptances, signatures, attestations, CAPTCHA and verification fields, and other consequential fields.</li>
     <li>Sends a value-free description of eligible fields to 1stStep.ai. Existing answers typed into the employer form are not included in that field-schema request.</li>
@@ -321,16 +321,16 @@
   <p><strong>Permissions used.</strong></p>
   <table>
     <tr><th>Permission</th><th>How the extension uses it</th></tr>
-    <tr><td><strong>Supported site access</strong></td><td>Runs only on <code>app.1ststep.ai</code> and the specifically declared Greenhouse hosts needed to detect jobs and support the supervised workflow.</td></tr>
-    <tr><td><strong>activeTab</strong></td><td>Reads the active supported tab when the user invokes an extension action.</td></tr>
-    <tr><td><strong>tabs</strong></td><td>Finds an open 1stStep.ai tab, opens or focuses the correct 1stStep.ai workflow, and communicates with the same-origin authentication bridge.</td></tr>
-    <tr><td><strong>storage</strong></td><td>Keeps the currently detected job, short-lived capture records, and limited operational state described in Sections 5 and 7.</td></tr>
-    <tr><td><strong>sidePanel</strong></td><td>Allows Chrome to present the extension's Job Agent interface alongside a supported page where that interface is available.</td></tr>
+    <tr><td><strong>Declared site access</strong></td><td>The only hosts the extension is granted in advance are <code>app.1ststep.ai</code> and Greenhouse job boards at <code>*.greenhouse.io</code>. It loads automatically on those, and nowhere else.</td></tr>
+    <tr><td><strong>activeTab</strong></td><td>Grants one-time read access to the tab you are on at the moment you invoke the extension, and only that tab. It is what allows job capture on other job boards without standing access to them.</td></tr>
+    <tr><td><strong>scripting</strong></td><td>Runs the job-reading script in that tab after you invoke the extension, and the field-filling script after your separate approval. No remotely hosted code is executed.</td></tr>
+    <tr><td><strong>storage</strong></td><td>Keeps the currently detected job, the capture handoff, and limited operational state described in Sections 5 and 7.</td></tr>
+    <tr><td><strong>contextMenus</strong></td><td>Adds the right-click actions that let you send the current page, or text you have highlighted, to 1stStep.ai.</td></tr>
   </table>
-  <p><strong>When it operates.</strong> The extension is limited to <code>app.1ststep.ai</code> and supported Greenhouse pages. On a supported page it detects the current job locally so it can present relevant controls. Website content is transmitted to 1stStep.ai only when needed for a user-facing action that you initiate, such as opening the job in 1stStep.ai or starting the supervised fill workflow.</p>
+  <p><strong>When it operates.</strong> The extension loads automatically only on <code>app.1ststep.ai</code> and Greenhouse pages, its sole declared host permissions. On any other site it reads the page only at the moment you invoke it, by clicking the extension or using its right-click action, under Chrome's <code>activeTab</code> and <code>scripting</code> permissions, which grant access to that one tab at that one moment. It does not run in the background on other sites and does not watch pages you have not acted on. Website content is transmitted to 1stStep.ai only for a user-facing action that you initiate, such as saving the job to your account or starting the supervised fill workflow.</p>
   <p><strong>What it does not do.</strong> The extension does not collect general browsing history, run on unrelated sites, execute remotely hosted code, bypass employer security controls, answer consequential questions, sell data, use data for personalized advertising or credit decisions, or automatically submit applications.</p>
   <p><strong>Limited Use.</strong> 1stStep.ai's use and transfer of information received through the Chrome extension complies with the Chrome Web Store User Data Policy, including the Limited Use requirements. We use extension data only to provide or improve the disclosed single purpose and related security, reliability, and support operations. We do not transfer it to advertising platforms, data brokers, or information resellers. We do not permit people to read user-specific extension data unless you explicitly authorize access for support, access is necessary to investigate abuse or a security incident, access is required by law, or the data has been aggregated and anonymized for lawful internal operations.</p>
-  <p><strong>Your controls.</strong> You can stop page access by disabling or uninstalling the extension, clear local extension data through Chrome, and request access to or deletion of server-side personal data by contacting us as described below. Uninstalling the extension does not automatically delete records stored in your 1stStep.ai account.</p>
+  <p><strong>Your controls.</strong> You can stop page access by disabling or uninstalling the extension, clear local extension data through Chrome, and export or delete server-side personal data, including saved captured jobs, from your account or by contacting us as described below. Uninstalling the extension does not delete captured jobs already saved to your 1stStep.ai account; those expire after 90 days or when you delete them.</p>
 
   <h2>9. Data Security &amp; Breach Notification</h2>
   <p>We use HTTPS for data in transit, authenticated encryption for protected server-side records, tenant-scoped access controls, revocable sessions, bounded access tokens, rate limits, and server-only provider credentials. Passwords, OTPs, CAPTCHA answers, and full payment card numbers are not stored by 1stStep. However, no method of internet transmission or electronic storage is 100% secure, and we cannot guarantee absolute security.</p>
