@@ -7,11 +7,12 @@ const path = new URL(
 const html = fs.readFileSync(path, "utf8");
 const required = [
   'id="fs-journey"',
-  "Save time on every application.",
-  "Use the Chrome extension to capture a job",
+  "Tailor your résumé and cover letter.",
+  "Capture the job once with the Chrome extension.",
   "Get the Chrome extension",
-  "Explore the ongoing Job Agent search",
+  "Start an ongoing Job Agent search",
   "Nothing is sent automatically.",
+  "Start free. No card required. You review before anything is sent.",
   "Verified founder test · August 24",
   "First-round interview invitation received",
   'href="https://app.1ststep.ai"',

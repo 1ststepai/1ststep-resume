@@ -10,6 +10,9 @@ const [html, config, robots, sitemap] = await Promise.all([
 ]);
 
 assert.equal((html.match(/<h1\b/g) || []).length, 1);
+assert.match(html, /Tailor your résumé and cover letter\./);
+assert.match(html, /Start an ongoing Job Agent search/);
+assert.match(html, /Start free\. No card required\. You review before anything is sent\./);
 assert.match(html, /<link rel="canonical" href="https:\/\/resume\.1ststep\.ai\/">/);
 assert.match(html, /Verified founder test · August 24, 2026/);
 assert.match(html, /LogicSource interview invitation received August 24/);
