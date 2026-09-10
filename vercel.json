@@ -158,20 +158,29 @@
   ],
   "headers": [
     {
-      "source": "/home-motion.css",
+      "source": "/home-motion-1f7df326a312.css",
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "no-store"
+          "value": "public, max-age=31536000, immutable"
         }
       ]
     },
     {
-      "source": "/home-motion.js",
+      "source": "/home-motion-4e0eecde7df1.js",
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "no-store"
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/home-momentum-90ff283f0fd8.jpg",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
         }
       ]
     },
@@ -286,8 +295,21 @@
       "source": "/index.html",
       "headers": [
         {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'sha256-tlru7lmslzVtATPDH03eEYkZfwJmBxhEcmDmYMliHqE=' 'sha256-szQLzwZcO98P21QjTSzE0gLx2KOWAUeMBAHoTdkn5hc='; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src 'none'; worker-src 'self'; manifest-src 'self'; media-src 'none'; upgrade-insecure-requests"
+        },
+        {
           "key": "Cache-Control",
           "value": "public, max-age=300, stale-while-revalidate=60"
+        }
+      ]
+    },
+    {
+      "source": "/",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'sha256-tlru7lmslzVtATPDH03eEYkZfwJmBxhEcmDmYMliHqE=' 'sha256-szQLzwZcO98P21QjTSzE0gLx2KOWAUeMBAHoTdkn5hc='; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src 'none'; worker-src 'self'; manifest-src 'self'; media-src 'none'; upgrade-insecure-requests"
         }
       ]
     }

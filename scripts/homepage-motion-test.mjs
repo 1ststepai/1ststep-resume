@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync, statSync } from 'node:fs';
 import vm from 'node:vm';
 
-const source = readFileSync(new URL('../home-motion.js', import.meta.url), 'utf8');
+const source = readFileSync(new URL('../home-motion-4e0eecde7df1.js', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const css = readFileSync(new URL('../home-motion.css', import.meta.url), 'utf8');
+const css = readFileSync(new URL('../home-motion-1f7df326a312.css', import.meta.url), 'utf8');
 const icon = readFileSync(new URL('../1ststep-ai-icon.png', import.meta.url));
 function element() {
   const values = new Set();
@@ -88,9 +89,39 @@ assert.equal(timers.size, 1, 'Visible journey carousel must schedule its next sl
 assert.equal(journey.style.values['--journey-index'], '1');
 assert.equal(journeyCards[0].attributes['aria-hidden'], 'true');
 assert.equal(journeyCards[1].attributes['aria-hidden'], 'false');
-assert(statSync(new URL('../home-momentum.jpg', import.meta.url)).size < 200_000, 'Hero asset stays under 200 KB');
-assert.match(readFileSync(new URL('../build-public-web.mjs', import.meta.url), 'utf8'), /'home-momentum.jpg'/);
-assert.match(readFileSync(new URL('../build-public-web.mjs', import.meta.url), 'utf8'), /'site-theme\.js'/);
+assert(statSync(new URL('../home-momentum-90ff283f0fd8.jpg', import.meta.url)).size < 200_000, 'Hero asset stays under 200 KB');
+const buildSource = readFileSync(new URL('../build-public-web.mjs', import.meta.url), 'utf8');
+const vercelConfig = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
+const immutableAssets = ['home-motion-1f7df326a312.css', 'home-momentum-90ff283f0fd8.jpg', 'home-motion-4e0eecde7df1.js'];
+for (const asset of immutableAssets) {
+  assert.match(buildSource, new RegExp(`'${asset.replaceAll('.', '\\.')}'`), `${asset} must be published`);
+  const cacheRule = vercelConfig.headers.find(rule => rule.source === `/${asset}`);
+  assert.equal(cacheRule?.headers.find(header => header.key === 'Cache-Control')?.value, 'public, max-age=31536000, immutable');
+  const bytes = readFileSync(new URL(`../${asset}`, import.meta.url));
+  const canonicalBytes = asset.endsWith('.jpg') ? bytes : Buffer.from(bytes.toString('utf8').replaceAll('\r\n', '\n'));
+  assert.equal(asset.match(/-([a-f0-9]{12})\./)?.[1], createHash('sha256').update(canonicalBytes).digest('hex').slice(0, 12), `${asset} filename must match its normalized published contents`);
+}
+assert.match(buildSource, /'site-theme\.js'/);
+assert.match(html, /<link rel="preload" as="image" href="\/home-momentum-90ff283f0fd8\.jpg" type="image\/jpeg" fetchpriority="high">/);
+assert.match(html, /<link rel="stylesheet" href="\/home-motion-1f7df326a312\.css">/);
+assert.match(html, /<script src="\/home-motion-4e0eecde7df1\.js" defer><\/script>/);
+const rootCsp = vercelConfig.headers.find(rule => rule.source === '/')?.headers.find(header => header.key === 'Content-Security-Policy')?.value;
+assert(rootCsp, 'Homepage must have a route-specific CSP');
+assert.doesNotMatch(rootCsp, /unsafe-inline|cdn\.|stripe|googletagmanager|leadconnector/i);
+assert.match(rootCsp, /script-src 'self' 'sha256-[^']+' 'sha256-[^']+'/);
+const themeTag = '<script>';
+const jsonLdTag = '<script type="application/ld+json">';
+const themeStart = html.indexOf(themeTag) + themeTag.length;
+const jsonLdStart = html.indexOf(jsonLdTag) + jsonLdTag.length;
+const inlineScripts = [
+  html.slice(themeStart, html.indexOf('</script>', themeStart)),
+  html.slice(jsonLdStart, html.indexOf('</script>', jsonLdStart)),
+];
+assert(themeStart >= themeTag.length && jsonLdStart >= jsonLdTag.length, 'Expected inline homepage scripts must exist');
+for (const inlineScript of inlineScripts) {
+  const hash = createHash('sha256').update(inlineScript.replaceAll('\r\n', '\n')).digest('base64');
+  assert.match(rootCsp, new RegExp(`'sha256-${hash.replaceAll('+', '\\+').replaceAll('/', '\\/')}'`), 'Every inline homepage script must be allowed by its content hash');
+}
 assert.match(html, /class="demo-label">Product tour<\/span>/);
 assert.doesNotMatch(html, /controlled production beta|invite.paced|Request a beta spot/i);
 assert.match(html, /Request early access/);

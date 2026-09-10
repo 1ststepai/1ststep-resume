@@ -136,7 +136,7 @@ for (const viewport of VIEWPORTS) {
 }
 
 // ── Content must not depend on JavaScript ────────────────────────────────────
-// The reveal animation hides content until JS reveals it. If home-motion.js ever fails
+// The reveal animation hides content until JS reveals it. If home-motion-4e0eecde7df1.js ever fails
 // to load, every section must still render rather than staying invisible.
 {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, javaScriptEnabled: false });
