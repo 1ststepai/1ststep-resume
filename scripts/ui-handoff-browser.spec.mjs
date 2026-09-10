@@ -35,6 +35,37 @@ test('first visit presents one clear task and keeps secondary tools behind Menu'
   await page.screenshot({ path: join(tmpdir(), '1ststep-simplified-first-visit-mobile.png'), fullPage: true });
 });
 
+test('mobile My Jobs reviews one match at a time without submitting by swipe', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => sessionStorage.setItem('1ststep_concierge_desk_v2', JSON.stringify({
+    roles: [
+      { id: 'swipe-one', employer: 'Example Company', title: 'Procurement Manager', status: 'Found', fitScore: 92, remoteEligibility: 'Remote', salaryMin: 100000, salaryMax: 125000, matchReasons: ['Vendor and sourcing experience.'], discoveryRunId: 'swipe-run', applyPathActive: true, requisitionId: 'REQ-SWIPE-1', directEmployerUrl: 'https://jobs.example.test/1', jobDescription: 'Verified role description. '.repeat(20) },
+      { id: 'swipe-two', employer: 'Second Company', title: 'Strategic Sourcing Manager', status: 'Found', fitScore: 88, remoteEligibility: 'Hybrid', salaryMin: 110000, salaryMax: 130000, matchReasons: ['Procurement leadership experience.'], discoveryRunId: 'swipe-run', applyPathActive: true, requisitionId: 'REQ-SWIPE-2', directEmployerUrl: 'https://jobs.example.test/2', jobDescription: 'Verified role description. '.repeat(20) },
+    ], reusableFacts: [], standingPolicies: [], approvalBatches: [], actionQueue: [], applicationSessions: [], hiringEcosystem: [], acquisitionOutcomes: [], auditEvents: [],
+  })));
+  await page.goto(`${base}/concierge`, { waitUntil: 'domcontentloaded' });
+  await page.locator('#appMenu > summary').click();
+  await page.locator('#openJobsMenu').click();
+
+  await expect(page.locator('.swipe-job-card:visible')).toHaveCount(1);
+  await expect(page.locator('.swipe-job-card:visible')).toContainText('Example Company');
+  await expect(page.locator('[data-swipe-prepare]')).toHaveText(/Save & prepare/);
+  await expect(page.locator('.swipe-job-controls')).toContainText('No application is sent by a swipe.');
+  expect((await page.locator('.swipe-actions button').allTextContents()).join(' ')).not.toMatch(/Apply|Submit/i);
+  await page.screenshot({ path: join(tmpdir(), '1ststep-mobile-swipe-jobs.png'), fullPage: true });
+
+  const box = await page.locator('.swipe-job-card:visible').boundingBox();
+  await page.mouse.move(box.x + box.width * 0.65, box.y + box.height * 0.5);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.25, box.y + box.height * 0.5, { steps: 5 });
+  await page.mouse.up();
+  await expect(page.locator('.swipe-job-card:visible')).toContainText('Second Company');
+  await page.locator('[data-swipe-undo]').click();
+  await expect(page.locator('.swipe-job-card:visible')).toContainText('Example Company');
+  await page.locator('#closeJobs').click();
+  await expect(page.locator('#appMenu > summary')).toBeFocused();
+});
+
 test('resume chooser hides unavailable capability, stacks on mobile, and opens builder', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));

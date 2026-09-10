@@ -111,6 +111,10 @@ let resumeInterviewActive = false;
 let careerStoryActive = false;
 let activePackageRoleId = '';
 let activeJobTab = 'Matches';
+let jobsDialogTrigger = null;
+const passedMatchIds = new Set();
+let lastPassedMatchId = '';
+let swipeGesture = null;
 let pendingConsequence = null;
 let pendingConsentContinuation = null;
 let lastDialogTrigger = null;
@@ -2726,19 +2730,29 @@ function renderSubscriberJobs() {
     return;
   }
   const filtered = records.filter(item => item.tab === activeJobTab);
-  $('jobCards').innerHTML = filtered.length ? filtered.map(({ role, applicationSession, status }) => {
+  const visible = activeJobTab === 'Matches' ? filtered.filter(({ role }) => !passedMatchIds.has(role.id)) : filtered;
+  const cards = visible.map(({ role, applicationSession, status }, index) => {
     const salary = compensationRange(role.salaryMin, role.salaryMax);
     const fit = 'Why it matches: ' + (role.matchReasons?.[0] || role.fitReasons?.[0] || 'Check the job requirements against your resume.');
     const location = role.remoteEligibility || role.geographyEligibility || 'Remote and location eligibility not verified';
-    return `<article class="simple-job-card"><header><div><p>${escapeHtml(role.employer || 'Employer unavailable')}</p><h4>${escapeHtml(role.title || 'Job title unavailable')}</h4></div><span class="status-badge ${statusBadgeClass(status)}">${escapeHtml(status)}</span></header><div class="simple-job-meta"><span>${escapeHtml(location)}</span><span>${escapeHtml(salary)}</span></div><footer><strong>${escapeHtml(fit)}</strong>${primaryJobAction(role, applicationSession, status)}</footer></article>`;
-  }).join('') : `<div class="jobs-empty">No ${escapeHtml(activeJobTab.toLowerCase())} jobs yet. Unavailable counts remain zero until persisted evidence exists.</div>`;
+    return `<article class="simple-job-card${activeJobTab === 'Matches' ? ` swipe-job-card${index === 0 ? ' is-swipe-current' : ''}` : ''}"${activeJobTab === 'Matches' ? ` data-swipe-role-id="${escapeHtml(role.id)}"` : ''}><header><div><p>${escapeHtml(role.employer || 'Employer unavailable')}</p><h4>${escapeHtml(role.title || 'Job title unavailable')}</h4></div><span class="status-badge ${statusBadgeClass(status)}">${escapeHtml(status)}</span></header><div class="simple-job-meta"><span>${escapeHtml(location)}</span><span>${escapeHtml(salary)}</span></div><footer><strong>${escapeHtml(fit)}</strong>${primaryJobAction(role, applicationSession, status)}</footer></article>`;
+  }).join('');
+  if (activeJobTab !== 'Matches') {
+    $('jobCards').innerHTML = cards || `<div class="jobs-empty">No ${escapeHtml(activeJobTab.toLowerCase())} jobs yet. Unavailable counts remain zero until persisted evidence exists.</div>`;
+    return;
+  }
+  const current = visible[0];
+  const currentAction = current ? primaryJobAction(current.role, current.applicationSession, current.status) : '';
+  const canPrepare = currentAction.includes('data-job-package-generate');
+  const swipeControls = current ? `<div class="swipe-job-controls"><div class="swipe-position"><span>Matches</span><strong>${filtered.length - visible.length + 1} of ${filtered.length}</strong></div><div class="swipe-actions"><button type="button" data-swipe-pass aria-label="Pass on this job"><span aria-hidden="true">×</span>Pass</button><button class="swipe-prepare" type="button" data-swipe-prepare aria-label="${canPrepare ? 'Save and prepare this job' : 'Review this job'}"><span aria-hidden="true">→</span>${canPrepare ? 'Save & prepare' : 'Review job'}</button></div><p>Swipe left to pass · right to ${canPrepare ? 'prepare' : 'review'}</p><small>No application is sent by a swipe.</small>${lastPassedMatchId ? '<button class="swipe-undo" type="button" data-swipe-undo>Undo last pass</button>' : ''}</div>` : `<div class="swipe-review-complete"><strong>You reviewed all current matches.</strong><small>No application was sent.</small>${lastPassedMatchId ? '<button type="button" data-swipe-undo>Undo last pass</button>' : ''}</div>`;
+  $('jobCards').innerHTML = (cards || '<div class="jobs-empty">No matches yet. Unavailable counts remain zero until persisted evidence exists.</div>') + swipeControls;
 }
 
-function openJobs(tab = 'Matches') { activeJobTab = tab; renderSubscriberJobs(); $('jobsOverlay').classList.add('open'); }
+function openJobs(tab = 'Matches') { jobsDialogTrigger = document.activeElement; activeJobTab = tab; renderSubscriberJobs(); $('jobsOverlay').classList.add('open'); }
 function closeJobs() {
   const restoreFocus = $('jobsOverlay').contains(document.activeElement);
   $('jobsOverlay').classList.remove('open');
-  if (restoreFocus) $('openJobs').focus();
+  if (restoreFocus) (jobsDialogTrigger?.offsetParent !== null ? jobsDialogTrigger : document.querySelector('#appMenu > summary'))?.focus();
 }
 function openNeedsYou() { renderNeedsYouQueue(); $('needsYouOverlay').classList.add('open'); $('closeNeedsYou').focus(); }
 function closeNeedsYou() { $('needsYouOverlay').classList.remove('open'); }
@@ -3970,6 +3984,25 @@ $('jobTabs').addEventListener('click', event => {
   renderSubscriberJobs();
 });
 $('jobCards').addEventListener('click', async event => {
+  if (event.target.closest('[data-swipe-undo]')) {
+    if (lastPassedMatchId) passedMatchIds.delete(lastPassedMatchId);
+    lastPassedMatchId = '';
+    renderSubscriberJobs();
+    return;
+  }
+  const swipeCard = $('jobCards').querySelector('.swipe-job-card.is-swipe-current');
+  if (event.target.closest('[data-swipe-pass]')) {
+    if (!swipeCard) return;
+    lastPassedMatchId = swipeCard.dataset.swipeRoleId;
+    passedMatchIds.add(lastPassedMatchId);
+    renderSubscriberJobs();
+    showToast('Passed for this review');
+    return;
+  }
+  if (event.target.closest('[data-swipe-prepare]')) {
+    swipeCard?.querySelector('.job-primary-action')?.click();
+    return;
+  }
   if (reviewNeedsYouTarget(event.target)) return;
   const generateId = event.target?.dataset?.jobPackageGenerate;
   const reviewId = event.target?.dataset?.jobPackageReview;
@@ -3998,6 +4031,40 @@ $('jobCards').addEventListener('click', async event => {
   try { const run = await generateDurablePackage(generateId, { retryRequested: event.target.dataset.packageRetry === 'true' }); renderSubscriberJobs(); if (run) showToast(run.result?.resumeText ? 'Private draft ready for review' : 'Preparation saved'); }
   catch (error) { closeJobs(); addMessage('assistant', `<strong>The package was not created.</strong><br>${escapeHtml(error.message)} Your role and resume remain saved.`); }
   finally { event.target.disabled = false; }
+});
+$('jobCards').addEventListener('pointerdown', event => {
+  if (!window.matchMedia('(max-width: 720px)').matches || event.target.closest('button,a')) return;
+  const card = event.target.closest('.swipe-job-card.is-swipe-current');
+  if (!card) return;
+  swipeGesture = { card, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY };
+  card.setPointerCapture?.(event.pointerId);
+});
+$('jobCards').addEventListener('pointermove', event => {
+  if (!swipeGesture || swipeGesture.pointerId !== event.pointerId) return;
+  const x = event.clientX - swipeGesture.startX;
+  const y = event.clientY - swipeGesture.startY;
+  if (Math.abs(x) <= Math.abs(y)) return;
+  swipeGesture.card.style.transform = `translateX(${Math.max(-120, Math.min(120, x))}px) rotate(${x / 35}deg)`;
+  swipeGesture.card.dataset.swipeDirection = x > 24 ? 'right' : x < -24 ? 'left' : '';
+});
+function finishJobSwipe(event) {
+  if (!swipeGesture || swipeGesture.pointerId !== event.pointerId) return;
+  const { card, startX, startY } = swipeGesture;
+  swipeGesture = null;
+  const x = event.clientX - startX;
+  const y = event.clientY - startY;
+  card.style.transform = '';
+  delete card.dataset.swipeDirection;
+  if (Math.abs(x) < 72 || Math.abs(x) <= Math.abs(y)) return;
+  if (x < 0) $('jobCards').querySelector('[data-swipe-pass]')?.click();
+  else $('jobCards').querySelector('[data-swipe-prepare]')?.click();
+}
+$('jobCards').addEventListener('pointerup', finishJobSwipe);
+$('jobCards').addEventListener('pointercancel', event => {
+  if (!swipeGesture || swipeGesture.pointerId !== event.pointerId) return;
+  swipeGesture.card.style.transform = '';
+  delete swipeGesture.card.dataset.swipeDirection;
+  swipeGesture = null;
 });
 $('postSubmissionActions').addEventListener('click', async event => {
   const button = event.target.closest('[data-post-submission]');
