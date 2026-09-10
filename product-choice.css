@@ -114,6 +114,15 @@ body:has(#welcomeOverlay.visible) #lc_text-widget { display: none !important; }
 .welcome-resume-choice span { display: block; margin-top: 5px; color: #69738a; font-size: 10px; font-weight: 500; }
 .welcome-resume-choice-primary { background: #4f52ed; border-color: #4f52ed; color: #fff; }
 .welcome-resume-choice-primary span { color: rgba(255,255,255,.8); }
+.welcome-paste-panel { text-align: left; }
+.welcome-paste-panel[hidden] { display: none; }
+.welcome-paste-panel label { display: block; margin-bottom: 8px; color: #17203a; font: 800 14px/1.35 'Inter', sans-serif; }
+.welcome-paste-panel textarea { width: 100%; box-sizing: border-box; resize: vertical; padding: 12px; border: 1px solid #d9deea; border-radius: 12px; color: #17203a; background: #fff; font: 13px/1.5 'Inter', sans-serif; }
+.welcome-paste-panel textarea:focus { outline: 3px solid rgba(79,82,237,.18); border-color: #5558ee; }
+.welcome-paste-panel p { min-height: 18px; margin: 6px 0; color: #b42318; font: 600 11px/1.4 'Inter', sans-serif; }
+.welcome-paste-actions { display: flex; gap: 10px; }
+.welcome-paste-actions button { min-height: 44px; flex: 1; border: 1px solid #d9deea; border-radius: 10px; background: #fff; color: #17203a; font: 800 13px/1.2 'Inter', sans-serif; cursor: pointer; }
+.welcome-paste-actions #welcomePasteSaveBtn { border-color: #4f52ed; background: #4f52ed; color: #fff; }
 
 @media (max-width: 980px) {
   .welcome-overlay { padding: 20px; }

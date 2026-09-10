@@ -118,8 +118,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { corePlugins: { preflight: false }, theme: { extend: {} } }</script>
   <link rel="icon" href="/1ststep-ai-icon.png" type="image/png" />
-  <link rel="stylesheet" href="/style.css" />
-  <link rel="stylesheet" href="/product-choice.css" />
+  <link rel="stylesheet" href="/style.css?v=resume-focus-20260909" />
+  <link rel="stylesheet" href="/product-choice.css?v=resume-focus-20260909" />
 </head>
 
 <body>
@@ -132,7 +132,7 @@
       <div class="logo" id="logoBtn" title="1stStep.ai" role="button" tabindex="0" aria-label="Go to Resume Tailor home" style="cursor:pointer">1stStep<span>.ai</span></div>
 
       <!-- Center: Dynamic page title (desktop only) -->
-      <div class="topbar-center hide-mobile" id="pageTitle">Resume Workspace</div>
+      <div class="topbar-center hide-mobile" id="pageTitle">Resume</div>
 
       <!-- Right: mobile nav toggle + upgrade + avatar -->
       <div class="topbar-right" style="gap:8px">
@@ -141,13 +141,13 @@
 
         <!-- Mobile-only mode toggle (hidden on desktop via sidebar) -->
         <div class="mode-toggle">
-          <button class="mode-btn active" id="modeResume"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M11 1H3a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V5l-3-4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M11 1v4h3M5 8h6M5 10.5h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Resume Workspace</button>
-          <button class="mode-btn" id="modeJobs"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Job Search</button>
-          <button class="mode-btn" id="modeTailored"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M2 4h8a1 1 0 011 1v10a1 1 0 01-1 1H2a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M4 8h5M4 10.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Job Tracker <span id="tailoredBadge" style="display:none;background:rgba(99,102,241,0.3);color:#a5b4fc;border-radius:100px;padding:1px 6px;font-size:10px;margin-left:2px">0</span></button>
+          <button class="mode-btn active" id="modeResume"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M11 1H3a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V5l-3-4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M11 1v4h3M5 8h6M5 10.5h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Resume</button>
+          <button class="mode-btn" id="modeJobs"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Find Jobs</button>
+          <button class="mode-btn" id="modeTailored"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M2 4h8a1 1 0 011 1v10a1 1 0 01-1 1H2a1 1 0 011-1V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M4 8h5M4 10.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Prepared <span id="tailoredBadge" style="display:none;background:rgba(99,102,241,0.3);color:#a5b4fc;border-radius:100px;padding:1px 6px;font-size:10px;margin-left:2px">0</span></button>
           <div class="mode-more" id="modeMoreWrap">
             <button class="mode-btn" id="modeMoreBtn" title="More tools">More <span class="ui-icon" style="opacity:.75" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span><span id="moreActiveDot" style="display:none;width:6px;height:6px;border-radius:50%;background:#60A5FA;margin-left:2px"></span></button>
             <div class="mode-more-menu" id="moreMenu">
-              <button class="mode-more-item" id="modeTracker"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Applications <span id="trackerBadge" style="display:none;background:var(--blue);color:white;border-radius:100px;padding:1px 6px;font-size:10px;margin-left:4px">0</span></button>
+              <button class="mode-more-item" id="modeTracker"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> My Jobs <span id="trackerBadge" style="display:none;background:var(--blue);color:white;border-radius:100px;padding:1px 6px;font-size:10px;margin-left:4px">0</span></button>
               <button class="mode-more-item" id="modeLinkedIn"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 6.5v5M4 4v.5M7 11.5V9c0-1.1.9-2 2-2s2 .9 2 2v2.5M7 6.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> LinkedIn Profile</button>
               <button class="mode-more-item" id="modeBulkApply"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="13" cy="12" r="2.5" fill="currentColor"/></svg> Bulk Apply</button>
             </div>
@@ -231,24 +231,24 @@
       <div class="sb-section">
         <button class="sb-item active" id="sbResume">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          Resume Workspace
+          Resume
         </button>
         <button class="sb-item" id="sbJobs">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          Job Search
+          Find Jobs
         </button>
         <button class="sb-item" id="sbTailored">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/><rect x="2" y="13" width="9" height="9"/><rect x="13" y="13" width="9" height="9"/></svg>
-          Job Tracker
+          Prepared Resumes
           <span class="sb-badge" id="sbTailoredBadge" style="display:none">0</span>
         </button>
         <a class="sb-item" href="/concierge" style="text-decoration:none">
           <span class="sb-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M8 9h8M8 13h5"/></svg></span>
-          Application Concierge
+          Job Agent
         </a>
         <button class="sb-item" id="sbTracker">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-          Tracker
+          My Jobs
           <span class="sb-badge" id="sbTrackerBadge" style="display:none">0</span>
         </button>
         <button class="sb-item" id="sbLinkedIn">
@@ -284,37 +284,14 @@
         <!-- -- Hero Action Panel: 2-column -- -->
         <div class="hero-action-panel">
 
-          <!-- Left: Value prop + trust signals -->
-          <div class="hero-left">
-            <div class="hero-ai-badge">
-              <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.8 4.6L14 6l-3 3 1 4.3L8 11l-4 2.3L5 9 2 6l4.2-.4z"/></svg>
-              AI-powered optimization
-            </div>
-            <h1 class="hero-title">Tailor Your Resume<br>in Seconds</h1>
-            <p class="hero-subtitle">Upload your resume + paste a job description. We'll handle the rest.</p>
-            <div class="hero-trust-list">
-              <div class="hero-trust-item">
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 8 6 12 14 4"/></svg>
-                Keyword matching engine
-              </div>
-              <div class="hero-trust-item">
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 8 6 12 14 4"/></svg>
-                ATS-friendly formatting
-              </div>
-              <div class="hero-trust-item">
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 8 6 12 14 4"/></svg>
-                Parsed in-browser, never stored
-              </div>
-              <div class="hero-trust-item">
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 8 6 12 14 4"/></svg>
-                3 free tailors - no card needed
-              </div>
-            </div>
-            <p style="margin-top:18px;font-size:11px;color:var(--muted);line-height:1.5">Used by job seekers to land<br>interviews faster.</p>
-          </div>
-
           <!-- Right: Inputs + CTA -->
           <div class="hero-right">
+
+            <div class="resume-flow-intro">
+              <div class="hero-ai-badge">Resume</div>
+              <h1>Add your resume, then choose a job</h1>
+              <p>1stStep creates a tailored draft for you to review before you use it.</p>
+            </div>
 
             <!-- Extension promo banner - hidden once dismissed or extension detected -->
             <div id="extPromoBanner" style="display:none;align-items:center;gap:11px;padding:11px 13px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:10px;margin-bottom:10px">
@@ -391,7 +368,7 @@
               </div>
               <textarea id="jobText" rows="5" aria-label="Job description" placeholder="Paste the full job description here - the more detail, the better the result."></textarea>
               <div id="trackerPickerWrap" style="position:relative;margin-top:6px;">
-                <button id="pickTrackedJobBtn" style="background:none;border:none;padding:0;font-size:12px;color:var(--brand);cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;"> Pick from Job Tracker</button>
+                <button id="pickTrackedJobBtn" style="background:none;border:none;padding:0;font-size:12px;color:var(--brand);cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;">Pick from My Jobs</button>
                 <div id="trackerPickerDropdown" style="display:none;position:static;margin-top:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.12);max-height:220px;overflow-y:auto;"></div>
               </div>
               <p id="jobHelperText" style="display:none;margin:5px 0 0;font-size:12px;color:var(--muted)">Add the job posting to tailor your resume to it</p>
@@ -440,7 +417,7 @@
         </div><!-- /hero-action-panel -->
 
         <!-- Extra context - collapsible card below hero -->
-        <div class="panel-section" style="padding:14px 20px">
+        <div class="panel-section" id="advancedPanel" style="padding:14px 20px">
           <details id="advancedSection">
             <summary style="font-size:11px;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;color:var(--label);cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;user-select:none">
               <span id="advArrow" style="font-size:9px;transition:transform 0.15s;color:var(--muted)">></span> Extra Context <span style="font-size:11px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(Optional)</span>
@@ -524,11 +501,11 @@
             </button>
             <button class="rab-btn" id="rabVault">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/><rect x="2" y="13" width="9" height="9"/><rect x="13" y="13" width="9" height="9"/></svg>
-              Job Tracker
+              Prepared Resumes
             </button>
             <button class="rab-btn" id="rabTracker">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-              Tracker
+              My Jobs
             </button>
             <button class="rab-btn rab-btn-cover" id="rabCoverLetter" style="display:none">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
@@ -539,8 +516,8 @@
           <!-- Tracker auto-save confirmation - shown briefly after each tailor -->
           <div id="trackerSaveConfirm" style="display:none;align-items:center;gap:8px;padding:8px 16px;background:rgba(99,102,241,0.07);border-bottom:1px solid rgba(99,102,241,0.15);font-size:12px;color:var(--text2)">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Added to Tracker as <strong style="color:var(--text)">Resume Ready</strong></span>
-            <button id="trackerConfirmViewBtn" style="margin-left:auto;background:none;border:none;color:var(--brand);font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;padding:0;white-space:nowrap">View Tracker -></button>
+            <span>Saved as <strong style="color:var(--text)">Resume Ready</strong></span>
+            <button id="trackerConfirmViewBtn" style="margin-left:auto;background:none;border:none;color:var(--brand);font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;padding:0;white-space:nowrap">View prepared resumes -&gt;</button>
             <button id="trackerConfirmDismissBtn" aria-label="Dismiss tracker confirmation" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0;flex-shrink:0"><span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></button>
           </div>
 
@@ -981,8 +958,8 @@
         <div style="max-width:860px;width:100%;margin:0 auto;padding:24px 16px;box-sizing:border-box">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
             <div>
-              <h2 style="font-size:18px;font-weight:700;margin:0 0 4px"> Job Tracker</h2>
-              <p style="font-size:13px;color:var(--muted);margin:0">Track every application - from tailored to offer.</p>
+              <h2 style="font-size:18px;font-weight:700;margin:0 0 4px">Prepared Resumes</h2>
+              <p style="font-size:13px;color:var(--muted);margin:0">Review the resume drafts prepared for each role.</p>
             </div>
             <div style="display:flex;gap:8px;align-items:center">
               <button id="addManualJobBtn"
@@ -1737,8 +1714,20 @@
         <h2>Start with your resume</h2>
         <p>Use an existing resume or build a clean master version from scratch.</p>
         <div id="welcomePathGrid" class="welcome-path-grid">
-          <button id="welcomeUploadBtn" class="welcome-resume-choice welcome-resume-choice-primary" type="button">I have a resume<span>Upload, paste, or import from LinkedIn</span></button>
-          <button id="welcomeBuildBtn" class="welcome-resume-choice" type="button">I need to build one<span>Step-by-step guided builder</span></button>
+          <button id="welcomeUploadBtn" class="welcome-resume-choice welcome-resume-choice-primary" type="button">Upload a file<span>PDF, Word, or plain text</span></button>
+          <button id="welcomePasteBtn" class="welcome-resume-choice" type="button">Paste resume text<span>Copy and paste your existing resume</span></button>
+          <button id="welcomeLinkedInBtn" class="welcome-resume-choice" type="button">Import from LinkedIn<span>Use your LinkedIn profile PDF</span></button>
+          <button id="welcomeBuildBtn" class="welcome-resume-choice" type="button">Build from scratch<span>Step-by-step guided builder</span></button>
+        </div>
+
+        <div id="welcomePastePanel" class="welcome-paste-panel" hidden>
+          <label for="welcomePasteInput">Paste your resume</label>
+          <textarea id="welcomePasteInput" rows="9" placeholder="Paste the text of your current resume here."></textarea>
+          <p id="welcomePasteError" role="alert" aria-live="polite"></p>
+          <div class="welcome-paste-actions">
+            <button id="welcomePasteBackBtn" type="button">Back</button>
+            <button id="welcomePasteSaveBtn" type="button">Use this resume</button>
+          </div>
         </div>
 
         <!-- Step 2: paste JD - shown after resume is detected -->
@@ -2066,7 +2055,7 @@
       <line x1="16" y1="13" x2="8" y2="13" />
       <line x1="16" y1="17" x2="8" y2="17" />
     </svg>
-    Tailor
+    Resume
   </button>
   <button class="mobile-nav-item" id="mobileNavJobs">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -2074,7 +2063,7 @@
       <circle cx="11" cy="11" r="8" />
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
-    Jobs
+    Find
   </button>
   <button class="mobile-nav-item" id="mobileNavTailored">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -2084,7 +2073,7 @@
       <rect x="3" y="14" width="7" height="7" rx="1" />
       <rect x="14" y="14" width="7" height="7" rx="1" />
     </svg>
-    Tracker
+    History
     <span class="mobile-nav-badge" id="mobileNavTailoredBadge" style="display:none">0</span>
   </button>
   <button class="mobile-nav-item" id="mobileNavTracker">
@@ -2093,7 +2082,7 @@
       <path d="M9 11l3 3L22 4" />
       <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
     </svg>
-    Applied
+    My Jobs
     <span class="mobile-nav-badge" id="mobileNavTrackerBadge" style="display:none">0</span>
   </button>
   <button class="mobile-nav-item" id="mobileNavLinkedIn">
@@ -2149,7 +2138,7 @@
   data-widget-id="69dc254ad0d6ea2d59ad3b08"></script>
 
 <!-- Resume Builder Wizard - loaded last so all helpers (saveResume, showToast, etc.) are defined -->
-<script src="/app.js?v=route-assets-20260905"></script>
+<script src="/app.js?v=resume-focus-20260909"></script>
 <script src="/resume-builder.js?v=28cd652"></script>
 
 </body>

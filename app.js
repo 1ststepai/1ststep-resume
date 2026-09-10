@@ -1165,6 +1165,10 @@ function collapseLetterSpacing(text) {
       document.getElementById('welcomeAgentProductBtn')?.addEventListener('click', startJobAgent);
       document.getElementById('welcomeProductBackBtn')?.addEventListener('click', _showWelcomeProductChooser);
       document.getElementById('welcomeUploadBtn')?.addEventListener('click', () => dismissWelcome('upload'));
+      document.getElementById('welcomePasteBtn')?.addEventListener('click', _showWelcomePastePanel);
+      document.getElementById('welcomePasteBackBtn')?.addEventListener('click', _showResumeWelcomePanel);
+      document.getElementById('welcomePasteSaveBtn')?.addEventListener('click', _saveWelcomePastedResume);
+      document.getElementById('welcomeLinkedInBtn')?.addEventListener('click', () => dismissWelcome('linkedin'));
       document.getElementById('welcomeBuildBtn')?.addEventListener('click', () => dismissWelcome('build'));
       document.getElementById('welcomeRestoreBtn')?.addEventListener('click', triggerRestoreBackup);
 
@@ -1307,10 +1311,44 @@ function collapseLetterSpacing(text) {
     function _showResumeWelcomePanel() {
       const chooser = document.getElementById('welcomeProductChooser');
       const panel = document.getElementById('welcomeResumePanel');
+      const pathGrid = document.getElementById('welcomePathGrid');
+      const pastePanel = document.getElementById('welcomePastePanel');
       if (chooser) chooser.hidden = true;
       if (panel) panel.hidden = false;
+      if (pathGrid) pathGrid.style.display = '';
+      if (pastePanel) pastePanel.hidden = true;
       document.getElementById('welcomeUploadBtn')?.focus();
       _pingTracker('onboarding_product_resume');
+    }
+
+    function _showWelcomePastePanel() {
+      const pathGrid = document.getElementById('welcomePathGrid');
+      const pastePanel = document.getElementById('welcomePastePanel');
+      if (pathGrid) pathGrid.style.display = 'none';
+      if (pastePanel) pastePanel.hidden = false;
+      document.getElementById('welcomePasteInput')?.focus();
+    }
+
+    function _saveWelcomePastedResume() {
+      const input = document.getElementById('welcomePasteInput');
+      const error = document.getElementById('welcomePasteError');
+      const text = sanitizeResumeText(input?.value.trim() || '');
+      if (text.length < 200) {
+        if (error) error.textContent = 'Paste at least 200 characters so 1stStep has enough resume detail.';
+        input?.focus();
+        return;
+      }
+      if (error) error.textContent = '';
+      const resumeText = document.getElementById('resumeText');
+      if (resumeText) {
+        resumeText.value = text;
+        resumeText.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      document.getElementById('fileName').textContent = 'Pasted resume';
+      document.getElementById('fileLoaded').style.display = 'flex';
+      document.getElementById('fileDrop').style.display = 'none';
+      _onResumeReadyAdvanceWelcome();
+      _pingTracker('onboarding_resume_pasted');
     }
 
     function _showWelcomeProductChooser() {
@@ -1322,6 +1360,8 @@ function collapseLetterSpacing(text) {
       if (panel) panel.hidden = true;
       if (pathGrid) pathGrid.style.display = '';
       if (step2) step2.style.display = 'none';
+      const pastePanel = document.getElementById('welcomePastePanel');
+      if (pastePanel) pastePanel.hidden = true;
       document.getElementById('welcomeResumeProductBtn')?.focus();
     }
 
@@ -1366,6 +1406,12 @@ function collapseLetterSpacing(text) {
         // Keep overlay open - trigger file picker then advance to step 2 when resume lands
         setTimeout(() => document.getElementById('fileInput')?.click(), 200);
         _onResumeReadyAdvanceWelcome();
+        return;
+      }
+
+      if (path === 'linkedin') {
+        _closeWelcomeOverlay();
+        setTimeout(openLinkedInPdfModal, 200);
         return;
       }
 
@@ -2230,11 +2276,18 @@ ${resume.slice(0, 3000)}
     }
 
     function updateWorkflowGuidanceUI(workflowState = getApplicationWorkflowState()) {
+      updateResumeFocusState(workflowState);
       updateCurrentObjectiveBar(workflowState);
       updateWhatsNextGuide(workflowState);
       updateDisabledButtonReasons(workflowState);
       updateApplicationChecklist(workflowState);
       updateEmptyStates(workflowState);
+    }
+
+    function updateResumeFocusState(workflowState = getApplicationWorkflowState()) {
+      document.body.classList.toggle('resume-focus-resume-first', !workflowState.hasResume && !workflowState.hasJobDescription);
+      document.body.classList.toggle('resume-focus-needs-input', !workflowState.hasResume || !workflowState.hasJobDescription);
+      document.body.classList.toggle('resume-focus-building', !workflowState.hasGeneratedResume);
     }
 
     function dismissWhatsNextGuide() {
@@ -2479,6 +2532,8 @@ ${resume.slice(0, 3000)}
         updateWhatsNextGuide();
         return;
       }
+      const workflowState = getApplicationWorkflowState();
+      updateResumeFocusState(workflowState);
       if (btn.disabled) {
         updateWhatsNextGuide();
         return; // don't override state while running
@@ -4611,7 +4666,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       if (_rg) _rg.style.display = (mode === 'resume') ? 'grid' : 'none';
 
       // Dynamic page title in topbar center
-      const _titleMap = { resume: 'Resume Tailor', jobs: 'Job Search', tailored: 'Job Tracker', tracker: 'Applications', linkedin: 'LinkedIn Profile', bulkapply: 'Bulk Apply' };
+      const _titleMap = { resume: 'Resume', jobs: 'Find Jobs', tailored: 'Prepared Resumes', tracker: 'My Jobs', linkedin: 'LinkedIn Profile', bulkapply: 'Bulk Apply' };
       const _pt = document.getElementById('pageTitle');
       if (_pt) _pt.textContent = _titleMap[mode] || 'Dashboard';
 
