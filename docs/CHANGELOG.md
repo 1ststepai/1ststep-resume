@@ -10,6 +10,7 @@ Record verified ecosystem changes here. Entries are append-only within each date
 - Remediated four release-candidate browser boundaries: model-output DOM XSS, legacy bearer storage/export, persistent resume PII, and CSV formula injection.
 - Closed two additional browser-storage trust paths by removing résumé content from the extension message contract and mapping subscription cache values to fixed literals.
 - Added separate existing-user and affiliate-only partner onboarding through the verified Clerk identity boundary, encrypted partner-role persistence, explicit consent, administrator-only approval, approved-only attribution, self-referral rejection, account export/deletion coverage, and mobile-safe partner states. No payout or commission system was activated.
+- Added rendered partner-onboarding checks at 390px iPhone and 412px Android widths for visible path context, 44px touch targets, and zero horizontal overflow.
 - Removed the obsolete browser-local partner identity/code generator from the public partner landing while preserving its non-authoritative local prospect workspace.
 - Passed the complete consolidated release gate, 23 extension browser tests, the 82-asset production build, deterministic v1.6 ZIP rebuild, and high-severity dependency audit.
 - Recorded production as blocked: 89 of 126 required release environment names are absent and the authenticated extension-to-My-Jobs Preview journey is still unproven.

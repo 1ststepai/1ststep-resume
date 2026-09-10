@@ -74,7 +74,7 @@ This is the execution queue for the app, Chrome extension, resume site, partner 
 
 - **Owner:** Partner site and shared platform
 - **Acceptance criteria:** The public landing offers explicit existing-user and affiliate-only paths. The authenticated role reuses a verified Clerk identity without granting Job Agent access, stores encrypted partner records separately, requires explicit consent and administrator approval, rejects self-referrals, and includes partner data in account export/deletion. Beta referrals never appear as earned commission.
-- **Verified candidate evidence:** Focused partner account, API, surface, login-return, account-lifecycle, security, and mobile-layout tests pass locally. The old browser-local referral-code generator was removed; prospect drafts remain local and non-authoritative.
+- **Verified candidate evidence:** Focused partner account, API, surface, login-return, account-lifecycle, and security tests pass locally. Rendered onboarding passes at 390px iPhone and 412px Android widths with 44px hit targets and no horizontal overflow. The old browser-local referral-code generator was removed; prospect drafts remain local and non-authoritative.
 - **External blockers:** Production Clerk/session behavior, Redis/encryption configuration, cross-site mobile behavior, and administrator review must be verified on the exact deployed candidate. Payout, commission, pricing, and public publication remain unimplemented and unauthorized.
 
 ### Operational release evidence

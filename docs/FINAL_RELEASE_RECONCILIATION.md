@@ -76,8 +76,9 @@ This branch is source- and local-test-ready, but **not production-release-ready*
 | TypeScript / ESLint | Unavailable in the authoritative package: no standalone `typecheck` or `lint` script. This is not recorded as a pass. |
 | Production environment-name audit | Fail for release readiness: 89 of 126 required names absent; values not validated. |
 | Public domains | HTTP 200 for app, resume, and partners; authenticated and source-parity proof still missing. |
-| PR #80 CI | The previous pushed head `fc5e385` passed the deterministic gate, CodeQL, static QA, dependency audit, and Vercel Preview but failed Sonar Security Rating with one remaining browser-storage taint path. That source path is fixed locally; the exact new head must be pushed and all checks, including Sonar A, must pass before merge. |
-| Runtime-bearing release Preview | Ready: `dpl_E7h1ghMHF31tqAFFQN7Tfn1iF6M9`, bound through GitHub deployment `6371383461` to `2be4174`; public root, Job Agent, and partners routes returned HTTP 200. Authenticated persistence is still untested. |
+| PR #80 CI | The browser-storage taint source is fixed and the clean candidate passes the complete local release gate. GitHub deterministic gate, CodeQL, static QA, dependency audit, and Vercel Preview were green on `b7eba4e`; Sonar had not attached a new-head result and its API still exposed the stale prior rating. Every check, including a fresh Sonar Security Rating A, must attach to and pass on the exact final pushed head before merge. |
+| Runtime-bearing release Preview | Ready: `dpl_B4ZjpTma6dQShfymxGBbmkyBSBaT`, bound through GitHub deployment `6373403950` to `b7eba4e`. Authenticated Vercel CLI access verified `/partner`; unauthenticated `/api/partner` correctly denied the request. The Preview is browser-protected, and authenticated Clerk/partner/My Jobs persistence is still untested. |
+| Partner mobile browser | Pass locally at rendered 390x844 and 412x915 viewports: explicit affiliate-only state visible, all visible controls have at least a 44px hit target, and document width does not exceed viewport. Preview authenticated behavior remains unverified. |
 
 ## Release commits and source of truth
 
