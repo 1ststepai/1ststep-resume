@@ -20,10 +20,11 @@ test('question dialog contains forward, reverse and stray keyboard focus without
 
 for (const [trigger, dialog] of [['openJobs', 'jobsOverlay'], ['openVault', 'vaultOverlay']]) {
   test(`${dialog} returns focus to its trigger after Escape`, async ({ page }) => {
+    if (trigger === 'openVault') await page.locator('#appMenu > summary').click();
     await page.locator(`#${trigger}`).click();
     await expect(page.locator(`#${dialog}`)).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.locator(`#${dialog}`)).toBeHidden();
-    await expect(page.locator(`#${trigger}`)).toBeFocused();
+    await expect(page.locator(trigger === 'openVault' ? '#appMenu > summary' : `#${trigger}`)).toBeFocused();
   });
 }

@@ -14,6 +14,27 @@ test('subscriber workspace uses light surfaces and opens Needs You', async ({ pa
   await page.screenshot({ path: join(tmpdir(), '1ststep-ui-handoff-needs-you.png') });
 });
 
+test('first visit presents one clear task and keeps secondary tools behind Menu', async ({ page }) => {
+  await page.route('**/api/**', route => route.fulfill({ status: 401, contentType: 'application/json', body: '{}' }));
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto(`${base}/concierge`, { waitUntil: 'networkidle' });
+
+  await expect(page.locator('#agentTitle')).toHaveText('Let’s get your job search ready.');
+  await expect(page.locator('#openGuidedLaunch')).toContainText('Add my resume');
+  await expect(page.locator('.agent-promise')).toHaveText('Nothing is sent without your approval.');
+  await expect(page.locator('.agent-launch .launch-benefits span')).toHaveCount(3);
+  await expect(page.locator('.agent-footer')).toHaveCount(0);
+  await expect(page.locator('#openVault')).toBeHidden();
+  await page.screenshot({ path: join(tmpdir(), '1ststep-simplified-first-visit-desktop.png'), fullPage: true });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator('#openJobs')).toBeHidden();
+  await expect(page.locator('#openNeedsYou')).toBeHidden();
+  await expect(page.locator('#appMenu > summary')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: join(tmpdir(), '1ststep-simplified-first-visit-mobile.png'), fullPage: true });
+});
+
 test('resume chooser hides unavailable capability, stacks on mobile, and opens builder', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -44,27 +65,31 @@ for (const width of [375, 390, 720]) {
   });
 }
 
-test('mobile first visit keeps the account action in the header and footer in flow', async ({ page }) => {
+test('mobile first visit keeps one menu in the header and secondary actions on demand', async ({ page }) => {
   await page.route('**/api/**', route => route.fulfill({ status: 401, contentType: 'application/json', body: '{}' }));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${base}/concierge`);
 
+  await expect(page.locator('#appMenu > summary')).toBeVisible();
+  await expect(page.locator('#openAgentAccess')).toBeHidden();
+  await expect(page.locator('#openVault')).toBeHidden();
+  await expect(page.locator('#openJobs')).toBeHidden();
+  await expect(page.locator('#openNeedsYou')).toBeHidden();
+  await page.locator('#appMenu > summary').click();
   await expect(page.locator('#openAgentAccess')).toBeVisible();
   await expect(page.locator('#openVault')).toBeVisible();
-  await expect(page.locator('#openJobs')).toBeHidden();
   const layout = await page.evaluate(() => {
     const header = document.querySelector('.agent-header');
     const nav = header.querySelector('nav');
-    const access = document.querySelector('#openAgentAccess');
-    const footer = document.querySelector('.agent-footer');
+    const menu = document.querySelector('#appMenu > summary');
     const headerBox = header.getBoundingClientRect();
-    const accessBox = access.getBoundingClientRect();
+    const menuBox = menu.getBoundingClientRect();
     return {
       bodyPaddingBottom: getComputedStyle(document.body).paddingBottom,
       headerPosition: getComputedStyle(header).position,
       navPosition: getComputedStyle(nav).position,
-      footerPosition: getComputedStyle(footer).position,
-      accessInsideHeader: accessBox.top >= headerBox.top && accessBox.bottom <= headerBox.bottom,
+      menuInsideHeader: menuBox.top >= headerBox.top && menuBox.bottom <= headerBox.bottom,
+      footerRemoved: !document.querySelector('.agent-footer'),
       noHorizontalOverflow: document.documentElement.scrollWidth <= innerWidth,
     };
   });
@@ -72,8 +97,8 @@ test('mobile first visit keeps the account action in the header and footer in fl
     bodyPaddingBottom: '0px',
     headerPosition: 'relative',
     navPosition: 'static',
-    footerPosition: 'static',
-    accessInsideHeader: true,
+    menuInsideHeader: true,
+    footerRemoved: true,
     noHorizontalOverflow: true,
   });
   await page.screenshot({ path: join(tmpdir(), '1ststep-mobile-shell-layout.png'), fullPage: true });
@@ -83,10 +108,13 @@ test('mobile subscriber workspace keeps navigation and theme control in flow', a
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${base}/concierge?uiFixture=subscriber`, { waitUntil: 'networkidle' });
   await expect(page.locator('#openAgentAccess')).toBeHidden();
-  await expect(page.locator('#openJobs')).toBeVisible();
+  await expect(page.locator('#openJobs')).toBeHidden();
+  await expect(page.locator('#appMenu > summary')).toBeVisible();
   expect(await page.locator('.agent-header nav').evaluate(el => getComputedStyle(el).position)).toBe('static');
   expect(await page.locator('body').evaluate(el => getComputedStyle(el).paddingBottom)).toBe('0px');
-  await expect(page.locator('.agent-header nav button:visible')).toHaveCount(6);
+  await page.locator('#appMenu > summary').click();
+  await expect(page.locator('#openJobsMenu')).toBeVisible();
+  await expect(page.locator('[data-theme-toggle]')).toBeVisible();
   await page.screenshot({ path: join(tmpdir(), '1ststep-mobile-workspace-navigation.png'), fullPage: true });
 });
 

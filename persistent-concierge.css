@@ -621,3 +621,36 @@ body.needs-attention #attentionNow h2{font-size:clamp(1.75rem,4vw,2.6rem)}
 body.needs-attention #attentionNowSummary{max-width:62ch;color:var(--agent-body)}
 body.needs-attention #reviewAttentionNow{margin-top:18px}
 @media(max-width:600px){body.needs-attention .agent-main{padding-top:24px}.attention-now-safety{font-size:.8rem}}
+
+/* Simplified subscriber shell: one task first, everything else on demand. */
+body:has(.agent-app){background:#fff}
+.agent-app .agent-header{position:relative;z-index:60;width:100%;max-width:none;height:82px;padding:0 max(40px,calc((100vw - 1200px)/2));background:#fff}
+.agent-header nav{display:flex!important;align-items:center;gap:18px!important;width:auto!important;padding:0!important;border:0!important;background:transparent!important}
+.agent-header nav>.primary-destination{padding:10px 8px;background:transparent;color:#334155;font-weight:650}
+.app-menu{position:relative}
+.app-menu summary{display:flex;align-items:center;gap:9px;min-height:48px;padding:0 16px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:#172033;font-size:14px;font-weight:700;cursor:pointer;list-style:none}
+.app-menu summary::-webkit-details-marker{display:none}
+.app-menu summary::before{content:'☰';font-size:18px;line-height:1}
+.app-menu[open] summary{border-color:#4338ca;box-shadow:0 0 0 3px #4338ca1f}
+.app-menu-panel{position:absolute;top:56px;right:0;display:grid;min-width:230px;padding:8px;border:1px solid #dbe3ee;border-radius:12px;background:#fff;box-shadow:0 18px 48px #17203324}
+.app-menu:not([open]) .app-menu-panel{display:none}
+.agent-header .app-menu-panel button,.agent-header .app-menu-panel a{display:flex!important;align-items:center;min-height:44px!important;margin:0!important;padding:10px 12px!important;border:0!important;border-radius:7px!important;background:transparent!important;color:#334155!important;font:600 14px/1.25 Inter,system-ui,sans-serif!important;text-align:left;text-decoration:none;cursor:pointer}
+.agent-header .app-menu-panel button:hover,.agent-header .app-menu-panel a:hover{background:#eef2ff!important;color:#312e81!important}
+.agent-header .app-menu-panel .access-control{margin-top:4px!important;border-top:1px solid #e2e8f0!important;border-radius:0 0 7px 7px!important;color:#4338ca!important}
+.mobile-menu-destination{display:none!important}
+.agent-main{max-width:1100px;padding:0 28px 48px}
+.agent-main .agent-launch{max-width:780px;min-height:calc(100vh - 130px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:62px 0 110px}
+.agent-launch #agentTitle{max-width:760px;margin:0 auto 24px;font-family:Inter,system-ui,sans-serif;font-size:clamp(46px,5.7vw,72px);font-weight:800;line-height:1.06;letter-spacing:-.055em;color:#101a31}
+.agent-launch .studio-intro{max-width:680px;margin:0 auto 34px;font-size:20px;line-height:1.55;color:#536277}
+.agent-launch .guided-launch-cta{display:flex;align-items:center;justify-content:center;gap:18px;width:min(470px,100%);min-height:68px;margin:0 auto 14px;padding:16px 28px;border:0;border-radius:10px;background:#4338ca;box-shadow:none}
+.agent-launch .guided-launch-cta::after{content:'→';font-size:27px;line-height:1}
+.agent-launch .guided-launch-cta span{font-size:20px;font-weight:750}
+.agent-launch .agent-promise{order:0;margin:0 auto 52px!important;color:#536277!important;font-size:15px!important;line-height:1.5!important}
+.agent-launch .launch-benefits{order:1;display:grid;grid-template-columns:repeat(3,1fr);width:min(620px,100%);margin:0 auto;padding:0;border:0;gap:0}
+.agent-launch .launch-benefits span{position:relative;display:grid;justify-items:center;gap:9px;padding:0 12px;color:#64748b;font-size:14px;font-weight:500}
+.agent-launch .launch-benefits span::before{content:'';position:absolute;top:19px;left:0;width:100%;height:1px;background:#dbe3ee;z-index:0}
+.agent-launch .launch-benefits span:first-child::before{left:50%;width:50%}.agent-launch .launch-benefits span:last-child::before{width:50%}
+.agent-launch .launch-benefits b{position:relative;z-index:1;display:grid;width:40px;height:40px;place-items:center;border:1px solid #dbe3ee;border-radius:50%;background:#f8fafc;color:#64748b}
+.agent-launch .launch-benefits span:first-child b{border-color:#c7d2fe;background:#eef2ff;color:#4338ca}
+.agent-footer{display:none}
+@media(max-width:700px){.agent-app .agent-header{height:76px;min-height:76px;padding:0 18px;flex-wrap:nowrap!important}.agent-header .agent-logo{font-size:23px}.agent-header nav>.primary-destination{display:none!important}.mobile-menu-destination{display:flex!important}.app-menu summary{min-height:48px;padding:0 14px}.app-menu-panel{position:fixed;top:68px;left:14px;right:14px;min-width:0}.agent-main{padding:0 20px 24px}.agent-main .agent-launch{min-height:calc(100vh - 76px);padding:46px 0 80px}.agent-launch #agentTitle{font-size:clamp(42px,12vw,56px);line-height:1.05}.agent-launch .studio-intro{font-size:18px;line-height:1.55;margin-bottom:30px}.agent-launch .guided-launch-cta{min-height:60px}.agent-launch .guided-launch-cta span{font-size:18px}.agent-launch .agent-promise{margin-bottom:46px!important;text-align:center!important}.agent-launch .launch-benefits span{padding:0 4px;font-size:12px;line-height:1.25;text-align:center}.agent-launch .launch-benefits b{width:38px;height:38px}}

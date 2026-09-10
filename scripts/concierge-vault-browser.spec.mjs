@@ -6,6 +6,24 @@ import { rememberApplicationAnswer, resolveApplicationAnswer, forgetAnswerMemory
 
 const baseUrl = process.env.CONCIERGE_TEST_URL || 'http://127.0.0.1:4175/concierge';
 
+async function openSavedInfo(page) {
+  await page.locator('#appMenu > summary').click();
+  await page.locator('#openVault').click();
+}
+
+async function openMenuAction(page, id) {
+  await page.locator('#appMenu > summary').click();
+  await page.locator(`#${id}`).click();
+}
+
+async function continueApplication(page) {
+  const attentionAction = page.locator('#reviewAttentionNow');
+  const resumeAction = page.locator('#resumeApplication');
+  await expect.poll(async () => await attentionAction.isVisible() || await resumeAction.isVisible()).toBe(true);
+  if (await attentionAction.isVisible()) await attentionAction.click();
+  else await resumeAction.click();
+}
+
 test('Needs You remembers an exact answer, restores attribution, and forgets it without transmission', async ({ page }) => {
   let vault = grantVaultConsent(), version = 1, patch;
   let session = { id:'application-memory-fixture',version:1,packageRunId:'package-memory-fixture',role:{employer:'Synthetic Employer',title:'Operations Manager',requisitionId:'REQ-MEMORY',directEmployerUrl:'https://careers.example.com/REQ-MEMORY'},documentVersion:'resume-memory-v1',state:'Waiting for You',stage:'employer_form',externalApplicationExecution:false,proposedFields:[],approvals:{transmission:null,submission:null},receipt:null,actions:[{id:'action-memory-fixture',type:'AMBIGUOUS_FACT',status:'open',summary:'Describe your vendor experience.',metadata:{question:'Describe your vendor experience.'}}],timeline:[] };
@@ -25,7 +43,7 @@ test('Needs You remembers an exact answer, restores attribution, and forgets it 
     await route.fulfill({json:{session,sessions:[session],submissionsEnabled:false}});
   });
   await page.goto(baseUrl,{waitUntil:'domcontentloaded'});
-  await page.locator('#resumeApplication').click();
+  await continueApplication(page);
   await expect(page.locator('#answerMemoryForm')).toContainText('Continue with this answer');
   await expect(page.locator('#answerMemoryForm')).not.toContainText('Remember for similar applications');
   await page.screenshot({path:`${process.env.TEMP || '/tmp'}/needs-you-answer-step.png`});
@@ -43,7 +61,7 @@ test('Needs You remembers an exact answer, restores attribution, and forgets it 
   expect(JSON.stringify(patch)).not.toContain('equipment warranty');
   expect(session.approvals).toEqual({transmission:null,submission:null});
   await page.reload({waitUntil:'networkidle'});
-  await page.locator('#openVault').click();
+  await openSavedInfo(page);
   await expect(page.locator('#vaultList')).toContainText('Remembered about you');
   await expect(page.locator('#vaultList')).toContainText('equipment warranty claims');
   await page.screenshot({path:`${process.env.TEMP || '/tmp'}/remembered-about-you.png`});
@@ -133,7 +151,7 @@ test('newly reviewed resume survives late sign-in hydration and reaches consent 
   await page.locator('#cancelJobAgentConsent').click();
   await page.locator('#guidedLaunchClose').click();
   await page.route('**/api/user-session*', route => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
-  await page.locator('#openAgentAccess').click();
+  await openMenuAction(page, 'openAgentAccess');
   await page.locator('#signOutAgent').click();
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem('1ststep_resume'))).toBeNull();
   await expect(page.locator('#resumeEditor')).toHaveValue('');
@@ -244,16 +262,16 @@ test('saved-info privacy controls render safely for a signed-out user', async ({
   await expect(page.locator('#agentConversation')).toBeHidden();
   await expect(page.locator('#openAgentAccess')).toHaveText('Sign in');
   await expect(page.locator('#openDesk')).toBeHidden();
-  await page.locator('#openAgentStatus').click();
+  await openMenuAction(page, 'openAgentStatus');
   await expect(page.locator('#guidedLaunchOverlay')).toHaveClass(/open/);
   await page.locator('#guidedLaunchClose').click();
-  await page.locator('#openVault').click();
+  await openSavedInfo(page);
   await expect(page.locator('#vaultOverlay')).toHaveClass(/open/);
   await expect(page.locator('#vaultStatus')).toContainText(/Sign in with Job Agent access/);
   await expect(page.locator('#enableVault')).toBeDisabled();
   await page.locator('#closeVault').click();
   await expect(page.locator('#vaultOverlay')).not.toHaveClass(/open/);
-  await page.locator('#openAgentAccess').click();
+  await openMenuAction(page, 'openAgentAccess');
   await expect(page.locator('#downloadAccountData')).toBeHidden();
   await expect(page.locator('#deleteAccountData')).toBeHidden();
   expect(errors.filter(message => !/Failed to load resource/.test(message))).toEqual([]);
@@ -262,7 +280,7 @@ test('saved-info privacy controls render safely for a signed-out user', async ({
 test('saved-info dialog remains usable on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
-  await page.locator('#openVault').click();
+  await openSavedInfo(page);
   await expect(page.locator('#vaultTitle')).toBeVisible();
   const dimensions = await page.locator('.vault-shell').evaluate(element => ({ width: element.getBoundingClientRect().width, viewport: window.innerWidth }));
   expect(dimensions.width).toBeLessThanOrEqual(dimensions.viewport);
@@ -290,7 +308,7 @@ test('Career Profile previews canonical facts and requires confirmation before a
     return route.fulfill({ json: { ok: true, profileVersion: 1, facts, imported: 1, replayed: 0, reuseGrantsCreated: 0 } });
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#openVault').click();
+  await openSavedInfo(page);
   await expect(page.locator('#careerProfilePanel')).toBeVisible();
   await page.locator('#analyzeLegacyProfile').click();
   await expect(page.locator('#careerProfileMigrationSummary')).toContainText('1 confirmed fact can move safely');
@@ -337,7 +355,7 @@ test('a signed but non-invited pilot user keeps data controls without agent acce
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await expect(page.locator('#openAgentAccess')).toHaveText('Pilot invite required');
   await expect(page.locator('#startJobSearch')).toHaveText('Check pilot access');
-  await page.locator('#openAgentAccess').click();
+  await openMenuAction(page, 'openAgentAccess');
   await expect(page.locator('#agentAccessMessage')).toContainText('limited to invited members');
   await expect(page.locator('#agentAccessMessage')).toContainText('saved-data controls remain available');
   await expect(page.locator('#downloadAccountData')).toBeVisible();
@@ -371,7 +389,7 @@ test('one click queues, checks, and downloads a complete background account expo
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ task: { id: 'account_export_browser_fixture', status: 'ready', ready: true }, partialExportReturned: false }) });
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#openAgentAccess').click();
+  await openMenuAction(page, 'openAgentAccess');
   const download = page.waitForEvent('download');
   await page.locator('#downloadAccountData').click();
   const artifact = await download;
@@ -404,7 +422,7 @@ test('a failed background export returns to one-click retry without downloading 
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ task: { id: url.searchParams.get('taskId'), status: firstAttempt ? 'failed' : 'ready', ready: !firstAttempt }, partialExportReturned: false }) });
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#openAgentAccess').click();
+  await openMenuAction(page, 'openAgentAccess');
   await page.locator('#downloadAccountData').click();
   await expect(page.locator('#agentAccessMessage')).toContainText('complete export could not be prepared');
   await expect(page.locator('#downloadAccountData')).toBeEnabled();
@@ -431,7 +449,7 @@ test('account deletion reports partial browser cleanup truthfully and remains re
   }));
   page.on('dialog', dialog => dialog.accept('DELETE MY JOB AGENT CLOUD DATA'));
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#openAgentAccess').click();
+  await openMenuAction(page, 'openAgentAccess');
   await expect(page.locator('#deleteAccountData')).toBeVisible();
   await page.locator('#deleteAccountData').click();
   await expect(page.locator('#agentAccessMessage')).toContainText('1 session closed safely');
@@ -459,6 +477,7 @@ test('admin-only evidence shows content-free background worker health', async ({
     }),
   }));
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await page.locator('#appMenu > summary').click();
   await expect(page.locator('#openDesk')).toBeVisible();
   await page.locator('#openDesk').click();
   await page.locator('[data-desk-tab="audit"]').click();
@@ -777,7 +796,7 @@ test('the same saved-info area can revoke authorization and pause the agent', as
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ consent: { ...activeConsent, status: 'revoked', active: false, code: 'JOB_AGENT_CONSENT_REQUIRED' }, version: 5, pausedRuns: 1, pausedApplications: 1, cancelledBrowserTasks: 1, executingBrowserTasks: 1, browserTaskReconciliationRequired: true, authorizationShutdownReconciliationRequired: true }) });
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#openVault').click();
+  await openSavedInfo(page);
   await expect(page.locator('#jobAgentAuthorizationStatus')).toContainText('Active');
   page.once('dialog', dialog => dialog.accept());
   await page.locator('#revokeJobAgentConsent').click();
@@ -811,7 +830,7 @@ test('one checked choice creates a daily search and Saved Info can pause it', as
   await expect(page.locator('#dailyBackgroundSearch')).toBeChecked();
   await page.locator('#startJobSearch').click();
   await expect.poll(() => scheduledMission?.role).toBeTruthy();
-  await page.locator('#openVault').click();
+  await openSavedInfo(page);
   await expect(page.locator('[data-schedule-action="pause"]')).toBeVisible();
   await page.locator('[data-schedule-action="pause"]').click();
   await expect.poll(() => deletes).toBe(1);
@@ -832,7 +851,7 @@ test('a signed user can opt into generic Needs You email alerts with one checkbo
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ preference, version, deliveryAvailable: true }) });
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#openVault').click();
+  await openSavedInfo(page);
   await expect(page.locator('#savedNeedsYouEmailAlerts')).toBeEnabled();
   await page.locator('#savedNeedsYouEmailAlerts').check();
   await expect(page.locator('#needsYouNotificationStatus')).toContainText('generic email only');
@@ -969,7 +988,7 @@ test('consequential personal-data sharing opens an employer-specific confirmatio
   await page.route('**/api/session-capabilities', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ adminConsole: false, jobAgentAccess: true, tier: 'complete', authentication: 'opaque-session' }) }));
   await page.route('**/api/application-sessions', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sessions: [session] }) }));
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#resumeApplication').click();
+  await continueApplication(page);
   await page.locator('#resolveApplication').click();
   await expect(page.locator('#confirmationOverlay')).toHaveClass(/open/);
   await expect(page.locator('#confirmationEmployer')).toHaveText('Fixture Employer');
@@ -999,7 +1018,7 @@ test('ambiguous employer question is completed on the verified employer page wit
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sessions: [session] }) });
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#resumeApplication').click();
+  await continueApplication(page);
   await expect(page.locator('#applicationActionTitle')).toHaveText('Answer this employer question');
   await expect(page.locator('#applicationActionSummary')).toContainText('will not infer, capture, or silently reuse this answer');
   await expect(page.getByRole('link', { name: '1. Open employer application' })).toHaveAttribute('href', 'https://careers.example.com/REQ-QUESTION-1');
@@ -1038,7 +1057,7 @@ test('unknown employer fill result requires preserved-form review before a fresh
   });
   page.on('dialog', dialog => dialog.accept());
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#resumeApplication').click();
+  await continueApplication(page);
   await expect(page.locator('#applicationActionTitle')).toHaveText('Check the saved employer form');
   await expect(page.locator('#applicationActionSummary')).toContainText('never retry automatically');
   await expect(page.locator('#openEmployerPage')).toBeVisible();
@@ -1087,7 +1106,7 @@ test('reviewed filled form reaches a separate final approval without submitting'
   });
   page.on('dialog', dialog => dialog.accept());
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#resumeApplication').click();
+  await continueApplication(page);
   await expect(page.locator('#applicationActionTitle')).toHaveText('Your completed form is ready to review');
   await expect(page.locator('#resolveApplication')).toHaveText('Review final application');
   await page.locator('#resolveApplication').click();
@@ -1136,7 +1155,7 @@ test('expired final approval returns to Needs You without submitting or trusting
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sessions: [session] }) });
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#resumeApplication').click();
+  await continueApplication(page);
   await expect(page.locator('#applicationActionTitle')).toHaveText('Your final approval expired safely');
   await expect(page.locator('#applicationActionSummary')).toContainText('Nothing was submitted');
   await expect(page.locator('#resolveApplication')).toHaveText('Renew final approval');
@@ -1162,7 +1181,7 @@ test('unknown final submission outcome blocks retry and keeps the application un
   await page.route('**/api/session-capabilities*', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ adminConsole: false, jobAgentAccess: true, tier: 'complete', authentication: 'opaque-session' }) }));
   await page.route('**/api/application-sessions*', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sessions: [session] }) }));
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#resumeApplication').click();
+  await continueApplication(page);
   await expect(page.locator('#applicationActionTitle')).toHaveText('Check whether the employer received it');
   await expect(page.locator('#applicationActionSummary')).toContainText('Do not submit again');
   await expect(page.locator('#applicationPrivacy')).toContainText('Submission result is unknown');
@@ -1192,7 +1211,7 @@ test('receipt-verified job can record a private interview outcome in one click',
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sessions: [session] }) });
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#resumeApplication').click();
+  await continueApplication(page);
   await expect(page.locator('#applicationTitle')).toHaveText('Application submitted');
   await expect(page.locator('#applicationPrivacy')).toContainText('update only your private tracker');
   await page.locator('[data-post-submission="INTERVIEW"]').click();
@@ -1251,7 +1270,7 @@ test('resumable browser handoff shows only a safe read-only field-structure prev
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ session: active ? browserSession : null, view: active ? view : null, provider, externalApplicationExecution: false, submissionsEnabled: false }) });
   });
   await page.goto(`${baseUrl}?uiFixture=durable-application`, { waitUntil: 'networkidle' });
-  await page.locator('#resumeApplication').click();
+  await continueApplication(page);
   await expect(page.locator('#applicationBrowserHandoff')).toBeHidden();
   await page.getByRole('button', { name: 'Use cloud browser instead' }).click();
   await expect(page.locator('#applicationBrowserHandoff')).toBeVisible();
@@ -1304,7 +1323,7 @@ test('approved remote provider renders only its exact isolated stream origin in 
     return route.fulfill({ status: method === 'POST' ? 201 : 200, contentType: 'application/json', body: JSON.stringify({ session: active ? browserSession : null, view: active ? view : null, provider, externalApplicationExecution: false, submissionsEnabled: false }) });
   });
   await page.goto(`${baseUrl}?uiFixture=durable-application`, { waitUntil: 'networkidle' });
-  await page.locator('#resumeApplication').click();
+  await continueApplication(page);
   await expect(page.locator('#applicationBrowserHandoff')).toBeHidden();
   await page.getByRole('button', { name: 'Use cloud browser instead' }).click();
   await page.locator('#startBrowserHandoff').click();

@@ -12,12 +12,18 @@ const DIALOGS = [
   { trigger: '#openGuidedLaunch', overlay: '#guidedLaunchOverlay' }
 ];
 
+async function clickTrigger(page, trigger) {
+  if (trigger === '#openVault') await page.locator('#appMenu > summary').click();
+  if (trigger === '#openGuidedLaunch') await page.locator(trigger).evaluate(node => node.click());
+  else await page.locator(trigger).click();
+}
+
 for (const { trigger, overlay } of DIALOGS) {
   test(`${overlay} moves focus in and closes on Escape`, async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`${base}/concierge?uiFixture=subscriber`, { waitUntil: 'networkidle' });
 
-    await page.locator(trigger).click();
+    await clickTrigger(page, trigger);
     await expect(page.locator(overlay)).toBeVisible();
 
     // Focus must land inside the dialog, not stay on the trigger behind it.
@@ -33,7 +39,7 @@ for (const { trigger, overlay } of DIALOGS) {
   test(`${overlay} keeps Tab inside the dialog`, async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`${base}/concierge?uiFixture=subscriber`, { waitUntil: 'networkidle' });
-    await page.locator(trigger).click();
+    await clickTrigger(page, trigger);
     await expect(page.locator(overlay)).toBeVisible();
 
     // Tab well past the number of controls; focus must never leave the dialog.

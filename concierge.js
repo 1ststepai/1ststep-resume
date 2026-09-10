@@ -2873,7 +2873,7 @@ function renderMission() {
   $('quickResumeState').textContent = resumeReady ? 'Resume ready' : 'No resume selected yet';
   $('quickResumeState').classList.toggle('ready', resumeReady);
   $('startJobSearch').textContent = missionActive ? 'Update my job agent' : 'Start my job agent';
-  $('openGuidedLaunch').querySelector('span').textContent = missionActive ? 'Update my Job Agent' : 'Start my Job Agent';
+  $('openGuidedLaunch').querySelector('span').textContent = missionActive ? 'Update my Job Agent' : (resumeReady ? 'Continue setup' : 'Add my resume');
   document.body.classList.toggle('mission-active', missionActive);
   document.body.classList.toggle('workspace-ready', workspaceReady);
   const launchChoiceButtons = [...document.querySelectorAll('[data-launch-choice]')];
@@ -3938,6 +3938,11 @@ $('composer').addEventListener('submit', event => { event.preventDefault(); cons
 $('messages').addEventListener('click', event => { const value = event.target?.dataset?.prompt; if (!value) return; addMessage('user', escapeHtml(value)); respond(value); });
 $('openJobs').addEventListener('click', () => openJobs('Matches'));
 $('openNeedsYou').addEventListener('click', openNeedsYou);
+$('openJobsMenu').addEventListener('click', () => $('openJobs').click());
+$('openNeedsYouMenu').addEventListener('click', () => $('openNeedsYou').click());
+$('appMenu').addEventListener('click', event => { if (event.target.closest('.app-menu-panel button, .app-menu-panel a')) $('appMenu').open = false; });
+document.addEventListener('click', event => { if ($('appMenu').open && !$('appMenu').contains(event.target)) $('appMenu').open = false; });
+document.addEventListener('keydown', event => { if (event.key === 'Escape' && $('appMenu').open) { $('appMenu').open = false; document.querySelector('#appMenu > summary')?.focus(); } });
 $('openAgentStatus').addEventListener('click', () => {
   $('agentProgress').open = true;
   if (!document.body.classList.contains('workspace-ready')) { openGuidedLaunch(); return; }
@@ -4055,7 +4060,7 @@ $('openVault').addEventListener('click', () => { $('vaultOverlay').classList.add
 function closeVaultDialog() {
   const restoreFocus = $('vaultOverlay').contains(document.activeElement);
   $('vaultOverlay').classList.remove('open');
-  if (restoreFocus) $('openVault').focus();
+  if (restoreFocus) document.querySelector('#appMenu > summary')?.focus();
 }
 $('closeVault').addEventListener('click', closeVaultDialog);
 $('vaultOverlay').addEventListener('click', event => { if (event.target === $('vaultOverlay')) closeVaultDialog(); });
