@@ -2808,7 +2808,7 @@ ${resume.slice(0, 3000)}
     window.addEventListener('message', async (event) => {
       if (event.source !== window || event.origin !== window.location.origin) return;
       if (!event.data || event.data.type !== '1STSTEP_JOB_CAPTURE') return;
-      const { jobData, resumeText, mode, captureId } = event.data;
+      const { jobData, mode, captureId } = event.data;
       if (!jobData) return;
 
       // Exact capture identity: only accept the job this page was opened for.
@@ -2838,7 +2838,6 @@ ${resume.slice(0, 3000)}
       window._extensionDetected = true;
       trackProductEvent('extension_job_captured', {
         hasDescription: !!jobData.jobDescription,
-        hasResume: !!resumeText,
         mode: mode || 'unknown',
       });
       hideExtPromoBanner();
@@ -2857,15 +2856,6 @@ ${resume.slice(0, 3000)}
       // helper keeps the job rather than dropping it.
       if (_capturePersisted && _durableCaptureSaved && captureId) {
         try { window.postMessage({ type: '1STSTEP_JOB_CAPTURE_ACK', version: '1', captureId }, window.location.origin); } catch (_) {}
-      }
-
-      // If the extension delivered a resume and none is loaded yet, load it now
-      // so the user can review both inputs without re-uploading.
-      const appHasResume = !!(fileContent || document.getElementById('resumeText')?.value.trim());
-      if (!appHasResume && resumeText) {
-        document.getElementById('resumeText').value = resumeText;
-        // Keep candidate PII session-scoped; durable cloud persistence uses authenticated stores.
-        try { sessionStorage.setItem('1ststep_resume', resumeText); } catch (_) {}
       }
 
       const jobText = document.getElementById('jobText');
@@ -6862,6 +6852,11 @@ ${desc}`;
     // -- Subscription Verification ---------------------------------------------
     const SUB_CACHE_KEY = '1ststep_sub_cache';
     const SUB_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+    const SUBSCRIPTION_TIERS = new Set(['free', 'essential', 'complete', 'pro']);
+    const SUBSCRIPTION_STATUSES = new Set([
+      '', 'active', 'trialing', 'owner_access', 'owner_verified_access',
+      'legacy_access_free', 'no_active_subscription', 'verification_code_sent', 'verification_required',
+    ]);
     let subscriptionRestoreChallenge = '';
 
     function hasActiveSubscription() {
@@ -6902,9 +6897,14 @@ ${desc}`;
         const resp = await fetch(`/api/subscription?email=${encodeURIComponent(email)}`, fetchOptions);
         if (!resp.ok) return null;
         const data = await resp.json();
-        const tier = data.tier || 'free';
+        const tier = SUBSCRIPTION_TIERS.has(data.tier) ? data.tier : 'free';
+        const status = SUBSCRIPTION_STATUSES.has(data.status) ? data.status : '';
+        const parsedExpiresInDays = Number(data.expiresInDays);
+        const expiresInDays = Number.isInteger(parsedExpiresInDays) && parsedExpiresInDays >= 0 && parsedExpiresInDays <= 3660
+          ? parsedExpiresInDays
+          : null;
         // Cache the result
-        localStorage.setItem(SUB_CACHE_KEY, JSON.stringify({ email, tier, ts: Date.now(), expiresInDays: data.expiresInDays ?? null, status: data.status || '' }));
+        localStorage.setItem(SUB_CACHE_KEY, JSON.stringify({ email: String(email).trim().toLowerCase().slice(0, 254), tier, ts: Date.now(), expiresInDays, status }));
         _applySubscriptionTier(tier, true);
         return { ...data, tier };
       } catch (err) {

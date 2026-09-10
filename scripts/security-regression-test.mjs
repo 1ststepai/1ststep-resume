@@ -410,6 +410,16 @@ assert.doesNotMatch(appSource, /window\.postMessage\(\{ source: 'app', action: '
   'The retired wildcard profile bridge must remain absent.');
 assert.doesNotMatch(appSource, /localStorage\.setItem\((?:RESUME_KEY|'1ststep_resume')/,
   'Resume PII must remain session-scoped.');
+assert.doesNotMatch(appSource, /const \{ jobData, resumeText, mode, captureId \} = event\.data/,
+  'The extension capture bridge must not accept resume PII.');
+assert.doesNotMatch(appSource, /sessionStorage\.setItem\('1ststep_resume', resumeText\)/,
+  'Untrusted extension messages must not write resume PII to browser storage.');
+assert.match(appSource, /SUBSCRIPTION_TIERS\.has\(data\.tier\) \? data\.tier : 'free'/,
+  'Subscription API tiers must be allowlisted before browser caching.');
+assert.match(appSource, /SUBSCRIPTION_STATUSES\.has\(data\.status\) \? data\.status : ''/,
+  'Subscription API statuses must be allowlisted before browser caching.');
+assert.doesNotMatch(appSource, /localStorage\.setItem\(SUB_CACHE_KEY,[^\n]+data\./,
+  'Raw subscription API fields must not flow into browser storage.');
 assert.match(appSource, /el\.textContent = String\(msg \|\| ''\)/,
   'Resume-analysis status must render model output as text.');
 assert.match(appSource, /tag\.textContent = value\.trim\(\)\.slice\(0, 100\)/,
