@@ -9,8 +9,17 @@ export async function initializeLoginPage({
 } = {}) {
   const status = documentRef.getElementById('loginStatus');
   const retry = documentRef.getElementById('retryLogin');
-  const mode = new URLSearchParams(locationRef.search).get('mode');
-  const callback = `${locationRef.origin}/login.html`;
+  const parameters = new URLSearchParams(locationRef.search);
+  const mode = parameters.get('mode');
+  const requestedReturnTo = parameters.get('returnTo') || '/app';
+  let returnTo = '/app';
+  try {
+    const target = new URL(requestedReturnTo, locationRef.origin);
+    if (target.origin === locationRef.origin && target.pathname.startsWith('/') && target.pathname !== '/login.html') {
+      returnTo = `${target.pathname}${target.search}${target.hash}`;
+    }
+  } catch { /* invalid or external return targets fail closed to /app */ }
+  const callback = `${locationRef.origin}/login.html?returnTo=${encodeURIComponent(returnTo)}`;
   let exchanging = false;
 
   function loadScript(src, publishableKey) {
@@ -44,7 +53,7 @@ export async function initializeLoginPage({
       storage.setItem('1ststep_sub_cache', JSON.stringify({
         ts: now(), jobAgentSession: true,
       }));
-      locationRef.replace('/app');
+      locationRef.replace(returnTo);
     } catch (error) {
       exchanging = false;
       status.textContent = error.message || 'Sign-in is temporarily unavailable.';
@@ -58,7 +67,7 @@ export async function initializeLoginPage({
     const response = await fetchImpl('/api/app-config', { cache: 'no-store', signal: timeout(15000) });
     if (!response.ok) throw new Error('Sign-in is temporarily unavailable. Please try again.');
     const configuration = (await response.json()).authentication?.clerk;
-    if (!configuration?.enabled) throw new Error('Secure sign-in is not available yet. You can return to the app and use email-code access.');
+    if (!configuration?.enabled) throw new Error('Secure sign-in is not available in this environment yet. Please try again later.');
     // Use this application's verified Clerk origin, never a URL supplied by a query string.
     await loadScript('https://clerk.1ststep.ai/npm/@clerk/clerk-js@6/dist/clerk.browser.js', configuration.publishableKey);
     await windowRef.Clerk.load({
@@ -70,7 +79,7 @@ export async function initializeLoginPage({
       const result = await fetchImpl('/api/user-session', { method: 'DELETE', credentials: 'same-origin' });
       if (!result.ok) throw new Error('Sign-out could not finish. Please try again.');
       await windowRef.Clerk.signOut();
-      locationRef.replace('/app');
+      locationRef.replace(returnTo);
     } else if (windowRef.Clerk.session) {
       await exchange();
     } else {

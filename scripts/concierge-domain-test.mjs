@@ -28,6 +28,7 @@ import {
   pipelineCounts,
   pauseManagedApplicationSession,
   readinessStatus,
+  reconcileConfirmedResumeFacts,
   recordGeneratedPackage,
   recordFieldAnswer,
   recordOtpAttemptOutcome,
@@ -43,6 +44,7 @@ import {
   startManagedApplicationSession,
   transitionRole,
   truthProfileGaps,
+  reviewConfirmedResumeFacts,
   updateTruthProfile,
 } from '../lib/concierge-domain.js';
 
@@ -67,6 +69,15 @@ assert.match(verifiedResumeDraft.text, /EXPERIENCE\nVerified employer and role/)
 assert.match(verifiedResumeDraft.text, /SKILLS\nProcurement/);
 assert.deepEqual(verifiedResumeDraft.missingSections, []);
 assert.ok(!/authorized|salary|travel/i.test(verifiedResumeDraft.text));
+
+const confirmedFactFixture = `Preview QA User · qa@example.invalid\n\nEXPERIENCE\nQA Coordinator at Example Co, 2022-present\n\nEDUCATION\nBachelor's degree\n\nSKILLS\nProject coordination | Data & reporting`;
+const unsafeGeneratedFixture = 'Preview QA User\n\nEXPERIENCE\nQA Coordinator at Example Co, 2022-present';
+const factReview = reviewConfirmedResumeFacts(confirmedFactFixture, unsafeGeneratedFixture);
+assert.deepEqual(factReview.filter(fact => !fact.included).map(fact => fact.value), ['qa@example.invalid', "Bachelor's degree", 'Project coordination', 'Data & reporting']);
+const reconciledFacts = reconcileConfirmedResumeFacts(confirmedFactFixture, unsafeGeneratedFixture);
+assert.equal(reconciledFacts.usedGenerated, false);
+assert.equal(reconciledFacts.text, confirmedFactFixture, 'Any omitted confirmed fact must fail closed to the deterministic draft');
+assert.equal(reconcileConfirmedResumeFacts(confirmedFactFixture, confirmedFactFixture).usedGenerated, true);
 
 const emptyResumeDraft = buildVerifiedResumeDraft(createDeskState(), {});
 assert.equal(emptyResumeDraft.text, '');

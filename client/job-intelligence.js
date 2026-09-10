@@ -1,3 +1,5 @@
+import { jobMatchesHardExclusion } from './job-mission-relevance.js';
+
 const FIT_BANDS = Object.freeze([
   { min: 90, label: 'Exceptional Match' },
   { min: 80, label: 'Strong Match' },
@@ -127,6 +129,7 @@ export function evaluateCandidateFit(job = {}, profile = {}, mission = {}) {
   const hardDisqualifiers = [];
   const exclusions = list(profile.excludedEmployers).map(item => item.toLowerCase());
   if (exclusions.some(item => clean(job.employer).toLowerCase().includes(item))) hardDisqualifiers.push('Employer is excluded by confirmed preference');
+  if (jobMatchesHardExclusion(job, mission)) hardDisqualifiers.push('Job conflicts with a confirmed Never include rule');
   if (mission.salaryMin && job.salaryMax && Number(job.salaryMax) < Number(mission.salaryMin)) hardDisqualifiers.push('Maximum disclosed compensation is below the hard floor');
   const wantedModes = list(mission.workModes || mission.workMode);
   const listedMode = /hybrid/i.test(`${job.workplaceType} ${job.location}`) ? 'Hybrid' : job.remote === true || /remote/i.test(`${job.workplaceType} ${job.remoteEligibility}`) ? 'Remote' : 'On-site';

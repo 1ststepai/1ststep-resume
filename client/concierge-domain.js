@@ -175,6 +175,45 @@ export function buildVerifiedResumeDraft(inputState = {}, profile = {}) {
   };
 }
 
+function normalizedResumeFact(value) {
+  return asText(value).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function verifiedResumeFactLines(baseText) {
+  let section = 'Contact';
+  const facts = [];
+  for (const rawLine of asText(baseText).split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    if (/^(EXPERIENCE|EDUCATION|SKILLS|CERTIFICATIONS)$/.test(line)) {
+      section = line[0] + line.slice(1).toLowerCase();
+      continue;
+    }
+    const values = section === 'Skills' ? line.split('|') : section === 'Contact' ? line.split(/\s+[|·]\s+/) : [line];
+    for (const value of values.map(asText).filter(Boolean)) facts.push({ section, value });
+  }
+  return facts;
+}
+
+export function reviewConfirmedResumeFacts(baseText, candidateText) {
+  const candidate = normalizedResumeFact(candidateText);
+  return verifiedResumeFactLines(baseText).map(fact => ({
+    ...fact,
+    included: candidate.includes(normalizedResumeFact(fact.value)),
+  }));
+}
+
+export function reconcileConfirmedResumeFacts(baseText, generatedText) {
+  const facts = reviewConfirmedResumeFacts(baseText, generatedText);
+  const omitted = facts.filter(fact => !fact.included);
+  return {
+    text: omitted.length ? asText(baseText) : asText(generatedText),
+    facts,
+    omitted,
+    usedGenerated: omitted.length === 0,
+  };
+}
+
 export function truthProfileGaps(profile) {
   const p = createTruthProfile(profile);
   const gaps = [];

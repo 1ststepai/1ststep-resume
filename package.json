@@ -51,6 +51,7 @@
     "test:browser:vault": "playwright test scripts/concierge-vault-browser.spec.mjs --workers=1",
     "test:browser:employer-fixtures": "playwright test scripts/employer-form-fixture-browser.spec.mjs --workers=1",
     "test:browser:job-agent": "playwright test scripts/concierge-vault-browser.spec.mjs scripts/employer-form-fixture-browser.spec.mjs scripts/greenhouse-extension-browser.spec.mjs --workers=1",
+    "test:trust-remediation": "node scripts/clerk-login-client-test.mjs && node scripts/job-agent-pilot-access-test.mjs && node scripts/concierge-domain-test.mjs && node scripts/job-intelligence-test.mjs && node scripts/public-ats-discovery-test.mjs && playwright test scripts/trust-remediation-browser.spec.mjs --workers=1",
     "test:employer-browser-runner": "node scripts/employer-browser-runner-artifact-test.mjs && node scripts/employer-browser-runner-protocol-test.mjs && node scripts/employer-browser-task-store-test.mjs && node scripts/employer-browser-task-worker-test.mjs && node scripts/employer-browser-session-test.mjs && node scripts/employer-browser-remote-provider-test.mjs && node scripts/employer-browser-session-cleanup-test.mjs",
     "security:gate": "node scripts/production-security-gate.mjs",
     "security:production-readiness-drill": "node scripts/run-production-readiness-drill.mjs",

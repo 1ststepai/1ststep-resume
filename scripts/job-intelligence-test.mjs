@@ -78,6 +78,9 @@ const blocked = evaluateCandidateFit({ ...job, salaryMax: 90000, requirements },
 assert.ok(blocked.score < 60);
 assert.equal(blocked.credibleInterviewPath, false);
 assert.match(blocked.hardDisqualifiers.join(' '), /compensation/i);
+const excludedDefenseFit = evaluateCandidateFit({ ...job, employer: 'Example Defense Systems', industry: 'Aerospace & Defense' }, rankSafetyProfile, { ...rankSafetyMission, exclusions: ['Exclude defense contractors'] });
+assert.equal(excludedDefenseFit.credibleInterviewPath, false);
+assert.match(excludedDefenseFit.hardDisqualifiers.join(' '), /Never include/i);
 
 assert.ok(descriptionSimilarity(job.description, `${job.description} Additional detail.`) > .85);
 assert.equal(publicJobsAreDuplicate(job, { ...job, requisitionId: '', description: `${job.description} Additional detail.` }), true);

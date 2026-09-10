@@ -143,6 +143,7 @@ assert.equal(jobMatchesMission({ ...greenhouseJobs[0], employmentType: 'Unknown'
 assert.equal(jobMatchesMission({ ...greenhouseJobs[0], title: 'Legal Operations Analyst', description: 'Supports procurement contracts.' }, mission), false);
 assert.equal(jobMatchesMission({ ...greenhouseJobs[0], title: 'Strategic Finance Manager', description: 'Vendor management.' }, { ...mission, role: 'Procurement Manager' }), false);
 assert.equal(jobMatchesMission({ ...greenhouseJobs[0], title: 'Senior Buyer', description: '' }, mission), true);
+assert.equal(jobMatchesMission({ ...greenhouseJobs[0], employer: 'Fixture Defense Systems', title: 'Senior Buyer', description: 'Department of Defense supplier.' }, { ...mission, exclusions: ['Exclude defense contractors'] }), false);
 assert.equal(jobMatchesMission({ ...greenhouseJobs[0], title: 'Customer Success Manager', description: '' }, { ...mission, role: 'Customer Success Manager' }), true);
 assert.equal(jobMatchesMission({ ...greenhouseJobs[0], title: 'Executive Assistant', description: '' }, { ...mission, role: 'Account Executive' }), false);
 assert.equal(jobMatchesMission({ ...greenhouseJobs[0], title: 'Data Analyst', description: '' }, { ...mission, role: 'Software Engineer', roleFamilies: ['software engineer', 'data analyst', 'data scientist'] }), true);
@@ -201,8 +202,9 @@ const previousSources = process.env.CONCIERGE_PUBLIC_ATS_SOURCES;
 process.env.CONCIERGE_PUBLIC_ATS_SOURCES = '[]';
 let responseStatus = 0;
 let responseBody;
+const responseHeaders = {};
 const response = {
-  setHeader() {},
+  setHeader(name, value) { responseHeaders[name] = value; },
   status(code) { responseStatus = code; return this; },
   json(body) { responseBody = body; return this; },
   end() { return this; },
@@ -211,5 +213,7 @@ await discoveryHandler({ method: 'POST', headers: { origin: 'http://127.0.0.1:41
 assert.equal(responseStatus, 200);
 assert.equal(responseBody.status, 'sources-not-configured');
 assert.equal(responseBody.submissionsEnabled, false);
+assert.equal(responseBody.correlationId, responseHeaders['X-Correlation-Id']);
+assert.match(responseBody.correlationId, /^[a-f0-9-]{20,64}$/i);
 if (previousSources === undefined) delete process.env.CONCIERGE_PUBLIC_ATS_SOURCES;
 else process.env.CONCIERGE_PUBLIC_ATS_SOURCES = previousSources;
