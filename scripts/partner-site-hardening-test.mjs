@@ -15,6 +15,10 @@ assert.match(html, /<link rel="canonical" href="https:\/\/partners\.1ststep\.ai\
 assert.match(html, /property="og:image" content="https:\/\/partners\.1ststep\.ai\/assets\/og-partners-[a-f0-9]{12}\.png"/);
 assert.match(html, /type="application\/ld\+json"/);
 assert.doesNotMatch(html, /<style>|<script>(?!\s*\{)/);
+assert.match(html, /login\.html\?mode=sign-up&amp;returnTo=%2Fpartner/);
+assert.match(html, /login\.html\?returnTo=%2Fpartner/);
+assert.match(html, /id="partner-link" hidden aria-hidden="true"/);
+assert.doesNotMatch(await readFile(new URL('assets/partner-account-entry.js', root), 'utf8'), /localStorage|sessionStorage|fetch\(/);
 
 const assetUrls = [...html.matchAll(/(?:href|src|content)="(\/assets\/[^"]+)"/g)].map((match) => match[1]);
 for (const assetUrl of new Set(assetUrls)) {

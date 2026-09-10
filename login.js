@@ -9,8 +9,15 @@ export async function initializeLoginPage({
 } = {}) {
   const status = documentRef.getElementById('loginStatus');
   const retry = documentRef.getElementById('retryLogin');
-  const mode = new URLSearchParams(locationRef.search).get('mode');
-  const callback = `${locationRef.origin}/login.html`;
+  const params = new URLSearchParams(locationRef.search);
+  const mode = params.get('mode');
+  const requestedReturn = params.get('returnTo');
+  const returnTo = ['/app', '/app/resume', '/partner'].includes(requestedReturn) ? requestedReturn : '/app';
+  const referralCode = String(params.get('ref') || '').trim().toLowerCase();
+  const safeReferralCode = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/.test(referralCode) ? referralCode : '';
+  const callbackParams = new URLSearchParams({ returnTo });
+  if (safeReferralCode) callbackParams.set('ref', safeReferralCode);
+  const callback = `${locationRef.origin}/login.html?${callbackParams}`;
   let exchanging = false;
 
   function loadScript(src, publishableKey) {
@@ -44,7 +51,17 @@ export async function initializeLoginPage({
       storage.setItem('1ststep_sub_cache', JSON.stringify({
         ts: now(), jobAgentSession: true,
       }));
-      locationRef.replace('/app');
+      if (safeReferralCode) {
+        const attribution = await fetchImpl('/api/partner?action=attribute', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: safeReferralCode }),
+          signal: timeout(15000),
+        });
+        if (!attribution.ok && attribution.status !== 409) {
+          throw new Error('Your account is ready, but referral attribution could not be verified. Please retry before continuing.');
+        }
+      }
+      locationRef.replace(returnTo);
     } catch (error) {
       exchanging = false;
       status.textContent = error.message || 'Sign-in is temporarily unavailable.';

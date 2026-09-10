@@ -10,15 +10,17 @@ const [html, config, robots, sitemap] = await Promise.all([
 ]);
 
 assert.equal((html.match(/<h1\b/g) || []).length, 1);
-assert.match(html, /Tailor your résumé and cover letter\./);
-assert.match(html, /Start an ongoing Job Agent search/);
+assert.match(html, /Your AI Job Agent\./);
+assert.match(html, /Start Job Agent/);
+assert.match(html, /login\.html\?mode=sign-up&amp;returnTo=%2Fapp/);
+assert.match(html, /target\.searchParams\.set\("ref", ref\)/);
 assert.match(html, /Start free\. No card required\. You review before anything is sent\./);
 assert.match(html, /<link rel="canonical" href="https:\/\/resume\.1ststep\.ai\/">/);
 assert.match(html, /Verified founder test · August 24, 2026/);
 assert.match(html, /LogicSource interview invitation received August 24/);
 assert.match(html, /Aug 25 · 1:00–1:30 PM/);
-assert.match(html, /Estimated time saved/);
-assert.match(html, /Estimate based on completed steps/);
+assert.match(html, /Example time-saved estimate/);
+assert.match(html, /Example estimate based on the three prepared steps shown/);
 assert.match(html, /https:\/\/www\.youtube\.com\/shorts\/5WCJcfwF5Q8/);
 assert.doesNotMatch(html, /1ststepdotai|professornode|swingtradepros/i);
 assert.doesNotMatch(html, /leadconnector|msgsndr|highlevel|ghl-/i);
