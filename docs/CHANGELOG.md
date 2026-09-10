@@ -14,6 +14,11 @@ Record verified ecosystem changes here. Entries are append-only within each date
 - Recorded production dependency/runtime health as unknown pending authenticated protected evidence.
 - Independently verified the existing PR #72 candidate locally at `5c30d77`; no PR #72 source was changed by this pass.
 - No production deployment, extension publication, billing change, provider activation, or applicant-data migration was performed.
+- Completed a read-only-first repository reconciliation across seven independent Git markers and all 44 authoritative worktrees; details are in `docs/REPOSITORY_RECONCILIATION.md`.
+- Cleaned four worktrees only after proving their changes were generated tool output or byte-identical to already merged history.
+- Preserved 18 unique audit documents in local commit `acad40b` and tested agency-site work in local commit `a0e7f10`; neither commit was pushed or deployed.
+- Recorded unresolved extension version drift: Web Store v1.3.2, `main` v1.5.0, PR #72 v1.6.0, and the mixed primary checkout v1.4.0.
+- Recorded exact production deployment IDs and source parity as unknown because Vercel deployment metadata exposed no Git SHA.
 
 ## Historical state recognized by this baseline
 
