@@ -12,6 +12,7 @@ Record verified ecosystem changes here. Entries are append-only within each date
 - Recorded the current split release state: Chrome Web Store v1.3.2, main manifest v1.5.0, and open PR #72 v1.6.
 - Recorded that public pricing is currently aligned around free invitation-only beta and future $39/month access with no active checkout.
 - Recorded production dependency/runtime health as unknown pending authenticated protected evidence.
+- Independently verified the existing PR #72 candidate locally at `5c30d77`; no PR #72 source was changed by this pass.
 - No production deployment, extension publication, billing change, provider activation, or applicant-data migration was performed.
 
 ## Historical state recognized by this baseline
