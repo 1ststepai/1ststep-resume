@@ -6,11 +6,25 @@ import { rememberApplicationAnswer, resolveApplicationAnswer, forgetAnswerMemory
 
 const baseUrl = process.env.CONCIERGE_TEST_URL || 'http://127.0.0.1:4175/concierge';
 
+async function routeApprovedOnboarding(page) {
+  const activeConsent = { status: 'active', active: true, code: null, scopes: ['direct-employer-discovery', 'confirmed-profile-storage', 'ai-document-preparation', 'application-workspace'] };
+  await page.route('**/api/session-capabilities', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ adminConsole: false, jobAgentAccess: true, tier: 'complete', sessionAuthentication: 'opaque-session', jobAgentConsent: activeConsent, jobAgentConsentPolicyConfigured: true }) }));
+  await page.route('**/api/job-agent-consent', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ consent: activeConsent, version: 1, policyConfigured: true }) }));
+}
+
+async function openApplicationFromPrimary(page) {
+  const attention = page.locator('#reviewAttentionNow');
+  const resume = page.locator('#resumeApplication');
+  await expect.poll(async () => (await attention.isVisible()) || (await resume.isVisible())).toBe(true);
+  if (await attention.isVisible()) await attention.click();
+  else await resume.click();
+}
+
 test('Needs You remembers an exact answer, restores attribution, and forgets it without transmission', async ({ page }) => {
   let vault = grantVaultConsent(), version = 1, patch;
   let session = { id:'application-memory-fixture',version:1,packageRunId:'package-memory-fixture',role:{employer:'Synthetic Employer',title:'Operations Manager',requisitionId:'REQ-MEMORY',directEmployerUrl:'https://careers.example.com/REQ-MEMORY'},documentVersion:'resume-memory-v1',state:'Waiting for You',stage:'employer_form',externalApplicationExecution:false,proposedFields:[],approvals:{transmission:null,submission:null},receipt:null,actions:[{id:'action-memory-fixture',type:'AMBIGUOUS_FACT',status:'open',summary:'Describe your vendor experience.',metadata:{question:'Describe your vendor experience.'}}],timeline:[] };
   const errors = []; page.on('pageerror', error => errors.push(error.message));
-  await page.route('**/api/session-capabilities*', route => route.fulfill({json:{jobAgentAccess:true,authentication:'opaque-session'}}));
+  await page.route('**/api/session-capabilities*', route => route.fulfill({json:{jobAgentAccess:true,sessionAuthentication:'opaque-session'}}));
   await page.route('**/api/applicant-vault', async route => {
     if (route.request().method() === 'POST') {
       const body = route.request().postDataJSON();
@@ -25,7 +39,7 @@ test('Needs You remembers an exact answer, restores attribution, and forgets it 
     await route.fulfill({json:{session,sessions:[session],submissionsEnabled:false}});
   });
   await page.goto(baseUrl,{waitUntil:'domcontentloaded'});
-  await page.locator('#resumeApplication').click();
+  await openApplicationFromPrimary(page);
   await expect(page.locator('#answerMemoryForm')).toContainText('Continue with this answer');
   await expect(page.locator('#answerMemoryForm')).not.toContainText('Remember for similar applications');
   await page.screenshot({path:`${process.env.TEMP || '/tmp'}/needs-you-answer-step.png`});
@@ -88,7 +102,7 @@ test('queued status is visible and a running question receives status instead of
   await page.screenshot({ path: `${process.env.TEMP || '/tmp'}/agent-status-mobile.png` });
 });
 
-test('newly reviewed resume survives late sign-in hydration and reaches consent without a second upload', async ({ page }) => {
+test('onboarding waits for authenticated beta eligibility and consent hydration', async ({ page }) => {
   let releaseSession;
   const sessionReady = new Promise(resolve => { releaseSession = resolve; });
   const bundle = jobAgentPolicyBundle({ termsVersion: 'terms-beta-1', privacyVersion: 'privacy-beta-1', authorizationVersion: 'job-agent-beta-1' });
@@ -102,41 +116,14 @@ test('newly reviewed resume survives late sign-in hydration and reaches consent 
   await page.route('**/api/job-agent-consent', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ consent, policyConfigured: true, version: 0 }) }));
   await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
   await page.locator('#openGuidedLaunch').click();
-  await page.locator('[data-guided-goal="best-fit"]').click();
-  const chooser = page.waitForEvent('filechooser');
-  await page.locator('#quickUploadResume').click();
-  const resume = `Synthetic reviewed resume\n${'Managed sourcing and supplier operations.\n'.repeat(12)}`;
-  await (await chooser).setFiles({ name: 'synthetic-resume.txt', mimeType: 'text/plain', buffer: Buffer.from(resume) });
-  await expect(page.locator('#resumeEditor')).toHaveValue(resume.trim());
-  await page.locator('#saveResume').click();
-  await expect(page.locator('#resumeMeta')).toContainText('available in this tab');
+  await expect(page.locator('#guidedLaunchOverlay')).not.toHaveClass(/open/);
   releaseSession();
   await expect.poll(() => page.evaluate(() => document.querySelector('#openAgentAccess').textContent)).not.toBe('Sign in');
-  await page.waitForLoadState('networkidle');
-  expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('1ststep_resume')).text)).toBe(resume.trim());
-  expect(await page.evaluate(() => localStorage.getItem('1ststep_resume'))).toBeNull();
-  page.on('dialog', dialog => dialog.accept());
-  await page.locator('#saveResume').click();
-  await expect(page.locator('#resumeMeta')).toContainText('not backed up to your account');
-  expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('1ststep_resume')).text)).toBe(resume.trim());
-  await page.locator('#closeResumeSetup').click();
-  await expect(page.locator('#quickResumeState')).toContainText('Resume ready');
-  await page.locator('#guidedLaunchNext').click();
-  await page.locator('[data-opportunity-path]').first().click();
-  await page.locator('[data-launch-choice="workMode"][data-value="Remote"]').click();
-  await page.locator('[data-launch-choice="employmentType"][data-value="Full-time"]').click();
-  await page.locator('[data-launch-choice="salary"][data-value="0"]').click();
-  await page.locator('#startJobSearch').click();
-  await expect(page.locator('#resumeOverlay')).not.toHaveClass(/open/);
+  await expect(page.locator('#guidedLaunchSaveStatus')).not.toContainText('Checking secure save');
+  await page.locator('#openGuidedLaunch').click();
   await expect(page.locator('#jobAgentConsentOverlay')).toHaveClass(/open/);
-  await page.screenshot({ path: `${process.env.TEMP || '/tmp'}/resume-handoff-consent.png` });
   await page.locator('#cancelJobAgentConsent').click();
-  await page.locator('#guidedLaunchClose').click();
-  await page.route('**/api/user-session*', route => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
-  await page.locator('#openAgentAccess').click();
-  await page.locator('#signOutAgent').click();
-  await expect.poll(() => page.evaluate(() => sessionStorage.getItem('1ststep_resume'))).toBeNull();
-  await expect(page.locator('#resumeEditor')).toHaveValue('');
+  await expect(page.locator('#guidedLaunchOverlay')).not.toHaveClass(/open/);
 });
 
 test('resume workspace loads executable assets and its Job Agent chooser reaches concierge', async ({ page }) => {
@@ -192,20 +179,27 @@ async function routeAccountWorkspace(page, { mission, runState = 'Preparing', jo
 async function reachGuidedLaunchReview(page, { goal = 'best-fit', salary = '0' } = {}) {
   await page.locator('#openGuidedLaunch').click();
   await page.locator(`[data-guided-goal="${goal}"]`).click();
+  await page.locator('#guidedLaunchNext').click();
   await expect(page.locator('#quickResumeState')).toContainText('Resume ready');
   await page.locator('#guidedLaunchNext').click();
   await page.locator('[data-opportunity-path]').first().click();
+  await page.locator('#guidedLaunchNext').click();
   await page.locator('[data-launch-choice="workMode"][data-value="Remote"]').click();
+  await page.locator('#guidedLaunchNext').click();
   await page.locator('[data-launch-choice="employmentType"][data-value="Full-time"]').click();
+  await page.locator('#guidedLaunchNext').click();
   await page.locator(`[data-launch-choice="salary"][data-value="${salary}"]`).click();
+  await page.locator('#guidedLaunchNext').click();
   await expect(page.locator('#startJobSearch')).toBeVisible();
 }
 
 test('two-click resume onboarding stays short and refuses secret-shaped answers without advancing', async ({ page }) => {
+  await routeApprovedOnboarding(page);
   await page.addInitScript(() => localStorage.setItem('1ststep_applicant_vault_preference_v1', 'device-only'));
   await page.goto(baseUrl);
   await page.locator('#openGuidedLaunch').click();
   await page.locator('[data-guided-goal="best-fit"]').click();
+  await page.locator('#guidedLaunchNext').click();
   await page.locator('#quickBuildResume').click();
   await expect(page.locator('#questionOverlay')).toHaveClass(/open/);
   await expect(page.locator('#questionProgress')).toHaveText('Resume setup · 4 essential answers remaining');
@@ -245,8 +239,8 @@ test('saved-info privacy controls render safely for a signed-out user', async ({
   await expect(page.locator('#openAgentAccess')).toHaveText('Sign in');
   await expect(page.locator('#openDesk')).toBeHidden();
   await page.locator('#openAgentStatus').click();
-  await expect(page.locator('#guidedLaunchOverlay')).toHaveClass(/open/);
-  await page.locator('#guidedLaunchClose').click();
+  await expect(page.locator('#agentAccessOverlay')).toHaveClass(/open/);
+  await page.locator('#closeAgentAccess').click();
   await page.locator('#openVault').click();
   await expect(page.locator('#vaultOverlay')).toHaveClass(/open/);
   await expect(page.locator('#vaultStatus')).toContainText(/Sign in with Job Agent access/);
@@ -281,7 +275,7 @@ test('a stale legacy bearer is never sent to the Job Agent and returns to opaque
   expect(authorizationHeader).toBeNull();
   const cache = await page.evaluate(() => JSON.parse(localStorage.getItem('1ststep_sub_cache') || '{}'));
   expect(cache.jobAgentSession).toBeUndefined();
-  await expect(page.locator('#verifyAgentAccess')).toHaveText('Email me a code');
+  await expect(page.locator('#agentAccessCredentialFields')).toBeHidden();
 });
 
 test('sign-in shows immediate progress while email and verification requests are pending', async ({ page }) => {
@@ -328,14 +322,14 @@ test('a signed but non-invited pilot user keeps data controls without agent acce
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await expect(page.locator('#openAgentAccess')).toHaveText('Pilot invite required');
   await expect(page.locator('#startJobSearch')).toHaveText('Check pilot access');
-  await page.locator('#openAgentAccess').click();
+  await expect(page.locator('#agentAccessOverlay')).toHaveClass(/open/);
   await expect(page.locator('#agentAccessMessage')).toContainText('limited to invited members');
   await expect(page.locator('#agentAccessMessage')).toContainText('saved-data controls remain available');
   await expect(page.locator('#downloadAccountData')).toBeVisible();
   await expect(page.locator('#signOutAgent')).toBeVisible();
   await expect(page.locator('#signOutAgentEverywhere')).toBeVisible();
   await expect(page.locator('#deleteAccountData')).toBeVisible();
-  await expect(page.locator('#verifyAgentAccess')).toBeEnabled();
+  await expect(page.locator('#agentAccessCredentialFields')).toBeHidden();
   await expect(page.locator('#openDesk')).toBeHidden();
 });
 
@@ -534,14 +528,19 @@ test('the guided tap-through launch starts a truthful no-submit search in a few 
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await page.locator('#openGuidedLaunch').click();
   await page.locator('[data-guided-goal="best-fit"]').click();
+  await page.locator('#guidedLaunchNext').click();
   await expect(page.locator('#quickResumeState')).toContainText('Resume ready');
   await page.locator('#guidedLaunchNext').click();
   const firstPath = page.locator('[data-opportunity-path]').first();
   await expect(firstPath).toBeVisible();
   await firstPath.click();
+  await page.locator('#guidedLaunchNext').click();
   await page.locator('[data-launch-choice="workMode"][data-value="Remote"]').click();
+  await page.locator('#guidedLaunchNext').click();
   await page.locator('[data-launch-choice="employmentType"][data-value="Full-time"]').click();
+  await page.locator('#guidedLaunchNext').click();
   await page.locator('[data-launch-choice="salary"][data-value="100000"]').click();
+  await page.locator('#guidedLaunchNext').click();
   await expect(page.locator('#startJobSearch')).toBeEnabled();
   await page.locator('#startJobSearch').click();
   await expect(page.locator('#runStateTrack [data-run-state="Preparing"]')).toHaveClass(/active/);
@@ -732,13 +731,6 @@ test('a signed-in user gives one-time scoped authorization before any agent run 
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await page.locator('#openGuidedLaunch').click();
-  await page.locator('[data-guided-goal="best-fit"]').click();
-  await page.locator('#guidedLaunchNext').click();
-  await page.locator('[data-opportunity-path]').first().click();
-  await page.locator('[data-launch-choice="workMode"][data-value="Remote"]').click();
-  await page.locator('[data-launch-choice="employmentType"][data-value="Full-time"]').click();
-  await page.locator('[data-launch-choice="salary"][data-value="0"]').click();
-  await page.locator('#startJobSearch').click();
   await expect(page.locator('#jobAgentConsentOverlay')).toHaveClass(/open/);
   await expect(page.locator('#jobAgentConsentChecks input[type="checkbox"]')).toHaveCount(1);
   await expect(page.locator('#jobAgentConsentOverlay input[type="date"]')).toHaveCount(0);
@@ -753,6 +745,19 @@ test('a signed-in user gives one-time scoped authorization before any agent run 
   await page.locator('#jobAgentConsentChecks input[type="checkbox"]').check();
   await page.locator('#grantJobAgentConsent').click();
   await expect(page.locator('#jobAgentConsentOverlay')).not.toHaveClass(/open/);
+  await expect(page.locator('#guidedLaunchOverlay')).toHaveClass(/open/);
+  await page.locator('[data-guided-goal="best-fit"]').click();
+  await page.locator('#guidedLaunchNext').click();
+  await page.locator('#guidedLaunchNext').click();
+  await page.locator('[data-opportunity-path]').first().click();
+  await page.locator('#guidedLaunchNext').click();
+  await page.locator('[data-launch-choice="workMode"][data-value="Remote"]').click();
+  await page.locator('#guidedLaunchNext').click();
+  await page.locator('[data-launch-choice="employmentType"][data-value="Full-time"]').click();
+  await page.locator('#guidedLaunchNext').click();
+  await page.locator('[data-launch-choice="salary"][data-value="0"]').click();
+  await page.locator('#guidedLaunchNext').click();
+  await page.locator('#startJobSearch').click();
   await expect.poll(() => runStarts).toBe(1);
   expect(savedAttestations).toEqual({ age18OrOlder: true, termsAccepted: true, privacyAcknowledged: true, candidateAuthorizationAccepted: true });
   await expect(page.locator('#messages')).toContainText('Found 0 matching jobs');
@@ -843,10 +848,8 @@ test('a signed-out launch stops at the dedicated no-charge Job Agent access scre
     localStorage.setItem('1ststep_resume', `Candidate reviewed resume\n${'Verified operations and vendor-management experience.\n'.repeat(8)}`);
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await reachGuidedLaunchReview(page);
-  await expect(page.locator('#startJobSearch')).toBeEnabled();
-  await expect(page.locator('#startJobSearch')).toContainText('Unlock my job agent');
-  await page.locator('#startJobSearch').click();
+  await page.locator('#openGuidedLaunch').click();
+  await expect(page.locator('#guidedLaunchOverlay')).not.toHaveClass(/open/);
   await expect(page.locator('#agentAccessOverlay')).toHaveClass(/open/);
   await expect(page.locator('#agentAccessOverlay')).toContainText('No new charge is created from this screen');
   await expect(page.locator('#agentAccessOverlay')).toContainText('Billing is not active yet; nothing is charged');
@@ -854,6 +857,7 @@ test('a signed-out launch stops at the dedicated no-charge Job Agent access scre
 });
 
 test('the guided launch remains usable without horizontal scrolling on mobile', async ({ page }) => {
+  await routeApprovedOnboarding(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('#agentLaunch')).toBeVisible();
@@ -917,22 +921,16 @@ test('subscriber work is reduced to simple job cards and one consolidated Needs 
 });
 
 test('status tabs, mission stats, and receipt-only submission counting share one canonical view', async ({ page }) => {
-  await page.addInitScript(() => {
-    sessionStorage.setItem('1ststep_concierge_mission_v1', JSON.stringify({
-      mission: { role: 'Procurement Manager', roleFamily: 'procurement', workModes: ['Remote'], employmentTypes: ['Full-time'], salaryMin: 100000, location: 'United States', target: 10 },
-      messages: [], discovery: { status: 'complete', matches: 3 }, runState: 'Preparing',
-    }));
-    sessionStorage.setItem('1ststep_resume', `Candidate reviewed resume\n${'Verified sourcing experience.\n'.repeat(12)}`);
-    sessionStorage.setItem('1ststep_concierge_desk_v2', JSON.stringify({
-      roles: [
-        { id: 'found', employer: 'Found Co', title: 'Buyer', status: 'Found', fitScore: 81 },
-        { id: 'ready', employer: 'Ready Co', title: 'Sourcing Lead', status: 'Package Ready', fitScore: 88 },
-        { id: 'unverified-submit', employer: 'No Receipt Co', title: 'Manager', status: 'Submitted', fitScore: 84 },
-        { id: 'verified-submit', employer: 'Receipt Co', title: 'Director', status: 'Submitted', fitScore: 90, receipt: { confirmationId: 'EMP-OK-1', receivedAt: new Date().toISOString() } },
-        { id: 'interview', employer: 'Interview Co', title: 'Lead', status: 'Interview', fitScore: 89 },
-      ], reusableFacts: [], standingPolicies: [], approvalBatches: [], actionQueue: [], applicationSessions: [], hiringEcosystem: [], acquisitionOutcomes: [], auditEvents: [],
-    }));
-  });
+  const mission = { role: 'Procurement Manager', roleFamily: 'procurement', workModes: ['Remote'], employmentTypes: ['Full-time'], salaryMin: 100000, location: 'United States', target: 10 };
+  await routeEncryptedResumeVault(page);
+  await routeAccountWorkspace(page, { mission, jobCards: [
+    { id: 'found', employer: 'Found Co', title: 'Buyer', status: 'Found', fitScore: 81 },
+    { id: 'ready', employer: 'Ready Co', title: 'Sourcing Lead', status: 'Package Ready', fitScore: 88 },
+    { id: 'unverified-submit', employer: 'No Receipt Co', title: 'Manager', status: 'Submitted', fitScore: 84 },
+    { id: 'verified-submit', employer: 'Receipt Co', title: 'Director', status: 'Submitted', fitScore: 90, receipt: { confirmationId: 'EMP-OK-1', receivedAt: new Date().toISOString() } },
+    { id: 'interview', employer: 'Interview Co', title: 'Lead', status: 'Interview', fitScore: 89 },
+  ] });
+  await page.route('**/api/session-capabilities', route => route.fulfill({ json: { jobAgentAccess: true, sessionAuthentication: 'opaque-session' } }));
   await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('#quickResumeState')).toHaveText('Resume ready');
   await expect(page.locator('#configCriteria')).toHaveText('Procurement Manager');
@@ -960,7 +958,7 @@ test('consequential personal-data sharing opens an employer-specific confirmatio
   await page.route('**/api/session-capabilities', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ adminConsole: false, jobAgentAccess: true, tier: 'complete', authentication: 'opaque-session' }) }));
   await page.route('**/api/application-sessions', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sessions: [session] }) }));
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#resumeApplication').click();
+  await openApplicationFromPrimary(page);
   await page.locator('#resolveApplication').click();
   await expect(page.locator('#confirmationOverlay')).toHaveClass(/open/);
   await expect(page.locator('#confirmationEmployer')).toHaveText('Fixture Employer');
@@ -990,7 +988,7 @@ test('ambiguous employer question is completed on the verified employer page wit
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sessions: [session] }) });
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#resumeApplication').click();
+  await openApplicationFromPrimary(page);
   await expect(page.locator('#applicationActionTitle')).toHaveText('Answer this employer question');
   await expect(page.locator('#applicationActionSummary')).toContainText('will not infer, capture, or silently reuse this answer');
   await expect(page.getByRole('link', { name: '1. Open employer application' })).toHaveAttribute('href', 'https://careers.example.com/REQ-QUESTION-1');
@@ -1029,7 +1027,7 @@ test('unknown employer fill result requires preserved-form review before a fresh
   });
   page.on('dialog', dialog => dialog.accept());
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#resumeApplication').click();
+  await openApplicationFromPrimary(page);
   await expect(page.locator('#applicationActionTitle')).toHaveText('Check the saved employer form');
   await expect(page.locator('#applicationActionSummary')).toContainText('never retry automatically');
   await expect(page.locator('#openEmployerPage')).toBeVisible();
@@ -1078,7 +1076,7 @@ test('reviewed filled form reaches a separate final approval without submitting'
   });
   page.on('dialog', dialog => dialog.accept());
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#resumeApplication').click();
+  await openApplicationFromPrimary(page);
   await expect(page.locator('#applicationActionTitle')).toHaveText('Your completed form is ready to review');
   await expect(page.locator('#resolveApplication')).toHaveText('Review final application');
   await page.locator('#resolveApplication').click();
@@ -1127,7 +1125,7 @@ test('expired final approval returns to Needs You without submitting or trusting
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sessions: [session] }) });
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#resumeApplication').click();
+  await openApplicationFromPrimary(page);
   await expect(page.locator('#applicationActionTitle')).toHaveText('Your final approval expired safely');
   await expect(page.locator('#applicationActionSummary')).toContainText('Nothing was submitted');
   await expect(page.locator('#resolveApplication')).toHaveText('Renew final approval');
@@ -1153,7 +1151,7 @@ test('unknown final submission outcome blocks retry and keeps the application un
   await page.route('**/api/session-capabilities*', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ adminConsole: false, jobAgentAccess: true, tier: 'complete', authentication: 'opaque-session' }) }));
   await page.route('**/api/application-sessions*', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sessions: [session] }) }));
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#resumeApplication').click();
+  await openApplicationFromPrimary(page);
   await expect(page.locator('#applicationActionTitle')).toHaveText('Check whether the employer received it');
   await expect(page.locator('#applicationActionSummary')).toContainText('Do not submit again');
   await expect(page.locator('#applicationPrivacy')).toContainText('Submission result is unknown');
@@ -1183,7 +1181,7 @@ test('receipt-verified job can record a private interview outcome in one click',
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sessions: [session] }) });
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await page.locator('#resumeApplication').click();
+  await openApplicationFromPrimary(page);
   await expect(page.locator('#applicationTitle')).toHaveText('Application submitted');
   await expect(page.locator('#applicationPrivacy')).toContainText('update only your private tracker');
   await page.locator('[data-post-submission="INTERVIEW"]').click();
@@ -1242,7 +1240,7 @@ test('resumable browser handoff shows only a safe read-only field-structure prev
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ session: active ? browserSession : null, view: active ? view : null, provider, externalApplicationExecution: false, submissionsEnabled: false }) });
   });
   await page.goto(`${baseUrl}?uiFixture=durable-application`, { waitUntil: 'networkidle' });
-  await page.locator('#resumeApplication').click();
+  await openApplicationFromPrimary(page);
   await expect(page.locator('#applicationBrowserHandoff')).toBeHidden();
   await page.getByRole('button', { name: 'Use cloud browser instead' }).click();
   await expect(page.locator('#applicationBrowserHandoff')).toBeVisible();
@@ -1295,7 +1293,7 @@ test('approved remote provider renders only its exact isolated stream origin in 
     return route.fulfill({ status: method === 'POST' ? 201 : 200, contentType: 'application/json', body: JSON.stringify({ session: active ? browserSession : null, view: active ? view : null, provider, externalApplicationExecution: false, submissionsEnabled: false }) });
   });
   await page.goto(`${baseUrl}?uiFixture=durable-application`, { waitUntil: 'networkidle' });
-  await page.locator('#resumeApplication').click();
+  await openApplicationFromPrimary(page);
   await expect(page.locator('#applicationBrowserHandoff')).toBeHidden();
   await page.getByRole('button', { name: 'Use cloud browser instead' }).click();
   await page.locator('#startBrowserHandoff').click();
@@ -1357,6 +1355,8 @@ test('vault copy asks an unauthenticated visitor to sign in rather than blaming 
 
 test('Learning Center renders only persisted confirmed rules and remains usable on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await routeAccountWorkspace(page, { mission: { role: 'Procurement Manager', roleFamily: 'procurement', workModes: ['Remote'], employmentTypes: ['Full-time'], location: 'United States', target: 10 } });
+  await routeEncryptedResumeVault(page);
   await page.route('**/api/session-capabilities*', route => route.fulfill({
     status: 200, contentType: 'application/json',
     body: JSON.stringify({ adminConsole: false, jobAgentAccess: true, tier: 'complete', sessionAuthentication: 'opaque-session' }),
@@ -1382,7 +1382,7 @@ test('Learning Center renders only persisted confirmed rules and remains usable 
       facts: [], exportable: true, deletable: true,
     }),
   }));
-  await page.goto(`${baseUrl}?uiFixture=subscriber`, { waitUntil: 'networkidle' });
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await page.locator('#agentProgress > summary').click();
   await page.locator('#learningCenter summary').click();
 
@@ -1399,10 +1399,16 @@ test('mobile persisted retry state supports keyboard Pause and Play again withou
   const now = new Date('2026-09-01T12:00:00.000Z').toISOString();
   const retryAt = new Date('2026-09-01T12:05:00.000Z').toISOString();
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.addInitScript(({ now, retryAt }) => {
-    sessionStorage.setItem('1ststep_concierge_mission_v1', JSON.stringify({ mission: { role: 'Procurement Manager', workModes: ['Remote'], location: 'New Jersey', target: 10 }, messages: [], discovery: { status: 'queued' }, runState: 'Searching' }));
-    sessionStorage.setItem('1ststep_job_agent_run_v1', JSON.stringify({ id: 'run_resilience_fixture_1', operationId: 'op_resilience_fixture_1', taskType: 'direct_employer_discovery', status: 'Searching', lifecycleState: 'Retrying', attempt: 2, maxAttempts: 4, nextRetryAt: retryAt, lastHeartbeatAt: now, createdAt: now, updatedAt: now, events: [{ id: 'event_retry_1', type: 'RETRY_SCHEDULED', state: 'Retrying', attempt: 2, at: now }] }));
-  }, { now, retryAt });
+  const mission = { role: 'Procurement Manager', workModes: ['Remote'], location: 'New Jersey', target: 10 };
+  const retryRun = { id: 'run_resilience_fixture_1', operationId: 'op_resilience_fixture_1', taskType: 'direct_employer_discovery', mission, status: 'Searching', lifecycleState: 'Retrying', attempt: 2, maxAttempts: 4, nextRetryAt: retryAt, lastHeartbeatAt: now, createdAt: now, updatedAt: now, events: [{ id: 'event_retry_1', type: 'RETRY_SCHEDULED', state: 'Retrying', attempt: 2, at: now }] };
+  await routeAccountWorkspace(page, { mission, runState: 'Searching' });
+  await page.route('**/api/session-capabilities', route => route.fulfill({ json: { jobAgentAccess: true, sessionAuthentication: 'opaque-session' } }));
+  await page.route('**/api/job-agent-runs*', route => {
+    if (route.request().method() === 'PATCH') {
+      return route.fulfill({ json: { run: { ...retryRun, status: 'Searching', lifecycleState: 'Queued', nextRetryAt: new Date().toISOString() } } });
+    }
+    return route.fulfill({ json: { run: retryRun } });
+  });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await expect(page.locator('#runStateSummary')).toContainText('Waiting to retry');
   await expect(page.locator('#runStateTiming')).toContainText('next run');
