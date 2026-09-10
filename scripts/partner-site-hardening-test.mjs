@@ -10,6 +10,13 @@ const [html, config, robots, sitemap, llms] = await Promise.all([
   readFile(new URL('sitemap.xml', root), 'utf8'),
   readFile(new URL('llms.txt', root), 'utf8'),
 ]);
+const stylesheetPath = html.match(/href="(\/assets\/partner-[a-f0-9]{12}\.css)"/)?.[1];
+assert.ok(stylesheetPath, 'Partner page must use a content-hashed stylesheet');
+const stylesheet = await readFile(new URL(`.${stylesheetPath}`, root), 'utf8');
+assert.equal(stylesheetPath.match(/partner-([a-f0-9]{12})\.css/)?.[1], createHash('sha256').update(stylesheet.replaceAll('\r\n', '\n')).digest('hex').slice(0, 12));
+assert.match(stylesheet, /--muted:\s*#62677f/);
+assert.match(stylesheet, /--green:\s*#147d5a/);
+assert.match(stylesheet, /\.footer-inner \.brand-dot\s*\{\s*color:\s*#7c72f2/);
 
 assert.match(html, /<link rel="canonical" href="https:\/\/partners\.1ststep\.ai\/">/);
 assert.match(html, /property="og:image" content="https:\/\/partners\.1ststep\.ai\/assets\/og-partners-[a-f0-9]{12}\.png"/);
