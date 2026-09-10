@@ -33,7 +33,8 @@ for (const name of ['Content-Security-Policy', 'X-Frame-Options', 'X-Content-Typ
   assert.ok(globalHeaders[name], `${name} must be configured`);
 }
 assert.match(globalHeaders['Content-Security-Policy'], /frame-ancestors 'none'/);
-assert.doesNotMatch(globalHeaders['Content-Security-Policy'], /unsafe-inline|https:\/\//);
+assert.doesNotMatch(globalHeaders['Content-Security-Policy'], /unsafe-inline|connect-src[^;]*\*/);
+assert.match(globalHeaders['Content-Security-Policy'], /connect-src 'self' https:\/\/app\.1ststep\.ai/);
 
 const jsonLd = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1];
 assert.ok(jsonLd, 'JSON-LD block must exist');

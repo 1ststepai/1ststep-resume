@@ -65,6 +65,22 @@
 
     <aside class="beta-notice reveal" role="note"><span aria-hidden="true">i</span><div><strong>Partner program in beta</strong><p>Create and share your link now. Beta signups may be attributed, but they do not accrue commission. No payouts are active today.</p></div></aside>
 
+    <aside class="live-ticker reveal" aria-label="Live partner program totals">
+      <div class="ticker-track" id="tickerTrack">
+        <div class="ticker-group">
+          <span><strong data-ticker="referrals">—</strong> verified referrals tracked</span>
+          <span><strong data-ticker="partners">—</strong> active partner codes</span>
+          <span><strong data-ticker="paid">—</strong> referred paid subscribers</span>
+        </div>
+        <div class="ticker-group" aria-hidden="true">
+          <span><strong data-ticker-copy="referrals">—</strong> verified referrals tracked</span>
+          <span><strong data-ticker-copy="partners">—</strong> active partner codes</span>
+          <span><strong data-ticker-copy="paid">—</strong> referred paid subscribers</span>
+        </div>
+      </div>
+      <p class="ticker-unavailable" id="tickerUnavailable">Live referral totals will appear here when verified tracking is available.</p>
+    </aside>
+
     <section class="launch-terms reveal" aria-labelledby="launchTermsTitle">
       <div class="section-heading compact"><h2 id="launchTermsTitle">Planned paid-launch terms</h2><p>Simple, recurring economics—clearly labeled before checkout exists.</p></div>
       <div class="term-rail">
@@ -106,9 +122,16 @@
             <div class="meta">Examples: career-coach-sarah, resumehelp101, jobsearchclub</div>
           </div>
         </div>
+        <label for="partnerEmail">Contact Email</label>
+        <input id="partnerEmail" type="email" autocomplete="email" placeholder="you@example.com" maxlength="320" required>
+        <label class="terms-consent" for="partnerTerms">
+          <input id="partnerTerms" type="checkbox">
+          <span>I accept the beta <a href="#program-terms">partner terms</a> and understand that beta referrals do not earn commission.</span>
+        </label>
         <div class="btns">
           <button class="primary" id="savePartnerBtn" type="button">Create My Partner Link</button>
         </div>
+        <div id="partnerStatus" class="success" role="status" aria-live="polite"></div>
         <div id="generatedLinkBox" class="link-box" aria-live="polite">
           <label for="referralLink">Referral Link</label>
           <input id="referralLink" type="url" readonly>
@@ -341,6 +364,6 @@ https://www.linkedin.com/posts/..."></textarea>
   <footer>
     <div class="footer-inner"><a class="brand" href="https://app.1ststep.ai"><span class="brand-badge">1st</span>Step<span class="brand-dot">.ai</span></a><p>Find suitable roles. Prepare better applications. You review and submit.</p><div><a href="#program-terms">Program terms</a><a href="https://app.1ststep.ai" target="_blank" rel="noopener">Open app</a><button id="motionToggle" type="button" aria-pressed="false">Pause motion</button></div></div>
   </footer>
-  <script src="/assets/partner-8de6b3b95a1d.js" defer></script>
+  <script src="/assets/partner-284b3be68cb6.js" defer></script>
 </body>
 </html>
