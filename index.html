@@ -22,15 +22,22 @@
 <meta name="twitter:title" content="1stStep.ai — Your AI Job Agent">
 <meta name="twitter:description" content="Find the right jobs. Build better applications. Faster. You review and submit every application yourself.">
 <meta name="twitter:image" content="https://app.1ststep.ai/og-1ststep-ai.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="icon" href="/1ststep-ai-icon.png">
 <link rel="apple-touch-icon" href="/1ststep-ai-icon.png">
-<script src="/site-theme.js"></script>
+<script>
+try {
+  var initialTheme = localStorage.getItem('1ststep_theme');
+  document.documentElement.dataset.theme = initialTheme === 'dark' ? 'dark' : 'light';
+  document.documentElement.style.colorScheme = document.documentElement.dataset.theme;
+} catch (_) {
+  // Storage can be unavailable in privacy modes; the light theme is the safe default.
+  document.documentElement.dataset.theme = 'light';
+}
+document.documentElement.classList.add('js');
+</script>
 <link rel="stylesheet" href="/home-motion.css">
 <link rel="stylesheet" href="/site-theme.css">
-<script>document.documentElement.classList.add('js');</script>
+<script src="/site-theme.js" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -42,8 +49,9 @@
     <nav class="nav-links" aria-label="Primary">
       <a href="#paths">Product</a>
       <a href="#how">How it works</a>
-      <a href="#details">Good to know</a>
+      <a href="#faq">Good to know</a>
       <a href="/pricing">Pricing</a>
+      <a href="https://partners.1ststep.ai/">Affiliates</a>
     </nav>
     <div class="nav-actions">
       <a class="nav-signin" href="/app">Sign in</a>
@@ -55,8 +63,9 @@
   <nav class="nav-sheet" id="navSheet" aria-label="Primary, compact">
     <a href="#paths">Product</a>
     <a href="#how">How it works</a>
-    <a href="#details">Good to know</a>
+    <a href="#faq">Good to know</a>
     <a href="/pricing">Pricing</a>
+    <a href="https://partners.1ststep.ai/">Affiliates</a>
     <a href="/app">Sign in</a>
     <a class="btn btn-primary btn-block nav-sheet-cta" href="/concierge">Start My Job Agent — Free</a>
   </nav>
@@ -70,17 +79,43 @@
     <div class="hero-copy">
       <p class="pill"><span class="pill-tag">Beta</span> AI Job Agent · free early access by invitation</p>
       <h1>Find the right jobs. Build better applications. <span class="hero-accent">Faster.</span></h1>
-      <p class="lede">Your AI Job Agent helps find suitable openings and prepare a tailored résumé and cover letter from experience you have confirmed. You review every application and submit it yourself.</p>
+      <p class="lede">Capture a job with the extension, prepare tailored documents in your workspace, or start the Job Agent to keep your search moving. You review every application and submit it yourself.</p>
       <div class="hero-cta">
         <a class="btn btn-primary btn-lg" href="/concierge">Start My Job Agent — Free</a>
         <a class="btn btn-quiet btn-lg" href="#how">See How It Works</a>
       </div>
+      <div class="hero-evidence" aria-label="Product evidence">
+        <article class="interview-proof">
+          <span>Verified founder test · August 24, 2026</span>
+          <strong>First-round interview invitation received</strong>
+          <p>A LogicSource role worked through with 1stStep led to a live phone interview. The employer made the decision.</p>
+          <div class="proof-receipt" aria-label="LogicSource interview invitation received August 24 for a 30-minute interview on August 25, 2026">
+            <span class="proof-date" aria-hidden="true"><b>AUG</b><strong>24</strong></span>
+            <span class="proof-receipt-copy"><small>INTERVIEW INVITATION</small><b>LogicSource</b><em>Aug 25 · 1:00–1:30 PM</em></span>
+          </div>
+        </article>
+        <article class="time-proof" data-motion-scene>
+          <div class="time-proof-dial" role="img" aria-label="35 minutes saved on Evan's LogicSource application task">
+            <svg viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="time-proof-track" cx="60" cy="60" r="45"></circle>
+              <circle class="time-proof-ticks" pathLength="60" cx="60" cy="60" r="45"></circle>
+              <circle class="time-proof-meter" pathLength="60" cx="60" cy="60" r="45"></circle>
+              <circle class="time-proof-end" cx="60" cy="15" r="4"></circle>
+            </svg>
+            <div class="time-proof-value"><b>35</b><small>min saved</small></div>
+          </div>
+          <div class="time-proof-copy">
+            <span>Actual result · LogicSource</span>
+            <strong>Live phone interview</strong>
+            <p>This is how much time I actually saved on the task that got me a live phone interview with LogicSource.</p>
+            <small>Job captured: 5 min · résumé: 18 min · cover letter: 12 min</small>
+          </div>
+        </article>
+      </div>
       <ul class="hero-points">
         <li>Free early access by invitation — no card required</li>
         <li>You review and submit every application yourself</li>
-        <li>Start with your résumé and a few simple questions</li>
       </ul>
-      <p class="hero-payoff">Your next role. One step closer.</p>
     </div>
 
     <div class="hero-panel demo-stage" data-motion-scene>
@@ -162,7 +197,7 @@
 
       </article>
       <article class="studio-card studio-extension reveal" data-motion-scene>
-        <div><p class="eyebrow">03 / TAKE IT WITH YOU</p><h3>Found a job you love?<br>Bring it into your workspace.</h3><p>The 1stStep Chrome extension keeps job capture close at hand while you browse.</p><a class="studio-link" href="https://chromewebstore.google.com/detail/1ststepai-%E2%80%93-tailor-your-r/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener noreferrer" data-chrome-web-store-url>Get the Chrome extension <span aria-hidden="true">↗</span></a></div>
+        <div><p class="eyebrow">03 / TAKE IT WITH YOU</p><h3>Found a job you love?<br>Bring it into your workspace.</h3><p>Capture a supported job page without copying and pasting. Review the details in your 1stStep workspace.</p><a class="studio-link" href="https://chromewebstore.google.com/detail/1ststepai-%E2%80%93-tailor-your-r/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener noreferrer" data-chrome-web-store-url>Get the Chrome extension <span aria-hidden="true">↗</span></a></div>
         <div class="extension-visual"><div class="browser-preview"><div class="browser-bar"><span aria-hidden="true">● ● ●</span> Employer careers</div><div class="browser-body"><span class="eyebrow">CAREERS</span><strong>Make your next move.</strong><i></i><i></i></div></div><div class="extension-popover"><span class="brand-mark sm" aria-hidden="true">1st</span><div><strong>A good find.</strong><span>Bring this role to 1stStep.</span></div><span aria-hidden="true">↗</span></div></div>
       </article>
     </div>
@@ -207,13 +242,6 @@
   </div>
 </section>
 
-<section class="compact-details" id="details" aria-labelledby="detailsTitle"><div class="wrap wrap-narrow">
-  <h2 id="detailsTitle">A few things worth knowing.</h2>
-  <details id="inside"><summary>How the agent helps</summary><p>It checks roles, prepares documents from your confirmed experience, and puts missing answers in one place. You review and submit applications yourself.</p></details>
-  <details id="compare"><summary>Job Agent or Résumé Builder?</summary><p>Use the Job Agent for your search, or the Résumé Builder when you already have a role in mind. Both keep you in control.</p></details>
-  <details id="security"><summary>Your information and your control</summary><p>No invented experience. Passwords and security codes are not reusable facts. You can correct your information and withdraw permission. 1stStep does not currently submit applications on your behalf.</p><a href="/privacy">Read our privacy policy</a></details>
-</div></section>
-
 <!-- ── FAQ ────────────────────────────────────────────────────────────────── -->
 <section id="faq" class="band">
   <div class="wrap wrap-narrow">
@@ -222,29 +250,11 @@
       <h2>Straight answers.</h2>
     </div>
     <div class="faq reveal">
-      <details><summary>Will it apply for me without asking?</summary><div class="faq-body">No. Your agent prepares the materials. You review them and submit the application yourself.</div></details>
-      <details><summary>Does it need my passwords?</summary><div class="faq-body">No. Employer passwords are never asked for or kept as reusable facts. If a site makes you sign in, that step is handed to you.</div></details>
-      <details><summary>What happens at a security code or CAPTCHA?</summary><div class="faq-body">It stops and puts the step in your list. It does not try to solve CAPTCHAs, and it does not store one-time codes.</div></details>
+      <details><summary>Will it apply for me without asking?</summary><div class="faq-body">No. Your agent prepares the materials. You review them and submit the application yourself. 1stStep does not currently submit applications on your behalf, and you can pause a run or withdraw permission at any time.</div></details>
+      <details><summary>What happens at a sign-in, security code, or CAPTCHA?</summary><div class="faq-body">That step is handed to you. Employer passwords are never kept as reusable facts, one-time codes are not stored, and the agent does not try to solve CAPTCHAs.</div></details>
       <details><summary>Will the résumé sound like a robot wrote it?</summary><div class="faq-body">It is built from facts you confirmed and written for that specific job. Nothing is invented, and the output stays plain and ATS-safe rather than padded with buzzwords.</div></details>
-      <details><summary>How does it pick jobs?</summary><div class="faq-body">Against the criteria and confirmed facts you set. Roles under your stated bar are filtered out rather than counted toward a quota. Protected characteristics are never used for ranking.</div></details>
-      <details><summary>How are applications counted?</summary><div class="faq-body">Only when the employer confirms receipt. Written, ready, and waiting on you are tracked separately and never counted as submitted.</div></details>
-      <details><summary>How do I actually send the application?</summary><div class="faq-body">Review your prepared résumé and cover letter, then submit them on the employer’s website. 1stStep does not currently submit applications on your behalf.</div></details>
+      <details><summary>How does it pick and count jobs?</summary><div class="faq-body">It checks the criteria and confirmed facts you set. Roles under your stated bar are filtered out. An application counts as submitted only when the employer confirms receipt.</div></details>
       <details><summary>What does it cost?</summary><div class="faq-body"><strong>1stStep Complete will be $39/month</strong> when paid access opens. One membership includes the resume builder, cover-letter tools, tracker, extension workflow, and Job Agent. Early access is free by invitation, and there is no paid checkout today. Any later subscription requires your separate agreement.</div></details>
-      <details><summary>Can I stop it?</summary><div class="faq-body">Yes, at any time. You can pause a run, edit or delete confirmed facts, withdraw permission, and ask for your data to be deleted.</div></details>
-    </div>
-  </div>
-</section>
-
-<!-- ── Close ──────────────────────────────────────────────────────────────── -->
-<section class="close">
-  <div class="wrap">
-    <div class="close-inner reveal">
-      <h2>Start with one job, or hand over the search.</h2>
-      <p>Start with your résumé. Keep control of every next step.</p>
-      <div class="hero-cta center">
-        <a class="btn btn-primary btn-lg" href="/concierge">Start My Job Agent — Free</a>
-        <a class="btn btn-quiet btn-lg" href="#details">Good to know</a>
-      </div>
     </div>
   </div>
 </section>
@@ -260,7 +270,7 @@
     </div>
     <div>
       <h2 class="foot-h">Product</h2>
-      <ul><li><a href="/app/resume">Résumé Builder</a></li><li><a href="/concierge">Job Agent</a></li><li><a href="https://chromewebstore.google.com/detail/1ststepai-%E2%80%93-tailor-your-r/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener noreferrer" data-chrome-web-store-url>Chrome extension</a></li><li><a href="/pricing">Pricing</a></li></ul>
+      <ul><li><a href="/app/resume">Résumé Builder</a></li><li><a href="/concierge">Job Agent</a></li><li><a href="https://chromewebstore.google.com/detail/1ststepai-%E2%80%93-tailor-your-r/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener noreferrer" data-chrome-web-store-url>Chrome extension</a></li><li><a href="/pricing">Pricing</a></li><li><a href="https://partners.1ststep.ai/">Affiliates</a></li></ul>
     </div>
     <div>
       <h2 class="foot-h">Account</h2>
@@ -326,17 +336,12 @@
         {
           "@type": "Question",
           "name": "Will it apply for me without asking?",
-          "acceptedAnswer": { "@type": "Answer", "text": "No. Your agent prepares the materials. You review them and submit the application yourself." }
+          "acceptedAnswer": { "@type": "Answer", "text": "No. Your agent prepares the materials. You review them and submit the application yourself. 1stStep does not currently submit applications on your behalf, and you can pause a run or withdraw permission at any time." }
         },
         {
           "@type": "Question",
-          "name": "Does it need my passwords?",
-          "acceptedAnswer": { "@type": "Answer", "text": "No. Employer passwords are never asked for or kept as reusable facts. If a site makes you sign in, that step is handed to you." }
-        },
-        {
-          "@type": "Question",
-          "name": "What happens at a security code or CAPTCHA?",
-          "acceptedAnswer": { "@type": "Answer", "text": "It stops and puts the step in your list. It does not try to solve CAPTCHAs, and it does not store one-time codes." }
+          "name": "What happens at a sign-in, security code, or CAPTCHA?",
+          "acceptedAnswer": { "@type": "Answer", "text": "That step is handed to you. Employer passwords are never kept as reusable facts, one-time codes are not stored, and the agent does not try to solve CAPTCHAs." }
         },
         {
           "@type": "Question",
@@ -345,28 +350,13 @@
         },
         {
           "@type": "Question",
-          "name": "How does it pick jobs?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Against the criteria and confirmed facts you set. Roles under your stated bar are filtered out rather than counted toward a quota. Protected characteristics are never used for ranking." }
-        },
-        {
-          "@type": "Question",
-          "name": "How are applications counted?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Only when the employer confirms receipt. Written, ready, and waiting on you are tracked separately and never counted as submitted." }
-        },
-        {
-          "@type": "Question",
-          "name": "How do I actually send the application?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Review your prepared résumé and cover letter, then submit them on the employer's website. 1stStep does not currently submit applications on your behalf." }
+          "name": "How does it pick and count jobs?",
+          "acceptedAnswer": { "@type": "Answer", "text": "It checks the criteria and confirmed facts you set. Roles under your stated bar are filtered out. An application counts as submitted only when the employer confirms receipt." }
         },
         {
           "@type": "Question",
           "name": "What does it cost?",
           "acceptedAnswer": { "@type": "Answer", "text": "1stStep Complete will be $39/month when paid access opens. One membership includes the resume builder, cover-letter tools, tracker, extension workflow, and Job Agent. Early access is free by invitation, and there is no paid checkout today. Any later subscription requires your separate agreement." }
-        },
-        {
-          "@type": "Question",
-          "name": "Can I stop it?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Yes, at any time. You can pause a run, edit or delete confirmed facts, withdraw permission, and ask for your data to be deleted." }
         }
       ]
     }
