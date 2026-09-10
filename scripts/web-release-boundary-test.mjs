@@ -1,12 +1,11 @@
 import assert from 'node:assert/strict';
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import middleware, { config as middlewareConfig } from '../middleware.js';
 
 const root = new URL('../', import.meta.url);
 const packageJson = JSON.parse(await readFile(new URL('package.json', root), 'utf8'));
 const vercelJson = JSON.parse(await readFile(new URL('vercel.json', root), 'utf8'));
 const vercelIgnore = await readFile(new URL('.vercelignore', root), 'utf8');
-const easyFunnelTag = '<script src="https://easyfunnel.co/chat.js" data-api-key="ef_4b021378a6ea9b9ea6f81e609142081046073f21489f6b5a"></script>';
 const rules = vercelIgnore
   .split(/\r?\n/)
   .map(line => line.trim())
@@ -83,24 +82,5 @@ const publicBuilder = await readFile(new URL('build-public-web.mjs', root), 'utf
 assert.match(publicBuilder, /const publicAssets = \[/);
 assert.doesNotMatch(publicBuilder, /['"]lib\//);
 assert.doesNotMatch(publicBuilder, /readdir|cp\(.+recursive|copy.+recursive/i);
-
-const htmlFiles = (await readdir(root)).filter(file => file.endsWith('.html'));
-for (const file of htmlFiles) {
-  const html = await readFile(new URL(file, root), 'utf8');
-  const expectedCount = file === 'index.html' || file === 'pricing.html' ? 1 : 0;
-  assert.equal(html.split(easyFunnelTag).length - 1, expectedCount, `EasyFunnel tag scope changed in ${file}`);
-  if (expectedCount) assert.match(html, new RegExp(`${easyFunnelTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*</body>`), `${file} must load EasyFunnel immediately before </body>`);
-}
-
-for (const source of ['/', '/index.html', '/pricing', '/pricing.html']) {
-  const csp = vercelJson.headers.find(rule => rule.source === source)?.headers.find(header => header.key === 'Content-Security-Policy')?.value || '';
-  assert.match(csp, /script-src[^;]*https:\/\/easyfunnel\.co/, `${source} must allow the EasyFunnel script`);
-  assert.match(csp, /connect-src[^;]*https:\/\/easyfunnel\.co/, `${source} must allow EasyFunnel chat requests`);
-  assert.match(csp, /img-src[^;]*(?:https:|https:\/\/easyfunnel\.co)/, `${source} must allow the EasyFunnel avatar`);
-}
-for (const source of ['/app', '/app/resume', '/concierge', '/concierge.html', '/login.html']) {
-  const csp = vercelJson.headers.find(rule => rule.source === source)?.headers.find(header => header.key === 'Content-Security-Policy')?.value || '';
-  assert.doesNotMatch(csp, /easyfunnel/i, `${source} must remain isolated from EasyFunnel`);
-}
 
 console.log('Web release emits an explicit public asset set and excludes internal/extension artifacts; extension release remains separately pinned and fail-closed.');

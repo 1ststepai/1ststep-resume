@@ -107,9 +107,7 @@ assert.match(html, /<link rel="stylesheet" href="\/home-motion-1f7df326a312\.css
 assert.match(html, /<script src="\/home-motion-4e0eecde7df1\.js" defer><\/script>/);
 const rootCsp = vercelConfig.headers.find(rule => rule.source === '/')?.headers.find(header => header.key === 'Content-Security-Policy')?.value;
 assert(rootCsp, 'Homepage must have a route-specific CSP');
-assert.doesNotMatch(rootCsp, /cdn\.|stripe|googletagmanager|leadconnector/i);
-assert.match(rootCsp, /script-src[^;]*https:\/\/easyfunnel\.co/);
-assert.match(rootCsp, /connect-src[^;]*https:\/\/easyfunnel\.co/);
+assert.doesNotMatch(rootCsp, /unsafe-inline|cdn\.|stripe|googletagmanager|leadconnector/i);
 assert.match(rootCsp, /script-src 'self' 'sha256-[^']+' 'sha256-[^']+'/);
 const themeTag = '<script>';
 const jsonLdTag = '<script type="application/ld+json">';
