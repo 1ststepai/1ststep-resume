@@ -9,7 +9,7 @@
 | App and APIs | Repository root, `api/`, `lib/`, `client/`, `concierge.*`, `app.*` | Vercel `1ststep-resume`; alias `app.1ststep.ai`; output `.public-web` | Ready production deployment observed; current runtime dependencies not authenticated in this pass |
 | Chrome extension | `1ststep-extension/` plus controlled-build scripts and app APIs | Chrome Web Store item `gnbjcmennlcbkmakameknfcnioohnjkp` | Store v1.3.2; main v1.5.0; PR #72 v1.6 source assembled on the consolidated release branch |
 | Resume site | `resume-tailor-landing/standalone/` | Vercel `1ststep-resume-landing`; alias `resume.1ststep.ai` | Ready static production deployment observed |
-| Partner site | `partners-landing/` | Vercel `1ststep-growth-finder`; alias `partners.1ststep.ai` | Ready static production deployment observed |
+| Partner site | `partners-landing/` plus authenticated `/partner`, `api/partner.js`, and `lib/partner-account.js` | Vercel `1ststep-growth-finder` for the public landing; authenticated role workflow ships with `1ststep-resume` | Public production landing observed; authenticated partner workflow is release-candidate source only and is not production-verified |
 
 The nearby `main-website` and `comission` repositories are not release sources for these four surfaces. `release-job-agent-20260907` has no valid HEAD and is not authoritative. Dated worktrees are candidate history, not deployment truth.
 
@@ -58,14 +58,15 @@ PR #72's durable-capture source is preserved in `release/consolidated-job-agent-
 | Jobs, packages, application sessions, actions, receipts | Job Agent durable stores; canonical Postgres model when independently activated | Tenant-scoped IDs, exact source/version binding, idempotency, encrypted payloads, append-audit, receipt-only Submitted |
 | Extension capture | Temporary Chrome storage until durable app acknowledgement; PR #72 app record afterward | Exact capture ID, app-origin bridge, no auth token in extension, encrypted tenant record, bounded retention |
 | Generated files | Tenant-owned private artifact boundary | Integrity hashes, signed downloads, malware/render gates, no public cache |
-| Partner referral/prospect draft data | Current partner page localStorage only | Browser-local and non-authoritative; no job-seeker access; durable portal not approved |
+| Partner role and application | Encrypted `partner:v2:*` Redis records keyed by an HMAC of the verified Clerk subject | Separate from applicant vault, résumé, My Jobs, entitlement, and payout data; explicit existing-user or affiliate-only consent; administrator-only approval; included in account export/deletion |
+| Partner prospect drafts | Public partner landing localStorage | Browser-local and non-authoritative; no identity, approval, referral-code issuance, job-seeker access, or commission state |
 | Public copy and commercial terms | Version-controlled maintained sources plus verified live deployments/store listing | Human approval for legal, pricing, billing, payout, and publication changes |
 | Operational telemetry | Content-free metrics, heartbeats, and signed evidence | No candidate/job/employer identifiers or source text; unavailable telemetry is `unknown` |
 
 ## API boundaries
 
 - Public/static: homepage, pricing, terms, privacy, public app config, resume site, partner site.
-- Signed user: opaque-session routes for vault, captured jobs, runs, schedules, packages, sessions, learning, notifications, and account lifecycle.
+- Signed user: opaque-session routes for vault, captured jobs, runs, schedules, packages, sessions, learning, notifications, account lifecycle, and the isolated partner role. Affiliate-only identity verification does not create Job Agent data or entitlement.
 - Internal worker: cron-bearer routes and bounded durable queues.
 - Service-to-service: signed receipt/webhook boundaries with timestamp, nonce/idempotency, exact source, and raw-body verification.
 - Admin: server-confirmed owner identity plus separate secrets where required; responses remain redacted/content-free.

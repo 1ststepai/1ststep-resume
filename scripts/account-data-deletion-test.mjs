@@ -29,6 +29,7 @@ function fixture({ failAt = '' } = {}) {
       deleteConsent: operation('consent', { deleted: true }),
       deleteSchedule: operation('schedule', { deleted: true }),
       deleteNotifications: operation('notifications', { deleted: true, auxiliaryRecordsDeleted: 3 }),
+      deletePartner: operation('partner', { deleted: true, attributionDeleted: false }),
       deleteResidualKeys: operation('residualKeys', { deleted: 6 }),
     },
   };
@@ -47,6 +48,7 @@ assert.equal(result.campaign.deleted, true);
 assert.equal(result.consent.deleted, true);
 assert.equal(result.schedule.deleted, true);
 assert.deepEqual(result.notifications, { deleted: true, auxiliaryRecordsDeleted: 3 });
+assert.deepEqual(result.partner, { deleted: true, attributionDeleted: false });
 assert.equal(result.residualKeys.deleted, 6);
 assert.equal(current.calls[0].name, 'accountExports');
 assert.equal(current.calls[1].name, 'artifacts');

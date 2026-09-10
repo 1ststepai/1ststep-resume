@@ -4887,6 +4887,20 @@ async function hydrateDurablePackages() {
   const pending = deskState.roles.filter(role => role.packageRunId && !role.packageDraft).slice(0, 10);
   for (const role of pending) await refreshDurablePackage(role.packageRunId, false);
 }
+
+async function recordPartnerReferralAttribution() {
+  if (!hasApiSession()) return;
+  const code = String(new URLSearchParams(window.location.search).get('ref') || '')
+    .trim().toLowerCase().replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40).replace(/-+$/g, '');
+  if (!code) return;
+  await fetchWithTimeout('/api/partner?action=attribute', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...apiAuthorizationHeaders() },
+    body: JSON.stringify({ code }),
+  }, REQUEST_TIMEOUTS.persistence).catch(() => null);
+}
+
 async function hydrateAccountWorkflow() {
   initializeAccountWorkflowAuthority();
   await hydrateCampaignStore();
@@ -4905,6 +4919,7 @@ $('statusShowJobs').addEventListener('click', () => $('openJobs').click());
 // Refresh the displayed age without issuing background requests or inventing activity.
 setInterval(renderRunState, 15000);
 Promise.all([loadPublicAppConfig(), loadSessionCapabilities()]).then(async () => {
+  await recordPartnerReferralAttribution();
   await hydrateAccountWorkflow();
   accountWorkflowHydrated = true;
   renderCampaignSyncStatus();

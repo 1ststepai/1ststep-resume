@@ -4,6 +4,8 @@ This is the read-only-first hygiene and release-readiness record for the local `
 
 ## Executive result
 
+> Release follow-up: the inventory below remains the historical hygiene snapshot. PR #80 on `release/consolidated-job-agent-v1.6-20260910` is now the sole integration path for the verified v1.6 extension ancestry and PR #79 documentation. The candidate also replaces the rejected broad partner-preview history with a focused, encrypted partner-role workflow: explicit existing-user and affiliate-only paths, no implicit Job Agent data or entitlement, administrator-only approval, and account export/deletion coverage. Exact pushed-head CI, production configuration, authenticated mobile persistence, and source/deployment parity remain release gates; Chrome Web Store publication remains separately gated.
+
 - The source of truth for `app.1ststep.ai`, the Chrome extension, `resume.1ststep.ai`, and `partners.1ststep.ai` is `1ststepai/1ststep-resume`.
 - The authoritative repository has 44 registered worktrees. It started with 12 dirty worktrees and finishes with 8. Four were cleaned only after their changes were proven generated or already preserved in merged commits.
 - Current `origin/main` is `8a6ba82`. Its smoke, public build, and 17-test extension release suite pass.

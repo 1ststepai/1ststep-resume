@@ -2,7 +2,7 @@
 
 ## Decision
 
-`release/consolidated-job-agent-v1.6-20260910` is the sole assembled release candidate. It starts at clean `origin/main` `8a6ba82`, integrates the verified Chrome extension v1.6 source from PR #72, the focused Job Agent trust remediation, and the operating-system/reconciliation documentation from PR #79. It excludes incomplete partner-preview, database-migration, broad UX, stale PR, detached recovery, and mixed dirty-primary work.
+`release/consolidated-job-agent-v1.6-20260910` is the sole assembled release candidate. It starts at clean `origin/main` `8a6ba82`, integrates the verified Chrome extension v1.6 source from PR #72, the focused Job Agent trust remediation, the operating-system/reconciliation documentation from PR #79, and a newly implemented isolated partner-role workflow. It excludes the older incomplete partner preview, database migration, broad UX, stale PR, detached recovery, and mixed dirty-primary work.
 
 This branch is source- and local-test-ready, but **not production-release-ready**. Production lacks 89 required environment variable names across controlled-beta, private storage/scanning, cost, evidence, support, assisted-application, and final-submission controls. The consolidated branch also lacks the branch-scoped Preview configuration needed for an authenticated extension-to-My-Jobs test. No production deployment, Chrome Web Store publication, database migration, provider activation, pricing change, or OAuth credential change is authorized by this document.
 
@@ -46,7 +46,7 @@ This branch is source- and local-test-ready, but **not production-release-ready*
 | No unsupported autonomous submission | Main defaults and v1.6 extension contract | Included; extension is no-submit | Production environment name audit confirms final-submission enablement names are absent, but values and equivalent overrides are not runtime-verified. |
 | Evidence-backed time saved | PR #72 ancestry (`d00711f`) | Included | Browser test passes; figures remain labeled estimates based on completed events. |
 | Cross-site copy/pricing/legal | Current main plus PR #72 disclosures and PR #79 operating docs | Included only where merged here | External counsel sign-off and live cross-domain parity remain outstanding. |
-| Partner isolation | Merged main partner hardening | Included through baseline | `de77157` unified partner preview excluded because Clerk/Apple/admin approval was incomplete. |
+| Partner isolation | New focused partner role built on current release contracts | Included in candidate | `de77157` remained excluded. The replacement uses the existing Clerk-to-opaque-session boundary, explicit existing-user or affiliate-only consent, encrypted isolated Redis records, administrator-only approval, approved-only attribution, self-referral rejection, and account export/deletion. It creates no Job Agent data or entitlement and activates no payout. Production auth/runtime/mobile proof remains required. |
 | Canonical PostgreSQL career profile | `codex/career-profile-schema-20260908` | Excluded | Independent review, isolated migration/RLS runtime evidence, and production authorization are required. |
 
 ## Conflicts, stale work, and missing evidence
@@ -72,11 +72,11 @@ This branch is source- and local-test-ready, but **not production-release-ready*
 | `npm run build` | Pass; 82 intentional public assets. |
 | `npm run build:extension:controlled` | Pass; v1.6.0, 11 files, 50,407 bytes, exact SHA-256 `72491347f92a416d76d0e81f097aa0516d277587bfa304fadb20c22d42f44fff`, no candidate values. |
 | `npm audit --omit=dev --audit-level=high` | Pass; 0 vulnerabilities. |
-| Static security scan | Partial repository coverage; 4 findings on PR #72, all remediated in `2eb61a1` and covered by regression assertions. Live/runtime security remains unverified. |
+| Static security scan | Four inherited PR #72 findings were remediated in `2eb61a1`. Two later browser-storage trust paths were remediated on the candidate; focused regression tests pass. Sonar must return Security Rating A on the exact pushed head before merge. Live/runtime security remains unverified. |
 | TypeScript / ESLint | Unavailable in the authoritative package: no standalone `typecheck` or `lint` script. This is not recorded as a pass. |
 | Production environment-name audit | Fail for release readiness: 89 of 126 required names absent; values not validated. |
 | Public domains | HTTP 200 for app, resume, and partners; authenticated and source-parity proof still missing. |
-| PR #80 CI | Pass on the runtime/report head and subsequent evidence-only refresh: deterministic 13-layer gate, CodeQL, static QA, production dependency audit, and Vercel checks. Recheck the exact current PR head before merge. |
+| PR #80 CI | The previous pushed head `fc5e385` passed the deterministic gate, CodeQL, static QA, dependency audit, and Vercel Preview but failed Sonar Security Rating with one remaining browser-storage taint path. That source path is fixed locally; the exact new head must be pushed and all checks, including Sonar A, must pass before merge. |
 | Runtime-bearing release Preview | Ready: `dpl_E7h1ghMHF31tqAFFQN7Tfn1iF6M9`, bound through GitHub deployment `6371383461` to `2be4174`; public root, Job Agent, and partners routes returned HTTP 200. Authenticated persistence is still untested. |
 
 ## Release commits and source of truth
