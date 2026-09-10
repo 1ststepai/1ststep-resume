@@ -7,6 +7,7 @@ Record verified ecosystem changes here. Entries are append-only within each date
 ### 2026-09-10
 
 - Added the ecosystem operating system, current evidence-based roadmap, and architecture contract.
+- Added a deterministic smoke-test contract that fails if the required operating documents or core release-safety rules disappear.
 - Designated `1ststepai/1ststep-resume` as the source of truth for the app, extension source, resume site, and partner site.
 - Recorded the current split release state: Chrome Web Store v1.3.2, main manifest v1.5.0, and open PR #72 v1.6.
 - Recorded that public pricing is currently aligned around free invitation-only beta and future $39/month access with no active checkout.

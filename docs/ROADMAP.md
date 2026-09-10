@@ -107,5 +107,6 @@ This is the execution queue for the app, Chrome extension, resume site, partner 
 - Inspected all 43 registered worktrees and preserved all dirty state.
 - Verified source branch, remotes, manifests, PR #72, deployment projects/aliases, live HTTP state, public pricing, auth boundaries, schema/RLS source, extension capture flow, and available test commands.
 - Established these operating documents on a clean branch from current `origin/main`.
+- Added `scripts/operating-system-contract-test.mjs` to the standard smoke command so future changes cannot silently remove the required operating files or core approval/receipt rules.
 - Baseline checks passed: smoke, public build, and extension release suite with 17 browser tests.
 - Remaining risk: protected production runtime health and authenticated end-to-end behavior are still unknown.
