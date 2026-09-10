@@ -50,7 +50,7 @@ import {
 import { acquisitionFunnel, evaluateCandidateFit, extractStructuredRequirements, upsertHiringEcosystem } from './client/job-intelligence.js';
 import { JOB_RELEVANCE_POLICY_VERSION, jobTitleMatchesMission, restoredJobCardIsRelevant } from './client/job-mission-relevance.js';
 import { buildAnswerCoachingRequest, summarizePracticeSession } from './client/interview-practice.js';
-import { OPPORTUNITY_PATHS, OPPORTUNITY_SECTORS, mergeAuthoritativeOutcomeEvidence, opportunityPathOutcomeEvidence, rankOpportunityPaths, suggestedOpportunityPaths } from './client/opportunity-paths.js';
+import { OPPORTUNITY_PATHS, OPPORTUNITY_SECTORS, mergeAuthoritativeOutcomeEvidence, opportunityPathOutcomeEvidence, suggestedOpportunityPaths } from './client/opportunity-paths.js';
 import { authoritativeReceiptCount, canonicalConversation, directSourceCoverage, maskedActivityFeed, missionStats, needsYouKind, statusBadgeClass, statusTab, subscriberStatus as subscriberUiStatus } from './client/subscriber-ui-model.js';
 import {
   CAMPAIGN_TEMPLATES, addCampaign, campaignMetrics, createCampaignStore, operatingContractText, updateCampaignStatus, updatePersistentCampaign,
@@ -1897,6 +1897,7 @@ function advanceGuidedLaunch() {
   guidedLaunchStep = Math.min(GUIDED_LAUNCH_STAGES.length - 1, guidedLaunchStep + 1);
   saveGuidedLaunchDraft();
   renderMission();
+  requestAnimationFrame(() => resetGuidedLaunchScroll($('guidedLaunchOverlay')));
 }
 
 function opportunityPathOptions() {
@@ -1926,77 +1927,17 @@ function renderOpportunityPaths() {
   ].join('');
   $('jobSectorFilter').value = opportunitySector;
   if (!guidedSelection.pathId && hasResume() && options[0]?.profileSignal > 0) guidedSelection.pathId = options[0].id;
-  $('opportunityPaths').innerHTML = options.map((path, index) => {
+  $('opportunityPaths').innerHTML = options.map(path => {
     const selected = path.id === guidedSelection.pathId;
-    const live = Number.isFinite(path.openings);
-    const analyzed = Number.isFinite(path.verifiedOpeningsAnalyzed) ? path.verifiedOpeningsAnalyzed : path.openings;
-    const supply = live ? `${path.openings} current opening${path.openings === 1 ? '' : 's'} · ${path.qualifiedOpenings} of ${analyzed} verified role${analyzed === 1 ? '' : 's'} above fit floor` : 'Select to search this role family';
-    const outcome = path.outcomeConfidence === 'reliable'
-      ? `Your observed rate: ${path.interviewRate}% reached recruiter screen · ${path.sampleSize} receipt-verified applications`
-      : path.outcomeConfidence === 'directional'
-        ? `Directional only: ${path.interviewRate}% reached recruiter screen · ${path.sampleSize} receipt-verified applications`
-      : path.outcomeConfidence === 'early'
-        ? `Too early for a rate: ${path.screens} screens from ${path.sampleSize} receipt-verified applications`
-        : 'Observed interview rate: learning from your tracker';
-    return `<button class="opportunity-path${selected ? ' selected' : ''}" type="button" role="radio" aria-checked="${selected}" data-opportunity-path="${escapeHtml(path.id)}"><i aria-hidden="true"></i><strong>${escapeHtml(path.label)}</strong><small>${escapeHtml(supply)}${live && path.averageFit ? ` · ${path.averageFit}/100 average fit` : ''}</small><small>${escapeHtml(outcome)}</small>${live && index === 0 ? '<em class="path-best">Best current evidence</em>' : ''}</button>`;
+    return `<button class="opportunity-path${selected ? ' selected' : ''}" type="button" role="radio" aria-checked="${selected}" data-opportunity-path="${escapeHtml(path.id)}"><i aria-hidden="true"></i><strong>${escapeHtml(path.label)}</strong></button>`;
   }).join('');
-  const scan = missionState.pathScan;
-  $('pathEvidence').textContent = scan?.status === 'complete'
-    ? `${scan.partial ? 'Some sources could not finish. You can compare again; these results are partial. ' : ''}Compared ${scan.jobsScanned} current postings across ${scan.sourcesChecked} connected direct-employer feeds and ${OPPORTUNITY_PATHS.length} job paths. Your observed rate appears after 5 receipt-verified applications and is not labeled reliable before 20.`
-    : scan?.status === 'error'
-      ? `Live comparison needs attention: ${String(scan.message || '').replace(/[.!?]+$/, '')}. Starter paths remain available.`
-      : 'Starter paths come from your confirmed experience. Live opening counts appear only after a direct-employer feed scan.';
+  $('pathEvidence').textContent = 'Choose one. You can change this later.';
   const locationReady = guidedSelection.workMode === 'Remote' || Boolean($('launchLocation').value.trim() || guidedSelection.location);
   $('startJobSearch').disabled = !guidedSelection.pathId || !hasResume() || !locationReady;
   $('locationPreference').hidden = guidedSelection.workMode === 'Remote';
   if (!$('launchLocation').value && guidedSelection.location) $('launchLocation').value = guidedSelection.location;
 }
 
-async function scanOpportunityPaths() {
-  if (!hasResume()) {
-    openResumeSetup();
-    setResumeMessage('Add or build your resume before comparing paths.', 'warn');
-    return;
-  }
-  const button = $('scanOpportunityPaths');
-  button.disabled = true;
-  button.textContent = 'Comparing…';
-  missionState.pathScan = { status: 'searching', checkedAt: new Date().toISOString() };
-  saveAll(); renderOpportunityPaths();
-  try {
-    const response = await fetchWithTimeout('/api/concierge-discovery', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', ...apiAuthorizationHeaders() },
-      body: JSON.stringify({
-        mission: {
-          roleFamilies: OPPORTUNITY_PATHS.flatMap(path => path.terms),
-          workModes: [guidedSelection.workMode], employmentTypes: [guidedSelection.employmentType],
-          salaryMin: guidedSelection.salary || null, location: guidedSelection.workMode === 'Remote' ? 'United States' : '',
-        },
-        limit: 100,
-      }),
-    }, REQUEST_TIMEOUTS.discovery);
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || 'Live path comparison is unavailable');
-    const ranked = rankOpportunityPaths({ jobs: data.jobs || [], supplyByPath: data.supplyByPath || {}, outcomes: mergeAuthoritativeOutcomeEvidence(deskState.acquisitionOutcomes, durableApplicationSessions), profile: deskState.truthProfile, resumeText: savedResumeText() });
-    missionState.pathScan = {
-      status: 'complete', partial: data.partial === true || data.status === 'partial', checkedAt: new Date().toISOString(), jobsScanned: Number(data.filterSummary?.scanned) || (data.jobs || []).length,
-      sourcesChecked: (data.sourceSummary || []).filter(source => ['ok', 'partial'].includes(source.status)).length,
-      recommendations: ranked.map(path => ({
-        id: path.id, label: path.label, searchRole: path.searchRole, rankScore: path.rankScore,
-        openings: path.openings, verifiedOpeningsAnalyzed: path.verifiedOpeningsAnalyzed, qualifiedOpenings: path.qualifiedOpenings, averageFit: path.averageFit, topFit: path.topFit,
-        sampleSize: path.sampleSize, screens: path.screens, offers: path.offers,
-        interviewRate: path.interviewRate, offerRate: path.offerRate, outcomeConfidence: path.outcomeConfidence,
-      })),
-    };
-    if (ranked[0]) guidedSelection.pathId = ranked[0].id;
-  } catch (error) {
-    missionState.pathScan = { status: 'error', checkedAt: new Date().toISOString(), message: error.message || 'Unknown error' };
-  } finally {
-    button.disabled = false;
-    button.textContent = 'Compare live paths';
-    saveAll(); renderOpportunityPaths();
-  }
-}
 function savedResumeRecord() {
   for (const key of RESUME_KEYS) {
     let raw = sessionStorage.getItem(key);
@@ -2075,7 +2016,7 @@ function setResumeMessage(message, kind = '') {
 }
 function openResumeSetup() {
   $('resumeEditor').value = savedResumeText();
-  setResumeMessage(hasResume() ? 'Saved resume loaded. Review it or replace it.' : 'Nothing is saved until you review and choose Save resume.', hasResume() ? 'good' : '');
+  setResumeMessage(hasResume() ? 'Resume ready. Choose a different file to replace it.' : 'Choose a file to continue.', hasResume() ? 'good' : '');
   $('resumeOverlay').classList.add('open');
 }
 function closeResumeSetup() { $('resumeOverlay').classList.remove('open'); }
@@ -3832,7 +3773,6 @@ $('quickUseSavedResume').addEventListener('click', () => {
   advanceGuidedLaunch();
 });
 $('quickUploadResume').addEventListener('click', () => {
-  openResumeSetup();
   $('resumeFile').click();
 });
 $('reviewAddResume').addEventListener('click', openResumeSetup);
@@ -3841,7 +3781,6 @@ $('quickBuildResume').addEventListener('click', () => {
   renderGuidedLaunch();
   startResumeInterview();
 });
-$('scanOpportunityPaths').addEventListener('click', scanOpportunityPaths);
 $('jobSectorFilter').addEventListener('change', event => {
   opportunitySector = event.target.value;
   const current = selectedOpportunityPath();
@@ -4052,7 +3991,8 @@ $('jobCards').addEventListener('pointermove', event => {
   const x = event.clientX - swipeGesture.startX;
   const y = event.clientY - swipeGesture.startY;
   if (Math.abs(x) <= Math.abs(y)) return;
-  swipeGesture.card.style.transform = `translateX(${Math.max(-120, Math.min(120, x))}px) rotate(${x / 35}deg)`;
+  swipeGesture.card.classList.toggle('is-dragging-right', x > 8);
+  swipeGesture.card.classList.toggle('is-dragging-left', x < -8);
   swipeGesture.card.dataset.swipeDirection = x > 24 ? 'right' : x < -24 ? 'left' : '';
 });
 function finishJobSwipe(event) {
@@ -4061,7 +4001,7 @@ function finishJobSwipe(event) {
   swipeGesture = null;
   const x = event.clientX - startX;
   const y = event.clientY - startY;
-  card.style.transform = '';
+  card.classList.remove('is-dragging-left', 'is-dragging-right');
   delete card.dataset.swipeDirection;
   if (Math.abs(x) < 72 || Math.abs(x) <= Math.abs(y)) return;
   if (x < 0) $('jobCards').querySelector('[data-swipe-pass]')?.click();
@@ -4070,7 +4010,7 @@ function finishJobSwipe(event) {
 $('jobCards').addEventListener('pointerup', finishJobSwipe);
 $('jobCards').addEventListener('pointercancel', event => {
   if (!swipeGesture || swipeGesture.pointerId !== event.pointerId) return;
-  swipeGesture.card.style.transform = '';
+  swipeGesture.card.classList.remove('is-dragging-left', 'is-dragging-right');
   delete swipeGesture.card.dataset.swipeDirection;
   swipeGesture = null;
 });
@@ -4265,13 +4205,24 @@ $('closeResumeSetup').addEventListener('click', closeResumeSetup);
 $('resumeOverlay').addEventListener('click', event => { if (event.target === $('resumeOverlay')) closeResumeSetup(); });
 $('resumeFile').addEventListener('change', async event => {
   try {
-    setResumeMessage('Reading the resume locally...');
+    $('quickResumeState').textContent = 'Reading resume…';
     const file = event.target.files[0];
     const text = await extractResumeFile(file);
     if (text.length < 100) throw new Error('The file did not contain enough readable resume text.');
-    $('resumeEditor').value = text;
-    setResumeMessage(`${file.name} is ready to review · ${text.length.toLocaleString()} characters extracted locally.`, 'good');
-  } catch (error) { setResumeMessage(error.message, 'warn'); }
+    const saved = saveResumeText(text, 'concierge-upload', file.name);
+    $('resumeEditor').value = saved;
+    $('quickUseSavedResume').hidden = false;
+    setResumeMessage(`${file.name} added.`, 'good');
+    closeResumeSetup();
+    showToast('Resume ready');
+    if (vaultEnabled()) backupResume(saved, file.name, false).catch(() => {});
+    if (guidedLaunchOpen && GUIDED_LAUNCH_STAGES[guidedLaunchStep] === 'resume') advanceGuidedLaunch();
+    else renderMission();
+  } catch (error) {
+    setResumeMessage(error.message, 'warn');
+    $('quickResumeState').textContent = error.message;
+    $('quickResumeState').classList.remove('ready');
+  }
 });
 $('buildResumeDraft').addEventListener('click', () => startResumeInterview());
 $('careerStoryResume').addEventListener('click', () => { closeResumeSetup(); startCareerStory(); });

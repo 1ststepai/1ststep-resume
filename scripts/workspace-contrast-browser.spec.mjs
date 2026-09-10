@@ -76,13 +76,11 @@ for (const theme of themes) for (const width of [375, 1440]) {
     await page.setViewportSize({width,height:900});
     await openWithTheme(page, `${base}/concierge`, theme);
     if(width === 375) {
-      const buttons = await page.locator('.agent-header nav button:visible').evaluateAll(nodes => nodes.map(n => ({font:parseFloat(getComputedStyle(n).fontSize),height:n.getBoundingClientRect().height})));
-      expect(buttons.length).toBeGreaterThan(0);
-      expect(buttons.every(b => b.font >= 11.2 && b.height >= 44)).toBe(true);
+      const menu = await page.locator('#appMenu > summary').evaluate(node => ({font:parseFloat(getComputedStyle(node).fontSize),height:node.getBoundingClientRect().height}));
+      expect(menu.font).toBeGreaterThanOrEqual(11.2);
+      expect(menu.height).toBeGreaterThanOrEqual(44);
     }
-    await page.locator('#openGuidedLaunch').click();
-    await page.locator('[data-guided-goal="best-fit"]').click();
-    await page.locator('#quickUploadResume').click();
+    await page.locator('#openResumeSetup').evaluate(button => button.click());
     await expect(page.locator('#resumeOverlay')).toHaveClass(/open/);
     const failures = await page.evaluate(AUDIT);
     expect(failures.length, explainFailures(`resume ${theme} ${width}px`, failures)).toBe(0);
