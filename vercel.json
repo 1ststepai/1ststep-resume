@@ -50,6 +50,9 @@
     "api/job-agent-operations.js": {
       "maxDuration": 15
     },
+    "api/affiliates.js": {
+      "maxDuration": 15
+    },
     "api/job-agent-discord-relay.js": {
       "maxDuration": 10
     },

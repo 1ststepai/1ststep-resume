@@ -158,8 +158,9 @@
       background: #141825;
       border: 1px solid #1e2538;
       border-radius: 12px;
-      overflow: hidden;
+      overflow-x: auto;
     }
+    .affiliate-section table { min-width: 880px; }
     table { width: 100%; border-collapse: collapse; }
     thead th {
       padding: 12px 18px;
@@ -179,6 +180,22 @@
     td.name { font-weight: 500; color: #f1f5f9; }
     td.email { color: #94a3b8; font-size: 0.82rem; }
     td.date  { color: #64748b; font-size: 0.8rem; white-space: nowrap; }
+
+    .affiliate-section { margin-top: 38px; }
+    .money { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .row-actions button {
+      border: 1px solid #334155;
+      border-radius: 6px;
+      background: #1e2538;
+      color: #cbd5e1;
+      cursor: pointer;
+      padding: 6px 9px;
+      font-size: 0.72rem;
+    }
+    .row-actions button:hover { background: #2d3748; color: #fff; }
+    .row-actions button:disabled { cursor: not-allowed; opacity: 0.45; }
+    .affiliate-note { color: #64748b; font-size: 0.78rem; margin: -6px 0 14px; }
 
     /* ─── Tag Badges ─── */
     .badge {
@@ -281,6 +298,23 @@
       </table>
     </div>
 
+    <section class="affiliate-section" aria-labelledby="affiliate-title">
+      <div class="section-title" id="affiliate-title">Affiliate program</div>
+      <p class="affiliate-note" id="affiliate-note">Loading the durable referral ledger…</p>
+      <div class="metrics">
+        <div class="card accent-blue"><div class="card-label">Tracked Referrals</div><div class="card-value loading" id="a-referrals">—</div><div class="card-sub">First-touch signups</div></div>
+        <div class="card accent-indigo"><div class="card-label">Pending</div><div class="card-value loading money" id="a-pending">—</div><div class="card-sub">Inside confirmation hold</div></div>
+        <div class="card accent-green"><div class="card-label">Payable</div><div class="card-value loading money" id="a-payable">—</div><div class="card-sub">Amount currently owed</div></div>
+        <div class="card"><div class="card-label">Paid</div><div class="card-value loading money" id="a-paid">—</div><div class="card-sub">Recorded payouts</div></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Partner</th><th>Status</th><th>Referrals</th><th>Paid referrals</th><th>Pending</th><th>Payable</th><th>Paid</th><th>Actions</th></tr></thead>
+          <tbody id="affiliate-tbody"><tr id="affiliate-empty"><td colspan="8">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
     <p style="font-size:0.72rem;color:#334155;margin-top:14px;text-align:right;" id="updated-at"></p>
   </main>
 </div>
@@ -305,7 +339,8 @@
   // ── Fetch stats ──────────────────────────────────────────────────────
   async function loadStats(isLogin = false) {
     try {
-      const res = await fetch(`/api/health?mode=admin&secret=${encodeURIComponent(secret)}`);
+      const headers = { 'x-admin-secret': secret };
+      const res = await fetch('/api/health?mode=admin', { headers });
 
       if (res.status === 401) {
         if (isLogin) {
@@ -324,10 +359,78 @@
 
       const data = await res.json();
       renderStats(data);
+      try {
+        const affiliateRes = await fetch('/api/affiliates?view=admin', { headers });
+        if (affiliateRes.ok) renderAffiliates(await affiliateRes.json());
+        else renderAffiliateUnavailable();
+      } catch (_) {
+        renderAffiliateUnavailable();
+      }
       hideError();
 
     } catch (err) {
       showError('Could not reach /api/admin-stats. Check that it is deployed.');
+    }
+  }
+
+  function dollars(cents) {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format((Number(cents) || 0) / 100);
+  }
+
+  function renderAffiliates(data) {
+    const totals = data.totals || {};
+    document.getElementById('a-referrals').textContent = Number(totals.referrals || 0).toLocaleString();
+    document.getElementById('a-pending').textContent = dollars(totals.pendingCents);
+    document.getElementById('a-payable').textContent = dollars(Math.max(0, Number(totals.payableCents || 0)));
+    document.getElementById('a-paid').textContent = dollars(totals.paidCents);
+    ['a-referrals','a-pending','a-payable','a-paid'].forEach(id => document.getElementById(id).classList.remove('loading'));
+    document.getElementById('affiliate-note').textContent = data.commissionsEnabled
+      ? `Commission ledger active · payout threshold ${dollars(data.minimumPayoutCents)}`
+      : 'Referral tracking is active. Commission accrual remains disabled until the paid-program policy is explicitly activated.';
+    const tbody = document.getElementById('affiliate-tbody');
+    if (!data.partners?.length) {
+      tbody.innerHTML = '<tr id="affiliate-empty"><td colspan="8">No registered partners yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.partners.map(partner => `
+      <tr>
+        <td class="name">${esc(partner.name)}<div class="email">${esc(partner.email)}</div><div class="date">${esc(partner.code)}</div></td>
+        <td><span class="badge ${partner.status === 'active' ? 'badge-paid' : partner.status === 'pending' ? 'badge-beta' : 'badge-free'}">${esc(partner.status)}</span></td>
+        <td>${Number(partner.referrals || 0).toLocaleString()}</td>
+        <td>${Number(partner.paidReferrals || 0).toLocaleString()}</td>
+        <td class="money">${dollars(partner.pendingCents)}</td>
+        <td class="money">${dollars(Math.max(0, Number(partner.payableCents || 0)))}</td>
+        <td class="money">${dollars(partner.paidCents)}</td>
+        <td><div class="row-actions">
+          ${partner.status !== 'active' ? `<button data-affiliate-action="approve" data-code="${esc(partner.code)}">Approve</button>` : `<button data-affiliate-action="suspend" data-code="${esc(partner.code)}">Suspend</button>`}
+          <button data-affiliate-action="record-payout" data-code="${esc(partner.code)}" ${Number(partner.payableCents || 0) < Number(data.minimumPayoutCents || Infinity) ? 'disabled' : ''}>Record payout</button>
+        </div></td>
+      </tr>`).join('');
+    tbody.querySelectorAll('[data-affiliate-action]').forEach(button => button.addEventListener('click', () => runAffiliateAction(button)));
+  }
+
+  function renderAffiliateUnavailable() {
+    document.getElementById('affiliate-note').textContent = 'Affiliate ledger unavailable. No zero-value assumption has been made.';
+    document.getElementById('affiliate-tbody').innerHTML = '<tr id="affiliate-empty"><td colspan="8">Affiliate data unavailable.</td></tr>';
+  }
+
+  async function runAffiliateAction(button) {
+    const action = button.dataset.affiliateAction;
+    const code = button.dataset.code;
+    const reference = action === 'record-payout' ? prompt(`Enter the completed PayPal transaction reference for ${code}. This records a payout; it does not send money.`) : '';
+    if (action === 'record-payout' && !reference) return;
+    button.disabled = true;
+    try {
+      const response = await fetch('/api/affiliates?view=admin', {
+        method: 'POST', headers: { 'content-type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ action, code, reference }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Affiliate action failed.');
+      await loadStats();
+    } catch (error) {
+      showError(error.message || 'Affiliate action failed.');
+      button.disabled = false;
     }
   }
 

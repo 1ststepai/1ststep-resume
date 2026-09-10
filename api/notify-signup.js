@@ -17,6 +17,7 @@
 export const maxDuration = 10;
 import { applyApiHeaders, authenticateApiRequest, hasJsonContentType, isOriginAllowed, requestIp } from '../lib/api-security.js';
 import { enforceDurableRateLimit, sendRateLimitResult } from '../lib/durable-rate-limit.js';
+import { affiliateProgramConfiguration, recordAffiliateSignup } from '../lib/affiliate-program.js';
 
 // ── HTML escape helper (EMAIL-01: prevents XSS in admin email) ───────────────
 function escHtml(s) {
@@ -139,9 +140,9 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, results: { ghl: 'skipped', email: 'skipped' } });
   }
 
-  const fullName  = [firstName, lastName].filter(Boolean).join(' ').trim() || email;
-  const results   = { ghl: null, email: null };
   const referralCode = cleanReferralCode(bodyReferralCode || referral.referralCode || referral.ref || '');
+  const fullName  = [firstName, lastName].filter(Boolean).join(' ').trim() || email;
+  const results   = { ghl: null, email: null, affiliate: referralCode ? null : 'not-referred' };
   const referralTags = referralCode ? ['partner_referral', `ref_${referralCode}`] : [];
 
   // Internal referral verification:
@@ -196,7 +197,23 @@ export default async function handler(req, res) {
     results.ghl = 'skipped';
   }
 
-  // ── 2. Admin email via Resend ─────────────────────────────────────────────
+  // ── 2. Durable affiliate attribution ──────────────────────────────────────
+  // GHL remains the CRM view; the dedicated ledger is the accounting source.
+  if (referralCode) {
+    try {
+      const attribution = await recordAffiliateSignup({
+        code: referralCode,
+        email,
+        capturedAt: referral.capturedAt,
+      }, { configuration: affiliateProgramConfiguration() });
+      results.affiliate = attribution.recorded ? 'recorded' : attribution.reason;
+    } catch (err) {
+      console.error(JSON.stringify({ type: 'affiliate-signup-error', name: err?.name || 'unknown' }));
+      results.affiliate = 'error';
+    }
+  }
+
+  // ── 3. Admin email via Resend ─────────────────────────────────────────────
   const resendKey = process.env.RESEND_API_KEY;
   if (resendKey) {
     try {

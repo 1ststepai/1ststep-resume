@@ -14,6 +14,9 @@
  *
  * Stripe events to enable in Dashboard:
  *   checkout.session.completed
+ *   invoice.paid
+ *   charge.refunded
+ *   charge.dispute.created
  *   customer.subscription.updated
  *   customer.subscription.deleted
  *   invoice.payment_failed
@@ -27,6 +30,10 @@ import {
 } from '../lib/stripe-webhook-idempotency.js';
 import { recordConfiguredJobAgentOperationalEvent } from '../lib/job-agent-operational-metrics.js';
 import { sendConfiguredJobAgentOperatorAlert } from '../lib/job-agent-operator-alert.js';
+import {
+  affiliateProgramConfiguration, bindAffiliateStripeCustomer, eligibleInvoiceCents,
+  newlyRefundedCents, recordAffiliateInvoicePaid, recordAffiliateReversal,
+} from '../lib/affiliate-program.js';
 
 // Webhooks must receive the raw body — disable body parsing
 export const config = { api: { bodyParser: false } };
@@ -255,6 +262,14 @@ async function getTierFromSession(stripe, sessionId) {
   }
 }
 
+async function stripeCustomerEmail(stripe, customer, fallback = '') {
+  if (fallback) return String(fallback).trim().toLowerCase();
+  const customerId = typeof customer === 'string' ? customer : customer?.id;
+  if (!customerId) return '';
+  const record = typeof customer === 'object' ? customer : await stripe.customers.retrieve(customerId);
+  return record?.deleted ? '' : String(record?.email || '').trim().toLowerCase();
+}
+
 // ── Main handler ─────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
@@ -322,6 +337,12 @@ export default async function handler(req, res) {
       const tierLabel = '1stStep Complete';
       console.log(JSON.stringify({ type: 'stripe-checkout-completed', outcome: 'observed' }));
 
+      if (email && session.customer) {
+        await bindAffiliateStripeCustomer({ email, customerId: typeof session.customer === 'string' ? session.customer : session.customer.id }, {
+          configuration: affiliateProgramConfiguration(),
+        });
+      }
+
       // Sync to GHL CRM
       await pushToGHL({ email, name, tier });
 
@@ -332,6 +353,51 @@ export default async function handler(req, res) {
         email,
         alertKey,
       );
+      break;
+    }
+
+    case 'invoice.paid': {
+      const invoice = event.data.object;
+      const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
+      const email = await stripeCustomerEmail(stripe, invoice.customer, invoice.customer_email || '');
+      if (email && customerId) {
+        await bindAffiliateStripeCustomer({ email, customerId }, { configuration: affiliateProgramConfiguration() });
+      }
+      if (customerId) {
+        const result = await recordAffiliateInvoicePaid({
+          eventId: event.id,
+          invoiceId: invoice.id,
+          customerId,
+          grossCents: eligibleInvoiceCents(invoice),
+          currency: invoice.currency,
+          paidAt: invoice.status_transitions?.paid_at ? new Date(invoice.status_transitions.paid_at * 1000) : new Date(event.created * 1000),
+        }, { configuration: affiliateProgramConfiguration() });
+        console.log(JSON.stringify({ type: 'affiliate-invoice-paid', outcome: result.recorded ? 'recorded' : result.reason }));
+      }
+      break;
+    }
+
+    case 'charge.refunded': {
+      const charge = event.data.object;
+      const invoiceId = typeof charge.invoice === 'string' ? charge.invoice : charge.invoice?.id;
+      const refundedGrossCents = newlyRefundedCents(event);
+      if (invoiceId && refundedGrossCents > 0) {
+        await recordAffiliateReversal({
+          eventId: event.id, invoiceId, refundedGrossCents, occurredAt: new Date(event.created * 1000),
+        }, { configuration: affiliateProgramConfiguration() });
+      }
+      break;
+    }
+
+    case 'charge.dispute.created': {
+      const dispute = event.data.object;
+      const charge = typeof dispute.charge === 'string' ? await stripe.charges.retrieve(dispute.charge) : dispute.charge;
+      const invoiceId = typeof charge?.invoice === 'string' ? charge.invoice : charge?.invoice?.id;
+      if (invoiceId && dispute.amount > 0) {
+        await recordAffiliateReversal({
+          eventId: event.id, invoiceId, refundedGrossCents: dispute.amount, occurredAt: new Date(event.created * 1000),
+        }, { configuration: affiliateProgramConfiguration() });
+      }
       break;
     }
 
