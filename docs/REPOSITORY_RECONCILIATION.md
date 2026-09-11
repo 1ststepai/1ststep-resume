@@ -2,6 +2,17 @@
 
 This is the read-only-first hygiene and release-readiness record for the local `1stStep.ai` umbrella workspace. Git, GitHub, Chrome Web Store, Vercel, tests, and on-disk state were freshly inspected on 2026-09-10. No merge, reset, force-push, production deployment, extension publication, pricing change, OAuth credential rotation, provider activation, or applicant-data operation was performed.
 
+## 2026-09-11 release follow-up (supersedes stale current-state claims below)
+
+- `origin/main` is now `d64e174`; Production `app.1ststep.ai` is Ready on deployment `dpl_9XzsbvSm8vrFQeprJEoYALSf45be`. No production promotion was performed in this follow-up.
+- PR #80 remains the sole consolidated app, partner-role, and extension v1.6 release path. Current implementation commit `4b344f5` includes merge commit `0f9dc3d`, which reconciles `origin/main`, plus the conservative ATS capability matrix and one-action employer blocker contract. The branch is clean, pushed, and mergeable; required GitHub checks restarted after the push.
+- A clean local `npm run release:gate` passed at `4b344f5`: 37 responsive/contrast browser checks, 23 extension browser checks, 88 intentional static assets, 44 API functions, database/capacity/rollback/CI/security gates, zero untracked files, and a content-free release preflight.
+- Production and the prior exact PR #80 Preview both returned Clerk identity disabled. Branch-scoped variable names exist, but at least one required value is still absent, malformed, or not applied. Authenticated persistence, partner-role access, extension-to-My-Jobs persistence, and final end-to-end Job Agent proof remain blocked until a new Preview returns `authentication.clerk.enabled: true` and completes a real sign-in flow.
+- The Chrome Web Store remains v1.3.2 while the consolidated candidate manifest is v1.6.0. PR #72 is now an overlapping, conflicting historical candidate and should be closed only after PR #80 CI and unique-patch review finish. No store publication was performed.
+- The agency-site conversion work was reconciled with its current `origin/main`, passed 97 tests and a production Vite build, and was pushed as `main-website` PR #2. It is not deployed to Production.
+- The live legacy resume path is usable and responsive, but continues to emit a production Tailwind-CDN warning. Its primary handoff to the authenticated Job Agent cannot be verified beyond sign-in until Clerk is enabled.
+- The dirty primary product checkout and historical worktrees remain preserved. They were not reset, deleted, or committed wholesale; PR #80 is the only release candidate.
+
 ## Executive result
 
 > Release follow-up: the inventory below remains the historical hygiene snapshot. PR #80 on `release/consolidated-job-agent-v1.6-20260910` is now the sole integration path for the verified v1.6 extension ancestry and PR #79 documentation. The candidate also replaces the rejected broad partner-preview history with a focused, encrypted partner-role workflow: explicit existing-user and affiliate-only paths, no implicit Job Agent data or entitlement, administrator-only approval, and account export/deletion coverage. Exact pushed-head CI, production configuration, authenticated mobile persistence, and source/deployment parity remain release gates; Chrome Web Store publication remains separately gated.
