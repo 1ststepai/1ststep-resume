@@ -84,6 +84,18 @@ assert.deepEqual(blocked.actions.map(item => item.type), [
 assert.equal(blocked.actions.at(-1).riskCategory, 'eligibility-screening');
 assert.equal(blocked.actions.at(-1).canSkipJob, true);
 assert.match(blocked.actions.at(-1).summary, /Potential eligibility screen/);
+assert.equal(blocked.nextAction, blocked.actions[0]);
+assert.deepEqual({
+  employer: blocked.nextAction.employer, role: blocked.nextAction.role, requisition: blocked.nextAction.requisition,
+  currentStep: blocked.nextAction.currentStep, exactBlocker: blocked.nextAction.exactBlocker,
+  why: blocked.nextAction.why, suggestedAnswer: blocked.nextAction.suggestedAnswer,
+  sourceFact: blocked.nextAction.sourceFact, primaryAction: blocked.nextAction.primaryAction,
+}, {
+  employer: 'Example Employer', role: 'Procurement Manager', requisition: 'REQ-100',
+  currentStep: 'employer_form', exactBlocker: 'Password',
+  why: 'Sign in directly on the verified employer page. Credentials are never collected by 1stStep.',
+  suggestedAnswer: null, sourceFact: null, primaryAction: 'Resolve',
+});
 assert.throws(() => validateEmployerWorkerCheckpoint(blocked, {}), /PLAN_BLOCKED/);
 assert.throws(() => planEmployerFormStep({ session, now: new Date('2026-08-29T20:20:00.000Z'), fields: [] }), /APPROVAL_REQUIRED/);
 assert.throws(() => planEmployerFormStep({ session, now: new Date('2026-08-29T20:02:00.000Z'), fields: [{ fieldRef: 'field_bad', fieldKey: 'email', label: 'Email', value: 'candidate@example.test' }] }), /FIELD_VALUES_FORBIDDEN/);

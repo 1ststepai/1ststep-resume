@@ -39,6 +39,9 @@
     "api/job-agent-runs.js": {
       "maxDuration": 45
     },
+    "api/captured-jobs.js": {
+      "maxDuration": 20
+    },
     "api/job-agent-worker.js": {
       "maxDuration": 60,
       "includeFiles": "node_modules/{@napi-rs,pdfjs-dist,pdfkit}/**/*"
@@ -66,6 +69,9 @@
       "maxDuration": 180
     },
     "api/user-session.js": {
+      "maxDuration": 15
+    },
+    "api/partner.js": {
       "maxDuration": 15
     },
     "api/account-data.js": {
@@ -130,6 +136,10 @@
     {
       "source": "/app/resume",
       "destination": "/app.html"
+    },
+    {
+      "source": "/partner",
+      "destination": "/partner.html"
     },
     {
       "source": "/funnel",
@@ -223,6 +233,19 @@
         {
           "key": "Content-Security-Policy",
           "value": "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' https://clerk.1ststep.ai https://challenges.cloudflare.com https://*.protect.clerk.com; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://img.clerk.com; connect-src 'self' https://clerk.1ststep.ai https://*.protect.clerk.com:*; frame-src 'self' https://challenges.cloudflare.com https://*.protect.clerk.com; worker-src 'self' blob:; upgrade-insecure-requests"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/partner",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src 'none'; upgrade-insecure-requests"
         },
         {
           "key": "Cache-Control",

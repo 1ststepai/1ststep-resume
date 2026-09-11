@@ -156,8 +156,10 @@ for (const requiredFunction of [
   'health.func',
   'app-config.func',
   'concierge-state.func',
+  'captured-jobs.func',
   'job-agent-runs.func',
   'user-session.func',
+  'partner.func',
   'health/live.func',
   'health/ready.func',
   'health/dependencies.func',
@@ -166,11 +168,11 @@ for (const requiredFunction of [
   assert(functionNames.has(requiredFunction), `Expected serverless API function missing: api/${requiredFunction}`);
 }
 assert(functionNames.has('job-agent-discord-relay.func'), 'Expected serverless API function missing: api/job-agent-discord-relay.func');
-assert.equal(functionNames.size, 42, `Unexpected API function count: ${functionNames.size}`);
+assert.equal(functionNames.size, 44, `Unexpected API function count: ${functionNames.size}`);
 
 const outputConfig = JSON.parse(await readFile(path.join(outputRoot, 'config.json'), 'utf8'));
 const routeText = JSON.stringify(outputConfig.routes || []);
-for (const route of ['/app', '/concierge', '/pricing', '/terms', '/privacy']) {
+for (const route of ['/app', '/partner', '/concierge', '/pricing', '/terms', '/privacy']) {
   assert(routeText.includes(route), `Expected route missing from Vercel output config: ${route}`);
 }
 assert(routeText.includes('/api'), 'Expected API function routing missing from Vercel output config');

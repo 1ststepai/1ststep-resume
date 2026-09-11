@@ -28,13 +28,14 @@ This release source contains an opt-in foundation for Clerk identity, Neon Postg
 - Store candidate documents only as application-encrypted ciphertext with opaque object keys.
 - Never expose a public bucket or public object URL.
 - Use the existing short-lived HTTP-only application session after Clerk verification.
+- Use Clerk development keys (`pk_test_` / `sk_test_`) on Vercel `*.vercel.app` Previews and require production keys (`pk_live_` / `sk_live_`) in Production; never share Production identity data with an independent Preview.
 - Preserve action-time confirmation before employer transmission or submission.
 - Ensure every tenant-bound database transaction sets `app.tenant_id`; RLS is enabled and forced by the migration.
 - Keep a separate database migration role. The runtime role must have only the table and sequence privileges its APIs require.
 
 ## Current gaps before user-facing activation
 
-1. Provider accounts and development credentials have not been provisioned.
+1. PR #80's isolated non-provider Preview secrets are provisioned, but its three Clerk development values and live provider-backed sign-in remain pending.
 2. The migration has not been executed against a real Neon development branch.
 3. A least-privileged Neon application role and grants must be created and verified.
 4. The current static frontend still uses the existing email-code access interface; Clerk UI has not been connected because that requires the real Clerk publishable configuration and a reviewed CSP/source bundle.

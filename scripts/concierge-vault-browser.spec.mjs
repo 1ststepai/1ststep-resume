@@ -278,6 +278,39 @@ test('a stale legacy bearer is never sent to the Job Agent and returns to opaque
   await expect(page.locator('#agentAccessCredentialFields')).toBeHidden();
 });
 
+test('sign-in shows immediate progress while email and verification requests are pending', async ({ page }) => {
+  let releaseSend;
+  let releaseVerify;
+  const sendPending = new Promise(resolve => { releaseSend = resolve; });
+  const verifyPending = new Promise(resolve => { releaseVerify = resolve; });
+  await page.route('**/api/app-config', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ authentication: { restoreAccessAvailable: true } }),
+  }));
+  await page.route('**/api/subscription*', async route => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get('action') === 'restore-code') {
+      await sendPending;
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ restoreChallenge: 'synthetic-challenge' }) });
+    }
+    await verifyPending;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ tier: 'free', status: 'inactive' }) });
+  });
+  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await page.locator('#openAgentAccess').click();
+  await page.locator('#agentAccessEmail').fill('candidate@example.test');
+  await page.locator('#verifyAgentAccess').click();
+  await expect(page.locator('#verifyAgentAccess')).toHaveText('Sending code…');
+  await expect(page.locator('#agentAccessMessage')).toHaveText('Sending a one-time code…');
+  releaseSend();
+  await expect(page.locator('#verifyAgentAccess')).toHaveText('Verify existing access');
+  await page.locator('#agentAccessCode').fill('123456');
+  await page.locator('#verifyAgentAccess').click();
+  await expect(page.locator('#verifyAgentAccess')).toHaveText('Verifying…');
+  await expect(page.locator('#agentAccessMessage')).toHaveText('Verifying your code…');
+  releaseVerify();
+  await expect(page.locator('#agentAccessMessage')).toContainText('No current controlled-beta access');
+});
+
 test('a signed but non-invited pilot user keeps data controls without agent access', async ({ page }) => {
   await page.route('**/api/session-capabilities*', route => route.fulfill({
     status: 200, contentType: 'application/json',

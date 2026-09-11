@@ -53,6 +53,7 @@ test('controlled Greenhouse adapter fills only server-authorized ordinary fields
         <label for="first_name">First name</label><input id="first_name" name="first_name" required>
         <label for="email_address">Email</label><input id="email_address" name="email" type="email" required>
         <label for="resume_upload">Resume upload</label><input id="resume_upload" name="resume" type="file" required>
+        <label for="start_date">Available start date</label><input id="start_date" name="start_date" required>
         <label for="veteran_status">Veteran status</label><select id="veteran_status" name="veteran_status"><option value="">Unanswered</option><option>Prefer not to answer</option></select>
         <button id="submit" type="submit">Submit application</button>
       </form><script>window.__submitted=false;document.querySelector('form').addEventListener('submit',e=>{e.preventDefault();window.__submitted=true})</script>
@@ -96,11 +97,14 @@ test('controlled Greenhouse adapter fills only server-authorized ordinary fields
   await expect(page.locator('#email_address')).toHaveValue('');
   await expect(page.locator('#resume_upload')).toHaveValue('');
   const result = await page.evaluate(() => window.__sendExtensionMessage({ action: 'AUTOFILL', confirmPrecision: true }));
-  expect(result).toMatchObject({ success: true, filled: 3, total: 3, submitted: false, receiptVerified: false });
+  expect(result).toMatchObject({ success: true, filled: 3, total: 3, reviewCount: 1, reviewLabels: ['Available start date'], submitted: false, receiptVerified: false });
   await expect(page.locator('#first_name')).toHaveValue('Jordan');
   await expect(page.locator('#email_address')).toHaveValue('jordan@example.test');
   await expect(page.locator('#resume_upload')).toHaveValue(/fixture-role-resume\.pdf$/);
   await expect(page.locator('#veteran_status')).toHaveValue('');
+  await expect(page.locator('#start_date')).toHaveAttribute('data-firststep-needs-review', 'true');
+  await expect(page.locator('#firststep-fill-summary')).toContainText('1 highlighted field still needs you');
+  await expect(page.locator('#firststep-fill-summary')).toContainText('Nothing was submitted');
   expect(await page.evaluate(() => window.__submitted)).toBe(false);
 
   const messages = await page.evaluate(() => window.__bridgeMessages);
