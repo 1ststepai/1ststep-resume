@@ -10,7 +10,7 @@
     "test:answer-memory": "node scripts/application-answer-memory-test.mjs",
     "build:web": "node build-public-web.mjs",
     "build": "npm run build:web",
-    "smoke": "node scripts/job-agent-operator-bridge-test.mjs && node scripts/admin-cost-dashboard-test.mjs && node scripts/job-agent-discord-relay-test.mjs && node scripts/smoke-test.cjs",
+    "smoke": "node scripts/operating-system-contract-test.mjs && node scripts/job-agent-operator-bridge-test.mjs && node scripts/admin-cost-dashboard-test.mjs && node scripts/job-agent-discord-relay-test.mjs && node scripts/smoke-test.cjs",
     "benchmark:ai-routing": "node scripts/ai-routing-shadow-benchmark.mjs",
     "test:homepage": "node scripts/homepage-motion-test.mjs && node scripts/site-theme-test.mjs && node scripts/resume-visual-journey-test.mjs && node scripts/resume-standalone-test.mjs",
     "test:theme-contrast": "playwright test scripts/theme-contrast-browser.spec.mjs --workers=1",

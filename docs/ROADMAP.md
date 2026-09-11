@@ -1,203 +1,115 @@
-# ROADMAP.md — 1stStep.ai
-> Single source of truth for what's built, what's next, and what's been cut.
-> Aider: read this before starting any task. Do not build anything in FUTURE without explicit instruction. Do not re-build anything marked RETIRED.
+# 1stStep.ai Roadmap
 
----
+This is the execution queue for the app, Chrome extension, resume site, partner site, and shared platform. Read `docs/OPERATING_SYSTEM.md` first. Status is evidence-based; `unknown` means the required evidence was unavailable.
 
-## ✅ SHIPPED — Do Not Rebuild
+## Verified baseline — 2026-09-10
 
-| Feature | Notes |
-|---|---|
-| Resume tailoring (ATS + DOCX download) | Free: 3x Haiku lifetime · Complete: unlimited Sonnet |
-| Cover letter generation | Complete tier only |
-| Application tracker | With status + follow-up dates |
-| Interview Cheat Sheet v2 | Complete tier only |
-| LinkedIn OAuth sign-in | Profile auto-fill on signup |
-| LinkedIn PDF import | Resume import via PDF.js — keep |
-| GHL CRM integration | Contacts, tags, pipeline stages |
-| Beta email blast infra | health.js — blast + backfill actions |
-| Application event tracking | track-event.js — fires GHL tags on milestones |
-| Stripe payment + tierToken | HMAC signed, 20 min TTL, no per-call Stripe hits |
-| Stripe webhook handling | checkout.session.completed + subscription events |
+- Source of truth: `1ststepai/1ststep-resume`, current `origin/main` `8a6ba82` at inspection time.
+- The four requested surfaces share this repository but deploy independently.
+- `app.1ststep.ai`, `resume.1ststep.ai`, and `partners.1ststep.ai` returned HTTP 200 from Ready production deployments.
+- Public pricing is aligned: invitation-only free beta, future 1stStep Complete at $39/month, no active paid checkout, and no automatic conversion.
+- Chrome Web Store release: v1.3.2. `main` manifest: v1.5.0. Open PR #72: v1.6 durable-capture candidate, mergeable with green reported checks.
+- Local main baseline passed `npm run smoke`, `npm run build`, and `npm run test:extension-release` (17 browser tests). These checks do not prove production persistence or store compatibility.
+- The unauthenticated readiness request returned `AUTH_REQUIRED`; production database, encryption, worker, and tenant-isolation runtime health are therefore `unknown` in this pass.
+- Forty-four registered worktrees were inspected. Twelve were dirty before reconciliation and eight remain dirty after only generated or already-preserved duplicate changes were cleaned. The operating-system branch uses a clean worktree from `origin/main`.
 
----
+## Now
 
-## ✕ RETIRED — Do Not Touch or Rebuild
+### N1. Auth/access correctness and one-session sign-in
 
-| Feature | Why cut |
-|---|---|
-| Job Search (Adzuna + Indeed) | Fragile scraper, not core value prop. Replace jobs.js with URL/paste JD input |
-| Bulk Apply | Undermines brand, no retention value, Wrong product direction |
-| Essential tier ($49/mo) | Collapsed to Free / Complete only. Map existing Essential users → Complete |
+- **Owner:** App and shared platform
+- **Status:** Implemented in source; live end-to-end proof incomplete
+- **Acceptance criteria:** A new and returning user completes one Clerk sign-in; the server exchanges the verified identity for one opaque Secure HttpOnly session; refresh restores access; sign-out revokes the current session; all-device sign-out revokes all sessions; tenant identity conflict and unavailable Postgres fail clearly; the extension receives capability state but never a token.
+- **Dependencies:** Clerk configuration, Redis session store, Postgres identity binding, exact allowed origins, controlled-beta policy.
+- **External blockers:** Authenticated test account and protected runtime evidence.
+- **Security/release risks:** Legacy bearer migration, stale sessions, provider-subject collision, preview/production origin drift.
 
----
+### N2. Persistent onboarding, profile, and resume data
 
-## 🔴 FIX FIRST — In Priority Order
+- **Owner:** App and shared platform
+- **Status:** Applicant-vault and lifecycle contracts exist; production runtime proof is unknown
+- **Acceptance criteria:** User-confirmed facts and the reviewed master resume survive refresh and sign-out/sign-in, remain tenant-isolated, use optimistic concurrency and idempotency, export completely, delete completely, and never store prohibited secrets or unconfirmed consequential answers.
+- **Dependencies:** N1; encrypted durable store; independently verified schema/RLS/runtime evidence; retention and recovery evidence.
+- **External blockers:** Valid isolated database review and protected synthetic lifecycle drill.
+- **Security/release risks:** Source/schema parity is not runtime authorization; do not migrate applicant data or enable Postgres from repository evidence alone.
 
-These block the next phase of the product. Complete in order.
+### N3. Truth-safe resume generation and review
 
-### 1. Retire jobs.js + free the Vercel slot
-- **STATUS:** ⚠️ NOT SHIPPED. `api/jobs.js` still exists and is still wired up: `app.js` calls `/api/jobs`, `vercel.json` keeps the function entry and two rewrites, and `app.html` (served at `/app/resume`) loads `app.js`. Legacy search is still reachable. Corrected 2026-09-04.
-- **Why now:** Frees 1 of 12 Vercel function slots. Nothing else can be built without this.
-- **See:** BUG-001, BUG-002
+- **Owner:** App
+- **Status:** Implemented draft/artifact safeguards; production provider and render evidence remain gated
+- **Acceptance criteria:** Generation uses only versioned confirmed facts and the verified job snapshot; unsupported claims fail review; users can inspect and revise output; downloadable artifacts pass text, pagination, integrity, and isolated-render checks; failures never appear as ready.
+- **Dependencies:** N2; provider budgets; document-render evidence.
+- **External blockers:** Paid-provider and sandbox activation require explicit approval.
+- **Security/release risks:** Fabricated facts, stale source versions, unsafe files, or render mismatch.
 
-### 2. Collapse Essential tier → Free/Complete
-- Remove `essential` branch from `subscription.js` and `claude.js`
-- Map existing Essential subscribers to Complete
-- Remove Essential from all UI tier checks
-- Archive (don't delete) Essential Stripe product
-- **See:** BUG-004
+### N4. Greenhouse capture reliability release
 
-### 3. Remove Bulk Apply from nav + codebase
-- Remove from nav
-- Delete `bulk_apply` callType from `claude.js`
-- Remove any Bulk Apply UI components
-- **See:** BUG-008
+- **Owner:** Chrome extension, app, and shared platform
+- **Status:** Built in PR #72; not on `main`; not published
+- **Acceptance criteria:** From a real supported Greenhouse listing, a signed-in user captures once; the exact job appears exactly once in My Jobs; it survives refresh and sign-out/sign-in; replay and concurrent delivery return the same record; unsupported, closed, unverifiable, auth, consent, storage, and network failures are visible and honest; the extension retires its transient copy only after durable acknowledgement; account export/deletion includes the record; the extension never submits.
+- **Dependencies:** N1 and N2 runtime evidence; PR #72 review; public ATS source allowlist; compatible app deployment and controlled extension artifact.
+- **External blockers:** Authenticated supervised Greenhouse fixture, explicit production deployment approval, and Chrome Web Store owner publication.
+- **Security/release risks:** Published v1.3.2/main v1.5.0/candidate v1.6 fragmentation; 90-day captured-record retention; server/app/extension version skew; a local passing fixture is not employer-page proof.
 
-### 4. Fix landing page pricing + copy
-- Full checklist in BUG-009
-- Update pricing cards, hero CTA, Stripe links, FAQs
-- Add SEO/OG meta tags (BUG-010)
-- **Why now:** Landing page is live and showing wrong prices. Every visitor sees broken pricing.
+### N5. My Jobs usability and failure recovery
 
-### 5. Add localStorage → Supabase cloud backup
-- Email-keyed sync, localStorage remains primary
-- Unblocks: multi-device, data recovery, Chrome Extension profile sync
-- **See:** BUG-003, EXT-BUG-001
+- **Owner:** App
+- **Status:** Partially implemented
+- **Acceptance criteria:** Every durable job has one understandable state and next action; empty/loading/error/expired/closed/duplicate/outcome-unknown states are distinct; refresh never duplicates or silently discards a job; no pre-receipt state counts as Submitted or successful.
+- **Dependencies:** N4 and canonical state mapping in `docs/SIMPLE_JOB_AGENT_UX.md`.
+- **External blockers:** First-time-user supervised test.
+- **Security/release risks:** Local browser state masking durable-store failures; misleading success language.
 
----
+## Next
 
-## 🟡 NEXT — After Fixes Are Done
+### Cross-site truth and navigation contract
 
-These are the next features to build, in priority order.
+- **Owner:** App, resume site, partner site, and extension listing
+- **Acceptance criteria:** Pricing, beta access, ATS scope, retention, privacy, support, and final-submission language match the deployed product; all navigation reaches the canonical destination; a deterministic drift test covers maintained sources.
+- **Dependencies:** Stable N1–N5 release contract.
+- **External blockers:** Separate approval for any pricing or legal-policy change.
 
-### Nav restructure
-- Demote LinkedIn optimizer out of main nav → "More Tools"
-- Reclaim slot for "Backup / Sync" status indicator
-- Keep LinkedIn OAuth and PDF import — just move the optimizer
+### Partner portal clarity and strict isolation
 
-### Auto-create tracker entry on tailor
-- When user completes a tailor, auto-add to application tracker with job title + company pre-filled
-- Zero-friction path to 5+ saved applications = primary retention hook
+- **Owner:** Partner site and shared platform
+- **Acceptance criteria:** Browser-local utilities are labeled non-authoritative; job-seeker data is inaccessible; a future authenticated ledger, if approved, exposes only the signed-in partner's eligible attribution; beta signups never appear as earned commission.
+- **Dependencies:** Approved partner identity, attribution, payout, privacy, and dispute policy.
+- **External blockers:** Commercial/legal approval and a durable partner data model.
 
-### Rate limiting on claude.js
-- Upstash Redis sliding window
-- Free: 3 lifetime tailors (already enforced via tierToken, add IP guard)
-- Complete: 50 calls/hour soft cap, 200/day hard cap
-- **See:** BUG-005
+### Operational release evidence
 
-### UX: Loading states + error boundaries
-- Add "warming up…" message for first 3s of any AI call
-- Add retry UI on AI call failure
-- **See:** BUG-006, BUG-007
+- **Owner:** Shared platform
+- **Acceptance criteria:** Protected readiness, worker heartbeat, encrypted-store lifecycle, backup/restore, audit, capacity, rollback, and live asset/source parity evidence is current, content-free, retained, and bound to the exact release.
+- **Dependencies:** Approved environment and test budget.
+- **External blockers:** Production credentials and operator authorization.
 
-### Split index.html — Phase 1
-- Extract `tracker.js` (application tracker)
-- Extract `auth.js` (LinkedIn OAuth + session)
-- One module per PR — do not attempt a full rewrite
-- **See:** BUG-012
+## Later
 
----
+- Additional ATS capture only after Greenhouse meets the N4 acceptance criteria in production.
+- Optional notifications after persistence, suppression, provider delivery evidence, and user opt-in are proven.
+- Employer-browser assistance only through its separately approved no-submit gate.
+- Mobile and ChatGPT integrations only after the canonical identity/profile/My Jobs contracts are stable.
+- Growth surfaces, campaigns, and partner automation only after product truth and attribution are durable.
 
-## ◈ FUTURE — Do Not Start Without Explicit Instruction
+## Explicit non-goals
 
-These are planned but not yet scoped. Do not begin any of these unless explicitly told to.
+- Autonomous job search or applying beyond the controlled direct-employer discovery contract.
+- Auto-submit, employer-account automation, credential handling, CAPTCHA/OTP handling, or outcome invention.
+- Broad multi-ATS claims or permissions before one Greenhouse flow is proven.
+- Production database activation, applicant migration, billing, price changes, paid providers, emails, campaigns, waitlists, partner payouts, or external automations without explicit approval.
+- New abstractions, frameworks, or duplicate ledgers when an existing contract can be reused.
 
-| Feature | Notes |
-|---|---|
-| AI Career Chat | Complete tier · Sonnet · 2k token/day cap · resume+JD as system context |
-| Chrome Extension — 1-click apply | Greenhouse + Lever first, then LinkedIn. Blocked by EXT-BUG-001 until Supabase sync is done |
-| Interview Prep — promote | Surface more prominently in UI. High-intent repeat visit driver |
-| Notification engine | Follow-up nudges, application decay alerts. Requires cloud persistence |
-| Market Relevancy Score | Resume vs. current job market. Complete tier upsell hook |
-| Multi-device sync | Requires Supabase cloud backup first |
-| Streaming AI responses | Better UX for long tailoring calls. Add token budget guard first |
-| Stripe trial period | 7-day `trial_period_days` in Checkout. Send day-5 reminder via GHL/Resend |
+## Progress log — append only
 
----
+### 2026-09-10 — Ecosystem reset and operating-system baseline
 
-## Chrome Extension — Separate Track
-
-The extension is a future feature, not the current sprint. It has its own dependency chain.
-
-### Extension build order (when ready):
-1. **Supabase cloud sync first** — extension cannot read localStorage from app.1ststep.ai (different origin). Without cloud sync, there's no resume to autofill with.
-2. **"Copy to Extension" bridge** — button in web app writes profile to `chrome.storage` via deep link. Temporary workaround until Supabase is live.
-3. **Greenhouse + Lever content scripts first** — stable selectors, predictable HTML, high ROI
-4. **Popup + Side Panel UI** — toolbar popup + Chrome Side Panel API (MV3, Chrome 114+)
-5. **autofill callType in claude.js** — returns structured JSON for form fields. Add via `?action=` param (no new Vercel function)
-6. **GHL extension tags** — `extension_install`, `extension_apply`, `extension_autofill` in `track-event.js`
-7. **LinkedIn Easy Apply** — after Greenhouse/Lever are solid
-8. ~~**Workday**~~ — retired 2026-09-04; files deleted, not planned
-
-### Extension file structure (reference):
-```
-1ststep-extension/
-├── manifest.json         # MV3
-├── background.js         # Service worker — auth token, message routing
-├── content.js            # Shared detector — fires on all matched URLs
-├── popup.html/js         # Toolbar popup
-├── sidepanel.html/js     # Chrome Side Panel API
-├── sites/
-│   ├── greenhouse.js     # Start here — stable selectors
-│   ├── lever.js          # Start here — stable selectors
-│   ├── linkedin.js       # Multi-step modal — selectors change often
-│   ├── indeed.js         # iframe-based, cross-frame messaging needed
-└── utils/
-    ├── auth.js           # tierToken fetch + cache in chrome.storage
-    └── filler.js         # Generic field fill (input, select, textarea, file)
-```
-
----
-
-## API Function Slots — Track Carefully
-
-**Current: 12/12 on Vercel Hobby. AT LIMIT.**
-
-| File | Purpose | Slot |
-|---|---|---|
-| claude.js | AI proxy — tailor, cover_letter, interview, utility, chat | ✅ keep |
-| jobs.js | ⚠ RETIRING — replace with paste/URL input | 🗑 free this slot |
-| subscription.js | Stripe tier lookup + LinkedIn OAuth | ✅ keep |
-| health.js | Admin/cron — email blasts + GHL backfill | ✅ keep |
-| notify-signup.js | New user signup → GHL + welcome email | ✅ keep |
-| track-event.js | CRM event tagging | ✅ keep |
-| ghl-stage.js | GHL pipeline stage updates | ✅ keep |
-| stripe-webhook.js | Stripe subscription events | ✅ keep |
-| tally-webhook.js | Tally form submissions (beta) | ✅ keep |
-| beta.js | Beta access management | ✅ keep |
-| beta-expiry-check.js | Daily cron — expire beta users | ✅ keep (consolidate with beta.js later) |
-| app-config.js | Feature flags + tier limits to frontend | ✅ keep |
-| _alert.js | Resend alert helper — NOT a route (underscore prefix) | exempt |
-
-**Rule:** Add new functionality via `?action=` params on existing files. Never create a new `/api/*.js` file without retiring one first.
-
----
-
-## AI Visibility / Growth Track (Separate from Engineering)
-
-Not engineering tasks — tracked here for completeness.
-
-### Week 1 (free, fast):
-- [ ] Create G2 vendor profile — fill every field
-- [ ] Create Capterra listing
-- [ ] Create Trustpilot business profile
-- [ ] Launch on Product Hunt
-- [ ] Add `Organization` + `Product` + `FAQPage` schema to landing page
-- [ ] Create `/llms.txt` at site root listing key pages
-- [ ] Add OG / Twitter card meta tags
-- [ ] Standardise brand name: always "1stStep.ai" everywhere
-
-### Week 2–3:
-- [ ] Email 5 "best AI resume builder" roundup authors for inclusion
-- [ ] Post helpful answers in r/resumes + r/jobs (no spam)
-- [ ] Answer 3+ Quora questions about resume tailoring
-- [ ] Write first blog post: "How to tailor a resume for ATS in 2025"
-- [ ] Create "1stStep.ai vs Teal" comparison page
-
-### Month 2:
-- [ ] GHL day-7 review request email to all users
-- [ ] Target: 25 reviews across G2 + Trustpilot + Capterra
-- [ ] Display review count + star rating on landing page with Review schema
-- [ ] Record 1 YouTube walkthrough (real resume, real result)
-- [ ] Submit to AlternativeTo, SaaSHub, Slant
+- Inspected four Git markers: the authoritative `1ststep-resume` repository, an unrelated commission prototype, a broader corporate-site repository, and an uninitialized release staging repository. The four requested product surfaces resolve to the authoritative repository.
+- Inspected all 44 registered worktrees. Preserved unique and blocked work; cleaned four worktrees only where generated output or exact merged duplicates were proven.
+- Verified source branch, remotes, manifests, PR #72, deployment projects/aliases, live HTTP state, public pricing, auth boundaries, schema/RLS source, extension capture flow, and available test commands.
+- Established these operating documents on a clean branch from current `origin/main`.
+- Added `scripts/operating-system-contract-test.mjs` to the standard smoke command so future changes cannot silently remove the required operating files or core approval/receipt rules.
+- Baseline checks passed: smoke, public build, and extension release suite with 17 browser tests.
+- Independently checked PR #72 at `5c30d77`: its extension release suite passed 23 browser tests plus captured-job persistence, replay, tenant-isolation, public-source verification, closed/fail-closed behavior, and promotion tests; smoke and build also passed.
+- Remaining risk: protected production runtime health and authenticated end-to-end behavior are still unknown.
+- Recorded the complete repository, branch, worktree, PR, environment-file, deployment, and dirty-change audit in `docs/REPOSITORY_RECONCILIATION.md`.
+- Preserved the unique comprehensive UX audit as local commit `acad40b` and the tested agency-site work as local commit `a0e7f10`; neither was pushed.
