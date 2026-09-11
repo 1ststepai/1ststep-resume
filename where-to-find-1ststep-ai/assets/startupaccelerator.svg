@@ -1,0 +1,30 @@
+<svg class="logo-mark" viewBox="0 0 64 64" role="img" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="accel-lens" cx="38%" cy="32%" r="70%"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".24" stop-color="#FFF5F2"/><stop offset=".56" stop-color="#FF9C91"/><stop offset="1" stop-color="#A20F10"/></radialGradient>
+    <linearGradient id="accel-left" x1="1" y1=".5" x2="0" y2=".5"><stop stop-color="#FFF" stop-opacity=".9"/><stop offset=".22" stop-color="#FFB7AF" stop-opacity=".62"/><stop offset="1" stop-color="#D63B3B" stop-opacity="0"/></linearGradient>
+    <linearGradient id="accel-right" x1="0" y1=".5" x2="1" y2=".5"><stop stop-color="#FFF" stop-opacity=".9"/><stop offset=".22" stop-color="#FFB7AF" stop-opacity=".62"/><stop offset="1" stop-color="#D63B3B" stop-opacity="0"/></linearGradient>
+    <linearGradient id="accel-hull" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFFFFF"/><stop offset=".48" stop-color="#F7F4F3"/><stop offset="1" stop-color="#DDD6D6"/></linearGradient>
+    <linearGradient id="accel-thrust" x1=".5" y1="0" x2=".5" y2="1"><stop stop-color="#FFFFFF" stop-opacity=".95"/><stop offset=".26" stop-color="#FF9C91" stop-opacity=".78"/><stop offset="1" stop-color="#D63B3B" stop-opacity="0"/></linearGradient>
+    <filter id="accel-bloom" x="-180%" y="-180%" width="460%" height="460%"><feGaussianBlur stdDeviation="3.8"/></filter>
+    <filter id="accel-core-bloom" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="1.15" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <ellipse class="accel-ground" cx="32" cy="58.5" rx="17" ry="2.2" fill="#A20F10" opacity=".28" filter="url(#accel-bloom)"/>
+  <g aria-hidden="true">
+    <circle class="accel-halo" cx="32" cy="24" r="10.5" fill="#D63B3B" opacity=".26" filter="url(#accel-bloom)"/>
+    <path class="accel-streak-left" d="M20.5 30.4 1 27.8v5.6l19.5.4z" fill="url(#accel-left)" opacity="0" filter="url(#accel-core-bloom)"/>
+    <path class="accel-streak-right" d="M43.5 30.4 63 27.8v5.6l-19.5.4z" fill="url(#accel-right)" opacity="0" filter="url(#accel-core-bloom)"/>
+    <path class="accel-streak-left" d="M20.5 38.2 6 36.4v4.4l14.5.3z" fill="url(#accel-left)" opacity="0"/>
+    <path class="accel-streak-right" d="M43.5 38.2 58 36.4v4.4l-14.5.3z" fill="url(#accel-right)" opacity="0"/>
+  </g>
+  <g class="accel-craft">
+    <path class="accel-thrust" d="M25.6 39.5h12.8L32 59z" fill="url(#accel-thrust)" opacity=".85" filter="url(#accel-core-bloom)"/>
+    <path d="M22.4 30.6 13.2 46.4l9.2-6.1zM41.6 30.6l9.2 15.8-9.2-6.1z" fill="url(#accel-hull)" stroke="#242323" stroke-width="3.4" stroke-linejoin="miter"/>
+    <path d="M32 5.6c6.9 7.6 10.6 16 10.6 24v10.6H21.4V29.6c0-8 3.7-16.4 10.6-24z" fill="url(#accel-hull)" stroke="#242323" stroke-width="3.8" stroke-linejoin="miter"/>
+    <path d="M21.4 40.2h21.2" stroke="#242323" stroke-width="3.4" stroke-linecap="square"/>
+    <path d="M27.6 46.4h8.8" stroke="#A20F10" stroke-width="3.4" stroke-linecap="square"/>
+    <circle cx="32" cy="24" r="6.8" fill="none" stroke="#D63B3B" stroke-opacity=".22" stroke-width="1.1"/>
+    <circle class="accel-sweep" cx="32" cy="24" r="6.8" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="7 36" filter="url(#accel-core-bloom)"/>
+    <circle class="accel-core" cx="32" cy="24" r="4.45" fill="url(#accel-lens)" stroke="#870C0D" stroke-width="1.1" filter="url(#accel-core-bloom)"/>
+    <ellipse class="accel-glint" cx="30.55" cy="22.6" rx="1.35" ry="1" fill="#FFFFFF" opacity=".8"/>
+  </g>
+</svg>
