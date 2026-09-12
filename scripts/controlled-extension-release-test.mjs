@@ -18,13 +18,13 @@ try {
   assert.deepEqual(names, [
     'RELEASE-INTEGRITY.json', 'auth-bridge.js', 'background.js', 'content.js', 'generic-capture.js',
     'icons/icon-128.png', 'icons/icon-16.png', 'icons/icon-48.png', 'manifest.json',
-    'popup.html', 'popup.js', 'sidepanel.html', 'sidepanel.js',
+    'popup.html', 'popup.js',
   ].sort());
   assert.equal(names.some(name => /(?:^|\/)(?:sites|utils)\//.test(name)), false);
   assert.equal(names.some(name => /screenshot|store_listing|testing_guide|hook|result/i.test(name)), false);
 
   const releaseManifest = JSON.parse(await zip.file('RELEASE-INTEGRITY.json').async('string'));
-  assert.equal(releaseManifest.files.length, 12);
+  assert.equal(releaseManifest.files.length, 10);
   assert.equal(releaseManifest.excludesLegacyModules, true);
   assert.equal(releaseManifest.containsCandidateValues, false);
   assert.equal(releaseManifest.capability, 'universal-capture-supervised-greenhouse-no-submit');
@@ -33,7 +33,7 @@ try {
     assert.ok(file.bytes > 0);
   }
 
-  for (const name of ['popup.html', 'sidepanel.html']) {
+  for (const name of ['popup.html']) {
     const html = await zip.file(name).async('string');
     assert.doesNotMatch(html, /fonts\.(?:googleapis|gstatic)\.com/i);
     assert.doesNotMatch(html, /<script[^>]+src=["']https?:\/\//i);
@@ -44,6 +44,9 @@ try {
   assert.equal(manifest.permissions.includes('debugger'), false);
   assert.equal(manifest.permissions.includes('<all_urls>'), false);
   assert.equal(manifest.permissions.includes('scripting'), true);
+  assert.equal(manifest.permissions.includes('tabs'), false);
+  assert.equal(manifest.permissions.includes('sidePanel'), false);
+  assert.equal('side_panel' in manifest, false);
 } finally {
   await rm(directory, { recursive: true, force: true });
 }

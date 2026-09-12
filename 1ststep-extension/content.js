@@ -266,9 +266,11 @@ function getFieldLabel(el) {
 }
 
 function isVisible(el) {
-  if (el.tagName === 'SELECT') return true; // selects can be offscreen but still fillable
+  if (!el || el.disabled || el.readOnly || el.getAttribute('aria-hidden') === 'true') return false;
   const style = window.getComputedStyle(el);
-  if (style.display === 'none' || style.visibility === 'hidden') return false;
+  if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0' || style.pointerEvents === 'none') return false;
+  const semantic = `${el.name || ''} ${el.id || ''} ${el.className || ''}`;
+  if (/(?:honeypot|honey-pot|spam-trap|bot-field)/i.test(semantic)) return false;
   const rect = el.getBoundingClientRect();
   return rect.width > 0 || rect.height > 0 || el.offsetParent !== null;
 }
@@ -321,7 +323,7 @@ function scanFormFields() {
       fieldKey,
       inputType: el.type || el.tagName.toLowerCase(),
       label:    label.slice(0, 120),
-      required: !!el.required
+      required: !!el.required || el.getAttribute('aria-required') === 'true'
     };
     fields.push(field);
   }
@@ -393,6 +395,68 @@ function fillField(el, value) {
     console.warn('[1stStep] fillField error:', err);
     return false;
   }
+}
+
+function fieldHasValue(el) {
+  if (!el) return false;
+  if (String(el.type || '').toLowerCase() === 'file') return (el.files?.length || 0) > 0;
+  return String(el.value || '').trim().length > 0;
+}
+
+function markFieldsForReview(scannedFields, failedFieldKeys = []) {
+  document.querySelectorAll('[data-firststep-needs-review="true"]').forEach(el => {
+    el.removeAttribute('data-firststep-needs-review');
+  });
+  if (!document.getElementById('firststep-review-style')) {
+    const style = document.createElement('style');
+    style.id = 'firststep-review-style';
+    style.textContent = '[data-firststep-needs-review="true"]{outline:3px solid #f59e0b!important;outline-offset:2px!important}';
+    document.documentElement.appendChild(style);
+  }
+  const failed = new Set(failedFieldKeys);
+  const review = [];
+  for (const field of scannedFields || []) {
+    const el = findElementByKey(field.fieldRef);
+    if (!el) continue;
+    const needsReview = failed.has(field.fieldKey) || (field.required && !fieldHasValue(el));
+    if (!needsReview) continue;
+    el.setAttribute('data-firststep-needs-review', 'true');
+    review.push({
+      fieldRef: field.fieldRef,
+      fieldKey: field.fieldKey,
+      label: (field.label || field.fieldKey || 'Required field').slice(0, 80),
+    });
+  }
+  return review.slice(0, 20);
+}
+
+function showFillSummary({ filled, total, reviewCount }) {
+  document.getElementById('firststep-fill-summary')?.remove();
+  const summary = document.createElement('div');
+  summary.id = 'firststep-fill-summary';
+  summary.setAttribute('role', 'status');
+  summary.setAttribute('aria-live', 'polite');
+  summary.style.cssText = [
+    'position:fixed', 'right:24px', 'bottom:84px', 'z-index:2147483647',
+    'max-width:320px', 'padding:14px 42px 14px 16px', 'border-radius:12px',
+    'background:#111827', 'color:#fff', 'box-shadow:0 10px 30px rgba(15,23,42,.28)',
+    "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", 'font-size:13px', 'line-height:1.45',
+  ].join(';');
+  const result = document.createElement('strong');
+  result.textContent = `1stStep filled ${filled} of ${total} approved fields.`;
+  const next = document.createElement('div');
+  next.style.cssText = 'margin-top:4px;color:#e5e7eb';
+  next.textContent = reviewCount
+    ? `${reviewCount} highlighted field${reviewCount === 1 ? ' still needs' : 's still need'} you. Nothing was submitted.`
+    : 'Review the application, then submit it yourself. Nothing was submitted.';
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.setAttribute('aria-label', 'Dismiss 1stStep fill summary');
+  close.textContent = '×';
+  close.style.cssText = 'position:absolute;right:10px;top:8px;border:0;background:transparent;color:#fff;font-size:22px;cursor:pointer';
+  close.onclick = () => summary.remove();
+  summary.append(result, next, close);
+  document.body.appendChild(summary);
 }
 
 function applicationContext() {
@@ -540,7 +604,20 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         sendResponse({ success: false, error: completion?.error || 'The partial fill was preserved and moved to Needs You.' });
         return;
       }
-      sendResponse({ success: true, matchAssessment, filled: filledFieldKeys.length, total: (response.data?.fields || []).length + (response.data?.document?.available === true ? 1 : 0), scanned: fields.length, submitted: false, receiptVerified: false });
+      const total = (response.data?.fields || []).length + (response.data?.document?.available === true ? 1 : 0);
+      const reviewFields = markFieldsForReview(fields, failedFieldKeys);
+      showFillSummary({ filled: filledFieldKeys.length, total, reviewCount: reviewFields.length });
+      sendResponse({
+        success: true,
+        matchAssessment,
+        filled: filledFieldKeys.length,
+        total,
+        scanned: fields.length,
+        reviewCount: reviewFields.length,
+        reviewLabels: reviewFields.map(field => field.label),
+        submitted: false,
+        receiptVerified: false,
+      });
     } catch (err) {
       console.error('[1stStep] AUTOFILL error:', err);
       sendResponse({ success: false, error: err.message });

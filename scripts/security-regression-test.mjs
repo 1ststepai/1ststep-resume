@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 const files = Object.fromEntries(await Promise.all([
   'api/ai.js', 'api/claude.js', 'api/jobs.js', 'api/concierge-discovery.js',
   'api/notify-signup.js', 'api/track-event.js', 'api/ghl-stage.js', 'api/app-config.js',
-  'api/tally-webhook.js', 'api/beta-expiry-check.js', 'api/subscription.js', 'app.js', 'concierge.js', 'vercel.json',
+  'api/tally-webhook.js', 'api/beta-expiry-check.js', 'api/subscription.js', 'api/captured-jobs.js', 'api/partner.js', 'app.js', 'concierge.js', 'vercel.json',
   'api/application-packages.js', 'api/application-package-artifact.js', 'api/application-package-render.js',
   'api/application-sessions.js', 'api/employer-browser-session.js', 'api/extension-application-handoff.js', 'api/user-session.js', 'api/job-agent-notifications.js', 'api/account-data.js',
   'api/applicant-vault.js', 'api/application-audit.js', 'api/concierge-state.js', 'api/job-agent-consent.js',
@@ -13,7 +13,7 @@ const files = Object.fromEntries(await Promise.all([
 'api/job-agent-discord-relay.js', 'lib/job-agent-discord-relay.js',
 'lib/employer-browser-worker.js', 'lib/extension-application-handoff.js', 'lib/controlled-extension-release.js', 'lib/employer-browser-task-worker.js', 'lib/employer-browser-task-store.js', 'lib/employer-browser-session-provider.js', 'lib/employer-browser-session-store.js', 'lib/employer-browser-session-lifecycle.js', 'lib/employer-browser-session-cleanup.js', 'lib/job-agent-authorization-shutdown.js', 'lib/employer-receipt-verifier.js', 'lib/application-receipt-ingestion.js', 'lib/application-receipt-capture-provider.js', 'lib/application-receipt-evidence-provider.js', 'lib/application-receipt-task-store.js', 'lib/application-receipt-task-worker.js', 'lib/application-submission-provider.js', 'lib/application-submission-task-store.js', 'lib/application-submission-task-worker.js', 'lib/application-session-domain.js', 'lib/discovery-package-binding.js', 'lib/job-card-freshness-worker.js',
   'lib/application-package-worker.js', 'lib/application-package-render-sandbox.js', 'lib/job-agent-object-storage.js',
-  'lib/data-encryption-keyring.js', 'lib/tenant-campaign-store.js', 'lib/applicant-vault-store.js', 'lib/job-agent-consent-store.js', 'lib/job-agent-pilot-access.js', 'lib/job-agent-entitlement.js', 'lib/job-agent-spend-ledger.js',
+  'lib/data-encryption-keyring.js', 'lib/partner-account.js', 'lib/tenant-campaign-store.js', 'lib/applicant-vault-store.js', 'lib/captured-job-store.js', 'lib/captured-job-verification.js', 'lib/job-agent-consent-store.js', 'lib/job-agent-pilot-access.js', 'lib/job-agent-entitlement.js', 'lib/job-agent-spend-ledger.js',
   'lib/job-agent-schedule-store.js', 'lib/job-agent-notification-store.js', 'lib/application-needs-you-notifier.js', 'lib/job-agent-operator-alert-outbox.js', 'lib/job-agent-run-store.js', 'lib/user-session-store.js', 'lib/application-session-store.js', 'lib/application-follow-up-store.js',
   'lib/account-data-deletion.js', 'lib/account-data-export-builder.js', 'lib/account-data-export-task.js', 'lib/encrypted-record-maintenance.js', 'lib/encrypted-record-recovery.js', 'lib/job-agent-object-storage-drill.js', 'scripts/reencrypt-job-agent-records.mjs', 'scripts/encrypted-record-recovery-drill.mjs', 'scripts/job-agent-object-storage-drill.mjs',
 'lib/application-audit-head-export.js', 'lib/application-audit-archive-provider.js', 'lib/job-agent-launch-manifest.js', 'lib/job-agent-launch-evidence.js', 'lib/job-agent-release-record.js', 'lib/job-agent-support-ownership.js', 'lib/job-agent-production-environment-report.js', 'api/job-agent-readiness.js', 'scripts/build-controlled-extension.mjs', 'scripts/sherlock-security-review.mjs', 'scripts/production-launch-manifest-report.mjs', 'scripts/production-environment-shape-report.mjs', 'scripts/production-security-gate.mjs', 'scripts/job-agent-pilot-tenant-id.mjs', 'scripts/sign-job-agent-launch-evidence.mjs',
@@ -25,12 +25,20 @@ for (const route of ['api/ai.js', 'api/claude.js', 'api/jobs.js', 'api/concierge
 assert.match(files['api/user-session.js'], /authenticateApiRequest/);
 assert.match(files['api/user-session.js'], /revokeAllUserSessions/);
 assert.match(files['api/user-session.js'], /clearAccessSessionCookie/);
+assert.match(files['api/partner.js'], /requireOpaqueSession: true/);
+assert.match(files['api/partner.js'], /isOriginAllowed/);
+assert.match(files['api/partner.js'], /isAdministratorSubject/);
+assert.match(files['lib/partner-account.js'], /encryptJsonEnvelope/);
+assert.match(files['lib/partner-account.js'], /PARTNER_SELF_REFERRAL/);
 for (const route of [
   'api/account-data.js', 'api/applicant-vault.js', 'api/application-audit.js', 'api/application-package-artifact.js',
   'api/application-package-render.js', 'api/application-packages.js', 'api/application-sessions.js', 'api/employer-browser-session.js', 'api/extension-application-handoff.js', 'api/concierge-state.js',
   'api/job-agent-consent.js', 'api/job-agent-notifications.js', 'api/job-agent-operations.js', 'api/job-agent-runs.js',
-  'api/job-agent-schedule.js', 'api/session-capabilities.js',
+  'api/job-agent-schedule.js', 'api/session-capabilities.js', 'api/captured-jobs.js',
 ]) assert.match(files[route], /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/, `${route} must reject legacy bearer sessions`);
+assert.match(files['api/captured-jobs.js'], /verifyCapturedPublicJob/);
+assert.match(files['api/captured-jobs.js'], /requireJobAgentPolicyLevel\(JOB_AGENT_POLICY_LEVELS\.DATA_CONSENT/);
+assert.match(files['lib/captured-job-store.js'], /encryptJsonEnvelope/);
 assert.match(files['concierge.js'], /return \{ 'X-1stStep-Client': 'job-agent' \};/);
 assert.doesNotMatch(files['concierge.js'].match(/function apiAuthorizationHeaders\(\)[\s\S]*?\n\}/)?.[0] || '', /Bearer|tierToken|subscription/);
 assert.match(files['lib/job-agent-discord-relay.js'], /JOB_AGENT_DISCORD_ALERTS_APPROVED/);
@@ -399,5 +407,33 @@ assert.match(files['lib/job-agent-production-environment-report.js'], /writesPro
 assert.match(files['lib/job-agent-production-environment-report.js'], /performsExternalCalls:\s*false/);
 assert.match(files['lib/job-agent-production-environment-report.js'], /authoritativeProductionRuntimeEvidence:\s*authoritativeProductionRuntimeEvidence\s*===\s*true/);
 assert.doesNotMatch(files['scripts/production-environment-shape-report.mjs'], /process\.env\[[^\]]+\]|process\.env\.[A-Z0-9_]+/);
+
+const appSource = files['app.js'];
+assert.doesNotMatch(appSource, /tierToken/,
+  'Browser code must not store, export, or transmit the legacy bearer credential.');
+assert.doesNotMatch(appSource, /window\.postMessage\(\{ source: 'app', action: 'SYNC_PROFILE' \}/,
+  'The retired wildcard profile bridge must remain absent.');
+assert.doesNotMatch(appSource, /localStorage\.setItem\((?:RESUME_KEY|'1ststep_resume')/,
+  'Resume PII must remain session-scoped.');
+assert.doesNotMatch(appSource, /const \{ jobData, resumeText, mode, captureId \} = event\.data/,
+  'The extension capture bridge must not accept resume PII.');
+assert.doesNotMatch(appSource, /sessionStorage\.setItem\('1ststep_resume', resumeText\)/,
+  'Untrusted extension messages must not write resume PII to browser storage.');
+assert.match(appSource, /switch \(data\.tier\)[\s\S]{0,500}case 'pro':\s+tier = 'pro'/,
+  'Subscription API tiers must be mapped to literal values before browser caching.');
+assert.match(appSource, /switch \(data\.status\)[\s\S]{0,800}case 'verification_required':\s+status = 'verification_required'/,
+  'Subscription API statuses must be mapped to literal values before browser caching.');
+assert.doesNotMatch(appSource, /localStorage\.setItem\(SUB_CACHE_KEY,[^\n]+data\./,
+  'Raw subscription API fields must not flow into browser storage.');
+assert.doesNotMatch(appSource, /localStorage\.setItem\(SUB_CACHE_KEY,[^\n]*expiresInDays/,
+  'Untrusted subscription expiry values must not be persisted in browser storage.');
+assert.match(appSource, /el\.textContent = String\(msg \|\| ''\)/,
+  'Resume-analysis status must render model output as text.');
+assert.match(appSource, /tag\.textContent = value\.trim\(\)\.slice\(0, 100\)/,
+  'LinkedIn model keywords must render as bounded text nodes.');
+assert.doesNotMatch(appSource, /parsed\.keywords\.map\([^\n]+innerHTML|innerHTML = msg/,
+  'Model-generated values must not flow into innerHTML.');
+assert.match(appSource, /\^\(\?:\\s\*\[=\+\\-@\]\|\[\\t\\r\\n\]\)/,
+  'CSV export must neutralize spreadsheet formula prefixes.');
 
 console.log('Security regression tests passed.');

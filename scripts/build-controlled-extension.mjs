@@ -15,8 +15,6 @@ const RELEASE_FILES = Object.freeze([
   'auth-bridge.js',
   'popup.html',
   'popup.js',
-  'sidepanel.html',
-  'sidepanel.js',
   'icons/icon-16.png',
   'icons/icon-48.png',
   'icons/icon-128.png',

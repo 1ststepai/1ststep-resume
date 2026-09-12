@@ -4,10 +4,12 @@ This package has two explicit user flows: capture the visible job page into the 
 
 ## Job capture flow
 
-1. Open a job posting and click the extension.
+1. Open a job posting and click the extension, press `Alt+Shift+1`, or use the page menu to send the job directly to Resume Builder or Job Agent review.
 2. The extension uses the temporary `activeTab` grant to inspect that page only. It prefers JobPosting structured data, then adapters for Workday, Lever, Ashby, SmartRecruiters, and Greenhouse, then visible job-description containers. Accessible embedded frames are checked only during that click. It does not request permanent access to every website.
-3. Review or correct the captured title, company, location, pay disclosure, and description, then choose Resume Builder, cover letter, or Job Agent review. If the layout is unusual, highlight the description and click the extension again; manual paste remains the last fallback.
-4. A unique capture is kept locally for up to 15 minutes and removed only after the matching 1stStep page confirms it was saved.
+3. Review or correct the captured title and company, then choose Job Agent or Resume Builder. If the layout is unusual, highlight the description and click the extension again.
+4. A unique capture is kept locally for up to 24 hours and removed only after the matching 1stStep page confirms it was saved.
+
+After an explicit capture, the toolbar badge shows `JOB` when a posting was found or `?` when the page needs highlighted-text review. Fill results remain visible on supported pages: approved-field progress, highlighted required fields that still need the applicant, and an explicit reminder that nothing was submitted.
 
 Capture works on ordinary HTTP(S) pages whose job details are available in the rendered document or an accessible embedded frame. It cannot bypass sign-in walls, read browser-internal pages, or guarantee extraction from protected PDFs, inaccessible frames, or closed shadow roots.
 
@@ -18,7 +20,7 @@ Capture works on ordinary HTTP(S) pages whose job details are available in the r
 3. Click **Open secure employer page**. The app adds a non-sensitive application-session reference to the URL fragment.
 4. Click **Auto-fill** in the extension. The extension sends only the Greenhouse URL and value-free field schema through the signed-in app tab.
 5. The server verifies the tenant, entitlement, consent, exact requisition, approval, document version, field schema, and reusable vault facts. It consumes the single-use approval before returning transient ordinary values.
-6. The extension retrieves the exact isolated-render-verified résumé under the same two-minute, single-use transmission approval, verifies its SHA-256 in memory, attaches it to the recognized résumé control, fills ordinary fields, and never submits. CAPTCHA, OTP, identity, certification, consequential, unknown, non-résumé file-upload, or partial-fill steps return to **Needs You**.
+6. The extension retrieves the exact isolated-render-verified résumé under the same two-minute, single-use transmission approval, verifies its SHA-256 in memory, attaches it to the recognized résumé control, fills ordinary fields, highlights required fields that remain incomplete, and never submits. CAPTCHA, OTP, identity, certification, consequential, unknown, non-résumé file-upload, or partial-fill steps return to **Needs You**.
 7. The extension reports only filled/failed field keys. Final submission remains a separate action-time confirmation, and the tracker cannot show Submitted without an authoritative receipt.
 
 ## Local verification
@@ -27,6 +29,7 @@ Capture works on ordinary HTTP(S) pages whose job details are available in the r
 node scripts/extension-application-handoff-test.mjs
 node scripts/extension-security-test.mjs
 npm run test:browser:job-agent
+npm run test:extension-unpacked
 ```
 
 Load `1ststep-extension` as an unpacked extension only in a synthetic or explicitly authorized beta environment. Production requires `JOB_AGENT_EXTENSION_HANDOFF_ENABLED=true` and a separate server-only `JOB_AGENT_EXTENSION_HANDOFF_SECRET` of at least 32 characters. No provider or submission capability is enabled by this repository change.

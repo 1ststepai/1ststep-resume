@@ -212,6 +212,14 @@ Authorization shutdown preserves that ordering. A queued or leased browser task 
 
 ## Subscriber experience requirement
 
+### Evidence-backed time saved
+
+The subscriber workspace shows an **Estimated time saved** gauge on the main Job Agent view and in My Jobs. It is derived at render time from the same persisted job, package, employer-form, run, and authoritative-receipt evidence already restored for the signed-in user; it is not a separately editable counter.
+
+The versioned baseline model is intentionally conservative: 10 minutes for one completed multi-source direct-employer search, 2 minutes for one unique saved job, 3 minutes for one verified employer listing, 20 minutes for one completed application package, 1 minute per confirmed ordinary form field capped at 10 per application, and 2 minutes for one authoritative employer receipt. Duplicate role projections and receipts are deduplicated. Failed runs, outcome-unknown form work, simulated receipts, skipped work, and attempts without completion evidence add zero.
+
+The UI labels the result as an estimate, shows the total represented by the user's restored evidence plus rolling-seven-day and current-visit totals, and exposes the baseline breakdown. The calculation returns the explicit model version `job-agent-time-saved-v1`. Aggregate marketing claims are not produced by this client calculation; any future aggregate claim requires a separately reviewed anonymous analytics contract and validation of the published methodology.
+
 Every subscriber-facing Job Agent screen must pass the Grandma Test defined in
 `docs/SIMPLE_JOB_AGENT_UX.md`: one primary action per screen, one plain-language
 question at a time, no technical vocabulary, automatic saving, visible progress,

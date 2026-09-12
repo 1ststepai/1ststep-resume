@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0b1020">
+  <title>Partner access | 1stStep.ai</title>
+  <link rel="icon" href="/1ststep-ai-icon.png">
+  <link rel="stylesheet" href="/partner.css">
+  <script type="module" src="/partner.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="topbar">
+    <a class="brand" href="/app"><img src="/1ststep-ai-icon.png" alt="">1stStep.ai</a>
+    <nav aria-label="Account navigation"><a href="/app">Job Agent</a><a href="https://resume.1ststep.ai/">Resume</a><a href="https://partners.1ststep.ai/">Partner program</a><a href="/login.html?mode=sign-out&amp;returnTo=%2Fpartner">Sign out</a></nav>
+  </header>
+  <main id="main">
+    <p class="eyebrow">Separate, consent-based role</p>
+    <h1>Your partner access</h1>
+    <p class="lede">Apply, review your approval state, and receive a referral link only after approval. No commissions or payouts are active during beta.</p>
+
+    <section id="loading" class="card" aria-labelledby="loadingTitle"><h2 id="loadingTitle">Checking partner access</h2><p>Verifying your signed-in account…</p></section>
+
+    <section id="pathChoice" class="card" hidden aria-labelledby="pathTitle">
+      <h2 id="pathTitle">Choose the account path that describes you</h2>
+      <div class="choice-grid">
+        <article><h3>Existing 1stStep user</h3><p>Link a partner role to the same verified identity you already use for the Job Agent. This does not change your Job Agent data or entitlement.</p><a class="button" href="/partner?path=existing-user">Sign in with your 1stStep account</a></article>
+        <article><h3>Affiliate-only applicant</h3><p>Use secure identity verification only for the partner program. Affiliate access does not create a Job Agent profile, résumé, My Jobs data, or Job Agent entitlement.</p><a class="button secondary" href="/partner?path=affiliate-only">Apply as an affiliate — no Job Agent account required</a></article>
+      </div>
+    </section>
+
+    <section id="unavailable" class="card state" hidden aria-labelledby="errorTitle"><h2 id="errorTitle">Partner access unavailable</h2><p id="errorText">We could not verify your partner status.</p><button id="retry" type="button">Try again</button></section>
+
+    <section id="application" class="card" hidden aria-labelledby="applicationTitle">
+      <p class="path-label" id="pathLabel"></p>
+      <h2 id="applicationTitle">Apply to the partner beta</h2>
+      <p>Applications are reviewed before a referral link is activated. Beta referrals do not earn commission, and no payouts are active.</p>
+      <form id="partnerForm">
+        <label for="displayName">Your name or organization</label>
+        <input id="displayName" name="displayName" autocomplete="organization" maxlength="120" required>
+        <label for="code">Preferred partner code</label>
+        <input id="code" name="code" maxlength="40" pattern="[a-z0-9][a-z0-9-]{0,39}" placeholder="career-coach-sarah" autocapitalize="none" required>
+        <label class="check" for="terms"><input id="terms" type="checkbox" required><span>I explicitly consent to link this verified identity to a separate partner role and accept the <a href="https://partners.1ststep.ai/#program-terms">beta partner terms</a>.</span></label>
+        <button id="submit" type="submit">Submit application</button>
+        <output id="formStatus" aria-live="polite"></output>
+      </form>
+    </section>
+
+    <section id="status" class="card state" hidden aria-labelledby="statusTitle"><p class="badge" id="badge"></p><h2 id="statusTitle"></h2><p id="statusCopy"></p><div id="approved" hidden><label for="referralLink">Your approved referral link</label><input id="referralLink" type="url" readonly><button id="copy" type="button">Copy link</button><output id="copyStatus" aria-live="polite"></output></div><p class="support">Questions? <a href="mailto:support@1ststep.ai">Contact support</a>.</p></section>
+  </main>
+</body>
+</html>

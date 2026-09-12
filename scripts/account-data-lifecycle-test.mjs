@@ -14,6 +14,7 @@ const exported = buildAccountDataExport({
   notifications: { version: 1, preference: { enabled: true, channel: 'email' } },
   emailSuppression: { suppressed: true, reason: 'permanent-bounce', suppressedAt: now.toISOString(), storesRecipient: false },
   vault: { version: 2, vault: { facts: [{ id: 'fact_1', value: 'confirmed' }] } },
+  partnerAccount: { displayName: 'Career Coach', code: 'career-coach', status: 'approved' },
   campaign: { version: 1, state: { campaigns: [] } },
   runs: [{ id: 'run_12345678', result: { resumeText: 'candidate-owned draft', artifacts: [{ key: 'resume_pdf', filename: 'resume.pdf', sha256: 'abc', bytes: 123, contentBase64: 'TOP-SECRET-BINARY' }] } }],
   applicationSessions: [{ id: 'session_12345678', audit: { count: 2, headHash: 'hash', headSignature: 'signature' } }],
@@ -26,6 +27,8 @@ const exported = buildAccountDataExport({
 assert.equal(exported.account.subject, 'candidate@example.com');
 assert.equal(exported.scope.artifactBinariesIncluded, false);
 assert.equal(exported.scope.jobAgentConsent, true);
+assert.equal(exported.scope.partnerAccount, true);
+assert.equal(exported.partnerAccount.code, 'career-coach');
 assert.equal(exported.scope.jobAgentSchedule, true);
 assert.equal(exported.scope.needsYouNotificationPreference, true);
 assert.equal(exported.scope.needsYouEmailSuppression, true);

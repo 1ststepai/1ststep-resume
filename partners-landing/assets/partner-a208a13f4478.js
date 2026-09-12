@@ -1,6 +1,4 @@
 const STORE_KEY = 'firststep_outreach_prospects';
-    const PARTNER_KEY = 'firststep_growth_partner';
-    const APP_BASE_URL = 'https://app.1ststep.ai/';
     const $ = id => document.getElementById(id);
 
     function encode(q) {
@@ -13,83 +11,13 @@ const STORE_KEY = 'firststep_outreach_prospects';
       return '';
     }
 
-    function normalizePartnerCode(value) {
-      return String(value || '')
-        .trim()
-        .toLowerCase()
-        .replace(/[\s_]+/g, '-')
-        .replace(/[^a-z0-9-]/g, '')
-        .replace(/-+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 40)
-        .replace(/^-+|-+$/g, '');
-    }
-
-    function loadPartner() {
-      try { return JSON.parse(localStorage.getItem(PARTNER_KEY) || '{}'); } catch { return {}; }
-    }
-
-    function savePartner(partner) {
-      localStorage.setItem(PARTNER_KEY, JSON.stringify(partner));
-    }
-
-    function setCodeError(message) {
-      const el = $('codeError');
-      if (!el) return;
-      el.textContent = message || '';
-      el.style.display = message ? 'block' : 'none';
-    }
-
-    function getPartner({ showErrors = false } = {}) {
-      const current = loadPartner();
-      const partnerName = $('partnerName')?.value.trim() || current.partnerName || '';
-      const rawCode = $('referralCode')?.value || current.referralCode || '';
-      const referralCode = normalizePartnerCode(rawCode);
-      if (!referralCode && showErrors) {
-        setCodeError('Enter a partner code using letters, numbers, spaces, underscores, or hyphens.');
-      } else {
-        setCodeError('');
-      }
-      return { partnerName, referralCode };
-    }
-
-    function referralLink(partner = getPartner()) {
-      const code = normalizePartnerCode(partner.referralCode || '');
-      const params = new URLSearchParams({
-        ref: code,
-        utm_source: 'partner',
-        utm_medium: 'referral',
-        utm_campaign: 'growth_finder'
-      });
-      return `${APP_BASE_URL}?${params.toString()}`;
-    }
-
-    function renderGeneratedLink(partner) {
-      const link = referralLink(partner);
-      $('referralCode').value = partner.referralCode;
-      $('referralLink').value = link;
-      $('referralLinkText').textContent = link;
-      $('testReferralBtn').href = link;
-      $('generatedLinkBox').style.display = 'block';
-      $('copyStatus').textContent = '';
-      return link;
-    }
-
-    function hydratePartnerForm() {
-      const partner = loadPartner();
-      $('partnerName').value = partner.partnerName || '';
-      $('referralCode').value = partner.referralCode || '';
-      if (partner.referralCode) renderGeneratedLink(partner);
-    }
-
     function getSubject() {
       return 'A job application workflow that may help';
     }
 
     function getMessage(name = '[Name]', item = {}) {
       const signal = item.platform === 'Reddit' ? 'your post about the job search' : 'your #OpenToWork post';
-      const partner = getPartner();
-      const link = item.referralLink || (partner.referralCode ? referralLink(partner) : 'https://app.1ststep.ai');
+      const link = item.referralLink || 'https://app.1ststep.ai';
       return `Hey ${name}, saw ${signal}. 1stStep.ai helps organize job applications and build role-specific materials, and its Chrome extension can capture supported job pages without copying and pasting. Might be useful here: ${link}`;
     }
 
@@ -277,12 +205,7 @@ const STORE_KEY = 'firststep_outreach_prospects';
       });
     }
 
-    function renderStats() {
-      const partner = getPartner();
-      if (partner.referralCode && $('referralLink')) {
-        $('referralLink').value = referralLink(partner);
-      }
-    }
+    function renderStats() {}
 
     function escapeHtml(value) {
       return String(value || '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -328,13 +251,12 @@ const STORE_KEY = 'firststep_outreach_prospects';
     }
 
     function buildProspectItem(source) {
-      const partner = getPartner();
       const item = {
         name: source.name || '',
         profile: source.profile || '',
-        partnerName: partner.partnerName || '',
-        referralCode: partner.referralCode || '',
-        referralLink: partner.referralCode ? referralLink(partner) : '',
+        partnerName: '',
+        referralCode: '',
+        referralLink: '',
         field: source.field || '',
         note: source.note || '',
         subject: getSubject(),
@@ -420,18 +342,6 @@ const STORE_KEY = 'firststep_outreach_prospects';
     $('buildBtn').addEventListener('click', renderSearches);
     $('copyDmBtn').addEventListener('click', () => copyText(getTemplate()));
     $('copyTemplateBtn').addEventListener('click', () => copyText(getTemplate()));
-    $('savePartnerBtn').addEventListener('click', () => {
-      const partner = getPartner({ showErrors: true });
-      if (!partner.referralCode) return;
-      savePartner(partner);
-      renderGeneratedLink(partner);
-      renderStats();
-    });
-    $('copyReferralBtn').addEventListener('click', async () => {
-      const link = $('referralLink').value || referralLink(getPartner());
-      const copied = await copyText(link);
-      $('copyStatus').textContent = copied ? 'Copied!' : 'Copy failed. Select the link and copy it manually.';
-    });
     $('parseBtn').addEventListener('click', parseAndSaveProspect);
     $('saveBtn').addEventListener('click', saveProspect);
     $('copyAllBtn').addEventListener('click', () => {
@@ -447,8 +357,6 @@ const STORE_KEY = 'firststep_outreach_prospects';
         renderProspects();
       }
     });
-    $('referralCode').addEventListener('input', () => setCodeError(''));
-
     const navToggle = $('navToggle');
     const mobileNav = $('mobileNav');
     navToggle.addEventListener('click', () => {
@@ -504,7 +412,6 @@ const STORE_KEY = 'firststep_outreach_prospects';
 
     $('template').textContent = getTemplate();
     updateCalculator();
-    hydratePartnerForm();
     renderSearches();
     renderProspects();
     renderStats();

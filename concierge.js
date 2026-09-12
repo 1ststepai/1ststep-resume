@@ -51,7 +51,7 @@ import { acquisitionFunnel, evaluateCandidateFit, extractStructuredRequirements,
 import { JOB_RELEVANCE_POLICY_VERSION, jobTitleMatchesMission, normalizeMissionExclusions, restoredJobCardIsRelevant } from './client/job-mission-relevance.js';
 import { buildAnswerCoachingRequest, summarizePracticeSession } from './client/interview-practice.js';
 import { OPPORTUNITY_PATHS, OPPORTUNITY_SECTORS, mergeAuthoritativeOutcomeEvidence, opportunityPathOutcomeEvidence, rankOpportunityPaths, suggestedOpportunityPaths } from './client/opportunity-paths.js';
-import { authoritativeReceiptCount, canonicalConversation, directSourceCoverage, maskedActivityFeed, missionStats, needsYouKind, statusBadgeClass, statusTab, subscriberStatus as subscriberUiStatus } from './client/subscriber-ui-model.js';
+import { authoritativeReceiptCount, canonicalConversation, directSourceCoverage, estimateJobAgentTimeSaved, formatTimeSaved, maskedActivityFeed, missionStats, needsYouKind, statusBadgeClass, statusTab, subscriberStatus as subscriberUiStatus } from './client/subscriber-ui-model.js';
 import {
   CAMPAIGN_TEMPLATES, addCampaign, campaignMetrics, createCampaignStore, operatingContractText, updateCampaignStatus, updatePersistentCampaign,
 } from './client/persistent-campaign.js';
@@ -119,6 +119,8 @@ let resumeFactReviewState = null;
 let pathScanTimer = null;
 let pendingSectorRole = null;
 const processedJobCaptureIds = new Set();
+const processingJobCaptureIds = new Set();
+const timeSavedSessionStartedAt = new Date();
 
 function jobCaptureIdFromUrl() {
   return new URLSearchParams(window.location.search).get('jobCaptureId') || '';
@@ -137,6 +139,13 @@ function normalizedCapturedJob(input) {
     location: String(value.location || '').trim().slice(0, 500),
     salaryText: String(value.salaryText || '').trim().slice(0, 500),
     captureMethod: String(value.captureMethod || '').trim().slice(0, 80),
+    jobId: String(value.jobId || value.requisitionId || '').trim().slice(0, 160),
+    verification: String(value.verification || 'unverified').trim().slice(0, 20),
+    sourceProvider: String(value.sourceProvider || '').trim().slice(0, 40),
+    requisitionId: String(value.requisitionId || '').trim().slice(0, 160),
+    discoveryRunId: String(value.discoveryRunId || '').trim().slice(0, 128),
+    applyPathActive: value.applyPathActive === true,
+    verifiedAt: String(value.verifiedAt || '').trim().slice(0, 40),
   };
 }
 
@@ -1626,6 +1635,10 @@ async function submitAgentAccess(event) {
   const message = $('agentAccessMessage');
   const button = $('verifyAgentAccess');
   button.disabled = true;
+  button.textContent = agentRestoreChallenge ? 'Verifying…' : 'Sending code…';
+  message.textContent = agentRestoreChallenge
+    ? 'Verifying your code…'
+    : 'Sending a one-time code…';
   message.className = '';
   try {
     if (!agentRestoreChallenge) {
@@ -1672,6 +1685,7 @@ async function submitAgentAccess(event) {
   } catch (error) {
     message.textContent = error.message || 'Access verification is unavailable right now.';
     message.className = 'warn';
+    button.textContent = agentRestoreChallenge ? 'Verify existing access' : 'Email me a code';
   } finally {
     button.disabled = hasJobAgentAccess();
   }
@@ -2074,20 +2088,41 @@ function safeAction(action) {
   catch (error) { showDeskMessage(error.message, true); return false; }
 }
 
-function consumeJobAgentCapture() {
+async function consumeJobAgentCapture() {
   const capture = pendingJobAgentCapture;
   const captureId = String(capture?.captureId || '');
   const job = normalizedCapturedJob(capture?.jobData);
-  if (!captureId || processedJobCaptureIds.has(captureId) || !job.jobDescription) return;
-  processedJobCaptureIds.add(captureId);
-
+  if (!captureId || processedJobCaptureIds.has(captureId) || processingJobCaptureIds.has(captureId) || !job.jobDescription) return;
   const resumeUrl = `/app/resume?jobCaptureId=${encodeURIComponent(captureId)}&mode=tailor`;
   const resumeLink = `<a href="${escapeHtml(resumeUrl)}">Use this job in the Resume Builder</a>`;
   if (!hasJobAgentAccess()) {
+    processedJobCaptureIds.add(captureId);
     addMessage('assistant', `<strong>Your job page is captured.</strong><br>${resumeLink}. Job Agent review requires current Job Agent access; no application was started.`);
     showToast('Job captured for the Resume Builder');
     return;
   }
+  processingJobCaptureIds.add(captureId);
+
+  let savedJob;
+  try {
+    const response = await fetch('/api/captured-jobs', {
+      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ captureId, job }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload.job) throw new Error(payload.error || 'Sign in so this job can be saved to your account.');
+    savedJob = normalizedCapturedJob(payload.job);
+    processedJobCaptureIds.add(captureId);
+    window.postMessage({ type: '1STSTEP_JOB_CAPTURE_ACK', version: '1', captureId }, window.location.origin);
+  } catch (error) {
+    showDeskMessage(String(error?.message || 'This job could not be saved. Try again.'), true);
+    showToast('Job capture is still available in the extension');
+    processingJobCaptureIds.delete(captureId);
+    return;
+  }
+  processingJobCaptureIds.delete(captureId);
+  Object.assign(job, savedJob);
+
   if (!job.jobTitle || !job.company || !job.applyUrl.startsWith('https://')) {
     addMessage('assistant', `<strong>I captured the description, but the page did not expose enough identity to add it safely to Job Agent.</strong><br>${resumeLink}, where you can confirm the missing title or company. Nothing was invented or submitted.`);
     showToast('Review the captured job details');
@@ -2095,6 +2130,7 @@ function consumeJobAgentCapture() {
   }
 
   const roleId = `captured_${captureId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80)}`;
+  const verified = job.verification === 'verified' && Boolean(job.discoveryRunId) && job.applyPathActive;
   let duplicate = false;
   if (!deskState.roles.some(role => role.id === roleId)) {
     const result = addRole(deskState, {
@@ -2103,11 +2139,15 @@ function consumeJobAgentCapture() {
       title: job.jobTitle,
       directEmployerUrl: job.applyUrl,
       sourceUrl: job.applyUrl,
-      sourceType: 'user-captured',
-      applyPathActive: false,
+      requisitionId: job.requisitionId,
+      discoveryRunId: job.discoveryRunId,
+      sourceType: verified ? 'direct-employer' : 'user-captured',
+      applyPathActive: verified,
       jobDescription: job.jobDescription,
-      sourceProvider: job.site || 'user-selected page',
-      sourceEvidence: 'User-triggered extension capture. Employer ownership, requisition identity, and active Apply path still require verification.',
+      sourceProvider: job.sourceProvider || job.site || 'user-selected page',
+      sourceEvidence: verified
+        ? 'User-triggered capture reverified against the current published employer posting.'
+        : 'User-triggered extension capture. Employer ownership, requisition identity, and active Apply path still require verification.',
       remoteEligibility: 'Not verified from captured page',
       geographyEligibility: job.location ? `Captured page: ${job.location} (not independently verified)` : 'Not verified from captured page',
       salaryDisclosure: job.salaryText ? `Captured page: ${job.salaryText} (not independently verified)` : 'Not verified from captured page',
@@ -2122,7 +2162,9 @@ function consumeJobAgentCapture() {
   renderAll();
   addMessage('assistant', duplicate
     ? `<strong>${escapeHtml(job.jobTitle)} at ${escapeHtml(job.company)} is already in My Jobs.</strong><br>I kept the existing record and did not create a duplicate. ${resumeLink}.`
-    : `<strong>Captured ${escapeHtml(job.jobTitle)} at ${escapeHtml(job.company)} for review.</strong><br>I marked the source and Apply path as unverified. Nothing will be prepared or submitted until the listing is verified. ${resumeLink}.`);
+    : verified
+      ? `<strong>Saved and verified ${escapeHtml(job.jobTitle)} at ${escapeHtml(job.company)}.</strong><br>The current employer posting is ready for document preparation. ${resumeLink}. Nothing was submitted.`
+      : `<strong>Captured ${escapeHtml(job.jobTitle)} at ${escapeHtml(job.company)} for review.</strong><br>The Apply path is not independently verified, so automation stays off. ${resumeLink}.`);
   openJobs('Matches');
   showToast(duplicate ? 'Job already saved; duplicate suppressed' : 'Captured job added for supervised review');
 }
@@ -2559,6 +2601,32 @@ function renderCommandCenterEvidence(openActions) {
     : 'No feed or retrieval usage recorded for this view.';
 }
 
+function renderTimeSaved() {
+  const estimate = estimateJobAgentTimeSaved({
+    roles: subscriberRoles(), applicationSessions: durableApplicationSessions, run: durableRun,
+    sessionStartedAt: timeSavedSessionStartedAt,
+  });
+  const totalLabel = formatTimeSaved(estimate.totalMinutes);
+  const weekLabel = formatTimeSaved(estimate.lastSevenDaysMinutes);
+  const sessionLabel = formatTimeSaved(estimate.sessionMinutes);
+  const remainder = estimate.totalMinutes % 60;
+  const nextHourMinutes = estimate.totalMinutes ? (remainder ? 60 - remainder : 60) : 60;
+  $('timeSavedTotal').textContent = totalLabel;
+  $('timeSavedWeek').textContent = weekLabel;
+  $('timeSavedSession').textContent = sessionLabel;
+  $('timeSavedMeter').value = remainder;
+  $('timeSavedMeter').setAttribute('aria-valuetext', `${totalLabel} estimated total; ${nextHourMinutes} minutes to the next saved hour`);
+  $('timeSavedNext').textContent = estimate.totalMinutes
+    ? `${nextHourMinutes} estimated min to your next saved hour`
+    : 'Completed Job Agent work will appear here';
+  $('timeSavedBreakdown').innerHTML = estimate.breakdown.length
+    ? estimate.breakdown.map(item => `<li><span><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.count)} completed · ${escapeHtml(item.explanation)}</small></span><em>${escapeHtml(formatTimeSaved(item.minutes))}</em></li>`).join('')
+    : '<li class="time-saved-empty">No completed, evidence-backed work has been counted yet.</li>';
+  $('jobsTimeSavedTotal').textContent = totalLabel;
+  $('jobsTimeSavedWeek').textContent = `${weekLabel} in the last 7 days`;
+  $('timeSavedCard').classList.toggle('has-savings', estimate.totalMinutes > 0);
+}
+
 function learnedValuePreview(value) {
   if (Array.isArray(value)) return value.join(', ').slice(0, 120);
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
@@ -2881,6 +2949,7 @@ function renderMission() {
   renderGuidedLaunch();
   renderRunState();
   renderCommandCenterEvidence(openActions);
+  renderTimeSaved();
   renderSubscriberJobs();
   renderAgentAccessState();
 }
@@ -4818,6 +4887,20 @@ async function hydrateDurablePackages() {
   const pending = deskState.roles.filter(role => role.packageRunId && !role.packageDraft).slice(0, 10);
   for (const role of pending) await refreshDurablePackage(role.packageRunId, false);
 }
+
+async function recordPartnerReferralAttribution() {
+  if (!hasApiSession()) return;
+  const code = String(new URLSearchParams(window.location.search).get('ref') || '')
+    .trim().toLowerCase().replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40).replace(/-+$/g, '');
+  if (!code) return;
+  await fetchWithTimeout('/api/partner?action=attribute', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...apiAuthorizationHeaders() },
+    body: JSON.stringify({ code }),
+  }, REQUEST_TIMEOUTS.persistence).catch(() => null);
+}
+
 async function hydrateAccountWorkflow() {
   initializeAccountWorkflowAuthority();
   await hydrateCampaignStore();
@@ -4836,6 +4919,7 @@ $('statusShowJobs').addEventListener('click', () => $('openJobs').click());
 // Refresh the displayed age without issuing background requests or inventing activity.
 setInterval(renderRunState, 15000);
 Promise.all([loadPublicAppConfig(), loadSessionCapabilities()]).then(async () => {
+  await recordPartnerReferralAttribution();
   await hydrateAccountWorkflow();
   accountWorkflowHydrated = true;
   renderCampaignSyncStatus();
@@ -4843,6 +4927,10 @@ Promise.all([loadPublicAppConfig(), loadSessionCapabilities()]).then(async () =>
   const captureId = jobCaptureIdFromUrl();
   if (captureId) window.postMessage({ type: '1STSTEP_JOB_CAPTURE_REQUEST', version: '1', captureId }, window.location.origin);
   consumeJobAgentCapture();
+  if (new URLSearchParams(window.location.search).get('welcome') === 'extension') {
+    addMessage('assistant', '<strong>The browser helper is connected.</strong><br>Open a job posting, click the 1stStep icon, then choose Resume Builder or Job Agent.');
+    showToast('Extension connected');
+  }
 });
 
 // ── Interview practice ───────────────────────────────────────────────────────

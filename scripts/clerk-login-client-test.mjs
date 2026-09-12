@@ -31,6 +31,10 @@ assert.equal([...success.cache.values()][0].includes('fixture.session.token'),fa
 assert.deepEqual(JSON.parse([...success.cache.values()][0]), { ts: 0, jobAgentSession: true });
 const returned=await run({returnTo:'/app?resume=continue#review'});
 assert.equal(returned.redirect,'/app?resume=continue#review','OAuth and magic-link exchange must preserve the intended in-app route');
+const existingPartner=await run({returnTo:'/partner?path=existing-user'});
+assert.equal(existingPartner.redirect,'/partner?path=existing-user','Existing users must retain the explicit partner-linking path across Clerk redirects');
+const affiliateOnly=await run({returnTo:'/partner?path=affiliate-only',mode:'sign-up'});
+assert.equal(affiliateOnly.redirect,'/partner?path=affiliate-only','Affiliate-only applicants must retain the isolated role path across Clerk redirects');
 const rejectedExternal=await run({returnTo:'https://evil.example/steal'});
 assert.equal(rejectedExternal.redirect,'/app','External return URLs must fail closed');
 const expired=await run({token:null});
