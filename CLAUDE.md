@@ -1,5 +1,7 @@
 # Claude Code Harness
 
+For Job Agent development-task routing, use `docs/agents/README.md` after this file and the applicable product policies. Existing `.claude/agents/` helpers remain optional; the Agent OS does not replace this harness.
+
 ## Prime Directive
 
 Use the least context necessary. Do not scan the whole repo unless explicitly asked.

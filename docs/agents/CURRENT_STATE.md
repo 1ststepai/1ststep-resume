@@ -1,0 +1,17 @@
+# Job Agent development current state
+
+Observed 2026-09-12 (America/New_York). This is a **dated operational lead**, not a production ledger or release authorization. Reverify the exact branch, SHA, checks, deployment, installed extension, environment, and account state before acting. `UNKNOWN — VERIFY` means no current proof.
+
+| Item | Current observation and limit |
+| --- | --- |
+| Canonical product source | `https://github.com/1ststepai/1ststep-resume.git`; remote `main` and local `origin/main` both `d64e1743a63c40760d2c7ce8ef8f5a2f75d53f29` at inspection. The umbrella `1ststep.ai` directory is not the product Git checkout. |
+| Agent OS working source | Isolated `codex/job-agent-engineering-os-20260912` worktree, branched from `origin/main` at `d64e174`; documentation only, not a release candidate. The primary product checkout is `codex/chrome-store-policy-update` at `7a57fd7652e3633f84c0aaab2049ff5a94dc2c04` with extensive staged/unstaged/untracked work; preserve it. |
+| Active proposed release | [PR #80](https://github.com/1ststepai/1ststep-resume/pull/80) was OPEN, non-draft, mergeable at `89cbd01774f21c0bc033ffab352928e7b643fa59` when inspected. Its local `release/consolidated-job-agent-v1.6-20260910` worktree was clean at the same SHA. Listed GitHub CodeQL, deterministic gate, static QA, dependency audit, Sonar, and Vercel checks were green; this does not prove launch readiness. |
+| Other worktrees | Local `main` worktree `site-roast-fixes-20260909` was at `8a6ba82`, four commits behind `origin/main`; `1ststep-publish-clean` was detached with two edits. Many other product worktrees exist. Inspect exact ownership/status before any use. |
+| Extension versions | The [PR #80 release reconciliation](https://github.com/1ststepai/1ststep-resume/blob/release/consolidated-job-agent-v1.6-20260910/docs/FINAL_RELEASE_RECONCILIATION.md) reports Chrome Web Store v1.3.2 versus candidate v1.6.0. **Installed/Store version on 2026-09-12: UNKNOWN — VERIFY.** No publication is inferred. |
+| P0 leads | Authenticated exact-head Preview extension → My Jobs → refresh/sign-in → duplicate proof; canonical employer-requisition identity across distinct captures; hosted tenant/RLS evidence; truth/consent/protected-fact semantics; receipt/application-state semantics. These are leads from discovery and release reports, not a claim that every implementation is broken. Verify each current first divergence. |
+| P1 leads | Installed extension candidate verification; PR #80 and current Production release reconciliation. |
+| P2/P3 leads | Partner architecture decision and cross-session applicant state (P2); trustworthy analytics/learning baseline (P3). Avoid choosing among partner implementations without owner decision. |
+| Known blocked evidence | PR #80 reconciliation reports exact-head Preview Clerk disabled despite branch-scoped variable names, so authenticated persistence proof remained blocked as of that report. Current Preview Clerk and consent state: **UNKNOWN — VERIFY**. Hosted Postgres/RLS, Redis isolation, recovery, signed-user capacity, support/alert and current Production configuration evidence: **UNKNOWN — VERIFY**; historic absence is not a current count. |
+
+Source check: `git ls-remote` for `main` and candidate branch; local worktree/status/HEAD; `gh pr view 80` with checks; candidate `docs/FINAL_RELEASE_RECONCILIATION.md` and `docs/REPOSITORY_RECONCILIATION.md` for dated runtime and release observations. Do not copy secrets, candidate data, or employer evidence into this file.

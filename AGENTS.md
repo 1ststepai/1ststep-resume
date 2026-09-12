@@ -1,5 +1,7 @@
 # AGENTS.md - 1stStep Resume
 
+For Job Agent development-task routing, start at `docs/agents/README.md`. It sits under this file and the existing product/runtime/release policies; it does not grant production or application-execution approval.
+
 ## Project purpose
 1stStep Resume is a complex static/Vercel app for job seekers. It helps users tailor resumes, create cover letters, manage job-search workflow, restore paid access, and connect with a Chrome extension that captures job data from job boards.
 

@@ -1,7 +1,37 @@
 # AI Handoff
 
+## Job Agent implementation handoff contract
+
+For a task routed through `docs/agents/README.md`, retain the existing handoff guidance below and include these fields in the final task/PR handoff. A field with inaccessible evidence is `UNKNOWN — VERIFY`, never an implied pass. Record exact commands and outcomes without private candidate values or secrets.
+
+```text
+Objective:
+Agent/owner:
+Repository:
+Worktree:
+Branch:
+Commit:
+Environment:
+Baseline evidence:
+Files inspected:
+Files changed:
+Tests run:
+Exact results:
+Acceptance criteria: (each PASS / FAIL / BLOCKED, with evidence)
+Overall result: PASS / BLOCKED / NEEDS DECISION
+Live-path evidence:
+Security impact:
+Unknowns:
+Production impact: YES / NO
+Rollback: (candidate-only plan or approved Production procedure)
+Next recommended action:
+Human decision required: YES / NO (exact decision and actor)
+```
+
+Use the task's `docs/agents/TASK_CONTRACT.md` loop limit and report the attempt count. A green test, saved draft, form fill, HTTP 2xx, or Preview deployment is not an employer receipt or Production proof.
+
 ## Future task start
-Before making changes, read `AGENTS.md` first, then `docs/AI_HANDOFF.md`, then only the files directly relevant to the task. Do not scan the whole repo unless those docs are missing or the task genuinely requires broader investigation.
+Before making changes, read `AGENTS.md` first. For Job Agent development tasks, use `docs/agents/README.md` for routing, then this handoff and only the files directly relevant to the task. For other tasks, read this handoff after `AGENTS.md`. Do not scan the whole repo unless those docs are missing or the task genuinely requires broader investigation.
 
 ## Current project summary
 1stStep Resume is a static/Vercel job-search app. The browser app handles resume/job workflow and calls serverless API routes for Claude generation, subscription restore, Stripe access, GHL signup capture, and related server-only work.
