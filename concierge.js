@@ -379,7 +379,7 @@ function scheduleCampaignSync() {
 }
 
 function durableCampaignSnapshot() {
-  const durableRoleSource = deskState.roles.length ? visibleSubscriberRoles(deskState.roles) : (syncedSubscriberView.jobCards || []);
+  const durableRoleSource = visibleSubscriberRoles(mergedSubscriberRoles());
   const jobCards = durableRoleSource.slice(0, 100).map(role => ({
     id: role.id, employer: role.employer, title: role.title, status: subscriberUiStatus(role),
     requisitionId: role.requisitionId || '', sourceUrl: role.sourceUrl || '', sourceProvider: role.sourceProvider || '', sourceType: role.sourceType || '',
@@ -2761,11 +2761,12 @@ function renderNeedsYouQueue() {
 
 function visibleSubscriberRoles(roles = []) {
   const mission = missionState.mission || {};
-  return roles.filter(role => restoredJobCardIsRelevant({ ...role, status: subscriberUiStatus(role) }, mission));
+  const savedIds = new Set((syncedSubscriberView.jobCards || []).map(card => card.id));
+  return roles.filter(role => savedIds.has(role.id) || restoredJobCardIsRelevant({ ...role, status: subscriberUiStatus(role) }, mission));
 }
 
 function subscriberRoles() {
-  const baseRoles = deskState.roles.length ? deskState.roles : (syncedSubscriberView.jobCards || []);
+  const baseRoles = mergedSubscriberRoles();
   const sessionOnlyRoles = durableApplicationSessions.filter(session => !baseRoles.some(role => role.packageRunId === session.packageRunId)).map(session => ({
     id: `session_role_${session.id}`, employer: session.role.employer, title: session.role.title,
     requisitionId: session.role.requisitionId, directEmployerUrl: session.role.directEmployerUrl,
@@ -2774,9 +2775,15 @@ function subscriberRoles() {
   return [...visibleSubscriberRoles(baseRoles), ...sessionOnlyRoles].sort((a, b) => Number(b.fitScore || 0) - Number(a.fitScore || 0));
 }
 
+function mergedSubscriberRoles() {
+  const restoredIds = new Set(deskState.roles.map(role => role.id));
+  return [...deskState.roles, ...(syncedSubscriberView.jobCards || []).filter(card => !restoredIds.has(card.id))];
+}
+
 function primaryJobAction(role, applicationSession, status) {
   if (applicationSession) return `<button class="job-primary-action" type="button" data-job-application-review="${escapeHtml(applicationSession.id)}">Continue application</button>`;
   if (status === 'Rejected/Closed') return '<span class="job-action-unavailable">Employer role closed</span>';
+  if (!deskState.roles.some(item => item.id === role.id)) return '<span class="job-action-unavailable">Saved job details need secure recovery; refresh to try again.</span>';
   if (role.status === 'Package Ready') return `<button class="job-primary-action" type="button" data-job-application-start="${escapeHtml(role.id)}">Continue application</button>`;
   if (role.packageDraft) return `<button class="job-primary-action" type="button" data-job-package-review="${escapeHtml(role.id)}">Review resume draft</button>`;
   if (role.sourceType === 'user-captured') return `<button class="job-primary-action" type="button" data-job-captured-resume="${escapeHtml(role.id)}">Use in Resume Builder</button>`;
@@ -4853,6 +4860,7 @@ async function hydrateDurableRun() {
       durableRun = null;
       cacheDurableRun(null);
       delete missionState.durableRunId;
+      await restoreSavedDiscoveryRuns();
       saveAll(); renderMission();
       return true;
     }
@@ -4872,12 +4880,26 @@ async function hydrateDurableRun() {
       };
     }
     restoreDurableDiscoveryRoles(durableRun);
+    await restoreSavedDiscoveryRuns(durableRun.id);
     if (['Searching', 'Preparing', 'Paused', 'Waiting for You', 'Finished', 'Failed'].includes(durableRun.status)) {
       missionState.runState = durableRun.status === 'Failed' ? 'Paused' : durableRun.status;
       saveAll(); renderMission();
     }
     return true;
   } catch { return false; /* device state remains available */ }
+}
+
+async function restoreSavedDiscoveryRuns(latestRunId = '') {
+  // ponytail: restore at most 10 older runs per login under the 20/min API limit; batch reads if beta history exceeds this.
+  const ids = [...new Set((syncedSubscriberView.jobCards || []).map(card => card.discoveryRunId).filter(id => id && id !== latestRunId))].slice(0, 10);
+  for (const id of ids) {
+    try {
+      const response = await fetchWithTimeout(`/api/job-agent-runs?id=${encodeURIComponent(id)}`, { headers: apiAuthorizationHeaders() }, REQUEST_TIMEOUTS.persistence);
+      if (!response.ok) continue;
+      const data = await response.json().catch(() => ({}));
+      if (data.run?.id === id) restoreDurableDiscoveryRoles(data.run);
+    } catch { /* Keep the saved card visible but non-actionable until secure recovery succeeds. */ }
+  }
 }
 
 function restoreDurableDiscoveryRoles(run) {
