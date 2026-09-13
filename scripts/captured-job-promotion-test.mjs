@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createCapturedDiscoveryRun } from '../lib/captured-job-verification.js';
+import { canonicalCapturedJobId } from '../lib/captured-job-store.js';
 import { bindPackageToVerifiedDiscovery } from '../lib/discovery-package-binding.js';
 
 class FakeRedis {
@@ -42,8 +43,13 @@ const verifiedJob = {
   description: 'Current published employer requirements and responsibilities. '.repeat(12), location: 'Remote', remote: true,
   workplaceType: 'remote', employmentType: 'Full-time', applyPathVerified: true, applyPathVerification: 'current-lever-requisition-reverification', applyPathVerifiedAt: now.toISOString(),
 };
-const run = await createCapturedDiscoveryRun({ config, subject: 'candidate@example.test', captureId: '12345678-abcd-1234-abcd-123456789abc', verifiedJob, now });
+const canonicalId = canonicalCapturedJobId({ provider: verifiedJob.provider, sourceSlug: 'exampleco', requisitionId: verifiedJob.requisitionId });
+const run = await createCapturedDiscoveryRun({ config, subject: 'candidate@example.test', captureId: '12345678-abcd-1234-abcd-123456789abc', canonicalId, verifiedJob, now });
 assert.equal(run.status, 'Finished');
+const replay = await createCapturedDiscoveryRun({ config, subject: 'candidate@example.test', captureId: '87654321-abcd-1234-abcd-123456789abc', canonicalId, verifiedJob, now });
+assert.equal(replay.id, run.id, 'two captures of one verified requisition share the finished discovery run');
+const otherTenantRun = await createCapturedDiscoveryRun({ config, subject: 'other@example.test', captureId: '87654321-abcd-1234-abcd-123456789abc', canonicalId, verifiedJob, now });
+assert.notEqual(otherTenantRun.id, run.id, 'same requisition stays tenant-isolated');
 assert.equal(run.result.authority, 'published-direct-employer-ats-feed');
 assert.equal(run.result.jobs[0].requisitionId, 'abc-123');
 const bound = bindPackageToVerifiedDiscovery(run, {
@@ -53,4 +59,4 @@ const bound = bindPackageToVerifiedDiscovery(run, {
 }, { now });
 assert.equal(bound.discoveryRunId, run.id);
 assert.equal(bound.jobDescription.includes('Current published'), true);
-console.log('Verified captured job becomes a real finished discovery run accepted by package binding.');
+console.log('Verified captured job becomes a tenant-scoped canonical discovery run accepted by package binding.');

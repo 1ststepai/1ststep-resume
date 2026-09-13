@@ -1,6 +1,6 @@
 import { applyApiHeaders, authenticateApiRequest, hasJsonContentType, isOriginAllowed, jobAgentAccessAllowed } from '../lib/api-security.js';
 import { enforceDurableRateLimit, sendRateLimitResult } from '../lib/durable-rate-limit.js';
-import { readCapturedJob, saveCapturedJob } from '../lib/captured-job-store.js';
+import { canonicalCapturedJobId, readCapturedJob, saveCapturedJob } from '../lib/captured-job-store.js';
 import { createCapturedDiscoveryRun, verifyCapturedPublicJob } from '../lib/captured-job-verification.js';
 import { jobAgentRuntimeConfiguration } from '../lib/job-agent-runtime-configuration.js';
 import { recordConfiguredJobAgentOperationalEvent } from '../lib/job-agent-operational-metrics.js';
@@ -66,15 +66,19 @@ export default async function handler(req, res) {
 
     const captured = { ...(req.body?.job || {}), captureId };
     const verification = await verifyCapturedPublicJob({ job: captured, sources: config.sources });
+    const canonicalId = verification.status === 'verified'
+      ? canonicalCapturedJobId({ provider: verification.job.provider, sourceSlug: verification.source.slug, requisitionId: verification.job.requisitionId })
+      : '';
     let discoveryRun = null;
     if (verification.status === 'verified' && jobAgentAccessAllowed(auth)) {
-      discoveryRun = await createCapturedDiscoveryRun({ config, subject: auth.subject, captureId, verifiedJob: verification.job });
+      discoveryRun = await createCapturedDiscoveryRun({ config, subject: auth.subject, captureId, canonicalId, verifiedJob: verification.job });
     }
     const promotedToJobAgent = verification.status === 'verified' && discoveryRun?.status === 'Finished';
     const sourceJob = verification.job || captured;
     const saved = await saveCapturedJob({
       ...config,
       subject: auth.subject,
+      canonicalId,
       job: {
         ...captured,
         jobId: verification.job?.requisitionId || captured.jobId,
