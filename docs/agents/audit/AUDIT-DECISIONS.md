@@ -22,3 +22,12 @@ For each future decision, append (never rewrite history): date, finding ID, deci
 - Route bounded implementation to Application Content & Truth with Identity & Data and QA support. Coordinate existing résumé writers, establish one owner/worktree and preserve uncommitted work before edits. Require deterministic conflict/provenance/selection/version-pinning tests. Passing Build evidence may be marked READY FOR INDEPENDENT AUDIT, never AUD-005/AUD-007 RESOLVED. No release-gate waiver or Production authorization follows from this decision.
 
 Source: Product Owner instruction in the Engineering Orchestrator task on 2026-09-13. Existing PR #80 release worktree `release/consolidated-job-agent-v1.6-20260910` at `89cbd017` has uncommitted reconciliation code; the primary product checkout has separate uncommitted vault/package/session changes. Ownership transfer is pending; neither worktree was modified for this decision.
+
+## 2026-09-13 — RESUME-001 release progression gate (Product Owner)
+
+- Treat implementation commit `12a2c36974c52bbf2a6626edd225113ee27987b2` as implementation-complete, **not release-complete**. Preserve the Applicant Vault → explicitly selected version → package path; do not create another authority store or redesign the contract.
+- Require an auditor independent of implementation to return PASS or PASS WITH non-blocking follow-up before integration. Reverify the current PR #80 head and all intervening commits, preserve dirty worktrees, test the actual integrated candidate, then create only a clean Preview candidate. No Production deployment follows from this decision.
+- Close RESUME-001 only after authenticated hosted Vault persistence, selected-version authority and package identity, conflict behavior, fact-reuse restrictions, truthful failures, and no P0 regression are proven. AUD-005 and AUD-007 retain their separate independent closure gates.
+- Advance the next unblocked P0 user-journey workstream in a separate clean worktree and report Reliability / Legacy Resolution separately from Product Advancement. Do not widen into autonomous submission, employer automation, multi-ATS expansion, mobile or unrelated features.
+
+Source: Product Owner instruction in the Engineering Orchestrator task on 2026-09-13. This is a gate decision, not an audit verdict, merge, Preview proof or release authorization.
