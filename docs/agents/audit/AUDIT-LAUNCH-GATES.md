@@ -14,3 +14,21 @@ Cycle 0 proposed explicit G1–G4 only. G5/G6 below reconcile the already-existi
 | G6 Full production | All applicable capability gates, clean exact candidate/independent audit, security/DB/capacity/backup/support/rollback/legal and human decision. | PR #80 partial audit only; Production CLI/gitDirty metadata; protected runtime and hosted DB unknown. | AUD-001..012 as applicable, clean source AUD-003/010, OAuth AUD-011, recovery/ops/legal and human approvals. | BLOCKED — no Production release approval. |
 
 For each cycle, report gate-specific `PASS`, `FINDINGS`, or `BLOCKED/UNKNOWN` with exact evidence and whether unresolved findings block that gate. Do not infer that a gate is ready because an unrelated surface is live. Production, employer actions, provider activation, and publication still require separate owner authorization.
+
+## First real user application — controlled-beta release projection (2026-09-13)
+
+This is a product-facing projection of G2, not a new audit baseline. `Integrated` means present in the open PR #80 source at `b071371`, not merged or released. `Hosted verified` requires the signed end-to-end behavior, not a public configuration response or local test. The independent RESUME-001 review is in progress; no verdict is assumed here.
+
+| Capability | Implementation | Independent verification | Integrated | Hosted verified | Release status |
+| --- | --- | --- | --- | --- | --- |
+| Auth | Clerk/session path in PR #80; associated Preview reports enabled | AUD-002 open | PR #80 source only | No controlled sign-in/session lifecycle | P0 blocker |
+| Setup persistence | Account-backed concierge state and Applicant Vault paths in PR #80 | Hosted tenant/recovery evidence outstanding | PR #80 source only | No signed persistence proof | P0 blocker |
+| RESUME-001 authority | Local `12a2c369`; selected Vault version and fact reconciliation | Independent review pending; AUD-005/007 open | No | No | P0 blocker |
+| Hard-filter visibility | Local `18433c05`; server counts distinguished from added jobs | Pending | No | No | P1 candidate |
+| Real job capture | Local canonical-key candidate `be217f02`; PR #80 capture path exists | AUD-001 open | Canonical fix: no | No authenticated two-capture proof | P0 blocker |
+| Job intelligence | Requirement/fit paths in PR #80 | Full signed-path review outstanding | PR #80 source only | No | P1 requirement |
+| Package generation | Durable worker in PR #80; RESUME-001 authority is separate | Truth/authority review pending | Authority fix: no | No signed package proof | P0 blocker |
+| Package review | Review controls in `concierge.js` | Full signed-path review outstanding | PR #80 source only | No | P1 requirement |
+| My Jobs persistence | Saved cards and run restore in PR #80; multi-run action recovery gap identified from source | Two-run regression and hosted review outstanding | PR #80 source only | No | Conditional P0 blocker |
+
+Current narrow path: establish exact signed Preview identity and session lifecycle; complete independent RESUME-001 and AUD-001 review; integrate accepted candidates in a clean release source; run one authenticated real-job, package-review, sign-out/sign-in persistence test. Do not advance a cell from local tests alone.
