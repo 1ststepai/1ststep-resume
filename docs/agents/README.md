@@ -8,6 +8,8 @@ This is the single entry point for Codex, Claude Code, and future development ag
 2. Repository `AGENTS.md` and `CLAUDE.md` retain their existing restrictions. `docs/AI_MEMORY.md` defines shared identity, truth, and receipt invariants; `docs/JOB_AGENT_RUNTIME.md` is the runtime contract; `docs/JOB_AGENT_DEPLOYMENT_RUNBOOK.md` is the release procedure; `docs/JOB_AGENT_CONTINUOUS_IMPROVEMENT.md` governs the product learning layer. Read the relevant sections before any implementation.
 3. This directory routes **development work**. Read `CURRENT_STATE.md` as a dated lead, then verify changing facts against Git, GitHub, the exact environment, and live evidence. Start with `ORCHESTRATOR.md`, choose only the roles in `SPECIALISTS.md` needed for the task, use `LOOPS.md` only when iteration is needed, and use `TASK_CONTRACT.md` plus `docs/AI_HANDOFF.md` for the task and result.
 
+The existing separate Claude **Continuous Independent Audit Agent** uses [`audit/CONTINUOUS-AUDIT-AGENT.md`](audit/CONTINUOUS-AUDIT-AGENT.md) and its [`audit/AUDIT-STATE.md`](audit/AUDIT-STATE.md) checkpoint. It is read-only and does not join build-agent repair loops. The Orchestrator receives its explicit handoff, owns any remediation routing, and updates accepted audit documents; do not create another auditor or an automatic polling bridge.
+
 Existing `.claude/agents/codebase-scout.md`, `pr-reviewer.md`, and `smoke-test-runner.md` are optional bounded helpers, not parallel policy authorities or a reason to spawn agents for solo work. `docs/CLAUDE.md` is superseded; do not route new work through it. Older backlog, handoff, and release reports are evidence dated at publication, not current live state.
 
 ## Separate kinds of autonomy
@@ -18,4 +20,4 @@ The **product** target is autonomous by default, supervised by exception, subjec
 
 ## One task, one owner
 
-Keep the task contract and handoff with the task/PR; do not create a second product ledger or a persistent agent queue. `CURRENT_STATE.md` is the only changeable operational summary in this directory. The encrypted tenant stores and employer evidence remain the source of truth for application state. On completion, update current state only if newly verified facts materially changed; otherwise stop quietly.
+Keep the task contract and handoff with the task/PR; do not create a second product ledger or a persistent agent queue. `CURRENT_STATE.md` summarizes development work; `audit/` separately retains independent audit checkpoints, findings, and decisions, not product/application state. The encrypted tenant stores and employer evidence remain the source of truth for application state. On completion, update current state only if newly verified facts materially changed; otherwise stop quietly.

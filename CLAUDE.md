@@ -2,6 +2,8 @@
 
 For Job Agent development-task routing, use `docs/agents/README.md` after this file and the applicable product policies. Existing `.claude/agents/` helpers remain optional; the Agent OS does not replace this harness.
 
+For the **existing separate read-only Claude auditor**, start at `docs/agents/audit/CONTINUOUS-AUDIT-AGENT.md` and `docs/agents/audit/AUDIT-STATE.md`; return a handoff rather than editing, committing, deploying, or creating another auditor.
+
 ## Prime Directive
 
 Use the least context necessary. Do not scan the whole repo unless explicitly asked.

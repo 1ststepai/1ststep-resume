@@ -17,6 +17,7 @@ npm run security:release-preflight
 ```
 
 3. Require `security:release-preflight` to report `ok: true`. It hashes the complete `api/`, `lib/`, and public runtime surface, verifies the deployment ignore policy, and fails when tracked, staged, or untracked changes remain. Its path-list digests let an operator detect drift without printing filenames. Curate the intended change into a reviewed commit or isolated release worktree; never bypass this by hiding files or deploying a dirty checkout.
+   Obtain the existing Continuous Independent Audit Agent's exact-candidate handoff through `docs/agents/audit/AUDIT-HANDOFF.md` before limited-beta or Production release review. Reconcile unresolved gate-blocking findings in `docs/agents/audit/AUDIT-FINDINGS.md`; an auditor report, or its absence, never substitutes for this preflight or owner approval.
 4. Record the reviewed commit and the exact `runtime.sha256` from the passing preflight. In the exact candidate environment, retain and sign a content-free `controlled-beta-release` artifact and require `JOB_AGENT_CONTROLLED_BETA_RELEASE_EVIDENCE` to verify against that commit, runtime digest, pilot, policies, owners, caps, and capability flags. Configuration drift is a new review, not an environment-variable patch.
    - Generate: `node scripts/create-controlled-beta-release-record.mjs`
    - Verify from the unchanged candidate: `node scripts/verify-controlled-beta-release-record.mjs --artifact <record.json>`

@@ -2,6 +2,8 @@
 
 Roles are routing labels, not duplicate permanent ledgers or automatic subagents. The orchestrator appoints one writer and only the reviewers needed. All roles inherit `README.md` and repository policies.
 
+The separate Continuous Independent Audit Agent is **not** a build specialist or a writer. Specialists may supply evidence and repair Orchestrator-assigned tasks, but cannot assign severity, resolve findings, or advance `audit/AUDIT-STATE.md` on the auditor's behalf.
+
 | Role | Primary ownership and boundary |
 | --- | --- |
 | Product / UX | Onboarding, My Jobs, Agent Status, Saved Info, accessibility, errors, and applicant comprehension; validate the one-next-action experience without inventing progress. |

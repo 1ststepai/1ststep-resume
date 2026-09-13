@@ -78,7 +78,7 @@ Choose one loop per task. Every cycle records the baseline, hypothesis, changed 
 
 - **Trigger/objective:** An exact candidate is proposed for release; prepare a decision packet under `docs/JOB_AGENT_DEPLOYMENT_RUNBOOK.md`.
 - **Owners:** Release Manager primary; QA, Security, Live Path Verification, and affected domain owners review.
-- **Cycle/acceptance:** Verify canonical repo/worktree/branch/SHA and clean/reconciled source; version/extension digest; exact-head CI/tests/security; Preview live path; current Production baseline and source parity; required signed runtime, database/RLS, capacity, recovery, support, and rollback evidence. Missing evidence stays unknown.
+- **Cycle/acceptance:** Verify canonical repo/worktree/branch/SHA and clean/reconciled source; version/extension digest; exact-head CI/tests/security; Preview live path; current Production baseline and source parity; required signed runtime, database/RLS, capacity, recovery, support, and rollback evidence. Obtain the separate independent audit handoff for this candidate and reconcile unresolved gate-blocking findings. Missing evidence stays unknown.
 - **PASS/BLOCKED/escalate:** Output exactly **READY FOR HUMAN APPROVAL**, **NOT READY**, or **BLOCKED** with reasons. A green PR alone is not ready. Stop after two candidate cycles; escalate unresolved risk, config, merge, or scope decisions.
 - **Gates/evidence/rollback:** Human separately approves merge, Production deployment, Web Store publication, production configuration/migration, and rollback. Retain exact candidate index, check URLs/results, deployment IDs, live baseline, rollback preflight, and approval record. Never deploy automatically.
 
@@ -89,3 +89,9 @@ Choose one loop per task. Every cycle records the baseline, hypothesis, changed 
 - **Cycle/acceptance:** Real baseline → hypothesis → smallest reversible change → test/canary → real measurement → keep or revert. State the observation window and limit before starting; no auto-renewing experiment.
 - **PASS/BLOCKED/escalate:** Pass only with measured benefit and unchanged safety invariants. Block on insufficient data, failed safety fixture, missing consent, or exhausted window. Escalate candidate facts, hard filters, screening answers, privacy, transmission, submission authority, or legal changes.
 - **Gates/evidence/rollback:** No simulated applications/success or idle polling. Retain aggregate evidence, version, cost, decision, and one-click or candidate revert path; product auto-promotion remains limited to the existing approved low-risk categories.
+
+## 12. Continuous Independent Audit — one read-only cycle per invocation
+
+- **Trigger/objective:** `Run the next incremental 1stStep.ai audit`; a new candidate or auth/security/data, résumé truth, extension/capture, or application-state/receipt change; or a limited-beta/Production release review. Event-triggered only, never idle polling.
+- **Owner/cycle:** The **existing separate Claude auditor**, not a development specialist, follows `audit/CONTINUOUS-AUDIT-AGENT.md`: read checkpoint → verify source/candidate → compare commits → audit changed areas and affected seams → re-evaluate findings, evidence quality, and applicable launch gates → report and propose the next checkpoint. No repair iteration or repository mutation.
+- **Results:** `PASS`, `PASS WITH FINDINGS`, or `BLOCKED`; block on ambiguous source/environment/baseline or unavailable required hosted evidence. The Orchestrator receives the handoff, decides bounded remediation, and accepts any documentation update. Audit does not grant release approval.
