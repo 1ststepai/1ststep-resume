@@ -1,18 +1,18 @@
 # Independent audit checkpoint
 
-This is the accepted checkpoint, **not** the auditor's working notes or a release authorization. The Orchestrator updates it only after reconciling a completed auditor handoff. Changing facts must be reverified at each cycle.
+Cycle 0 is an accepted **scoped, historical delta anchor**, not a full line review or release authorization. The complete immutable auditor report is at C:\Users\evanp\Documents\Claude\Audits\1ststep.ai\2026-09-12-job-agent-audit-baseline.md (SHA-256 936EE4FAFFDAD2914D3161568C563134335CCACA72AA59F597F95F1C680F6344). The Orchestrator reconciled it against current source and limited runtime evidence on 2026-09-12 ET. Current facts must be reverified next cycle.
 
-| Field | State |
+| Field | Accepted state and limit |
 | --- | --- |
-| Canonical repository | `https://github.com/1ststepai/1ststep-resume` |
-| `LAST_AUDITED_COMMIT` | `UNSET` — no independent baseline cycle accepted |
-| Last audit date | `NEVER` |
-| Release candidate last audited | `NONE`; PR #80 is a dated candidate lead, not an audited release |
-| Unresolved Critical findings | `UNKNOWN` — inaugural severity triage pending |
-| Unresolved High findings | `UNKNOWN` — inaugural severity triage pending |
-| Unresolved Medium findings | `UNKNOWN` — inaugural severity triage pending |
-| Seeded, untriaged tracks | `AUTH-001`, `DATA-001`, `RESUME-001`, `CAPTURE-001`, `STATE-001`, `EXT-001`, `PARTNER-001` |
-| Next audit trigger | Owner invocation of `Run the next incremental 1stStep.ai audit`; initial cycle must establish a full baseline. Event triggers are in `CONTINUOUS-AUDIT-AGENT.md`. |
-| Evidence requiring hosted verification | Exact-head authenticated Clerk/session path; tenant/RLS and cross-session data; real extension-to-My-Jobs capture; deployed receipt/state behavior; partner identity/isolation; installed extension versus app compatibility. |
+| Canonical repository | https://github.com/1ststepai/1ststep-resume; remote origin/main d64e1743a63c40760d2c7ce8ef8f5a2f75d53f29 at reconciliation. |
+| Audit cycle / date | Cycle 0; independent report dated 2026-09-12. The auditor did not give a formal PASS/BLOCKED label; it said build only with conditions and no release. |
+| LAST_AUDITED_COMMIT | d64e1743a63c40760d2c7ce8ef8f5a2f75d53f29 — **main/Production delta anchor for the documented source, metadata and public-surface scope only**. Not a claim that all main code or runtime was audited. |
+| Production baseline | app.1ststep.ai -> Vercel dpl_7o8qo9zVKRy8A7DXUdR6AiQpsaM3, READY; metadata commit d64e174, source cli, gitDirty=1. Artifact parity with a clean main checkout is NOT PROVEN. Production /api/app-config still reports Clerk disabled. |
+| Release candidate last partially audited | PR #80 release/consolidated-job-agent-v1.6-20260910 @ b071371d80c90ca78213cbac9d604789ea4b96fc, open/mergeable at reconciliation. **PARTIAL**: capture store/API, partner account/API, auth config, résumé fact vault, receipt logic, fixtures and public surfaces. Most of its 51 commits/96 files were not line-reviewed; in particular browser-security fixes, partner UI, ATS contracts and extension v1.6 merge remain outside that review. Local release worktree is at stale 89cbd017 with 6 dirty entries. |
+| Post-audit Agent OS state | Local docs-only branch codex/job-agent-engineering-os-20260912 @ 4025a022, clean, unpushed; Cycle 0 saw 8898dbd and no audit directory. This ingestion changes docs again and needs independent review on the next cycle. |
+| Unresolved Critical / High / Medium / Low | 0 proven Critical; 6 High (AUD-001..006); 6 Medium (AUD-007..012); 4 Low (AUD-013..016). Counts include MITIGATED or NEEDS REVERIFICATION until independent resolution evidence is accepted. |
+| Changed evidence after Cycle 0 | Older PR #80 Preview dpl_7THZ77Nc6QjZdxBoC8qwF2pywYmU reports Clerk disabled. Newer GitHub-associated Preview https://1ststep-resume-ap5xisl63-1ststep.vercel.app reports Clerk enabled; Vercel metadata says source cli without Git SHA, and sign-in/session lifecycle is NOT VERIFIED. AUD-002/AUTH-001 remain unresolved. |
+| Next audit triggers | Explicit "Run the next incremental 1stStep.ai audit"; PR #80 push/new candidate; authenticated Preview readiness; any Production deploy; capture/vault/session/receipt or auth/security/data change; extension manifest/Store action; hosted migration; before beta/Production review. No idle polling. |
+| Hosted/environment limitations | Protected Preview sign-in, exact source-to-deployment parity for the newer CLI Preview, Clerk instance match, Redis/Postgres targets and two-tenant denial, durable capture/readback, installed extension compatibility, partner role and real receipt path are not independently proven. No secrets or applicant data belong in this ledger. |
 
-Checkpoint acceptance requires the auditor's exact candidate, audited scope, result, finding disposition, and evidence references. Do not mark `LAST_AUDITED_COMMIT` to HEAD merely because a report was produced; a `BLOCKED` or partial-scope audit leaves it unchanged. See `AUDIT-HANDOFF.md`.
+The next auditor compares main changes after d64e174 **and** the PR #80 delta/affected seams from its partial b071371 review. A partial or blocked next cycle cannot silently advance either anchor. The seven original track IDs remain mapped in AUDIT-FINDINGS.md; no finding is auto-resolved by this checkpoint.
