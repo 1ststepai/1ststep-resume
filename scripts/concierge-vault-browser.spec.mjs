@@ -581,6 +581,68 @@ test('a signed user restores the latest encrypted discovery run on a new device 
   expect(latestRestoreRequests).toBe(1);
 });
 
+test('two saved discovery runs keep both My Jobs cards actionable after sign-in', async ({ page }) => {
+  const mission = { role: 'Sourcing Manager', roleFamily: 'procurement', workModes: ['Remote'], employmentTypes: ['Full-time'], location: 'United States', target: 10 };
+  const oldMission = { ...mission, role: 'Procurement Analyst' };
+  const job = (employer, requisitionId, title = 'Sourcing Manager') => ({
+    provider: 'greenhouse', employer, title, requisitionId,
+    jobUrl: `https://boards.greenhouse.io/example/jobs/${requisitionId}`,
+    applyUrl: `https://boards.greenhouse.io/example/jobs/${requisitionId}`,
+    location: 'United States', remote: true, workplaceType: 'Remote', employmentType: 'Full-time',
+    description: `Lead sourcing and supplier management. ${'Verified employer responsibility. '.repeat(12)}`,
+    applyPathVerified: true, applyPathVerification: 'current-greenhouse-requisition-fetch',
+  });
+  const oldJob = job('Older Employer', 'REQ-OLD', 'Procurement Analyst');
+  const newJob = job('Newest Employer', 'REQ-NEW');
+  const card = (id, runId, employer, requisitionId, title = 'Sourcing Manager', status = 'Verified') => ({
+    id, employer, title, requisitionId, status, fitScore: 90,
+    directEmployerUrl: `https://boards.greenhouse.io/example/jobs/${requisitionId}`,
+    sourceProvider: 'greenhouse', sourceType: 'direct-employer', discoveryRunId: runId, applyPathActive: true,
+  });
+  await page.route('**/api/session-capabilities', route => route.fulfill({ json: { adminConsole: false, jobAgentAccess: true, tier: 'complete', sessionAuthentication: 'opaque-session' } }));
+  await routeEncryptedResumeVault(page);
+  await routeAccountWorkspace(page, { mission, jobCards: [card('old-card', 'run_old', 'Older Employer', 'REQ-OLD', 'Procurement Analyst', 'Found'), card('new-card', 'run_new', 'Newest Employer', 'REQ-NEW')] });
+  await page.route('**/api/job-agent-runs?latest=discovery', route => route.fulfill({ json: { run: { id: 'run_new', taskType: 'direct_employer_discovery', status: 'Finished', mission, result: { jobs: [newJob] } } } }));
+  let oldRunRequests = 0;
+  let oldRunAvailable = true;
+  await page.route('**/api/job-agent-runs?id=run_old', route => {
+    oldRunRequests += 1;
+    if (!oldRunAvailable) return route.fulfill({ status: 404, json: { error: 'Run not found.' } });
+    return route.fulfill({ json: { run: { id: 'run_old', taskType: 'direct_employer_discovery', status: 'Finished', mission: oldMission, result: { jobs: [oldJob] } } } });
+  });
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await page.locator('#openJobs').click();
+  await page.locator('[data-job-tab="Matches"]').click();
+  await expect(page.locator('#jobCards')).toContainText('Older Employer');
+  await expect(page.locator('[data-job-package-generate="old-card"]')).toBeVisible();
+  let oldPackageRequest = null;
+  await page.route('**/api/application-packages', route => {
+    oldPackageRequest = route.request().postDataJSON();
+    return route.fulfill({ status: 202, json: { run: { id: 'package_old', taskType: 'application_package', status: 'Preparing', mission: { roleId: 'old-card' }, result: null } } });
+  });
+  page.on('dialog', dialog => dialog.accept());
+  await page.locator('[data-job-package-generate="old-card"]').click();
+  expect(oldPackageRequest?.package).toMatchObject({ roleId: 'old-card', discoveryRunId: 'run_old', requisitionId: 'REQ-OLD' });
+  await page.locator('[data-job-tab="Preparing"]').click();
+  await expect(page.locator('#jobCards')).toContainText('Newest Employer');
+  await expect(page.locator('[data-job-package-generate="new-card"]')).toBeVisible();
+  expect(oldRunRequests).toBe(1);
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.locator('#openJobs').click();
+  await page.locator('[data-job-tab="Matches"]').click();
+  await expect(page.locator('[data-job-package-generate="old-card"]')).toHaveCount(1);
+  await page.locator('[data-job-tab="Preparing"]').click();
+  await expect(page.locator('[data-job-package-generate="new-card"]')).toHaveCount(1);
+  expect(oldRunRequests).toBe(2);
+  oldRunAvailable = false;
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.locator('#openJobs').click();
+  await page.locator('[data-job-tab="Matches"]').click();
+  await expect(page.locator('#jobCards')).toContainText('Older Employer');
+  await expect(page.locator('#jobCards')).toContainText('Saved job details need secure recovery');
+  await expect(page.locator('[data-job-package-generate="old-card"]')).toHaveCount(0);
+});
+
 test('a stale device run cannot hide a newer tenant discovery run', async ({ page }) => {
   let exactRunRequests = 0;
   await page.route('**/api/session-capabilities', route => route.fulfill({
