@@ -533,7 +533,14 @@ function renderVaultStatus() {
     const version = fact.versions.find(item => item.version === fact.currentVersion) || fact.versions.at(-1);
     if (version?.scope?.memory) return `<div class="desk-row"><div><strong>Remembered about you · ${escapeHtml(version.scope.category)}</strong><p>${escapeHtml(version.value)}</p><small>${escapeHtml(fact.label)} · ${escapeHtml(version.scope.kind)} scope · ${escapeHtml(version.scope.employer)} · ${escapeHtml(version.confirmedAt)} · ${version.scope.expiresAt ? `expires ${escapeHtml(version.scope.expiresAt)}` : 'until you edit or forget'}</small></div><div class="desk-actions"><button data-memory-edit="${escapeHtml(fact.id)}">Edit</button><button data-memory-forget="${escapeHtml(fact.id)}">Forget</button></div></div>`;
     return `<div class="desk-row"><div><strong>${escapeHtml(fact.label)}</strong><small>Saved securely · ${escapeHtml(version?.provenance || 'candidate confirmation')} · confidence ${Math.round((Number(version?.confidence) || 0) * 100)}% · version ${fact.currentVersion}${version?.autoReuse ? ' · reusable when meaning matches' : ' · manual review required'}</small></div><div class="desk-actions"><button data-vault-edit-fact="${escapeHtml(fact.fieldKey)}">Edit</button><button data-vault-revoke-fact="${escapeHtml(fact.id)}">Revoke</button></div></div>`;
-  }), ...documents.map(document => `<div class="desk-row"><div><strong>${escapeHtml(document.title)}</strong><small>Encrypted document · ${escapeHtml(document.type)} · version ${document.currentVersion} · contents hidden</small></div><div class="desk-actions"><button data-vault-revoke-document="${escapeHtml(document.id)}">Revoke</button></div></div>`)].filter(Boolean).join('') || empty('No encrypted account-backed answers or documents. Unsaved details remain only in this tab.');
+  }), ...documents.map(document => {
+    const selected = applicantVault.vault?.selectedBaseResume;
+    const versions = document.type === 'master-resume' ? document.versions.map(version => {
+      const chosen = selected?.documentId === document.id && selected.version === version.version && selected.sha256 === version.sha256;
+      return `<details><summary>Version ${version.version}${chosen ? ' · selected for packages' : ''} · review text</summary><div class="vault-resume-preview">${escapeHtml(version.text)}</div><button type="button" data-vault-base-document="${escapeHtml(document.id)}" data-vault-base-version="${version.version}" ${chosen ? 'disabled' : ''}>${chosen ? 'Selected base résumé' : 'Use this version as base résumé'}</button></details>`;
+    }).join('') : '';
+    return `<div class="desk-row"><div><strong>${escapeHtml(document.title)}</strong><small>Encrypted document · ${escapeHtml(document.type)} · ${document.versions.length} version(s)</small>${versions}</div><div class="desk-actions"><button data-vault-revoke-document="${escapeHtml(document.id)}">Revoke</button></div></div>`;
+  })].filter(Boolean).join('') || empty('No encrypted account-backed answers or documents. Unsaved details remain only in this tab.');
 }
 
 async function hydrateApplicantVault() {
@@ -612,6 +619,7 @@ function canonicalFactInput(fact) {
   return {
     fieldKey: fact.fieldKey, label: fact.label, value: fact.value, provenance: fact.source || 'candidate confirmation', confidence: 1,
     verificationState: fact.verificationState === 'document-verified' ? 'document-verified' : 'user-confirmed', sensitivity: fact.sensitivity,
+    originKind: /saved-resume-section|career-story-proposal|generated|parsed|inferred/i.test(String(fact.source || '')) ? 'parsed-proposal' : 'candidate-confirmed',
     autoReuse: CONSEQUENTIAL_QUESTION_KEYS.has(fact.fieldKey) ? false : fact.autoReuse === true, scope: fact.scope || {},
   };
 }
@@ -718,7 +726,10 @@ async function generateDurablePackage(roleId, { automatic = false, retryRequeste
     return retryData.run;
   }
   if (!role.jobDescription || role.jobDescription.length < 200) throw new Error('A verified employer job description is required.');
-  const resumeText = savedResumeText();
+  const selectedBase = applicantVault.vault?.selectedBaseResume;
+  const selectedText = selectedVaultResumeText();
+  if (selectedBase && !selectedText) throw new Error('Your selected saved résumé version is unavailable. Open Saved Info and review the selection.');
+  const resumeText = selectedText || savedResumeText();
   if (resumeText.length < 200) throw new Error('Save a candidate-reviewed master resume first.');
   if (!automaticPreparationAuthorized(sessionCapabilities.jobAgentConsent) && localStorage.getItem(PACKAGE_AI_CONSENT_KEY) !== 'approved') {
     if (automatic) return null;
@@ -734,11 +745,16 @@ async function generateDurablePackage(roleId, { automatic = false, retryRequeste
     body: JSON.stringify({ package: {
       roleId: role.id, discoveryRunId: role.discoveryRunId, employer: role.employer, title: role.title, requisitionId: role.requisitionId,
       directEmployerUrl: role.directEmployerUrl, applyPathActive: role.applyPathActive === true,
-      jobDescription: role.jobDescription, resumeText, includeCoverLetter: true,
+      jobDescription: role.jobDescription, resumeText: selectedBase ? savedResumeText() : resumeText, includeCoverLetter: true,
     }, runNow: !automatic, background: automatic }),
   }, 55000);
   const data = await response.json().catch(() => ({}));
   if (!response.ok && response.status !== 202) {
+    if (data.code === 'RESUME_REVIEW_REQUIRED') {
+      const factConflict = data.conflicts?.find(item => item.type === 'MATERIAL_FACT_MISMATCH');
+      const values = factConflict?.values?.map(item => `${item.source}: ${String(item.value || '').slice(0, 140)}`).join(' · ');
+      throw new Error(`Résumé review required. ${values || 'Your browser copy or confirmed facts differ from the selected saved version.'} Review both in Saved Info and the résumé editor; neither was overwritten.`);
+    }
     if (data.code === 'DIRECT_EMPLOYER_REQUISITION_CLOSED') {
       deskState = transitionRole(deskState, roleId, 'Rejected/Closed', { reason: 'The exact direct-employer requisition is no longer active.' });
       saveAll(); renderAll();
@@ -766,7 +782,7 @@ async function prepareDiscoveredApplications() {
     || missionState.runState === 'Paused') return;
   const candidates = preparationCandidates(deskState.roles, { discoveryRunId: durableRun?.id, limit: dailyGoal.target });
   if (!candidates.length) return;
-  if (savedResumeText().length < 200) {
+  if ((selectedVaultResumeText() || savedResumeText()).length < 200) {
     addMessage('assistant', '<strong>Your matches are saved. I need your reviewed master resume to prepare applications.</strong><br>Open Saved Info or upload your resume; you do not need to repeat the search.');
     return;
   }
@@ -1994,6 +2010,11 @@ function savedResumeRecord() {
   return { text: '', source: '', fileName: '', savedAt: '' };
 }
 function savedResumeText() { return savedResumeRecord().text; }
+function selectedVaultResumeText() {
+  const selected = applicantVault.vault?.selectedBaseResume;
+  const document = applicantVault.vault?.documents?.find(item => item.id === selected?.documentId && item.status === 'active');
+  return document?.versions?.find(version => version.version === selected.version && version.sha256 === selected.sha256)?.text || '';
+}
 function sanitizeResumeText(text) {
   let clean = String(text || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ' ');
   const patterns = [
@@ -4176,6 +4197,14 @@ $('vaultList').addEventListener('click', async event => {
   }
   const editKey = event.target?.dataset?.vaultEditFact;
   if (editKey) { $('vaultOverlay').classList.remove('open'); openQuestionPopup(editKey); return; }
+  const baseDocumentId = event.target?.dataset?.vaultBaseDocument;
+  if (baseDocumentId) {
+    const version = Number(event.target.dataset.vaultBaseVersion);
+    if (!window.confirm(`Use saved résumé version ${version} as the base for new application packages? Review its text and your confirmed facts first. Browser copies will not silently replace it.`)) return;
+    try { await vaultAction('select-base-resume', { documentId: baseDocumentId, version, reviewed: true }); showToast(`Base résumé version ${version} selected`); }
+    catch (error) { $('vaultStatus').textContent = error.message; }
+    return;
+  }
   const factId = event.target?.dataset?.vaultRevokeFact;
   const documentId = event.target?.dataset?.vaultRevokeDocument;
   if (!factId && !documentId) return;

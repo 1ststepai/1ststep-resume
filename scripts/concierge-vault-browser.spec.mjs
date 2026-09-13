@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { jobAgentPolicyBundle } from '../lib/job-agent-policy-bundle.js';
 import { jobAgentStatus } from '../client/concierge-router.js';
-import { grantVaultConsent } from '../lib/applicant-vault-domain.js';
+import { grantVaultConsent, selectVaultBaseResume, upsertVaultDocument } from '../lib/applicant-vault-domain.js';
 import { rememberApplicationAnswer, resolveApplicationAnswer, forgetAnswerMemory } from '../lib/application-answer-memory.js';
 
 const baseUrl = process.env.CONCIERGE_TEST_URL || 'http://127.0.0.1:4175/concierge';
@@ -19,6 +19,37 @@ async function openApplicationFromPrimary(page) {
   if (await attention.isVisible()) await attention.click();
   else await resume.click();
 }
+
+test('Saved Info explicitly selects one reviewed historical base resume version', async ({ page }) => {
+  let vault = grantVaultConsent(), version = 1, selection;
+  vault = upsertVaultDocument(vault, { type: 'master-resume', text: 'Version one candidate resume. '.repeat(16), provenance: 'candidate-reviewed' });
+  const documentId = vault.documents[0].id;
+  vault = upsertVaultDocument(vault, { id: documentId, type: 'master-resume', text: 'Version two candidate resume. '.repeat(16), provenance: 'candidate-reviewed' });
+  await page.route('**/api/session-capabilities*', route => route.fulfill({ json: { jobAgentAccess: true, sessionAuthentication: 'opaque-session' } }));
+  await page.route('**/api/applicant-vault', async route => {
+    if (route.request().method() === 'POST') {
+      const body = route.request().postDataJSON();
+      if (body.action === 'select-base-resume') {
+        selection = body.input;
+        vault = selectVaultBaseResume(vault, body.input);
+        version++;
+      }
+    }
+    await route.fulfill({ json: { vault, version } });
+  });
+  page.on('dialog', dialog => dialog.accept());
+  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await page.locator('#openVault').click();
+  await expect(page.locator('#vaultList')).toContainText('Version 1');
+  await expect(page.locator('#vaultList')).toContainText('Version 2');
+  await page.locator('#vaultList details').first().locator('summary').click();
+  await expect(page.locator('#vaultList details').first()).toContainText('Version one candidate resume');
+  await page.locator('#vaultList details').first().locator('button').click();
+  await expect(page.locator('#vaultList')).toContainText('Selected base résumé');
+  expect(selection).toEqual({ documentId, version: 1, reviewed: true });
+  expect(vault.selectedBaseResume.version).toBe(1);
+  expect(vault.documents[0].currentVersion).toBe(2);
+});
 
 test('Needs You remembers an exact answer, restores attribution, and forgets it without transmission', async ({ page }) => {
   let vault = grantVaultConsent(), version = 1, patch;
