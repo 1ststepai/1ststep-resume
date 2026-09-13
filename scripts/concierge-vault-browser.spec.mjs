@@ -544,7 +544,9 @@ test('the guided tap-through launch starts a truthful no-submit search in a few 
   await expect(page.locator('#startJobSearch')).toBeEnabled();
   await page.locator('#startJobSearch').click();
   await expect(page.locator('#runStateTrack [data-run-state="Preparing"]')).toHaveClass(/active/);
-  await expect(page.locator('#messages')).toContainText('Found 0 matching jobs');
+  await expect(page.locator('#messages')).toContainText('Added 0 new jobs to My Jobs');
+  await expect(page.locator('#messages')).toContainText('12 employer-feed listings scanned');
+  await expect(page.locator('#messages')).toContainText('11 listings outside your search requirements');
   await expect(page.locator('#messages')).toContainText('Found—not Submitted');
   expect(submittedMission?.location).toBe('United States');
   expect(submittedMission?.searchGoal).toBe('best-fit');

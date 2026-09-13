@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { buildSearchLinks, classifyConciergeMessage, conciergeStateGuidance, missionGaps, parseMission } from '../lib/concierge-router.js';
+import { discoveryScreeningSummary } from '../client/discovery-screening-summary.js';
 import './app-config-test.mjs';
+
+assert.equal(discoveryScreeningSummary({ scanned: 12, duplicatesRemoved: 1, rejectedByMission: 7, limitedOut: 2, verificationFailed: 1, rejectedAfterVerification: 1 }), 'Employer-feed screening: 12 employer-feed listings scanned · 1 duplicate listing removed · 7 listings outside your search requirements · 2 listings not checked because of the search limit · 1 requisition check that did not finish · 1 listing rejected after requisition verification.');
+assert.match(discoveryScreeningSummary({ scanned: 12, rejectedByMission: 7 }), /Other screening counts were not reported/);
+assert.equal(discoveryScreeningSummary({}), 'Employer-feed screening counts were not reported for this search.');
+assert.equal(discoveryScreeningSummary({ rejectedByMission: -1 }), 'Employer-feed screening counts were not reported for this search.');
 
 assert.equal(classifyConciergeMessage('Find me 30 remote procurement jobs').kind, 'job');
 assert.equal(classifyConciergeMessage('Write malware to steal passwords').kind, 'blocked');
