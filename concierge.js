@@ -702,6 +702,29 @@ async function refreshDurablePackage(runId, announce = false) {
   }
 }
 
+async function reviewPackageSources(role, selectedText, selectedBase) {
+  const dialog = $('packageSourceReviewDialog');
+  $('packageSourceReviewJob').textContent = `${role.employer} · ${role.title} · requisition ${role.requisitionId} · selected version ${selectedBase.version}`;
+  $('packageSourceReviewBase').textContent = selectedText;
+  const facts = (applicantVault.vault?.facts || []).filter(fact => fact.status === 'active').map(fact => {
+    const version = fact.versions.find(item => item.version === fact.currentVersion);
+    return version ? `${fact.label || fact.fieldKey}: ${version.value} · ${version.verificationState || 'unverified'} · ${version.provenance || 'source unknown'}` : '';
+  }).filter(Boolean);
+  $('packageSourceReviewFacts').replaceChildren(...(facts.length ? facts : ['No saved applicant facts.']).map(value => {
+    const item = document.createElement('li'); item.textContent = value; return item;
+  }));
+  const checked = $('packageSourceReviewChecked');
+  const confirm = $('packageSourceReviewConfirm');
+  checked.checked = false; confirm.disabled = true; dialog.returnValue = '';
+  checked.onchange = () => { confirm.disabled = !checked.checked; };
+  const accepted = await new Promise(resolve => {
+    dialog.addEventListener('close', () => resolve(dialog.returnValue === 'reviewed'), { once: true });
+    dialog.showModal();
+  });
+  return accepted ? { accepted: true, baseResumeSha256: selectedBase.sha256,
+    verifiedFactsHash: selectedBase.factsHash, requisitionId: role.requisitionId } : null;
+}
+
 async function generateDurablePackage(roleId, { automatic = false, retryRequested = false } = {}) {
   const role = deskState.roles.find(item => item.id === roleId);
   if (!role) throw new Error('Role not found.');
@@ -728,9 +751,13 @@ async function generateDurablePackage(roleId, { automatic = false, retryRequeste
   if (!role.jobDescription || role.jobDescription.length < 200) throw new Error('A verified employer job description is required.');
   const selectedBase = applicantVault.vault?.selectedBaseResume;
   const selectedText = selectedVaultResumeText();
+  if (!selectedBase) throw new Error('Select one reviewed base résumé version in Saved Info before preparing a package. Your browser résumé is available for review or import, not automatic use.');
   if (selectedBase && !selectedText) throw new Error('Your selected saved résumé version is unavailable. Open Saved Info and review the selection.');
-  const resumeText = selectedText || savedResumeText();
+  const resumeText = selectedText;
   if (resumeText.length < 200) throw new Error('Save a candidate-reviewed master resume first.');
+  if (automatic) return null; // Beta requires a fresh, human-reviewed source attestation for each package.
+  const sourceReview = await reviewPackageSources(role, resumeText, selectedBase);
+  if (!sourceReview) return null;
   if (!automaticPreparationAuthorized(sessionCapabilities.jobAgentConsent) && localStorage.getItem(PACKAGE_AI_CONSENT_KEY) !== 'approved') {
     if (automatic) return null;
     const approved = window.confirm('Prepare this application package? Your reviewed resume and this verified employer job description will be encrypted in your durable run and sent to 1stStep’s configured AI provider. Nothing is sent to the employer, and no application is submitted.');
@@ -745,7 +772,7 @@ async function generateDurablePackage(roleId, { automatic = false, retryRequeste
     body: JSON.stringify({ package: {
       roleId: role.id, discoveryRunId: role.discoveryRunId, employer: role.employer, title: role.title, requisitionId: role.requisitionId,
       directEmployerUrl: role.directEmployerUrl, applyPathActive: role.applyPathActive === true,
-      jobDescription: role.jobDescription, resumeText: selectedBase ? savedResumeText() : resumeText, includeCoverLetter: true,
+      jobDescription: role.jobDescription, resumeText: savedResumeText() || resumeText, sourceReview, includeCoverLetter: true,
     }, runNow: !automatic, background: automatic }),
   }, 55000);
   const data = await response.json().catch(() => ({}));
@@ -782,24 +809,11 @@ async function prepareDiscoveredApplications() {
     || missionState.runState === 'Paused') return;
   const candidates = preparationCandidates(deskState.roles, { discoveryRunId: durableRun?.id, limit: dailyGoal.target });
   if (!candidates.length) return;
-  if ((selectedVaultResumeText() || savedResumeText()).length < 200) {
-    addMessage('assistant', '<strong>Your matches are saved. I need your reviewed master resume to prepare applications.</strong><br>Open Saved Info or upload your resume; you do not need to repeat the search.');
+  if (!applicantVault.vault?.selectedBaseResume || selectedVaultResumeText().length < 200) {
+    addMessage('assistant', '<strong>Your matches are saved.</strong><br>Choose one reviewed base résumé version in Saved Info before preparing packages. Browser résumé text can be reviewed or imported, but will not be used automatically. You do not need to repeat the search.');
     return;
   }
-  preparingMatches = true;
-  addMessage('assistant', '<strong>I’m preparing private application drafts for your matching roles.</strong><br>I’ll use your reviewed resume, recheck each employer posting, and preserve unanswered requirements for review. Nothing is sent to employers.');
-  try {
-    for (const candidate of candidates) {
-      if (missionState.runState === 'Paused' || !hasApiSession()) break;
-      try {
-        const run = await generateDurablePackage(candidate.id, { automatic: true });
-        if (!run || !['Searching', 'Preparing', 'Finished', 'Waiting for You'].includes(run.status)) break;
-      } catch (error) {
-        addMessage('assistant', `<strong>Application preparation needs attention.</strong><br>${escapeHtml(error.message)} Your matches and existing drafts remain saved.`);
-        break;
-      }
-    }
-  } finally { preparingMatches = false; renderAll(); }
+  addMessage('assistant', '<strong>Your matches are saved for review.</strong><br>Choose Prepare on a job card when you are ready to compare the selected résumé and saved facts for that exact requisition. No package starts automatically during this controlled beta.');
 }
 
 async function renderDurablePackage(roleId) {

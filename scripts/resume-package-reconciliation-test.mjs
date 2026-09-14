@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { grantVaultConsent, revokeVaultFact, selectVaultBaseResume, syncCanonicalApplicantProfile, upsertVaultDocument, upsertVaultFact } from '../lib/applicant-vault-domain.js';
-import { reconcilePackageResumeInput } from '../lib/resume-package-reconciliation.js';
+import { packageSourceReviewMatches, reconcilePackageResumeInput } from '../lib/resume-package-reconciliation.js';
 import { validateApplicationPackageInput } from '../lib/job-agent-run-store.js';
 
 const at = '2026-09-13T12:00:00.000Z';
@@ -8,6 +8,11 @@ const resume = title => 'Job Title: ' + title + '\nEmployer: Example Co\n' + 'Ve
 const facts = [{ fieldKey: 'jobTitle', value: 'Senior Buyer', provenance: 'candidate confirmation',
   confidence: 1, verificationState: 'user-confirmed', originKind: 'candidate-confirmed', autoReuse: true }];
 let vault = grantVaultConsent({ scopes: ['confirmed-facts', 'documents'] }, at);
+const unselected = reconcilePackageResumeInput({ vault, browserText: resume('Senior Buyer') });
+assert.equal(unselected.status, 'needs-review', 'even sufficient legacy text cannot become an implicit package base');
+assert.equal(unselected.baseResume, null);
+assert.equal(unselected.resumeText, '');
+assert.equal(unselected.conflicts[0].type, 'BASE_RESUME_SELECTION_REQUIRED');
 vault = upsertVaultFact(vault, facts[0], at);
 vault = upsertVaultDocument(vault, { type: 'master-resume', text: resume('Senior Buyer'), provenance: 'candidate-reviewed' }, at);
 const doc = vault.documents[0];
@@ -25,15 +30,23 @@ assert.equal(resolved.status, 'ready');
 assert.equal(resolved.resumeText, firstVersion.text);
 assert.equal(resolved.baseResume.sha256, selected.sha256);
 assert.equal(resolved.verifiedFacts.length, 1);
+const sourceReview = { accepted: true, baseResumeSha256: selected.sha256,
+  verifiedFactsHash: resolved.verifiedFactsHash, requisitionId: 'req-123', reviewedAt: at };
+assert.equal(packageSourceReviewMatches(sourceReview, resolved, 'req-123'), true);
+assert.equal(packageSourceReviewMatches(null, resolved, 'req-123'), false, 'no review cannot authorize generation');
+assert.equal(packageSourceReviewMatches({ ...sourceReview, baseResumeSha256: '0'.repeat(64) }, resolved, 'req-123'), false);
+assert.equal(packageSourceReviewMatches({ ...sourceReview, verifiedFactsHash: '0'.repeat(64) }, resolved, 'req-123'), false);
+assert.equal(packageSourceReviewMatches(sourceReview, resolved, 'another-requisition'), false);
 const mission = validateApplicationPackageInput({
   roleId: 'role_example', discoveryRunId: 'run_discovery_example', employer: 'Example Co',
   title: 'Senior Buyer', requisitionId: 'req-123', directEmployerUrl: 'https://jobs.example.com/req-123',
   applyPathActive: true, jobDescription: 'Published role description. '.repeat(12),
   resumeText: resolved.resumeText, baseResume: resolved.baseResume,
-  verifiedFacts: resolved.verifiedFacts, verifiedFactsHash: resolved.verifiedFactsHash,
+  verifiedFacts: resolved.verifiedFacts, verifiedFactsHash: resolved.verifiedFactsHash, sourceReview,
 });
 assert.deepEqual(mission.baseResume, resolved.baseResume, 'selected document/version/hash is pinned in package mission');
 assert.equal(mission.verifiedFactsHash, resolved.verifiedFactsHash);
+assert.deepEqual(mission.sourceReview, sourceReview, 'per-package review is pinned to source, fact snapshot, and requisition');
 assert.throws(() => validateApplicationPackageInput({ ...mission, resumeText: resume('Buyer') }), /exact selected base resume identity/,
   'browser text cannot replace the pinned source without a hash mismatch');
 

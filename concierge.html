@@ -172,6 +172,17 @@
       </div>
     </section>
   </div>
+  <dialog class="package-source-review" id="packageSourceReviewDialog" aria-labelledby="packageSourceReviewTitle">
+    <form method="dialog">
+      <h2 id="packageSourceReviewTitle">Review sources before preparation</h2>
+      <p id="packageSourceReviewJob"></p>
+      <p>Compare this selected résumé version with your saved facts. If the narrative has an outdated title, employer, date, credential, metric, or other material conflict, choose “Needs correction” and fix it first. No application is submitted here.</p>
+      <h3>Selected base résumé</h3><pre id="packageSourceReviewBase"></pre>
+      <h3>Saved applicant facts and provenance</h3><ul id="packageSourceReviewFacts"></ul>
+      <label><input id="packageSourceReviewChecked" type="checkbox" required> I reviewed these sources for this exact job and found no unresolved material contradiction or unsupported claim.</label>
+      <div class="package-source-review-actions"><button value="cancel" formnovalidate>Needs correction</button><button id="packageSourceReviewConfirm" class="primary" value="reviewed" disabled>Continue preparation</button></div>
+    </form>
+  </dialog>
   <div class="package-review-overlay" id="packageReviewOverlay" role="dialog" aria-modal="true" aria-labelledby="packageReviewTitle">
     <section class="package-review-shell">
       <header class="package-review-head"><div><h2 id="packageReviewTitle">Check your resume</h2><p id="packageReviewJob"></p></div><button class="close-desk" id="closePackageReview" type="button" aria-label="Close review">Close</button></header>

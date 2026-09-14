@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { jobAgentPolicyBundle } from '../lib/job-agent-policy-bundle.js';
 import { jobAgentStatus } from '../client/concierge-router.js';
-import { grantVaultConsent, selectVaultBaseResume, upsertVaultDocument } from '../lib/applicant-vault-domain.js';
+import { grantVaultConsent, selectVaultBaseResume, upsertVaultDocument, upsertVaultFact } from '../lib/applicant-vault-domain.js';
 import { rememberApplicationAnswer, resolveApplicationAnswer, forgetAnswerMemory } from '../lib/application-answer-memory.js';
 
 const baseUrl = process.env.CONCIERGE_TEST_URL || 'http://127.0.0.1:4175/concierge';
@@ -49,6 +49,56 @@ test('Saved Info explicitly selects one reviewed historical base resume version'
   expect(selection).toEqual({ documentId, version: 1, reviewed: true });
   expect(vault.selectedBaseResume.version).toBe(1);
   expect(vault.documents[0].currentVersion).toBe(2);
+});
+
+test('package preparation requires a source review bound to the selected résumé, facts, and requisition', async ({ page }) => {
+  const baseText = 'Candidate-reviewed sourcing experience and education. '.repeat(10);
+  let vault = grantVaultConsent();
+  vault = upsertVaultFact(vault, { fieldKey: 'employment', value: 'Senior sourcing specialist at Example Company',
+    provenance: 'candidate confirmation', confidence: 1, verificationState: 'user-confirmed', originKind: 'candidate-confirmed', autoReuse: true });
+  vault = upsertVaultDocument(vault, { type: 'master-resume', text: baseText, provenance: 'candidate-reviewed' });
+  vault = selectVaultBaseResume(vault, { documentId: vault.documents[0].id, version: 1, reviewed: true });
+  const role = { id: 'review-role', employer: 'Example Company', title: 'Sourcing Manager', requisitionId: 'REQ-REVIEW-1',
+    status: 'Verified', directEmployerUrl: 'https://boards.greenhouse.io/example/jobs/111',
+    discoveryRunId: 'run_review_1', applyPathActive: true, fitScore: 90 };
+  let postedPackage = null;
+  await routeApprovedOnboarding(page);
+  await page.route('**/api/applicant-vault', route => route.fulfill({ json: { vault, version: 1 } }));
+  await routeAccountWorkspace(page, { mission: { role: 'Sourcing Manager', roleFamily: 'procurement', location: 'United States' }, jobCards: [role] });
+  await page.route('**/api/job-agent-runs?latest=discovery', route => route.fulfill({ json: { run: {
+    id: 'run_review_1', taskType: 'direct_employer_discovery', status: 'Finished',
+    mission: { role: 'Sourcing Manager', roleFamily: 'procurement', location: 'United States' },
+    result: { jobs: [{ provider: 'greenhouse', employer: role.employer, title: role.title,
+      requisitionId: role.requisitionId, jobUrl: role.directEmployerUrl, applyUrl: role.directEmployerUrl,
+      description: 'Lead sourcing and supplier programs. '.repeat(12), applyPathVerified: true,
+      applyPathVerification: 'current-greenhouse-requisition-fetch', applyPathVerifiedAt: '2026-09-14T12:00:00.000Z' }] },
+  } } }));
+  await page.route('**/api/application-packages', route => {
+    postedPackage = route.request().postDataJSON()?.package;
+    return route.fulfill({ json: { run: { id: 'package_review_1', status: 'Preparing',
+      mission: { roleId: role.id, employer: role.employer, title: role.title }, result: null } } });
+  });
+  page.on('dialog', dialog => dialog.accept());
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await page.locator('#openJobs').click();
+  await page.locator('[data-job-tab="Preparing"]').click();
+  const prepare = page.locator('[data-job-package-generate="review-role"]');
+  await expect(prepare).toHaveText('Prepare application');
+  await prepare.click();
+  await expect(page.locator('#packageSourceReviewDialog')).toBeVisible();
+  await expect(page.locator('#packageSourceReviewBase')).toContainText('Candidate-reviewed sourcing experience');
+  await expect(page.locator('#packageSourceReviewFacts')).toContainText('Senior sourcing specialist');
+  await expect(page.locator('#packageSourceReviewJob')).toContainText('REQ-REVIEW-1');
+  await expect(page.locator('#packageSourceReviewConfirm')).toBeDisabled();
+  await page.getByRole('button', { name: 'Needs correction' }).click();
+  expect(postedPackage).toBeNull();
+  await prepare.click();
+  await page.locator('#packageSourceReviewChecked').check();
+  await page.locator('#packageSourceReviewConfirm').click();
+  await expect.poll(() => postedPackage).not.toBeNull();
+  expect(postedPackage.sourceReview).toEqual({ accepted: true,
+    baseResumeSha256: vault.selectedBaseResume.sha256,
+    verifiedFactsHash: vault.selectedBaseResume.factsHash, requisitionId: role.requisitionId });
 });
 
 test('Needs You remembers an exact answer, restores attribution, and forgets it without transmission', async ({ page }) => {

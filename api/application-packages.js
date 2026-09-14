@@ -11,7 +11,7 @@ import { deleteApplicationPackageArtifacts } from '../lib/job-agent-object-stora
 import { jobAgentThroughputDecision, publicJobAgentThroughput } from '../lib/job-agent-throughput-policy.js';
 import { reviewablePackageBase } from '../lib/application-package-revision.js';
 import { readApplicantVault } from '../lib/applicant-vault-store.js';
-import { reconcilePackageResumeInput } from '../lib/resume-package-reconciliation.js';
+import { packageSourceReviewMatches, reconcilePackageResumeInput } from '../lib/resume-package-reconciliation.js';
 import { waitUntil } from '@vercel/functions';
 
 export const maxDuration = 60;
@@ -116,14 +116,20 @@ export default async function handler(req, res) {
       const vault = (await readApplicantVault({ ...config, subject: auth.subject })).vault;
       const reconciled = reconcilePackageResumeInput({ vault, browserText: packageMission?.resumeText });
       if (reconciled.status === 'needs-review') return res.status(409).json({
-        error: 'Your base resume and verified facts need review before preparing a package.',
+        error: reconciled.conflicts.some(item => item.type === 'BASE_RESUME_SELECTION_REQUIRED')
+          ? 'Select one reviewed base résumé version in Saved Info before preparing a package.'
+          : 'Your base resume and verified facts need review before preparing a package.',
         code: 'RESUME_REVIEW_REQUIRED', conflicts: reconciled.conflicts.slice(0, 20),
       });
+      if (!packageSourceReviewMatches(packageMission?.sourceReview, reconciled, String(packageMission?.requisitionId || ''))) {
+        return res.status(409).json({ error: 'Review the selected résumé, saved facts, and material narrative for this exact job before preparing a package.', code: 'SOURCE_REVIEW_REQUIRED' });
+      }
       const discoveryRunId = String(packageMission?.discoveryRunId || '');
       const discoveryRun = await readJobAgentRun({ ...config, subject: auth.subject, runId: discoveryRunId });
       const bound = await bindPackageToFreshVerifiedDiscovery(discoveryRun, { ...packageMission, resumeText: reconciled.resumeText }, { sources: config.sources });
       packageMission = { ...bound, baseResume: reconciled.baseResume, verifiedFacts: reconciled.verifiedFacts,
-        verifiedFactsHash: reconciled.verifiedFactsHash };
+        verifiedFactsHash: reconciled.verifiedFactsHash,
+        sourceReview: { ...packageMission.sourceReview, reviewedAt: new Date().toISOString() } };
       await recordConfiguredJobAgentOperationalEvent('direct_employer_reverification_open');
     }
     const created = await createJobAgentRun({
