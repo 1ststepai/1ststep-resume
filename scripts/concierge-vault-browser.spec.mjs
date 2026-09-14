@@ -686,7 +686,11 @@ test('two saved discovery runs keep both My Jobs cards actionable after sign-in'
     sourceProvider: 'greenhouse', sourceType: 'direct-employer', discoveryRunId: runId, applyPathActive: true,
   });
   await page.route('**/api/session-capabilities', route => route.fulfill({ json: { adminConsole: false, jobAgentAccess: true, tier: 'complete', sessionAuthentication: 'opaque-session' } }));
-  await routeEncryptedResumeVault(page);
+  let selectedVault = grantVaultConsent();
+  selectedVault = upsertVaultDocument(selectedVault, { type: 'master-resume',
+    text: 'Reviewed procurement and sourcing experience. '.repeat(12), provenance: 'candidate-reviewed' });
+  selectedVault = selectVaultBaseResume(selectedVault, { documentId: selectedVault.documents[0].id, version: 1, reviewed: true });
+  await page.route('**/api/applicant-vault', route => route.fulfill({ json: { vault: selectedVault, version: 1 } }));
   await routeAccountWorkspace(page, { mission, jobCards: [card('old-card', 'run_old', 'Older Employer', 'REQ-OLD', 'Procurement Analyst', 'Found'), card('new-card', 'run_new', 'Newest Employer', 'REQ-NEW')] });
   await page.route('**/api/job-agent-runs?latest=discovery', route => route.fulfill({ json: { run: { id: 'run_new', taskType: 'direct_employer_discovery', status: 'Finished', mission, result: { jobs: [newJob] } } } }));
   let oldRunRequests = 0;
@@ -702,13 +706,33 @@ test('two saved discovery runs keep both My Jobs cards actionable after sign-in'
   await expect(page.locator('#jobCards')).toContainText('Older Employer');
   await expect(page.locator('[data-job-package-generate="old-card"]')).toBeVisible();
   let oldPackageRequest = null;
+  let packageAttempts = 0;
   await page.route('**/api/application-packages', route => {
     oldPackageRequest = route.request().postDataJSON();
+    packageAttempts += 1;
+    if (packageAttempts === 1) return route.fulfill({ status: 409, json: { code: 'RESUME_REVIEW_REQUIRED',
+      conflicts: [{ type: 'VERIFIED_FACTS_CHANGED' }] } });
     return route.fulfill({ status: 202, json: { run: { id: 'package_old', taskType: 'application_package', status: 'Preparing', mission: { roleId: 'old-card' }, result: null } } });
   });
   page.on('dialog', dialog => dialog.accept());
   await page.locator('[data-job-package-generate="old-card"]').click();
+  await expect(page.locator('#packageSourceReviewDialog')).toBeVisible();
+  await expect(page.locator('#packageSourceReviewJob')).toContainText('REQ-OLD');
+  await page.locator('#packageSourceReviewChecked').check();
+  await page.locator('#packageSourceReviewConfirm').click();
+  await expect.poll(() => packageAttempts).toBe(1);
+  await expect(page.locator('#messages')).toContainText('Résumé review required');
+  await page.locator('#openJobs').click();
+  await page.locator('[data-job-tab="Matches"]').click();
+  await expect(page.locator('[data-job-package-generate="old-card"]')).toBeVisible();
+  await page.locator('[data-job-package-generate="old-card"]').click();
+  await page.locator('#packageSourceReviewChecked').check();
+  await page.locator('#packageSourceReviewConfirm').click();
+  await expect.poll(() => packageAttempts).toBe(2);
   expect(oldPackageRequest?.package).toMatchObject({ roleId: 'old-card', discoveryRunId: 'run_old', requisitionId: 'REQ-OLD' });
+  expect(oldPackageRequest.package.sourceReview).toMatchObject({ accepted: true,
+    baseResumeSha256: selectedVault.selectedBaseResume.sha256,
+    verifiedFactsHash: selectedVault.selectedBaseResume.factsHash, requisitionId: 'REQ-OLD' });
   await page.locator('[data-job-tab="Preparing"]').click();
   await expect(page.locator('#jobCards')).toContainText('Newest Employer');
   await expect(page.locator('[data-job-package-generate="new-card"]')).toBeVisible();
