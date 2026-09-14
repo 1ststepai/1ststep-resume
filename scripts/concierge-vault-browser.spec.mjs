@@ -278,37 +278,42 @@ test('a stale legacy bearer is never sent to the Job Agent and returns to opaque
   await expect(page.locator('#agentAccessCredentialFields')).toBeHidden();
 });
 
-test('sign-in shows immediate progress while email and verification requests are pending', async ({ page }) => {
-  let releaseSend;
-  let releaseVerify;
-  const sendPending = new Promise(resolve => { releaseSend = resolve; });
-  const verifyPending = new Promise(resolve => { releaseVerify = resolve; });
+test('Clerk-ready concierge sends sign-in to the same-origin login route', async ({ page }) => {
   await page.route('**/api/app-config', route => route.fulfill({
-    status: 200, contentType: 'application/json', body: JSON.stringify({ authentication: { restoreAccessAvailable: true } }),
+    status: 200, contentType: 'application/json', body: JSON.stringify({ authentication: { clerk: { enabled: true } } }),
   }));
-  await page.route('**/api/subscription*', async route => {
-    const url = new URL(route.request().url());
-    if (url.searchParams.get('action') === 'restore-code') {
-      await sendPending;
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ restoreChallenge: 'synthetic-challenge' }) });
-    }
-    await verifyPending;
-    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ tier: 'free', status: 'inactive' }) });
-  });
-  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await page.locator('#openAgentAccess').click();
-  await page.locator('#agentAccessEmail').fill('candidate@example.test');
-  await page.locator('#verifyAgentAccess').click();
-  await expect(page.locator('#verifyAgentAccess')).toHaveText('Sending code…');
-  await expect(page.locator('#agentAccessMessage')).toHaveText('Sending a one-time code…');
-  releaseSend();
-  await expect(page.locator('#verifyAgentAccess')).toHaveText('Verify existing access');
-  await page.locator('#agentAccessCode').fill('123456');
-  await page.locator('#verifyAgentAccess').click();
-  await expect(page.locator('#verifyAgentAccess')).toHaveText('Verifying…');
-  await expect(page.locator('#agentAccessMessage')).toHaveText('Verifying your code…');
-  releaseVerify();
-  await expect(page.locator('#agentAccessMessage')).toContainText('No current controlled-beta access');
+  await expect(page).toHaveURL(/\/login\.html\?returnTo=%2Fconcierge$/);
+});
+
+test('Clerk-disabled concierge fails closed without sending an access code', async ({ page }) => {
+  let subscriptionRequests = 0;
+  await page.route('**/api/app-config', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ authentication: { clerk: { enabled: false }, restoreAccessAvailable: true } }),
+  }));
+  await page.route('**/api/subscription*', route => { subscriptionRequests++; return route.abort(); });
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await page.locator('#openAgentAccess').click();
+  await expect(page.locator('#agentAccessOverlay')).toHaveClass(/open/);
+  await expect(page.locator('#agentAccessCredentialFields')).toBeHidden();
+  await expect(page.locator('#verifyAgentAccess')).toBeDisabled();
+  await expect(page.locator('#agentAccessMessage')).toContainText('Secure sign-in is not configured for this environment. No code was sent.');
+  expect(subscriptionRequests).toBe(0);
+});
+
+test('login page shows progress then a retryable configuration error', async ({ page }) => {
+  let releaseConfig;
+  const configPending = new Promise(resolve => { releaseConfig = resolve; });
+  await page.route('**/api/app-config', async route => {
+    await configPending;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ authentication: { clerk: { enabled: false } } }) });
+  });
+  await page.goto(new URL('/login.html', baseUrl).toString(), { waitUntil: 'commit' });
+  await expect(page.locator('#loginStatus')).toHaveText('Opening secure sign-in…');
+  releaseConfig();
+  await expect(page.locator('#loginStatus')).toContainText('Secure sign-in is not available in this environment yet.');
+  await expect(page.locator('#retryLogin')).toBeVisible();
 });
 
 test('a signed but non-invited pilot user keeps data controls without agent access', async ({ page }) => {
