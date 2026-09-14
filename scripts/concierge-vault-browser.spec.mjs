@@ -755,6 +755,33 @@ test('two saved discovery runs keep both My Jobs cards actionable after sign-in'
   await expect(page.locator('[data-job-package-generate="old-card"]')).toHaveCount(0);
 });
 
+test('two saved runs for one Greenhouse requisition show one My Jobs card', async ({ page }) => {
+  const mission = { role: 'Sourcing Manager', roleFamily: 'procurement', workModes: ['Remote'], employmentTypes: ['Full-time'], location: 'United States', target: 10 };
+  const requisitionId = 'REQ-SAME';
+  const url = `https://boards.greenhouse.io/example/jobs/${requisitionId}`;
+  const job = { provider: 'greenhouse', employer: 'Same Employer', title: 'Sourcing Manager', requisitionId,
+    jobUrl: url, applyUrl: url, location: 'United States', remote: true, workplaceType: 'Remote', employmentType: 'Full-time',
+    description: `Lead sourcing and supplier management. ${'Verified employer responsibility. '.repeat(12)}`,
+    applyPathVerified: true, applyPathVerification: 'current-greenhouse-requisition-fetch' };
+  const card = (id, runId) => ({ id, employer: job.employer, title: job.title, requisitionId,
+    status: 'Verified', fitScore: 90, directEmployerUrl: url, sourceProvider: 'greenhouse', sourceType: 'direct-employer',
+    discoveryRunId: runId, applyPathActive: true });
+  await page.route('**/api/session-capabilities', route => route.fulfill({ json: { adminConsole: false, jobAgentAccess: true, tier: 'complete', sessionAuthentication: 'opaque-session' } }));
+  await routeAccountWorkspace(page, { mission, jobCards: [card('old-card', 'run_old'), card('new-card', 'run_new')] });
+  await page.route('**/api/job-agent-runs?latest=discovery', route => route.fulfill({ json: { run: { id: 'run_new', taskType: 'direct_employer_discovery', status: 'Finished', mission, result: { jobs: [job] } } } }));
+  await page.route('**/api/job-agent-runs?id=run_old', route => route.fulfill({ json: { run: { id: 'run_old', taskType: 'direct_employer_discovery', status: 'Finished', mission, result: { jobs: [job] } } } }));
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await page.locator('#openJobs').click();
+  await page.locator('[data-job-tab="Preparing"]').click();
+  await expect(page.locator('#jobCards .simple-job-card')).toHaveCount(1);
+  await expect(page.locator('#jobCards [data-job-package-generate]')).toHaveCount(1);
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.locator('#openJobs').click();
+  await page.locator('[data-job-tab="Preparing"]').click();
+  await expect(page.locator('#jobCards .simple-job-card')).toHaveCount(1);
+  await expect(page.locator('#jobCards [data-job-package-generate]')).toHaveCount(1);
+});
+
 test('a stale device run cannot hide a newer tenant discovery run', async ({ page }) => {
   let exactRunRequests = 0;
   await page.route('**/api/session-capabilities', route => route.fulfill({

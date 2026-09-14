@@ -47,7 +47,7 @@ import {
   recordGeneratedPackage, recordPackageRunCheckpoint, resolveActionItem, resolveManagedApplicationException, resumeManagedApplicationSession, setAutonomyLevel, setStandingPolicy, stageReadinessDraft, startManagedApplicationSession, transitionRole, truthProfileGaps, updateTruthProfile,
   verificationGaps, reconcileConfirmedResumeFacts, reviewConfirmedResumeFacts,
 } from './client/concierge-domain.js';
-import { acquisitionFunnel, evaluateCandidateFit, extractStructuredRequirements, upsertHiringEcosystem } from './client/job-intelligence.js';
+import { acquisitionFunnel, evaluateCandidateFit, extractStructuredRequirements, publicJobsAreDuplicate, upsertHiringEcosystem } from './client/job-intelligence.js';
 import { JOB_RELEVANCE_POLICY_VERSION, jobTitleMatchesMission, normalizeMissionExclusions, restoredJobCardIsRelevant } from './client/job-mission-relevance.js';
 import { discoveryScreeningSummary } from './client/discovery-screening-summary.js';
 import { buildAnswerCoachingRequest, summarizePracticeSession } from './client/interview-practice.js';
@@ -2777,8 +2777,14 @@ function subscriberRoles() {
 }
 
 function mergedSubscriberRoles() {
-  const restoredIds = new Set(deskState.roles.map(role => role.id));
-  return [...deskState.roles, ...(syncedSubscriberView.jobCards || []).filter(card => !restoredIds.has(card.id))];
+  const roles = [...deskState.roles];
+  for (const card of syncedSubscriberView.jobCards || []) {
+    if (roles.some(role => role.id === card.id || (role.requisitionId && card.requisitionId
+      && String(role.sourceProvider || '').toLowerCase() === String(card.sourceProvider || '').toLowerCase()
+      && role.sourceProvider && publicJobsAreDuplicate(role, card)))) continue;
+    roles.push(card);
+  }
+  return roles;
 }
 
 function primaryJobAction(role, applicationSession, status) {
