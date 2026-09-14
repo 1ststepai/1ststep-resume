@@ -934,7 +934,8 @@ test('a signed-in user gives one-time scoped authorization before any agent run 
   await page.locator('#startJobSearch').click();
   await expect.poll(() => runStarts).toBe(1);
   expect(savedAttestations).toEqual({ age18OrOlder: true, termsAccepted: true, privacyAcknowledged: true, candidateAuthorizationAccepted: true });
-  await expect(page.locator('#messages')).toContainText('Found 0 matching jobs');
+  await expect(page.locator('#messages')).toContainText('Added 0 new jobs to My Jobs');
+  await expect(page.locator('#messages')).toContainText('0 employer-feed listings scanned');
 });
 
 test('the same saved-info area can revoke authorization and pause the agent', async ({ page }) => {
