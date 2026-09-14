@@ -1,5 +1,18 @@
 # Independent audit view of launch gates
 
+## Cycle 2 / app product-family overlay (2026-09-13)
+
+The table below is the Cycle 0 gate definition and historical limited reconciliation; it is **not** a fresh hosted or Production verdict. Independent Cycle 2 reported local **PASS WITH FINDINGS**, hosted **BLOCKED**, integration **YES WITH CONDITIONS**, Production **NOT AUTHORIZED**. Main audit anchor `d64e174` and partial PR #80 anchor `b071371` are unchanged. AUD-017..028 are now in `AUDIT-FINDINGS.md`; their release effects augment the earlier blockers, never waive them.
+
+| Surface / shared seam | Current justified release state | First missing proof or decision |
+| --- | --- | --- |
+| `app.1ststep.ai` signed Job Agent | **BLOCKED**; public shell historically conditional only | Exact Git-sourced Preview, Clerk lifecycle, hosted tenant/capture/résumé persistence, independently accepted clean integration. AUD-002/017/021/022/024/025 and original gates remain. |
+| `resume.1ststep.ai` | Public shell **historical PASS WITH CONDITIONS**; current parity **UNKNOWN**; authenticated authority **BLOCKED** | Current source/deployment mapping, selected Vault version and real-fact conflict/review path, identity linkage to canonical app user; no separate truth store authorized. |
+| `partners.1ststep.ai` | Operational launch **BLOCKED**; current live deployment state **UNKNOWN** | Current claim/link behavior, approved role, click→signup attribution/expiry, tenant isolation and explicit linkage to canonical app identity (AUD-008). |
+| Shared identity, schema, APIs, tenant ownership | **UNVERIFIED** across all three surfaces | Inspect existing per-surface identity/linkage and hosted two-tenant denial; do not infer a common user merely from three hostnames or introduce a second identity system. |
+
+Gate 10 integration may start only from a new clean worktree at the exact remote PR head, applying the five auditor-reviewed candidates in order with required suites after each step. The hard-filter assertion is corrected at `d2864c8`, but its full browser file is not green (40/42, including AUD-025 and intermittent onboarding consent); AUD-024 remains **NEEDS REVERIFICATION**. Before hosted acceptance, the Product Owner must decide AUD-022 (required selection versus explicit legacy review) and bound the narrative pre-generation review/fix for AUD-021. Before any deployment beyond a free-only isolated Preview, decide AUD-019 paid entitlement continuity. Obtain a Git-sourced exact-SHA Preview for hosted proof; no CLI-associated Preview counts as PR #80 identity. No Production release, autonomous final submission or extension publication is authorized.
+
 This is a **separate evidence view**, not a replacement for `docs/production-readiness/release-gate.md`, `docs/JOB_AGENT_DEPLOYMENT_RUNBOOK.md`, or owner approval. The auditor reports; the Orchestrator reconciles statuses. A green deterministic gate is not a signed-user or Production pass.
 
 Cycle 0 proposed explicit G1–G4 only. G5/G6 below reconcile the already-existing separate Agent OS gates; they are **not** attributed to the auditor's missing proposed rows. These are evidence statuses, not approval to merge, deploy, submit or publish.

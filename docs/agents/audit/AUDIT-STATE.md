@@ -1,5 +1,15 @@
 # Independent audit checkpoint
 
+## Cycle 2 reconciliation — 2026-09-13
+
+The immutable independent [Cycle 1](C:/Users/evanp/Documents/Claude/Audits/1ststep.ai/2026-09-13-job-agent-audit-cycle-1.md) report (SHA-256 `D99DFB832016B31FF3EFD653F4847BAA758072BF4223C6F32FF8CAC4BC1DD96A`) and [Cycle 2](C:/Users/evanp/Documents/Claude/Audits/1ststep.ai/2026-09-13-job-agent-audit-cycle-2.md) report (SHA-256 `98DE998C2ECB8921B4BC4C8387DB3D023006DD2148801A84FE425C47EF967607`) were received and reconciled into `AUDIT-FINDINGS.md` as AUD-017..028. Cycle 2's verdict is **PASS WITH FINDINGS for local source/test scope; hosted BLOCKED; integration YES WITH CONDITIONS; Production NOT AUTHORIZED**. Cycle 1 was blocked for exact-Preview attribution and hosted proof. The independent auditor did not close any prior finding.
+
+`LAST_AUDITED_COMMIT` remains `d64e1743a63c40760d2c7ce8ef8f5a2f75d53f29` as the **scoped main delta anchor**. PR #80 remains **PARTIAL** at `b071371d80c90ca78213cbac9d604789ea4b96fc`. Local candidates `ce50e11f`, `be217f02`, `12a2c369`, `5cfcb50`, and `18433c05` were independently examined but are neither integrated nor hosted-verified and do not advance either anchor. AUD-024's stale assertion has an engineering-only correction at `d2864c8906c57175ff9028775f6cbd44bf1181cd`; independent re-verification is pending. Its targeted browser test passed; the full browser file remains red from the obsolete Clerk fixture and an intermittent onboarding-consent assertion, so integration is **not** green.
+
+The three-surface app family is one engineering authority with separate release states: `app.1ststep.ai` signed beta **BLOCKED**; `resume.1ststep.ai` public shell **PASS WITH CONDITIONS historically**, current source/deployment parity **UNKNOWN**, authenticated résumé authority **BLOCKED**; `partners.1ststep.ai` operational launch **BLOCKED**, current deployment/identity/attribution proof **UNKNOWN**. Shared identity, user ownership, tenant isolation and cross-surface navigation are **UNVERIFIED**, not assumed healthy. See `AUDIT-LAUNCH-GATES.md`; no new Resume or Partners orchestrator is created.
+
+The table below preserves the Cycle 0 historical checkpoint, not a claim that Cycle 0 is still the latest completed independent audit or that its runtime observations remain current.
+
 Cycle 0 is an accepted **scoped, historical delta anchor**, not a full line review or release authorization. The complete immutable auditor report is at C:\Users\evanp\Documents\Claude\Audits\1ststep.ai\2026-09-12-job-agent-audit-baseline.md (SHA-256 936EE4FAFFDAD2914D3161568C563134335CCACA72AA59F597F95F1C680F6344). The Orchestrator reconciled it against current source and limited runtime evidence on 2026-09-12 ET. Current facts must be reverified next cycle.
 
 | Field | Accepted state and limit |
@@ -15,4 +25,4 @@ Cycle 0 is an accepted **scoped, historical delta anchor**, not a full line revi
 | Next audit triggers | Explicit "Run the next incremental 1stStep.ai audit"; PR #80 push/new candidate; authenticated Preview readiness; any Production deploy; capture/vault/session/receipt or auth/security/data change; extension manifest/Store action; hosted migration; before beta/Production review. No idle polling. |
 | Hosted/environment limitations | Protected Preview sign-in, exact source-to-deployment parity for the newer CLI Preview, Clerk instance match, Redis/Postgres targets and two-tenant denial, durable capture/readback, installed extension compatibility, partner role and real receipt path are not independently proven. No secrets or applicant data belong in this ledger. |
 
-The next auditor compares main changes after d64e174 **and** the PR #80 delta/affected seams from its partial b071371 review. A partial or blocked next cycle cannot silently advance either anchor. The seven original track IDs remain mapped in AUDIT-FINDINGS.md; no finding is auto-resolved by this checkpoint.
+The next auditor compares main changes after d64e174 **and** the PR #80 delta/affected seams from its partial b071371 review, plus independently reviewed but unintegrated candidate changes and new engineering corrections. A partial or blocked cycle cannot silently advance either anchor. The seven original track IDs remain mapped in AUDIT-FINDINGS.md; no finding is auto-resolved by this checkpoint.
