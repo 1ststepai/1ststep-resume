@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { initializeLoginPage } from '../login.js';
-async function run({signedIn=true, enabled=true, failure=false, mode='', returnTo='', token='fixture.session.token'}={}) {
+async function run({signedIn=true, enabled=true, failure=false, mode='', returnTo='', token='fixture.session.token', production=true, frontendApiUrl}={}) {
   const calls=[], cache=new Map(), scripts=[];
   const elements = Object.fromEntries(['loginStatus','retryLogin','clerkSignIn'].map(id=>[id,{hidden:true,textContent:'',addEventListener(type,fn){this[type]=fn;}}]));
   const result={calls,cache,scripts,elements};
   const expectedReturnTo = returnTo && returnTo.startsWith('/') && !returnTo.startsWith('/login.html') ? returnTo : '/app';
   const expectedCallback = `https://app.1ststep.ai/login.html?returnTo=${encodeURIComponent(expectedReturnTo)}`;
-  const clerk={session:signedIn?{getToken:async(options)=> {assert.equal(options.skipCache,true);return token;}}:null,load:async(options)=>{assert.equal(options.signInForceRedirectUrl,expectedCallback);assert.equal(options.signUpForceRedirectUrl,expectedCallback);},signOut:async()=>{result.signedOut=true;},redirectToSignIn:async(options)=>{assert.equal(options.signInForceRedirectUrl,expectedCallback);result.signIn=true;},redirectToSignUp:async(options)=>{assert.equal(options.signUpForceRedirectUrl,expectedCallback);result.signUp=true;}};
+  const clerk={session:signedIn?{getToken:async(options)=> {assert.equal(options.skipCache,true);return token;}}:null,load:async(options)=>{assert.equal(options.signInForceRedirectUrl,expectedCallback);assert.equal(options.signUpForceRedirectUrl,expectedCallback);result.loadOptions=options;},signOut:async()=>{result.signedOut=true;},redirectToSignIn:async(options)=>{assert.equal(options.signInForceRedirectUrl,expectedCallback);result.signIn=true;},redirectToSignUp:async(options)=>{assert.equal(options.signUpForceRedirectUrl,expectedCallback);result.signUp=true;}};
   await initializeLoginPage({
     documentRef:{getElementById:id=>elements[id],createElement:()=>({dataset:{}}),head:{appendChild(script){scripts.push(script.src);script.onload();}}},
     windowRef:{Clerk:clerk},
@@ -16,13 +17,15 @@ async function run({signedIn=true, enabled=true, failure=false, mode='', returnT
     now:()=>0,
     fetchImpl:async(url,options)=>{
       calls.push({url,options});
-      if(url==='/api/app-config')return{ok:true,json:async()=>({authentication:{clerk:{enabled,publishableKey:'pk_live_fixture'}}})};
+      if(url==='/api/app-config')return{ok:true,json:async()=>({authentication:{clerk:{enabled,publishableKey:production?'pk_live_fixture':'pk_test_fixture',frontendApiUrl:frontendApiUrl||(production?'https://clerk.1ststep.ai':'https://fixture.clerk.accounts.dev'),signInUrl:production?'https://accounts.1ststep.ai/sign-in':null,signUpUrl:production?'https://accounts.1ststep.ai/sign-up':null}}})};
       return{ok:!failure,json:async()=>failure?{error:'Subscription temporarily unavailable'}:{signedIn:true,email:'verified@example.test',tier:'complete',status:'active'}};
     },
   });
   return result;
 }
 const success=await run();
+assert.equal(success.scripts[0],'https://clerk.1ststep.ai/npm/@clerk/clerk-js@6/dist/clerk.browser.js');
+assert.equal(success.loadOptions.signInUrl,'https://accounts.1ststep.ai/sign-in');
 assert.equal(success.redirect,'/app','Ignore untrusted redirect parameters');
 assert.equal(success.calls[1].options.headers.Authorization,'Bearer fixture.session.token');
 assert.equal(success.calls[1].options.credentials,'same-origin');
@@ -52,6 +55,13 @@ assert.equal(failed.cache.size,0);
 assert.equal(failed.elements.retryLogin.hidden,false);
 const disabled=await run({enabled:false});
 assert.equal(disabled.scripts.length,0);
+const preview=await run({production:false});
+assert.equal(preview.scripts[0],'https://fixture.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js');
+assert.equal(Object.hasOwn(preview.loadOptions,'signInUrl'),false,'Preview must let the development Clerk instance choose its Account Portal');
+assert.equal(Object.hasOwn(preview.loadOptions,'signUpUrl'),false,'Preview must not receive Production Account Portal URLs');
+const mismatched=await run({production:false,frontendApiUrl:'https://clerk.1ststep.ai'});
+assert.equal(mismatched.scripts.length,0,'A test key cannot load the Production Clerk origin');
+assert.match(mismatched.elements.loginStatus.textContent,/invalid/i);
 assert.equal((await run({signedIn:false})).signIn,true);
 assert.equal((await run({signedIn:false,mode:'sign-up'})).signUp,true);
 const logout=await run({mode:'sign-out'});
@@ -60,4 +70,11 @@ assert.equal(logout.calls.some(call=>call.url.includes('clerk-exchange')),false)
 const failedLogout=await run({mode:'sign-out',failure:true});
 failedLogout.elements.retryLogin.click();
 assert.equal(failedLogout.reloaded,true,'Retrying logout cannot create a new login session');
+const loginHeaderRules=JSON.parse(await readFile(new URL('../vercel.json',import.meta.url))).headers.filter(rule=>rule.source==='/login.html');
+const productionCsp=loginHeaderRules.find(rule=>rule.missing?.some(condition=>condition.type==='host'))?.headers.find(header=>header.key==='Content-Security-Policy')?.value||'';
+const previewCsp=loginHeaderRules.find(rule=>rule.has?.some(condition=>condition.type==='host'))?.headers.find(header=>header.key==='Content-Security-Policy')?.value||'';
+assert.match(productionCsp,/https:\/\/clerk\.1ststep\.ai/);
+assert.doesNotMatch(productionCsp,/clerk\.accounts\.dev/,'Production CSP must not trust the development Clerk instance');
+assert.match(previewCsp,/https:\/\/first-impala-7783\.clerk\.accounts\.dev/);
+assert.doesNotMatch(previewCsp,/https:\/\/clerk\.1ststep\.ai/,'Preview CSP must not trust the Production Clerk instance');
 console.log('Login client checks passed: verified exchange, fixed redirects, no token storage, sign-up, failure recovery, and logout.');

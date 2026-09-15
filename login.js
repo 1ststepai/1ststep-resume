@@ -68,12 +68,21 @@ export async function initializeLoginPage({
     if (!response.ok) throw new Error('Sign-in is temporarily unavailable. Please try again.');
     const configuration = (await response.json()).authentication?.clerk;
     if (!configuration?.enabled) throw new Error('Secure sign-in is not available in this environment yet. Please try again later.');
-    // Use this application's verified Clerk origin, never a URL supplied by a query string.
-    await loadScript('https://clerk.1ststep.ai/npm/@clerk/clerk-js@6/dist/clerk.browser.js', configuration.publishableKey);
-    await windowRef.Clerk.load({
-      signInUrl: 'https://accounts.1ststep.ai/sign-in', signUpUrl: 'https://accounts.1ststep.ai/sign-up',
+    // Use only the server-validated Clerk origin associated with this deployment's public key.
+    const frontendApiUrl = new URL(configuration.frontendApiUrl);
+    const productionKey = configuration.publishableKey.startsWith('pk_live_');
+    const validFrontendApi = frontendApiUrl.protocol === 'https:' && !frontendApiUrl.port
+      && (productionKey
+        ? frontendApiUrl.origin === 'https://clerk.1ststep.ai'
+        : frontendApiUrl.hostname.endsWith('.clerk.accounts.dev'));
+    if (!validFrontendApi) throw new Error('Secure sign-in configuration is invalid. Please try again later.');
+    await loadScript(`${frontendApiUrl.origin}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, configuration.publishableKey);
+    const clerkOptions = {
       signInForceRedirectUrl: callback, signUpForceRedirectUrl: callback,
-    });
+    };
+    if (configuration.signInUrl) clerkOptions.signInUrl = configuration.signInUrl;
+    if (configuration.signUpUrl) clerkOptions.signUpUrl = configuration.signUpUrl;
+    await windowRef.Clerk.load(clerkOptions);
     if (mode === 'sign-out') {
       // Clear both identity and app sessions; this route never exchanges on logout.
       const result = await fetchImpl('/api/user-session', { method: 'DELETE', credentials: 'same-origin' });
