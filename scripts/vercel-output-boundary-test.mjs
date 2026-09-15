@@ -168,7 +168,8 @@ for (const requiredFunction of [
   assert(functionNames.has(requiredFunction), `Expected serverless API function missing: api/${requiredFunction}`);
 }
 assert(functionNames.has('job-agent-discord-relay.func'), 'Expected serverless API function missing: api/job-agent-discord-relay.func');
-assert.equal(functionNames.size, 44, `Unexpected API function count: ${functionNames.size}`);
+assert(functionNames.has('login-page.func'), 'Expected environment-specific login CSP function missing: api/login-page.func');
+assert.equal(functionNames.size, 45, `Unexpected API function count: ${functionNames.size}`);
 
 const outputConfig = JSON.parse(await readFile(path.join(outputRoot, 'config.json'), 'utf8'));
 const routeText = JSON.stringify(outputConfig.routes || []);

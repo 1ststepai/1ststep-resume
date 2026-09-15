@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import loginPageHandler, { loginContentSecurityPolicy } from '../api/login-page.js';
 import { initializeLoginPage } from '../login.js';
 async function run({signedIn=true, enabled=true, failure=false, mode='', returnTo='', token='fixture.session.token', production=true, frontendApiUrl}={}) {
   const calls=[], cache=new Map(), scripts=[];
@@ -70,11 +70,25 @@ assert.equal(logout.calls.some(call=>call.url.includes('clerk-exchange')),false)
 const failedLogout=await run({mode:'sign-out',failure:true});
 failedLogout.elements.retryLogin.click();
 assert.equal(failedLogout.reloaded,true,'Retrying logout cannot create a new login session');
-const loginHeaderRules=JSON.parse(await readFile(new URL('../vercel.json',import.meta.url))).headers.filter(rule=>rule.source==='/login.html');
-const productionCsp=loginHeaderRules.find(rule=>rule.missing?.some(condition=>condition.type==='host'))?.headers.find(header=>header.key==='Content-Security-Policy')?.value||'';
-const previewCsp=loginHeaderRules.find(rule=>rule.has?.some(condition=>condition.type==='host'))?.headers.find(header=>header.key==='Content-Security-Policy')?.value||'';
+const productionKey=`pk_live_${Buffer.from('clerk.1ststep.ai$').toString('base64url')}`;
+const developmentKey=`pk_test_${Buffer.from('first-impala-7783.clerk.accounts.dev$').toString('base64url')}`;
+const productionCsp=loginContentSecurityPolicy({VERCEL_ENV:'production',CLERK_PUBLISHABLE_KEY:productionKey});
+const previewCsp=loginContentSecurityPolicy({VERCEL_ENV:'preview',CLERK_PUBLISHABLE_KEY:developmentKey});
 assert.match(productionCsp,/https:\/\/clerk\.1ststep\.ai/);
 assert.doesNotMatch(productionCsp,/clerk\.accounts\.dev/,'Production CSP must not trust the development Clerk instance');
 assert.match(previewCsp,/https:\/\/first-impala-7783\.clerk\.accounts\.dev/);
 assert.doesNotMatch(previewCsp,/https:\/\/clerk\.1ststep\.ai/,'Preview CSP must not trust the Production Clerk instance');
+const priorEnvironment={...process.env};
+try{
+  Object.assign(process.env,{VERCEL_ENV:'preview',CLERK_PUBLISHABLE_KEY:developmentKey});
+  const captured={headers:{},statusCode:null,body:null};
+  const response={setHeader:(key,value)=>{captured.headers[key]=value;},status(code){captured.statusCode=code;return this;},send(body){captured.body=body;return this;},end(){return this;}};
+  loginPageHandler({method:'GET'},response);
+  assert.equal(captured.statusCode,200);
+  assert.match(captured.headers['Content-Security-Policy'],/first-impala-7783\.clerk\.accounts\.dev/);
+  assert.match(captured.body,/src="\/login\.js"/);
+}finally{
+  for(const key of Object.keys(process.env))if(!Object.hasOwn(priorEnvironment,key))delete process.env[key];
+  Object.assign(process.env,priorEnvironment);
+}
 console.log('Login client checks passed: verified exchange, fixed redirects, no token storage, sign-up, failure recovery, and logout.');
