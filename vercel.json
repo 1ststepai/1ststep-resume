@@ -203,7 +203,7 @@
       ]
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!login\\.html$).*)",
       "headers": [
         {
           "key": "X-Content-Type-Options",

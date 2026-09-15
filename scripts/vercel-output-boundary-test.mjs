@@ -173,6 +173,9 @@ assert.equal(functionNames.size, 45, `Unexpected API function count: ${functionN
 
 const outputConfig = JSON.parse(await readFile(path.join(outputRoot, 'config.json'), 'utf8'));
 const routeText = JSON.stringify(outputConfig.routes || []);
+assert(routeText.includes('login-page'), 'Environment-specific login page rewrite is missing');
+const defaultCspRoute = (outputConfig.routes || []).find(route => route.headers?.['Content-Security-Policy']?.includes('https://buy.stripe.com'));
+assert(defaultCspRoute?.src.includes('?!login'), 'Site-wide CSP must exclude the environment-specific login response');
 for (const route of ['/app', '/partner', '/concierge', '/pricing', '/terms', '/privacy']) {
   assert(routeText.includes(route), `Expected route missing from Vercel output config: ${route}`);
 }

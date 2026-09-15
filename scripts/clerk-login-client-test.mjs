@@ -86,6 +86,8 @@ try{
   loginPageHandler({method:'GET'},response);
   assert.equal(captured.statusCode,200);
   assert.match(captured.headers['Content-Security-Policy'],/first-impala-7783\.clerk\.accounts\.dev/);
+  assert.equal(captured.headers['X-Frame-Options'],'DENY');
+  assert.equal(captured.headers['X-Content-Type-Options'],'nosniff');
   assert.match(captured.body,/src="\/login\.js"/);
 }finally{
   for(const key of Object.keys(process.env))if(!Object.hasOwn(priorEnvironment,key))delete process.env[key];
