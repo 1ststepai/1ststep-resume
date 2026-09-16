@@ -44,6 +44,7 @@ const publicAssets = [
   'client/application-control-center.js',
   'client/job-intelligence.js',
   'client/job-mission-relevance.js',
+  'client/discovery-screening-summary.js',
   'client/interview-practice.js',
   'client/opportunity-paths.js',
   'client/subscriber-ui-model.js',

@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { chromium } from '@playwright/test';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const projectLinkPath = path.join(root, '.vercel', 'project.json');
@@ -90,6 +91,7 @@ const expectedStatic = [
   'client/concierge-domain.js',
   'client/job-intelligence.js',
   'client/job-mission-relevance.js',
+  'client/discovery-screening-summary.js',
   'client/interview-practice.js',
   'client/opportunity-paths.js',
   'client/subscriber-ui-model.js',
@@ -106,6 +108,53 @@ const expectedStatic = [
 for (const file of expectedStatic) {
   assert(staticFiles.has(file), `Expected public asset missing from Vercel output: ${file}`);
 }
+
+function relativeModuleSpecifiers(source) {
+  const specifiers = new Set();
+  const patterns = [
+    /^\s*(?:import|export)\s+[\s\S]*?\sfrom\s+['"](\.{1,2}\/[^'"]+)['"]/gm,
+    /^\s*import\s+['"](\.{1,2}\/[^'"]+)['"]/gm,
+    /\bimport\s*\(\s*['"](\.{1,2}\/[^'"]+)['"]\s*\)/g,
+  ];
+  for (const pattern of patterns) {
+    for (const match of source.matchAll(pattern)) specifiers.add(match[1]);
+  }
+  return [...specifiers];
+}
+
+function resolvePublicModule(importer, specifier) {
+  const cleanSpecifier = specifier.split(/[?#]/, 1)[0];
+  const resolved = path.posix.normalize(path.posix.join(path.posix.dirname(importer), cleanSpecifier));
+  assert(!resolved.startsWith('../') && resolved !== '..', `Public module escapes generated output: ${importer} -> ${specifier}`);
+  const candidates = path.posix.extname(resolved)
+    ? [resolved]
+    : [resolved, `${resolved}.js`, `${resolved}/index.js`];
+  const match = candidates.find(candidate => staticFiles.has(candidate));
+  assert(match, `Public module dependency missing from generated output: ${importer} -> ${specifier}`);
+  return match;
+}
+
+async function verifyPublicModuleClosure(entryModule) {
+  const pending = [entryModule];
+  const visited = new Set();
+  while (pending.length > 0) {
+    const modulePath = pending.pop();
+    if (visited.has(modulePath)) continue;
+    assert(staticFiles.has(modulePath), `Public module entry missing from generated output: ${modulePath}`);
+    visited.add(modulePath);
+    const source = await readFile(path.join(staticRoot, modulePath), 'utf8');
+    for (const specifier of relativeModuleSpecifiers(source)) {
+      const dependency = resolvePublicModule(modulePath, specifier);
+      if (!visited.has(dependency)) pending.push(dependency);
+    }
+  }
+  return visited;
+}
+
+const publicModuleClosure = new Set([
+  ...await verifyPublicModuleClosure('app.js'),
+  ...await verifyPublicModuleClosure('concierge.js'),
+]);
 
 const forbiddenExact = [
   'lib/job-agent-spend-ledger.js',
@@ -204,7 +253,14 @@ const outputServer = createServer(async (request, response) => {
     response.writeHead(404);
     return response.end('Not found');
   }
-  response.writeHead(200);
+  const contentTypes = {
+    '.css': 'text/css; charset=utf-8',
+    '.html': 'text/html; charset=utf-8',
+    '.js': 'text/javascript; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
+    '.svg': 'image/svg+xml',
+  };
+  response.writeHead(200, { 'Content-Type': contentTypes[path.extname(relative)] || 'application/octet-stream' });
   return response.end(await readFile(path.join(staticRoot, relative)));
 });
 await new Promise((resolve, reject) => {
@@ -231,8 +287,33 @@ try {
   ]) {
     assert.equal((await fetch(`${origin}${route}`)).status, 404, `Internal path was unexpectedly public: ${route}`);
   }
+
+  const browser = await chromium.launch();
+  try {
+    for (const route of ['/app?uiFixture=subscriber', '/concierge?uiFixture=subscriber']) {
+      const page = await browser.newPage();
+      const moduleErrors = [];
+      page.on('pageerror', error => moduleErrors.push(`pageerror: ${error.message}`));
+      page.on('requestfailed', request => {
+        if (/\.(?:m?js)(?:[?#]|$)/i.test(request.url())) {
+          moduleErrors.push(`requestfailed: ${request.url()} (${request.failure()?.errorText || 'unknown'})`);
+        }
+      });
+      page.on('response', response => {
+        if (/\.(?:m?js)(?:[?#]|$)/i.test(response.url()) && response.status() >= 400) {
+          moduleErrors.push(`module response: ${response.status()} ${response.url()}`);
+        }
+      });
+      await page.goto(`${origin}${route}`, { waitUntil: 'load' });
+      await page.waitForFunction(() => document.querySelector('#timeSavedTotal')?.textContent?.trim() === '47 min');
+      assert.deepEqual(moduleErrors, [], `Built-output module loading failed for ${route}:\n${moduleErrors.join('\n')}`);
+      await page.close();
+    }
+  } finally {
+    await browser.close();
+  }
 } finally {
   await new Promise(resolve => outputServer.close(resolve));
 }
 
-console.log(`Vercel output boundary verified: ${staticFiles.size} intentional static files, ${functionNames.size} API functions, no internal-source or extension-package leaks.`);
+console.log(`Vercel output boundary verified: ${staticFiles.size} intentional static files, ${publicModuleClosure.size} reachable public modules, ${functionNames.size} API functions, no internal-source or extension-package leaks.`);
