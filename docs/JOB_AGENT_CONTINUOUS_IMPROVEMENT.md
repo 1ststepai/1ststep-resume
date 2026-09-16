@@ -8,7 +8,7 @@ The controlled learning layer extends the existing signed-user, Upstash Redis, e
 2. Its content-free source summary is recorded in the tenant's encrypted learning profile.
 3. The daily leased worker reviews verified signals, source performance, and any pending proposal.
 4. The worker may create a low-risk proposal from retained observations, but does not certify evaluation fixtures or promote it.
-5. Evaluation and promotion require real regression, security, canary, and telemetry evidence; no production evaluator is wired yet. High-risk proposals also require explicit user approval.
+5. Evaluation and promotion require real regression, security, canary, and telemetry evidence; no production evaluator is wired yet. Approval of previously evaluated proposals is also blocked. High-risk proposals additionally require explicit user approval once the evidence gate exists.
 6. Scheduled discovery applies active, user-confirmed preferences before creating the next run.
 
 Discovery remains authoritative if learning is unavailable. Learning never submits an application, transmits candidate data, enables employer-browser execution, or changes the meaning of `Submitted`.

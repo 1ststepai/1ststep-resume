@@ -3,7 +3,7 @@ import { enforceDurableRateLimit, sendRateLimitResult } from '../lib/durable-rat
 import { JOB_AGENT_POLICY_LEVELS, requireJobAgentPolicyLevel } from '../lib/job-agent-policy-levels.js';
 import { jobAgentRuntimeConfiguration } from '../lib/job-agent-runtime-configuration.js';
 import {
-  correctPreference, createJobAgentLearningState, promoteLearningProposal, publicLearningSummary,
+  correctPreference, createJobAgentLearningState, publicLearningSummary,
   recordPreference, revokePreference, rollbackLearningPolicy, setLearningStatus,
 } from '../lib/job-agent-learning-domain.js';
 import {
@@ -51,6 +51,10 @@ export default async function handler(req, res) {
     const state = learning.state || createJobAgentLearningState({ createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
     const input = req.body?.input && typeof req.body.input === 'object' ? req.body.input : {};
     const action = String(req.body?.action || '');
+    if (action === 'approve-proposal') return res.status(409).json({
+      error: 'Learning proposal approval requires verified evaluation and canary evidence.',
+      code: 'LEARNING_EVALUATION_UNVERIFIED',
+    });
     const actions = {
       pause: () => setLearningStatus(state, 'paused'),
       resume: () => setLearningStatus(state, 'active'),
@@ -58,7 +62,6 @@ export default async function handler(req, res) {
       'correct-preference': () => correctPreference(state, { ...input, userConfirmed: true }),
       'revoke-preference': () => revokePreference(state, String(input.id || '')),
       rollback: () => rollbackLearningPolicy(state, String(input.version || ''), 'user-requested'),
-      'approve-proposal': () => promoteLearningProposal(state, String(input.id || ''), { humanApproved: true }),
     };
     if (!actions[action]) return res.status(400).json({ error: 'Unsupported learning action.' });
     const next = actions[action]();
