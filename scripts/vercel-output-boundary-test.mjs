@@ -108,6 +108,7 @@ const expectedStatic = [
 for (const file of expectedStatic) {
   assert(staticFiles.has(file), `Expected public asset missing from Vercel output: ${file}`);
 }
+assert(!staticFiles.has('login.html'), 'Static login.html shadows the environment-specific login response and its security headers');
 
 function relativeModuleSpecifiers(source) {
   const specifiers = new Set();
@@ -223,6 +224,10 @@ assert.equal(functionNames.size, 45, `Unexpected API function count: ${functionN
 const outputConfig = JSON.parse(await readFile(path.join(outputRoot, 'config.json'), 'utf8'));
 const routeText = JSON.stringify(outputConfig.routes || []);
 assert(routeText.includes('login-page'), 'Environment-specific login page rewrite is missing');
+const loginPageRoute = (outputConfig.routes || []).find(route => route.src === '^/login\\.html$' && route.dest === '/api/login-page');
+assert(loginPageRoute, 'Compiled /login.html route must reach the environment-specific login function');
+const loginFunctionConfig = JSON.parse(await readFile(path.join(outputRoot, 'functions', 'api', 'login-page.func', '.vc-config.json'), 'utf8'));
+assert.equal(loginFunctionConfig.filePathMap?.['login.html'], 'login.html', 'Login HTML must remain available to the server-only login function');
 const defaultCspRoute = (outputConfig.routes || []).find(route => route.headers?.['Content-Security-Policy']?.includes('https://buy.stripe.com'));
 assert(defaultCspRoute?.src.includes('?!login'), 'Site-wide CSP must exclude the environment-specific login response');
 for (const route of ['/app', '/partner', '/concierge', '/pricing', '/terms', '/privacy']) {
