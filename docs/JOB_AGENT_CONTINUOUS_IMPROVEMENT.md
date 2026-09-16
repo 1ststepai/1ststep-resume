@@ -7,8 +7,8 @@ The controlled learning layer extends the existing signed-user, Upstash Redis, e
 1. A verified direct-employer discovery run completes independently.
 2. Its content-free source summary is recorded in the tenant's encrypted learning profile.
 3. The daily leased worker reviews verified signals, source performance, and any pending proposal.
-4. Low-risk proposals are evaluated against the fixed safety dataset before promotion.
-5. High-risk proposals remain in the Learning Center until explicit user approval.
+4. The worker may create a low-risk proposal from retained observations, but does not certify evaluation fixtures or promote it.
+5. Evaluation and promotion require real regression, security, canary, and telemetry evidence; no production evaluator is wired yet. High-risk proposals also require explicit user approval.
 6. Scheduled discovery applies active, user-confirmed preferences before creating the next run.
 
 Discovery remains authoritative if learning is unavailable. Learning never submits an application, transmits candidate data, enables employer-browser execution, or changes the meaning of `Submitted`.
@@ -29,7 +29,7 @@ Accepted signals must be user-confirmed, direct-employer verified, provider-conf
 - Every fixture and safety assertion must pass; one failure blocks promotion.
 - Candidate facts, hard filters, compensation, geography, remote rules, screening answers, legal certifications, privacy, transmission, submission authority, attestations, and signatures require human approval.
 - `JOB_AGENT_LEARNING_ENABLED=false` is the global execution kill switch.
-- `JOB_AGENT_LEARNING_AUTO_PROMOTION_ENABLED=false` independently blocks automatic promotion.
+- `JOB_AGENT_LEARNING_AUTO_PROMOTION_ENABLED` is currently inert. Even if set to `true`, maintenance leaves proposals pending until a real evaluator and canary gate are implemented and verified.
 - User pause, one-click rollback, automatic regression rollback, export, and deletion are available through the authenticated Learning Center.
 
 ## Source expansion

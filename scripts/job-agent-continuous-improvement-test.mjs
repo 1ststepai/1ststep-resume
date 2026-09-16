@@ -7,6 +7,7 @@ import {
   recordVerifiedSignal, rollbackLearningPolicy, setLearningStatus, sourceExpansionPlan,
 } from '../lib/job-agent-learning-domain.js';
 import { claimNextJobAgentLearningMaintenance, completeJobAgentLearningMaintenance, readJobAgentLearningState, saveJobAgentLearningState } from '../lib/job-agent-learning-store.js';
+import { processNextJobAgentLearningMaintenance } from '../lib/job-agent-continuous-improvement-worker.js';
 import { jobMatchesMission } from '../lib/public-ats-discovery.js';
 import { subscriberStatus } from '../client/subscriber-ui-model.js';
 
@@ -115,6 +116,25 @@ const claimed = await claimNextJobAgentLearningMaintenance({ ...store, now: at(2
 assert.ok(claimed?.leaseToken, 'background work is claimed without a user prompt');
 assert.equal(await completeJobAgentLearningMaintenance({ redis, tenantId: claimed.tenantId, leaseToken: 'wrong', now: at(27) }), false);
 assert.equal(await completeJobAgentLearningMaintenance({ redis, tenantId: claimed.tenantId, leaseToken: claimed.leaseToken, now: at(27) }), true, 'interrupted workers resume from a retained lease');
+
+const workerStore = { ...store, subject: 'tenant-worker@example.test' };
+let observed = createJobAgentLearningState({ createdAt: at(30).toISOString(), updatedAt: at(30).toISOString() });
+for (let index = 0; index < 3; index += 1) observed = recordSourceObservation(observed, {
+  provider: 'greenhouse', employer: 'Observed Employer', status: 'error', inaccessible: 1,
+}, at(30 + index));
+observed = recordVerifiedSignal(observed, {
+  id: 'worker_source_evidence_1', type: 'source-scan', verificationStatus: 'direct-employer-verified',
+  source: 'greenhouse', subjectType: 'job-source', subjectId: 'greenhouse:Observed Employer', outcome: 'error',
+}, at(33));
+const observedPolicy = observed.activePolicyVersion;
+await saveJobAgentLearningState({ ...workerStore, state: observed, expectedVersion: 0,
+  idempotencyKey: 'learning_worker_0001', now: at(34), nextMaintenanceAt: at(35) });
+const maintenance = await processNextJobAgentLearningMaintenance({ redis, dataEncryptionKey: store.dataEncryptionKey,
+  env: { JOB_AGENT_LEARNING_ENABLED: 'true', JOB_AGENT_LEARNING_AUTO_PROMOTION_ENABLED: 'true' }, now: at(36) });
+const afterMaintenance = (await readJobAgentLearningState(workerStore)).state;
+assert.equal(maintenance.proposal, 'proposed', 'observations may propose a change but cannot certify it');
+assert.equal(afterMaintenance.evaluations.length, 0, 'maintenance must not invent fixture or safety results');
+assert.equal(afterMaintenance.activePolicyVersion, observedPolicy, 'configuration alone cannot promote a policy');
 
 const migration = await readFile(new URL('../migrations/002_job_agent_continuous_improvement.sql', import.meta.url), 'utf8');
 for (const table of ['candidate_preferences', 'fact_corrections', 'source_performance', 'learning_signals', 'learning_proposals', 'evaluation_runs', 'policy_versions']) assert.match(migration, new RegExp(`create table if not exists ${table}`));
