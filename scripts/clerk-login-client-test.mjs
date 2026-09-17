@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import loginPageHandler, { loginContentSecurityPolicy } from '../api/login-page.js';
 import { initializeLoginPage } from '../login.js';
-import { allowedClerkBrowserScriptSrc, DEVELOPMENT_CLERK_BROWSER_SCRIPT, PRODUCTION_CLERK_BROWSER_SCRIPT } from '../client/clerk-browser-script.js';
+import { allowedClerkBrowserScriptSrc, DEVELOPMENT_CLERK_BROWSER_SCRIPT, DEVELOPMENT_CLERK_FRONTEND_ORIGIN, PRODUCTION_CLERK_BROWSER_SCRIPT } from '../client/clerk-browser-script.js';
 async function run({signedIn=true, enabled=true, failure=false, mode='', returnTo='', token='fixture.session.token', production=true, frontendApiUrl}={}) {
   const calls=[], cache=new Map(), scripts=[];
   const elements = Object.fromEntries(['loginStatus','retryLogin','clerkSignIn'].map(id=>[id,{hidden:true,textContent:'',addEventListener(type,fn){this[type]=fn;}}]));
@@ -71,8 +71,12 @@ const attackerSuffix=await run({production:false,frontendApiUrl:'https://first-i
 assert.equal(attackerSuffix.scripts.length,0,'Suffix-style Clerk hostnames must fail closed');
 const javascriptSrc=await run({production:false,frontendApiUrl:'javascript:alert(1)'});
 assert.equal(javascriptSrc.scripts.length,0);
-const httpSrc=await run({production:false,frontendApiUrl:'http://first-impala-7783.clerk.accounts.dev'});
-assert.equal(httpSrc.scripts.length,0);
+const cleartextClerkOrigin = new URL(DEVELOPMENT_CLERK_FRONTEND_ORIGIN);
+cleartextClerkOrigin.protocol = 'http:';
+assert.equal(cleartextClerkOrigin.protocol, 'http:');
+const httpSrc=await run({production:false,frontendApiUrl:cleartextClerkOrigin.href});
+assert.equal(httpSrc.scripts.length,0,'Cleartext Clerk origins must fail closed');
+assert.equal(allowedClerkBrowserScriptSrc(cleartextClerkOrigin.href, false), '');
 assert.equal(allowedClerkBrowserScriptSrc('https://clerk.1ststep.ai', true), PRODUCTION_CLERK_BROWSER_SCRIPT);
 assert.equal(allowedClerkBrowserScriptSrc('https://first-impala-7783.clerk.accounts.dev', false), DEVELOPMENT_CLERK_BROWSER_SCRIPT);
 assert.equal(allowedClerkBrowserScriptSrc('https://fixture.clerk.accounts.dev', false), '');
