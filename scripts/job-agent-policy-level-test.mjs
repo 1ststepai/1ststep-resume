@@ -11,6 +11,7 @@ import {
   EXTERNAL_APPLICATION_SESSION_ACTIONS,
   AUTHORIZED_APPLICATION_SESSION_ACTIONS,
 } from '../api/application-sessions.js';
+import { JOB_AGENT_POLICY_STATIC_DOCUMENTS } from '../lib/job-agent-policy-bundle.js';
 
 const L = JOB_AGENT_POLICY_LEVELS;
 let passed = 0;
@@ -24,7 +25,13 @@ const dataEnv = {
 };
 const consentRecord = {
   schemaVersion: 1, status: 'active',
-  policy: { termsVersion: 'terms-2026-08-31', privacyVersion: 'privacy-2026-08-31', authorizationVersion: 'authz-2026-08-31' },
+  policy: {
+    termsVersion: 'terms-2026-08-31',
+    privacyVersion: 'privacy-2026-08-31',
+    authorizationVersion: 'authz-2026-08-31',
+    termsDigest: JOB_AGENT_POLICY_STATIC_DOCUMENTS.terms.sha256,
+    privacyDigest: JOB_AGENT_POLICY_STATIC_DOCUMENTS.privacy.sha256,
+  },
   scopes: [...JOB_AGENT_DATA_CONSENT_SCOPES, 'direct-employer-discovery'],
   attestations: { truthful: true, reviewed: true },
   grantedAt: '2026-08-31T00:00:00.000Z', revokedAt: null, audit: [], updatedAt: '2026-08-31T00:00:00.000Z',
@@ -86,6 +93,14 @@ await check('F · missing Terms/Privacy consent fails closed', async () => {
 
   const unattested = { ...consentRecord, attestations: { truthful: true, reviewed: false } };
   assert.equal(activeJobAgentDataConsent(unattested, policy).ok, false);
+
+  const staleDigest = { ...consentRecord, policy: { ...consentRecord.policy, termsDigest: 'f'.repeat(64) } };
+  assert.equal(activeJobAgentDataConsent(staleDigest, policy).code, 'JOB_AGENT_DATA_CONSENT_RENEWAL_REQUIRED');
+  const missingDigest = {
+    ...consentRecord,
+    policy: { termsVersion: consentRecord.policy.termsVersion, privacyVersion: consentRecord.policy.privacyVersion, authorizationVersion: consentRecord.policy.authorizationVersion },
+  };
+  assert.equal(activeJobAgentDataConsent(missingDigest, policy).code, 'JOB_AGENT_DATA_CONSENT_RENEWAL_REQUIRED');
 });
 
 // ── G: unknown policy level fails closed ─────────────────────────────────────

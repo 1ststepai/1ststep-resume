@@ -10,6 +10,17 @@ import {
 } from '../lib/job-agent-consent-domain.js';
 import { jobAgentConsentGate } from '../lib/job-agent-consent-store.js';
 import { jobAgentLaunchManifest } from '../lib/job-agent-launch-manifest.js';
+import { documentRenderSandboxConfiguration } from '../lib/application-package-render-sandbox.js';
+import { applicationReceiptCaptureConfiguration } from '../lib/application-receipt-capture-provider.js';
+import { employerBrowserWorkerConfiguration } from '../lib/employer-browser-worker.js';
+import { extensionApplicationHandoffConfiguration } from '../lib/extension-application-handoff.js';
+import { jobAgentObjectStorageConfiguration } from '../lib/job-agent-object-storage.js';
+import { jobAgentNeedsYouNotificationConfiguration } from '../lib/job-agent-notification-store.js';
+import {
+  activeJobAgentDataConsent,
+  jobAgentDataPolicyConfiguration,
+} from '../lib/job-agent-policy-levels.js';
+import { jobAgentScheduleConfiguration } from '../lib/job-agent-schedule-store.js';
 import {
   JOB_AGENT_OWNER_REVIEWED_POLICY_PIN,
   jobAgentOwnerReviewedPolicyConfiguration,
@@ -183,12 +194,143 @@ assert.equal(ownerManifest.capabilities.assistedApplication.eligible, false);
 assert.equal(ownerManifest.capabilities.packageReady.eligible, false);
 assert.equal(ownerManifest.capabilities.finalSubmission.eligible, false);
 
-const ownerPlusCounsel = jobAgentLaunchManifest({
+const ownerPlusCounsel = jobAgentConsentPolicyConfiguration({
+  ...ownerReviewedEnv, JOB_AGENT_COUNSEL_APPROVED: 'true',
+});
+assert.equal(ownerPlusCounsel.ready, false);
+assert.equal(ownerPlusCounsel.ownerReviewed, false);
+assert.equal(ownerPlusCounsel.counselApproved, false);
+assert.equal(ownerPlusCounsel.ownerCounselConflict, true);
+assert.equal(ownerPlusCounsel.approvalSource, null);
+assert.notEqual(ownerPlusCounsel.approvalSource, 'counsel');
+assert.throws(() => grantJobAgentConsent(acceptance, ownerPlusCounsel), /cannot be combined with counsel approval/);
+const publicConflict = publicJobAgentConsent(null, ownerPlusCounsel);
+assert.equal(publicConflict.counselApproved, false);
+assert.notEqual(publicConflict.approvalSource, 'counsel');
+assert.equal(publicConflict.policyBundle, null);
+assert.doesNotMatch(JSON.stringify(publicConflict), /"approvalSource":"counsel"/);
+assert.doesNotMatch(JSON.stringify(publicConflict), /"counselApproved":true/);
+
+const pinVersionsCounsel = jobAgentConsentPolicyConfiguration({
+  JOB_AGENT_COUNSEL_APPROVED: 'true',
+  JOB_AGENT_TERMS_VERSION: pin.termsVersion,
+  JOB_AGENT_PRIVACY_VERSION: pin.privacyVersion,
+  JOB_AGENT_AUTHORIZATION_VERSION: pin.authorizationVersion,
+});
+assert.equal(pinVersionsCounsel.ready, false);
+assert.equal(pinVersionsCounsel.counselApproved, false);
+assert.notEqual(pinVersionsCounsel.approvalSource, 'counsel');
+
+const ownerPlusCounselManifest = jobAgentLaunchManifest({
   ...ownerReviewedRuntimeEnv, JOB_AGENT_COUNSEL_APPROVED: 'true',
 });
-assert.equal(jobAgentConsentPolicyConfiguration({ ...ownerReviewedEnv, JOB_AGENT_COUNSEL_APPROVED: 'true' }).counselApproved, true);
-assert.equal(ownerPlusCounsel.capabilities.signedBeta.eligible, false);
-assert.equal(ownerPlusCounsel.submissionsEnabled, false);
+assert.equal(ownerPlusCounselManifest.capabilities.ownerReviewedControlledBeta.eligible, false);
+assert.equal(ownerPlusCounselManifest.capabilities.signedBeta.eligible, false);
+assert.equal(ownerPlusCounselManifest.submissionsEnabled, false);
+
+const emptyAllowlist = { ...ownerReviewedEnv, JOB_AGENT_PILOT_ALLOWED_TENANTS: '' };
+assert.equal(jobAgentPilotConfiguration(emptyAllowlist).ready, false);
+assert.equal(jobAgentPilotConfiguration(emptyAllowlist).invitedTenantCount, 0);
+assert.equal(jobAgentOwnerReviewedPolicyConfiguration(emptyAllowlist).valid, false);
+assert.equal(jobAgentConsentPolicyConfiguration(emptyAllowlist).ready, false);
+assert.equal(jobAgentPilotAccessForSubject(invited, emptyAllowlist).ok, false);
+assert.equal(jobAgentLaunchManifest({ ...ownerReviewedRuntimeEnv, JOB_AGENT_PILOT_ALLOWED_TENANTS: '' }).capabilities.ownerReviewedControlledBeta.eligible, false);
+
+const ceilingEnv = {
+  ...ownerReviewedRuntimeEnv,
+  JOB_AGENT_SCHEDULE_ENABLED: 'true',
+  JOB_AGENT_SCHEDULE_GLOBAL_DAILY_RUNS: '5',
+  JOB_AGENT_NEEDS_YOU_EMAIL_ENABLED: 'true',
+  RESEND_API_KEY: 'resend'.padEnd(32, 'x'),
+  RESEND_FROM: 'alerts@example.test',
+  RESEND_WEBHOOK_SECRET: 'whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw',
+  JOB_AGENT_EMAIL_SUPPRESSION_TTL_DAYS: '365',
+  JOB_AGENT_EXTENSION_HANDOFF_ENABLED: 'true',
+  JOB_AGENT_EXTENSION_HANDOFF_SECRET: 'h'.repeat(48),
+  JOB_AGENT_RECEIPT_CAPTURE_ENABLED: 'true',
+  JOB_AGENT_OBJECT_STORAGE_ENABLED: 'true',
+  BLOB_READ_WRITE_TOKEN: 'b'.repeat(32),
+  DOCUMENT_RENDER_SANDBOX_ENABLED: 'true',
+  DOCUMENT_RENDER_SANDBOX_SNAPSHOT_ID: 'snap_owner_reviewed',
+  EMPLOYER_BROWSER_WORKER_ENABLED: 'true',
+};
+assert.equal(jobAgentScheduleConfiguration(ceilingEnv).enabled, false);
+assert.equal(jobAgentScheduleConfiguration(ceilingEnv).reason, 'OWNER_REVIEWED_CAPABILITY_CEILING');
+assert.equal(jobAgentNeedsYouNotificationConfiguration(ceilingEnv).enabled, false);
+assert.equal(extensionApplicationHandoffConfiguration(ceilingEnv).ready, false);
+assert.equal(applicationReceiptCaptureConfiguration(ceilingEnv).ready, false);
+assert.equal(jobAgentObjectStorageConfiguration(ceilingEnv).ready, false);
+assert.equal(documentRenderSandboxConfiguration(ceilingEnv).enabled, false);
+assert.equal(employerBrowserWorkerConfiguration(ceilingEnv).enabled, false);
+const ceilingManifest = jobAgentLaunchManifest(ceilingEnv);
+assert.equal(ceilingManifest.capabilities.ownerReviewedControlledBeta.eligible, true);
+assert.equal(ceilingManifest.capabilities.signedBeta.eligible, false);
+assert.equal(ceilingManifest.capabilities.packageReady.eligible, false);
+assert.equal(ceilingManifest.capabilities.assistedApplication.eligible, false);
+assert.equal(ceilingManifest.capabilities.finalSubmission.eligible, false);
+assert.equal(ceilingManifest.submissionsEnabled, false);
+assert.equal(ceilingManifest.extensionHandoff.ready, false);
+
+const dataPolicy = jobAgentDataPolicyConfiguration(ownerReviewedEnv);
+assert.equal(dataPolicy.ready, true);
+assert.equal(dataPolicy.termsDigest, pin.termsSha256);
+assert.equal(dataPolicy.privacyDigest, pin.privacySha256);
+assert.equal(activeJobAgentDataConsent(granted, dataPolicy).ok, true);
+assert.equal(activeJobAgentDataConsent({
+  ...granted, policy: { ...granted.policy, termsDigest: 'f'.repeat(64) },
+}, dataPolicy).code, 'JOB_AGENT_DATA_CONSENT_RENEWAL_REQUIRED');
+assert.equal(activeJobAgentDataConsent({
+  ...granted, policy: { termsVersion: granted.policy.termsVersion, privacyVersion: granted.policy.privacyVersion, authorizationVersion: granted.policy.authorizationVersion },
+}, dataPolicy).code, 'JOB_AGENT_DATA_CONSENT_RENEWAL_REQUIRED');
+
+const productionOwnerEnv = { ...ownerReviewedRuntimeEnv, VERCEL_ENV: 'production' };
+assert.equal(jobAgentOwnerReviewedPolicyConfiguration(productionOwnerEnv).reason, 'production-not-allowed');
+assert.equal(jobAgentOwnerReviewedPolicyConfiguration(productionOwnerEnv).valid, false);
+const productionOwnerManifest = jobAgentLaunchManifest(productionOwnerEnv);
+assert.equal(productionOwnerManifest.capabilities.ownerReviewedControlledBeta.eligible, false);
+assert.ok(productionOwnerManifest.capabilities.ownerReviewedControlledBeta.blockers.includes('OWNER_REVIEWED_POLICY_NOT_ALLOWED_IN_PRODUCTION'));
+assert.equal(productionOwnerManifest.capabilities.signedBeta.eligible, false);
+assert.equal(productionOwnerManifest.submissionsEnabled, false);
+assert.equal(productionOwnerManifest.currentMode, 'preview');
+
+const previousEnv = { ...process.env };
+Object.assign(process.env, {
+  ...productionOwnerEnv,
+  ...ceilingEnv,
+  VERCEL_ENV: 'production',
+  NODE_ENV: 'production',
+  CRON_SECRET: 'readiness-cron-secret'.padEnd(48, 'x'),
+  JOB_AGENT_MALWARE_SCANNER_ENABLED: 'true',
+  JOB_AGENT_MALWARE_SCANNER_URL: 'https://scanner.example.test/scan',
+  JOB_AGENT_MALWARE_SCANNER_HOST: 'scanner.example.test',
+  JOB_AGENT_MALWARE_SCANNER_BEARER_TOKEN: 'm'.repeat(48),
+});
+try {
+  const { default: readinessHandler } = await import('../api/job-agent-readiness.js');
+  const response = {
+    statusCode: 200, body: undefined, headers: {},
+    setHeader(key, value) { this.headers[key] = value; },
+    status(code) { this.statusCode = code; return this; },
+    json(body) { this.body = body; return this; },
+    end() { return this; },
+  };
+  await readinessHandler({
+    method: 'GET',
+    headers: { authorization: `Bearer ${process.env.CRON_SECRET}` },
+    query: {},
+    socket: {},
+  }, response);
+  assert.equal(response.statusCode, 503);
+  assert.notEqual(response.body?.status, 'ok');
+  assert.equal(response.body?.submissionsEnabled === true, false);
+  assert.equal(response.body?.externalApplicationExecution === true, false);
+  assert.ok(['encrypted-object-storage', 'job-agent-consent-control', 'background-scheduling', 'audit-retention-archive', 'needs-you-notifications', 'controlled-beta-launch-manifest', 'not-configured'].includes(response.body?.failedStage) || response.body?.durableStore === 'not-configured');
+} finally {
+  for (const key of Object.keys(process.env)) {
+    if (!(key in previousEnv)) delete process.env[key];
+  }
+  Object.assign(process.env, previousEnv);
+}
 
 const emptyManifest = jobAgentLaunchManifest({});
 assert.equal(emptyManifest.capabilities.ownerReviewedControlledBeta.eligible, false);

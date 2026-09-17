@@ -4,6 +4,9 @@ Frozen engineering baseline: `bbb6ee31bffdd6c84729639c29d1d94c5ddb320e` (PR #86)
 This successor serves owner-reviewed Terms/Privacy and an owner-acknowledgment gate. It does **not** represent outside-counsel approval.
 
 Do **not** set `JOB_AGENT_COUNSEL_APPROVED=true`.
+Do **not** deploy this path to Production. Owner-reviewed eligibility is Preview-only and never substitutes for signedBeta.
+
+Owner-reviewed mode hard-disables background search, email, assisted fill, receipts, private object storage, and document rendering even if their individual flags are set. Empty `JOB_AGENT_PILOT_ALLOWED_TENANTS` admits zero users. Maximum invited tenants is five. Submission and employer transmission stay fail-closed.
 
 ## Policy pin
 
