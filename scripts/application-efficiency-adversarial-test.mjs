@@ -100,9 +100,9 @@ assert.equal(classifyLearningState({
 }), LEARNING_STATE_CLASSES.DERIVED_BUT_REVIEWABLE);
 
 const blank = grantVaultConsent({}, now);
-const authorized = remember(blank, 'Are you authorized to work in the US?', 'I am legally authorized to work in the United States.');
+const authorized = remember(blank, 'Are you authorized to work?', 'I am legally authorized to work.');
 assertReviewableProposal(
-  propose(authorized.vault, 'Are you legally authorized to work in the United States?'),
+  propose(authorized.vault, 'Are you legally authorized to work?'),
   'work_authorization',
   'equivalent work-authorization wording',
 );
@@ -110,6 +110,10 @@ assertReviewableProposal(
 assertUnknown(
   propose(authorized.vault, 'Will you now or in the future require visa sponsorship?'),
   'work-authorization memory must not satisfy sponsorship',
+);
+assertUnknown(
+  propose(authorized.vault, 'Are you legally authorized to work in the United States?'),
+  'work-authorization geography remainder must fail closed',
 );
 assertUnknown(
   propose(authorized.vault, 'Are you legally authorized to work in the United States, and will you now or in the future require visa sponsorship?'),
@@ -285,32 +289,32 @@ assertUnknown(
 
 const corrected = remember(
   authorized.vault,
-  'Are you authorized to work in the US?',
+  'Are you authorized to work?',
   'I am not a US worker and require review of my status.',
   { replaceVersion: 1, id: authorized.session.id, actionId: authorized.session.actions[0].id },
 );
-const correctedProposal = propose(corrected.vault, 'Are you legally authorized to work in the United States?');
+const correctedProposal = propose(corrected.vault, 'Are you legally authorized to work?');
 assertReviewableProposal(correctedProposal, 'work_authorization', 'corrected answer');
 assert.equal(correctedProposal.factVersion, 2);
 assert.notEqual(correctedProposal.factVersion, 1);
 
 const forgotten = forgetAnswerMemory(authorized.vault, authorized.vault.facts[0].id, now);
 assertUnknown(
-  propose(forgotten, 'Are you legally authorized to work in the United States?'),
+  propose(forgotten, 'Are you legally authorized to work?'),
   'forgotten memory must stop proposing',
 );
 const revoked = revokeVaultFact(authorized.vault, authorized.vault.facts[0].id, now);
 assertUnknown(
-  propose(revoked, 'Are you legally authorized to work in the United States?'),
+  propose(revoked, 'Are you legally authorized to work?'),
   'revoked vault fact must stop proposing',
 );
 
-const publicProposal = publicEquivalentAnswerProposal(propose(authorized.vault, 'Are you legally authorized to work in the United States?'));
+const publicProposal = publicEquivalentAnswerProposal(propose(authorized.vault, 'Are you legally authorized to work?'));
 assert.deepEqual(Object.keys(publicProposal).sort(), ['autoResolved', 'class', 'factId', 'factVersion', 'intent', 'requiresConfirmation']);
 assert.equal(publicProposal.requiresConfirmation, true);
 assert.equal(JSON.stringify(publicProposal).includes('I am legally authorized'), false);
 
-const resolveSession = sessionFor('Are you legally authorized to work in the United States?', { id: 'application_resolve' });
+const resolveSession = sessionFor('Are you legally authorized to work?', { id: 'application_resolve' });
 assert.throws(
   () => resolveApplicationAnswer(resolveSession, authorized.vault, {
     actionId: resolveSession.actions[0].id,
@@ -329,12 +333,12 @@ assert.equal(reuseApplicationAnswers(resolveSession, authorized.vault, now).acti
 
 const otherTenant = grantVaultConsent({}, now);
 assertUnknown(
-  propose(otherTenant, 'Are you legally authorized to work in the United States?'),
+  propose(otherTenant, 'Are you legally authorized to work?'),
   'a different tenant vault cannot see another user fact',
 );
 assert.equal(
-  propose(authorized.vault, 'Are you legally authorized to work in the United States?').factId
-    === propose(otherTenant, 'Are you legally authorized to work in the United States?').factId,
+  propose(authorized.vault, 'Are you legally authorized to work?').factId
+    === propose(otherTenant, 'Are you legally authorized to work?').factId,
   false,
 );
 
@@ -376,7 +380,7 @@ const sensitiveQuestion = sessionFor('Will you now or in the future require visa
 const sensitiveReuse = reuseApplicationAnswers(sensitiveQuestion, sponsorship.vault, now);
 assert.equal(sensitiveReuse.actions[0].status, 'open', 'sensitive questions stay review-gated');
 
-const snapshotSession = attachEquivalentAnswerProposals(sessionFor('Are you legally authorized to work in the United States?', {
+const snapshotSession = attachEquivalentAnswerProposals(sessionFor('Are you legally authorized to work?', {
   id: 'application_metrics', employer: 'Secretive Corp',
 }), authorized.vault, now);
 const snapshot = applicationEfficiencySnapshot(snapshotSession, { qualified: true, unansweredFieldKeys: ['veteranStatus'] });
@@ -605,7 +609,7 @@ assert.equal(classifyLearningState({
   value: 'Authorized to work', provenance: 'model inferred from resume', verificationState: 'user-confirmed', userConfirmed: true,
 }), LEARNING_STATE_CLASSES.DERIVED_BUT_REVIEWABLE);
 assertUnknown(
-  propose(inferredConfirmed, 'Are you legally authorized to work in the United States?'),
+  propose(inferredConfirmed, 'Are you legally authorized to work?'),
   'inferred provenance cannot source equivalent proposals',
 );
 const predicted = upsertVaultFact(blank, {
@@ -613,5 +617,81 @@ const predicted = upsertVaultFact(blank, {
   provenance: 'predicted from generated draft', verificationState: 'user-confirmed', confidence: 1,
 }, now);
 assertUnknown(propose(predicted, 'Legal first name'), 'predicted provenance cannot source equivalent proposals');
+
+assertUnknown(propose(contactFacts.legal_first_name, 'Legal first name, last name'), 'legal first name plus last name');
+assertUnknown(propose(contactFacts.legal_first_name, 'Legal first name last name'), 'juxtaposed first and last name');
+assertUnknown(propose(contactFacts.legal_first_name, 'What is your first name or nickname?'), 'first name or nickname');
+assertUnknown(propose(contactFacts.legal_first_name, 'What is your first name / preferred name?'), 'first name slash preferred');
+assertUnknown(propose(contactFacts.legal_first_name, 'What is your preferred first name?'), 'preferred first name remainder');
+assertUnknown(propose(contactFacts.legal_last_name, 'Legal last name and suffix'), 'last name and suffix');
+assertUnknown(propose(contactFacts.legal_last_name, 'What is your last name / suffix?'), 'last name slash suffix');
+assertUnknown(propose(contactFacts.email, 'What is your work email?'), 'work email is not email');
+assertUnknown(propose(contactFacts.email, 'What is your personal email?'), 'personal email is not email');
+assertUnknown(propose(contactFacts.email, 'What is your secondary email?'), 'secondary email is not email');
+assertUnknown(propose(contactFacts.phone, 'What is your work phone?'), 'work phone is not phone');
+assertUnknown(propose(contactFacts.phone, 'What is your home phone?'), 'home phone is not phone');
+assertUnknown(propose(authorized.vault, 'Are you a US citizen authorized to work?'), 'citizen plus authorized without conjunction');
+assertUnknown(propose(authorized.vault, 'Are you authorized to work in US/Canada?'), 'US/Canada slash remainder');
+assertUnknown(propose(location.vault, 'What is your current location in the UK/EU?'), 'UK/EU slash remainder');
+assertUnknown(propose(location.vault, 'What is your current location in CA/NY?'), 'CA/NY slash remainder');
+assertUnknown(propose(relocation.vault, 'Are you willing to relocate, commute?'), 'relocate comma commute');
+assertUnknown(propose(relocation.vault, 'Are you willing to relocate; commute?'), 'relocate semicolon commute');
+assertUnknown(propose(relocation.vault, 'Are you willing to relocate: commute?'), 'relocate colon commute');
+assertUnknown(propose(relocation.vault, 'Are you willing to relocate – commute?'), 'relocate en-dash commute');
+assertUnknown(propose(relocation.vault, 'Are you willing to relocate — commute?'), 'relocate em-dash commute');
+assertUnknown(propose(relocation.vault, 'Are you willing to relocate/commute?'), 'relocate slash commute');
+assert.equal(hasImplicitEmployerScope('Are you willing to relocate to this location?'), true);
+assert.equal(hasImplicitEmployerScope('Can you work at this facility?'), true);
+assert.equal(hasImplicitEmployerScope('Are you available at this campus?'), true);
+assert.equal(hasImplicitEmployerScope('Why this opportunity?'), true);
+assertUnknown(propose(relocation.vault, 'Are you willing to relocate to this location?'), 'this location is application-scoped');
+assertUnknown(propose(relocation.vault, 'Are you willing to relocate to this facility?'), 'this facility is application-scoped');
+assertUnknown(propose(relocation.vault, 'Are you willing to relocate to this campus?'), 'this campus is application-scoped');
+assertUnknown(propose(relocation.vault, 'Are you willing to relocate for this opportunity?'), 'this opportunity is application-scoped');
+assertUnknown(propose(freshStart.vault, 'When can you start, notice period?'), 'start date comma notice period');
+assertUnknown(propose(freshStart.vault, 'Start date: notice period'), 'start date colon notice period');
+assertUnknown(propose(freshStart.vault, 'When can you start / notice period?'), 'start date slash notice period');
+assertUnknown(propose(educationMemories.highest_education_level.vault, 'What is your highest level of education and school attended?'), 'education plus school');
+assertUnknown(propose(educationMemories.highest_education_level.vault, 'What is your highest level of education, school name?'), 'education comma school');
+assertUnknown(propose(authorized.vault, 'Are you authorized to work, certifications?'), 'authorization comma certifications');
+assertUnknown(propose(authorized.vault, 'Are you authorized to work and list certifications?'), 'authorization plus certifications');
+assert.equal(classifyCanonicalIntent('Is it false that you are authorized to work?'), null);
+assertUnknown(propose(authorized.vault, 'Is it false that you are authorized to work?'), 'false that polarity');
+assertUnknown(propose(authorized.vault, 'Has your work authorization been revoked?'), 'revoked authorization');
+assertUnknown(propose(authorized.vault, 'Is your work authorization pending?'), 'pending authorization');
+
+const llmDraft = upsertVaultFact(blank, {
+  fieldKey: 'authorization', label: 'Work authorization', value: 'Authorized to work',
+  provenance: 'llm draft extracted from resume parser', verificationState: 'user-confirmed', confidence: 1,
+}, now);
+assert.equal(classifyLearningState({
+  value: 'Authorized to work', provenance: 'llm draft extracted from resume parser', verificationState: 'user-confirmed', userConfirmed: true,
+}), LEARNING_STATE_CLASSES.DERIVED_BUT_REVIEWABLE);
+assertUnknown(propose(llmDraft, 'Are you legally authorized to work?'), 'allowlist rejects llm draft extracted from resume parser');
+
+assert.throws(() => applicationEfficiencySnapshot({
+  actions: [{ type: 'EMPLOYER_ATS_FAILURE', metadata: { reasonCode: 'https://example.test/reuse' } }],
+}), /content-free|not allowed|reason/i);
+assert.throws(() => applicationEfficiencySnapshot({
+  actions: [{ type: 'EMPLOYER_ATS_FAILURE', metadata: { reasonCode: 'JordanLee' } }],
+}), /content-free|not allowed|reason/i);
+assert.throws(() => applicationEfficiencySnapshot({
+  actions: [{ type: 'EMPLOYER_ATS_FAILURE', metadata: { reasonCode: 'SecretiveCorp' } }],
+}), /content-free|not allowed|reason/i);
+assert.throws(() => applicationEfficiencySnapshot({
+  actions: [{ type: 'EMPLOYER_ATS_FAILURE', metadata: { reasonCode: 'SANDBOX_TIMEOUT' } }],
+}), /content-free|not allowed|reason/i);
+assert.throws(() => createImprovementCandidate({
+  type: 'repeated-ats-question',
+  expectedBenefit: 'See https://example.test after review.',
+  evidence: { equivalentProposalCount: 1 },
+}), /content-free|not allowed/i);
+const allowedReason = applicationEfficiencySnapshot({
+  actions: [{ type: 'EMPLOYER_ATS_FAILURE', metadata: { reasonCode: 'http_429' } }],
+});
+assert.equal(allowedReason.atsFailurePoints[0].reasonCode, 'http_429');
+assert.equal(applicationEfficiencySnapshot({
+  actions: [{ type: 'EMPLOYER_ATS_FAILURE', metadata: { reasonCode: 'ats_timeout' } }],
+}).atsFailurePoints[0].reasonCode, 'ats_timeout');
 
 console.log('Application efficiency adversarial assertions passed. No employer calls.');

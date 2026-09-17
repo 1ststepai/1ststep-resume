@@ -12,7 +12,7 @@ assert.equal(classifyLearningState({ value: 'Senior Buyer', provenance: 'AI-gene
 assert.equal(classifyLearningState({ value: 'Senior Buyer', provenance: 'model inferred title' }), LEARNING_STATE_CLASSES.UNKNOWN_NEEDS_USER);
 assert.equal(classifyLearningState({}), LEARNING_STATE_CLASSES.UNKNOWN_NEEDS_USER);
 
-assert.equal(classifyCanonicalIntent('Are you legally authorized to work in the United States?')?.id, 'work_authorization');
+assert.equal(classifyCanonicalIntent('Are you legally authorized to work?')?.id, 'work_authorization');
 assert.equal(classifyCanonicalIntent('Will you now or in the future require visa sponsorship?')?.id, 'sponsorship');
 assert.equal(classifyCanonicalIntent('When can you start?')?.id, 'start_availability');
 assert.equal(classifyCanonicalIntent('Describe your vendor warranty experience.'), null);
@@ -21,7 +21,7 @@ const now = new Date('2026-09-17T14:00:00.000Z');
 const blank = grantVaultConsent({}, now);
 const authorizationSession = {
   id: 'application_auth_1', state: 'Waiting for You', stage: 'employer_form', role: { employer: 'Example Employer' },
-  actions: [{ id: 'action_auth_1', type: 'AMBIGUOUS_FACT', status: 'open', metadata: { question: 'Are you authorized to work in the US?' } }],
+  actions: [{ id: 'action_auth_1', type: 'AMBIGUOUS_FACT', status: 'open', metadata: { question: 'Are you authorized to work?' } }],
   timeline: [], approvals: {}, createdAt: now.toISOString(),
 };
 const remembered = rememberApplicationAnswer(blank, authorizationSession, {
@@ -29,7 +29,7 @@ const remembered = rememberApplicationAnswer(blank, authorizationSession, {
 }, now);
 const nextSession = {
   ...authorizationSession, id: 'application_auth_2',
-  actions: [{ id: 'action_auth_2', type: 'AMBIGUOUS_FACT', status: 'open', metadata: { question: 'Are you legally authorized to work in the United States?' } }],
+  actions: [{ id: 'action_auth_2', type: 'AMBIGUOUS_FACT', status: 'open', metadata: { question: 'Are you legally authorized to work?' } }],
 };
 const proposal = proposeEquivalentAnswer(remembered, {
   question: nextSession.actions[0].metadata.question, applicationId: nextSession.id, employer: nextSession.role.employer, now: now.getTime(),
