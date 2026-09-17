@@ -22,3 +22,6 @@ This is private answer preparation. The current employer adapter still needs scr
 ## Explicit save-choice UX
 
 The Needs You answer step is intentionally two-stage. The user first writes or reviews the answer, then sees a plain-language prompt: **Remember for similar applications**, **Use only for this application**, or **Change my answer**. No save request is preselected and no vault write happens before that choice. The broad option remains limited to ordinary, exact-question meaning matches; sensitive, permission, credential, challenge, and other consequential answers remain manual or application-scoped. Both save paths show that nothing is sent or submitted and continue to expose Edit/Forget controls in Saved Info.
+
+Post-beta isolated work: atomic-intent **proposals** for equivalent ATS questions live in `lib/application-efficiency-foundation.js` and `docs/POST_BETA_APPLICATION_EFFICIENCY.md`. They do not relax exact-match auto-reuse, do not auto-resolve different wording, and fail closed to UNKNOWN — NEEDS USER unless exactly one atomic intent, polarity, scope, provenance, and currency all match.
+

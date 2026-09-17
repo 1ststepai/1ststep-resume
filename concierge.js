@@ -3228,9 +3228,17 @@ function renderAnswerMemory(session, action) {
       && (!s.expiresAt || Date.parse(s.expiresAt) > Date.now())
       && (s.kind === 'candidate' || s.kind === 'application' && s.applicationId === session.id || s.kind === 'employer' && s.employer === session.role.employer);
   });
-  const v = fact?.versions.find(v => v.version === fact.currentVersion);
+  const proposal = !fact && action.metadata?.equivalentAnswerProposal;
+  const proposedFact = proposal && vaultEnabled() && applicantVault.vault.facts.find(f => f.id === proposal.factId && f.status === 'active' && f.currentVersion === proposal.factVersion);
+  const sourceFact = fact || proposedFact;
+  const v = sourceFact?.versions.find(item => item.version === sourceFact.currentVersion);
+  const hint = fact
+    ? '<small>You answered this before. Check it and change it if needed.</small>'
+    : proposedFact
+      ? '<small>A saved answer for a similar question is ready for your review. It is not used until you confirm it.</small>'
+      : '<small>Answer once, then choose exactly how this answer may be remembered.</small>';
   panel.innerHTML = `<form id="answerMemoryForm" class="desk-field"><label for="answerMemoryText">${escapeHtml(question)}</label>
-    ${fact ? '<small>You answered this before. Check it and change it if needed.</small>' : '<small>Answer once, then choose exactly how this answer may be remembered.</small>'}
+    ${hint}
     <textarea id="answerMemoryText" rows="3" maxlength="2000" required placeholder="Only what you know to be true">${escapeHtml(v?.value || '')}</textarea>
     <details><summary>Privacy options</summary><label class="check-row"><input id="answerMemorySensitive" type="checkbox"> This answer includes sensitive screening information and I want it saved securely</label><label for="answerMemoryExpiry">Forget this answer after (optional)</label><input id="answerMemoryExpiry" type="date"></details>
     <small>Passwords, security codes, and CAPTCHA answers are never saved. Nothing is sent or submitted from this step.</small>
