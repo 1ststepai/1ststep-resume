@@ -242,6 +242,30 @@ assert(functionNames.has('job-agent-discord-relay.func'), 'Expected serverless A
 assert(functionNames.has('login-page.func'), 'Expected environment-specific login CSP function missing: api/login-page.func');
 assert.equal(functionNames.size, 45, `Unexpected API function count: ${functionNames.size}`);
 
+function cspDirectiveSources(csp, directive) {
+  const prefix = `${directive} `;
+  const part = String(csp || '').split(';').map(item => item.trim())
+    .find(item => item === directive || item.startsWith(prefix));
+  return part ? part.slice(directive.length).trim().split(/\s+/).filter(Boolean) : [];
+}
+
+function cspHasExactHttpsOrigin(csp, directive, origin) {
+  const expected = new URL(origin);
+  if (expected.protocol !== 'https:' || expected.username || expected.password || expected.port
+    || expected.pathname !== '/' || expected.search || expected.hash) {
+    throw new Error('CSP origin comparison requires an exact HTTPS origin.');
+  }
+  return cspDirectiveSources(csp, directive).some(source => {
+    try {
+      const url = new URL(source);
+      return url.protocol === 'https:' && !url.username && !url.password && !url.port
+        && url.pathname === '/' && !url.search && !url.hash && url.origin === expected.origin;
+    } catch {
+      return false;
+    }
+  });
+}
+
 const outputConfig = JSON.parse(await readFile(path.join(outputRoot, 'config.json'), 'utf8'));
 const routeText = JSON.stringify(outputConfig.routes || []);
 assert(routeText.includes('login-page'), 'Environment-specific login page rewrite is missing');
@@ -249,7 +273,9 @@ const loginPageRoute = (outputConfig.routes || []).find(route => route.src === '
 assert(loginPageRoute, 'Compiled /login.html route must reach the environment-specific login function');
 const loginFunctionConfig = JSON.parse(await readFile(path.join(outputRoot, 'functions', 'api', 'login-page.func', '.vc-config.json'), 'utf8'));
 assert.equal(loginFunctionConfig.filePathMap?.['login.html'], 'login.html', 'Login HTML must remain available to the server-only login function');
-const defaultCspRoute = (outputConfig.routes || []).find(route => route.headers?.['Content-Security-Policy']?.includes('https://buy.stripe.com'));
+const defaultCspRoute = (outputConfig.routes || []).find(route => (
+  cspHasExactHttpsOrigin(route.headers?.['Content-Security-Policy'], 'form-action', 'https://buy.stripe.com')
+));
 assert(defaultCspRoute?.src.includes('?!login'), 'Site-wide CSP must exclude the environment-specific login response');
 for (const route of ['/app', '/partner', '/concierge', '/pricing', '/terms', '/privacy']) {
   assert(routeText.includes(route), `Expected route missing from Vercel output config: ${route}`);
