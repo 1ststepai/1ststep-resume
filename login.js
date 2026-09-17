@@ -1,4 +1,4 @@
-import { allowedClerkBrowserScriptSrc, PRODUCTION_CLERK_BROWSER_SCRIPT } from './client/clerk-browser-script.js';
+import { allowedClerkBrowserScriptSrc, DEVELOPMENT_CLERK_BROWSER_SCRIPT, PRODUCTION_CLERK_BROWSER_SCRIPT } from './client/clerk-browser-script.js';
 
 export async function initializeLoginPage({
   documentRef = document,
@@ -26,15 +26,13 @@ export async function initializeLoginPage({
 
   function loadScript(src, publishableKey) {
     return new Promise((resolve, reject) => {
-      const productionSrc = src === PRODUCTION_CLERK_BROWSER_SCRIPT ? PRODUCTION_CLERK_BROWSER_SCRIPT : '';
-      const developmentMatch = /^https:\/\/([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\.clerk\.accounts\.dev\/npm\/@clerk\/clerk-js@6\/dist\/clerk\.browser\.js$/.exec(String(src || ''));
-      const trustedSrc = productionSrc || (developmentMatch ? `https://${developmentMatch[1]}.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js` : '');
-      if (!trustedSrc) {
+      const script = documentRef.createElement('script');
+      if (src === PRODUCTION_CLERK_BROWSER_SCRIPT) script.src = PRODUCTION_CLERK_BROWSER_SCRIPT;
+      else if (src === DEVELOPMENT_CLERK_BROWSER_SCRIPT) script.src = DEVELOPMENT_CLERK_BROWSER_SCRIPT;
+      else {
         reject(new Error('Secure sign-in configuration is invalid. Please try again later.'));
         return;
       }
-      const script = documentRef.createElement('script');
-      script.src = trustedSrc;
       script.async = true;
       script.crossOrigin = 'anonymous';
       if (publishableKey) script.dataset.clerkPublishableKey = publishableKey;

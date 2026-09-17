@@ -1,6 +1,7 @@
 export const PRODUCTION_CLERK_FRONTEND_ORIGIN = 'https://clerk.1ststep.ai';
 export const PRODUCTION_CLERK_BROWSER_SCRIPT = 'https://clerk.1ststep.ai/npm/@clerk/clerk-js@6/dist/clerk.browser.js';
-const CLERK_JS_PATH = '/npm/@clerk/clerk-js@6/dist/clerk.browser.js';
+export const DEVELOPMENT_CLERK_FRONTEND_ORIGIN = 'https://first-impala-7783.clerk.accounts.dev';
+export const DEVELOPMENT_CLERK_BROWSER_SCRIPT = 'https://first-impala-7783.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js';
 const DEVELOPMENT_SUBDOMAIN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
 function parsedHttpsOrigin(value) {
@@ -27,8 +28,7 @@ export function allowedClerkFrontendOrigin(frontendApiUrl, productionKey) {
 
 export function allowedClerkBrowserScriptSrc(frontendApiUrl, productionKey) {
   const origin = allowedClerkFrontendOrigin(frontendApiUrl, productionKey);
-  if (!origin) return '';
-  if (productionKey) return PRODUCTION_CLERK_BROWSER_SCRIPT;
-  const subdomain = new URL(origin).hostname.split('.')[0];
-  return `https://${subdomain}.clerk.accounts.dev${CLERK_JS_PATH}`;
+  if (productionKey && origin === PRODUCTION_CLERK_FRONTEND_ORIGIN) return PRODUCTION_CLERK_BROWSER_SCRIPT;
+  if (!productionKey && origin === DEVELOPMENT_CLERK_FRONTEND_ORIGIN) return DEVELOPMENT_CLERK_BROWSER_SCRIPT;
+  return '';
 }
