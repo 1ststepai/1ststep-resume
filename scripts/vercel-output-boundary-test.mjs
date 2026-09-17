@@ -1,53 +1,74 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const projectLinkPath = path.join(root, '.vercel', 'project.json');
-let temporaryProjectLink = false;
-if (!existsSync(projectLinkPath)) {
-  const projectId = String(process.env.VERCEL_PROJECT_ID || '');
-  const orgId = String(process.env.VERCEL_ORG_ID || '');
-  if (!/^prj_[A-Za-z0-9]{20,}$/.test(projectId) || !/^team_[A-Za-z0-9]{20,}$/.test(orgId)) {
-    throw new Error('A local Vercel project link or the non-secret VERCEL_PROJECT_ID and VERCEL_ORG_ID identifiers are required.');
-  }
-  mkdirSync(path.dirname(projectLinkPath), { recursive: true });
-  const projectLink = {
-    projectId,
-    orgId,
-    projectName: '1ststep-resume',
-    settings: {
-      framework: null,
-      devCommand: null,
-      installCommand: null,
-      buildCommand: null,
-      outputDirectory: null,
-      rootDirectory: null,
-      directoryListing: false,
-      nodeVersion: '24.x',
-    },
-  };
-  writeFileSync(projectLinkPath, `${JSON.stringify(projectLink, null, 2)}\n`, { flag: 'wx' });
-  temporaryProjectLink = true;
+const expectedProjectId = 'prj_Lo7pjU6rfjxa30mEFE6TFuU0ZTcI';
+const expectedOrgId = 'team_hCdrlUnNBwc8vozwFwF5WkjP';
+for (const [name, expected] of [['VERCEL_PROJECT_ID', expectedProjectId], ['VERCEL_ORG_ID', expectedOrgId]]) {
+  assert.ok(!process.env[name] || process.env[name] === expected, `${name} must identify the canonical Job Agent project.`);
 }
-const buildCommand = process.platform === 'win32'
-  ? { command: process.env.ComSpec || 'cmd.exe', args: ['/d', '/s', '/c', 'npx vercel build --prod --yes'] }
-  : { command: 'npx', args: ['vercel', 'build', '--prod', '--yes'] };
-const buildEnvironment = { ...process.env, VERCEL_TELEMETRY_DISABLED: '1' };
-delete buildEnvironment.VERCEL_TOKEN;
-const build = spawnSync(buildCommand.command, buildCommand.args, {
-  cwd: root,
-  encoding: 'utf8',
-  stdio: 'pipe',
-  maxBuffer: 20 * 1024 * 1024,
-  env: buildEnvironment,
-});
-if (temporaryProjectLink) rmSync(projectLinkPath, { force: true });
+if (existsSync(projectLinkPath)) {
+  const link = JSON.parse(readFileSync(projectLinkPath, 'utf8'));
+  assert.equal(link.projectId, expectedProjectId, 'Refusing build against a noncanonical Vercel project link.');
+  assert.equal(link.orgId, expectedOrgId, 'Refusing build against a noncanonical Vercel team.');
+  assert.ok(link.settings && typeof link.settings === 'object', 'Offline build requires local project settings; no remote pull is permitted.');
+}
+// Do not let dotenv files supply deployment credentials or production data configuration.
+for (const directory of [root, path.join(root, '.vercel')]) {
+  if (!existsSync(directory)) continue;
+  assert.ok(!readdirSync(directory).some(name => /^\.env(?:$|\.)/.test(name) && name !== '.env.example'),
+    'Local environment files are not permitted in this isolated build; use a clean candidate checkout.');
+}
+// npm's Windows .cmd shim requires shell quoting; invoke its installed JS entry directly.
+const cliPath = process.env.VERCEL_CLI_PATH || (process.platform === 'win32'
+  ? [path.join(root, 'node_modules', 'vercel', 'dist', 'vc.js'),
+    ...String(process.env.PATH || process.env.Path || '').split(path.delimiter)
+      .map(directory => path.join(directory, 'node_modules', 'vercel', 'dist', 'vc.js'))]
+    .find(candidate => existsSync(candidate))
+  : undefined);
+assert.ok(process.platform !== 'win32' || cliPath,
+  'An installed Vercel CLI is required; set VERCEL_CLI_PATH to its absolute dist/vc.js entry.');
+if (cliPath) assert.ok(path.isAbsolute(cliPath) && existsSync(cliPath), 'VERCEL_CLI_PATH must identify an installed CLI entry point.');
+const buildEnvironment = {};
+for (const [name, value] of Object.entries(process.env)) {
+  if (/^(?:PATH|PATHEXT|SYSTEMROOT|WINDIR|COMSPEC|TEMP|TMP|TMPDIR|HOME|USERPROFILE|APPDATA|LOCALAPPDATA|PROGRAMFILES|PROGRAMFILES\(X86\))$/i.test(name)) buildEnvironment[name] = value;
+}
+buildEnvironment.VERCEL_TELEMETRY_DISABLED = '1';
+buildEnvironment.NO_UPDATE_NOTIFIER = '1';
+buildEnvironment.CI = '1';
+const isolatedConfig = mkdtempSync(path.join(tmpdir(), 'firststep-vercel-build-'));
+let temporaryProjectLink = false;
+let build;
+try {
+  if (!existsSync(projectLinkPath)) {
+    mkdirSync(path.dirname(projectLinkPath), { recursive: true });
+    writeFileSync(projectLinkPath, `${JSON.stringify({
+      projectId: expectedProjectId,
+      orgId: expectedOrgId,
+      projectName: '1ststep-resume',
+      settings: { framework: null, devCommand: null, installCommand: null, buildCommand: null,
+        outputDirectory: null, rootDirectory: null, directoryListing: false, nodeVersion: '24.x' },
+    }, null, 2)}\n`, { flag: 'wx' });
+    temporaryProjectLink = true;
+  }
+  // Native global-config isolation excludes cached Vercel accounts. Never use npx auto-install.
+  const args = ['build', '--prod', '--yes', '--global-config', isolatedConfig];
+  const command = cliPath ? process.execPath : 'vercel';
+  const commandArgs = cliPath ? [cliPath, ...args] : args;
+  build = spawnSync(command, commandArgs, { cwd: root, encoding: 'utf8', stdio: 'pipe',
+    maxBuffer: 20 * 1024 * 1024, env: buildEnvironment });
+} finally {
+  if (temporaryProjectLink) rmSync(projectLinkPath, { force: true });
+  rmSync(isolatedConfig, { recursive: true, force: true });
+}
 
 if (build.status !== 0) {
   process.stderr.write(build.stdout || '');

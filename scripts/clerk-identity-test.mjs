@@ -42,13 +42,28 @@ assert.equal(identity.providerSubject, 'user_fixture123');
 assert.deepEqual(verificationOptions.authorizedParties, ['https://app.1ststep.ai']);
 assert.equal('secretKey' in verificationOptions, false, 'JWT verification should use the public key, not send the Clerk secret into the verifier.');
 
+const diagnostics = [];
 const unverified = await authenticateClerkIdentity(req, {
   env,
+  reportFailure: event => diagnostics.push(event),
   verify: async () => ({ sub: 'user_fixture123' }),
   clerkClient: { users: { getUser: async () => ({ primaryEmailAddressId: 'e1', emailAddresses: [{ id: 'e1', emailAddress: 'person@example.test', verification: { status: 'unverified' } }] }) } },
 });
 assert.equal(unverified.ok, false);
 assert.equal(unverified.code, 'CLERK_SESSION_INVALID');
+assert.deepEqual(diagnostics, [{ type: 'clerk-identity-rejected', stage: 'verified-primary-email' }]);
+for (const stage of ['token-verification', 'subject-validation', 'identity-lookup']) {
+  const result = await authenticateClerkIdentity(req, {
+    env,
+    verify: async () => { if (stage === 'token-verification') throw new Error(`private ${token}`); return { sub: stage === 'subject-validation' ? 'private@example.test' : 'user_fixture123' }; },
+    clerkClient: { users: { getUser: async () => { throw new Error('private@example.test sk_test_private'); } } },
+    reportFailure: event => diagnostics.push(event),
+  });
+  assert.deepEqual(result, { ok: false, status: 401, code: 'CLERK_SESSION_INVALID' });
+  assert.deepEqual(diagnostics.at(-1), { type: 'clerk-identity-rejected', stage });
+}
+assert.doesNotMatch(JSON.stringify(diagnostics), /private|header|signature|sk_test|@/);
+assert.equal((await authenticateClerkIdentity(req, { env, verify: async () => { throw new Error('rejected'); }, reportFailure: () => { throw new Error('logger unavailable'); } })).ok, false);
 
 const sessionApi = await readFile(new URL('../api/user-session.js', import.meta.url), 'utf8');
 assert.match(sessionApi, /action\s*\|\| ''\) === 'clerk-exchange'/);
