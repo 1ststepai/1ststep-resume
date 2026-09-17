@@ -85,7 +85,9 @@ export default async function handler(req, res) {
   const launchManifest = jobAgentLaunchManifest();
   const launchActionPlan = publicJobAgentLaunchActionPlan(launchManifest.actionPlan);
   const objectStorage = jobAgentObjectStorageConfiguration();
-  if (String(process.env.VERCEL_ENV || '').toLowerCase() === 'production' && !objectStorage.ready) return res.status(503).json({
+  const ownerReviewedBeta = launchManifest.capabilities.ownerReviewedControlledBeta?.eligible === true;
+  const production = String(process.env.VERCEL_ENV || '').toLowerCase() === 'production';
+  if (production && !ownerReviewedBeta && !objectStorage.ready) return res.status(503).json({
     status: 'unavailable', durableStore: 'unknown', failedStage: 'encrypted-object-storage',
     encryptedObjectStorage: 'not-configured', malwareScanning: objectStorage.scanner?.enabled ? 'configured' : 'not-configured',
     launchActionPlan, externalApplicationExecution: false,
@@ -98,24 +100,24 @@ export default async function handler(req, res) {
     jobAgentConsentControl: 'not-configured', launchActionPlan, externalApplicationExecution: false,
   });
   const backgroundScheduling = jobAgentScheduleConfiguration();
-  if (String(process.env.VERCEL_ENV || '').toLowerCase() === 'production' && !backgroundScheduling.enabled) return res.status(503).json({
+  if (production && !ownerReviewedBeta && !backgroundScheduling.enabled) return res.status(503).json({
     status: 'unavailable', durableStore: 'unknown', failedStage: 'background-scheduling',
     jobAgentConsentControl: consentControlConfigured ? 'configured' : 'not-configured', backgroundScheduling: 'not-configured', launchActionPlan, externalApplicationExecution: false,
   });
   const auditHeadExportConfig = applicationAuditHeadExportConfiguration();
   const auditArchiveConfig = applicationAuditArchiveConfiguration();
-  if (String(process.env.VERCEL_ENV || '').toLowerCase() === 'production' && (!auditHeadExportConfig || !auditArchiveConfig.ready)) return res.status(503).json({
+  if (production && !ownerReviewedBeta && (!auditHeadExportConfig || !auditArchiveConfig.ready)) return res.status(503).json({
     status: 'unavailable', durableStore: 'unknown', failedStage: 'audit-retention-archive',
     jobAgentConsentControl: consentControlConfigured ? 'configured' : 'not-configured', backgroundScheduling: backgroundScheduling.enabled ? 'configured' : 'not-configured',
     retentionAuditHeadExport: 'not-configured', retentionAuditArchive: publicApplicationAuditArchiveConfiguration(auditArchiveConfig), launchActionPlan, externalApplicationExecution: false,
   });
   const needsYouNotificationConfig = jobAgentNeedsYouNotificationConfiguration();
-  if (String(process.env.VERCEL_ENV || '').toLowerCase() === 'production' && !needsYouNotificationConfig.enabled) return res.status(503).json({
+  if (production && !ownerReviewedBeta && !needsYouNotificationConfig.enabled) return res.status(503).json({
     status: 'unavailable', durableStore: 'unknown', failedStage: 'needs-you-notifications',
     jobAgentConsentControl: consentControlConfigured ? 'configured' : 'not-configured', backgroundScheduling: backgroundScheduling.enabled ? 'configured' : 'not-configured',
     retentionAuditHeadExport: auditHeadExportConfig && auditArchiveConfig.ready ? 'configured' : 'not-configured', retentionAuditArchive: publicApplicationAuditArchiveConfiguration(auditArchiveConfig), needsYouNotifications: 'not-configured', launchActionPlan, externalApplicationExecution: false,
   });
-  if (String(process.env.VERCEL_ENV || '').toLowerCase() === 'production' && !launchManifest.capabilities.signedBeta.eligible) return res.status(503).json({
+  if (production && !ownerReviewedBeta && !launchManifest.capabilities.signedBeta.eligible) return res.status(503).json({
     status: 'unavailable', durableStore: 'unknown', failedStage: 'controlled-beta-launch-manifest',
     launchMode: launchManifest.currentMode, requiredLaunchMode: 'signed-beta',
     assistedExecutionMode: launchManifest.assistedExecutionMode, extensionHandoff: launchManifest.extensionHandoff,

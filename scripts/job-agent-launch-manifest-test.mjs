@@ -113,6 +113,7 @@ Object.assign(readyEnv, {
 let manifest = jobAgentLaunchManifest({}, { now });
 assert.equal(manifest.currentMode, 'preview');
 assert.equal(manifest.capabilities.preview.eligible, true);
+assert.equal(manifest.capabilities.ownerReviewedControlledBeta.eligible, false);
 assert.equal(manifest.capabilities.signedBeta.eligible, false);
 assert.equal(manifest.externalApplicationExecution, false);
 assert.equal(manifest.submissionsEnabled, false);
