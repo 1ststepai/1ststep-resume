@@ -7,7 +7,8 @@ test('subscriber workspace uses light surfaces and opens Needs You', async ({ pa
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(`${base}/concierge?uiFixture=subscriber`);
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe('light');
-  await expect(page.locator('.daily-dashboard')).toBeVisible();
+  await expect(page.locator('#attentionNow')).toBeVisible();
+  await expect(page.locator('#attentionNowTitle')).toContainText('needs you');
   await page.screenshot({ path: join(tmpdir(), '1ststep-ui-handoff-desktop.png') });
   await page.locator('#openNeedsYou').click();
   await expect(page.locator('.needs-sheet')).toBeVisible();
