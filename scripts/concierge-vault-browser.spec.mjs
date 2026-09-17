@@ -167,7 +167,7 @@ test('queued status is visible and a running question receives status instead of
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await expect(page.locator('#agentRunState')).toHaveText('Queued — not started yet');
-  await expect(page.locator('#agentStatusDetail')).toContainText('worker has not started');
+  await expect(page.locator('#agentStatusDetail')).toContainText('has not started yet');
   await expect(page.locator('[data-run-state="Searching"]')).not.toHaveClass(/active/);
   await page.locator('#messageInput').fill('is my agent running currently?');
   await page.locator('#composer button[type="submit"]').click();
@@ -1144,7 +1144,7 @@ test('status tabs, mission stats, and receipt-only submission counting share one
   await expect(page.locator('[data-job-tab="Submitted"] span')).toHaveText('1');
   await expect(page.locator('[data-job-tab="Interviews"] span')).toHaveText('1');
   await page.locator('[data-job-tab="Submitted"]').click();
-  await expect(page.locator('#jobCards')).toContainText('Receipt Verified');
+  await expect(page.locator('#jobCards')).toContainText('Confirmation verified');
   await expect(page.locator('#jobCards')).not.toContainText('No Receipt Co');
 });
 

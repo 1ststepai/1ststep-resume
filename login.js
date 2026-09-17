@@ -21,6 +21,12 @@ export async function initializeLoginPage({
       returnTo = `${target.pathname}${target.search}${target.hash}`;
     }
   } catch { /* invalid or external return targets fail closed to /app */ }
+  if (typeof documentRef.querySelector === 'function' && /\/concierge(?:\.html)?(?:[?#]|$)/i.test(returnTo)) {
+    const heading = documentRef.querySelector('main h1');
+    const intro = documentRef.querySelector('main .intro');
+    if (heading) heading.textContent = 'Sign in to your Job Agent';
+    if (intro) intro.textContent = 'Save who you are, the jobs it finds, and the questions that need you.';
+  }
   const callback = `${locationRef.origin}/login.html?returnTo=${encodeURIComponent(returnTo)}`;
   let exchanging = false;
 

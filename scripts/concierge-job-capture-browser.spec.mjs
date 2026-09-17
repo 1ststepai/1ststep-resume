@@ -49,8 +49,8 @@ test('a generic extension capture is visibly added to Job Agent for supervised r
   await expect(page.locator('#jobsOverlay')).toHaveClass(/open/);
   await expect(page.locator('#jobCards')).toContainText('Account Director, Health Systems');
   await expect(page.locator('#jobCards')).toContainText('Zocdoc');
-  await expect(page.locator('#jobCards')).toContainText('Found');
-  await expect(page.getByRole('button', { name: 'Use in Resume Builder' })).toBeVisible();
+  await expect(page.locator('#jobCards')).toContainText('Captured · not verified');
+  await expect(page.getByRole('button', { name: 'Review captured job' })).toBeVisible();
   await expect(page.locator('#jobCardsDescription')).toContainText('Captured jobs stay unverified');
   await expect(page.locator('#jobCards')).not.toContainText(/prepare application|submitted/i);
 
@@ -63,6 +63,6 @@ test('a generic extension capture is visibly added to Job Agent for supervised r
   expect(state.pending).toBeNull();
   expect(state.jobAgentCapture).toBeNull();
 
-  await page.getByRole('button', { name: 'Use in Resume Builder' }).click();
+  await page.getByRole('button', { name: 'Review captured job' }).click();
   await expect(page).toHaveURL(new RegExp(`/app/resume\\?jobCaptureId=${captureId}&mode=tailor$`));
 });

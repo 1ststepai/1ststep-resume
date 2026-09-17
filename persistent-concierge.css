@@ -658,3 +658,43 @@ html[data-theme="dark"] body[data-page="concierge"] #guidedLaunchSaveStatus[data
   .guided-review .agent-launch-button{position:fixed;left:14px;right:14px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:112;width:auto;max-width:692px;margin:0 auto;box-shadow:0 10px 28px rgba(15,23,42,.22)}
   .job-tabs-hint{display:block;margin:0;padding:6px 14px;color:var(--agent-body);font-size:12px;text-align:right}
 }
+
+/* Product polish: readable type, Needs You, trust chips, Saved Info authority. */
+.trust-chip{display:inline-flex;align-items:center;margin:0 0 6px;padding:3px 8px;border:1px solid var(--agent-control-border);border-radius:999px;background:var(--agent-soft);color:var(--agent-body);font-size:12px;font-weight:700;line-height:1.3;letter-spacing:0;text-transform:none}
+.trust-chip.trust-confirmed{border-color:#bbf7d0;background:#f0fdf4;color:#166534}
+.trust-chip.trust-preference{border-color:#c7d2fe;background:#eef2ff;color:#3730a3}
+.trust-chip.trust-unknown{border-color:#fde68a;background:#fffbeb;color:#92400e}
+.vault-authority{display:grid;gap:6px;margin:14px 0 0;padding:16px 18px;border:1px solid #c7d2fe;border-radius:12px;background:#eef2ff;color:#172033}
+.vault-authority[hidden]{display:none!important}
+.vault-authority strong{font-size:16px;line-height:1.35}
+.vault-authority p{margin:0;color:#475569;font-size:14px;line-height:1.55}
+.needs-continuity{margin:0 0 14px;padding:12px 14px;border-left:3px solid #b45309;border-radius:8px;background:#fffbeb;color:#92400e;font-size:14px;line-height:1.5}
+.simple-job-card .job-next{margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5}
+.status-badge{font-size:12px!important;line-height:1.3!important;max-width:none;padding:6px 10px}
+.agent-progress-metrics span{font-size:12px;letter-spacing:.02em;text-transform:none;font-weight:650}
+body.needs-attention #openNeedsYou{background:#fff7ed;color:#9a3412;border-color:#fdba74}
+#headerNeedsYouCount{min-width:20px;height:20px;font-size:11px}
+.agent-conversation>header span{font-size:13px;line-height:1.45}
+.agent-conversation>header p{margin:6px 0 0;color:var(--agent-body);font-size:14px;line-height:1.5}
+.desk-row .trust-chip{margin-bottom:8px}
+@media(max-width:720px){
+  .agent-header nav button,.mobile-nav-more>summary{font-size:12px}
+  .agent-progress-metrics span{font-size:11px}
+  .job-tabs{overflow-x:auto;scrollbar-width:thin}
+  .simple-job-card header{flex-wrap:wrap}
+  .status-badge{max-width:100%}
+}
+@media(max-width:390px){
+  .agent-header nav button,.mobile-nav-more>summary{font-size:12px}
+  .agent-progress-metrics span{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){
+  .agent-working-track,.agent-working-track::after{animation:none}
+}
+html[data-theme="dark"] .trust-chip.trust-confirmed{color:#86efac;border-color:#166534;background:#052e16}
+html[data-theme="dark"] .trust-chip.trust-preference{color:#c7d2fe;border-color:#4338ca;background:#1e1b4b}
+html[data-theme="dark"] .trust-chip.trust-unknown{color:#fcd34d;border-color:#92400e;background:#451a03}
+html[data-theme="dark"] .vault-authority,html[data-theme="dark"] .needs-continuity{background:var(--agent-surface);color:var(--agent-ink)}
+html[data-theme="dark"] .vault-authority p,html[data-theme="dark"] .simple-job-card .job-next{color:#d6dee8}
+html[data-theme="dark"] body.needs-attention #openNeedsYou{background:#451a03;color:#fcd34d}
+

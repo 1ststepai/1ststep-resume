@@ -52,7 +52,7 @@ import { JOB_RELEVANCE_POLICY_VERSION, jobTitleMatchesMission, normalizeMissionE
 import { discoveryScreeningSummary } from './client/discovery-screening-summary.js';
 import { buildAnswerCoachingRequest, summarizePracticeSession } from './client/interview-practice.js';
 import { OPPORTUNITY_PATHS, OPPORTUNITY_SECTORS, mergeAuthoritativeOutcomeEvidence, opportunityPathOutcomeEvidence, rankOpportunityPaths, suggestedOpportunityPaths } from './client/opportunity-paths.js';
-import { authoritativeReceiptCount, canonicalConversation, directSourceCoverage, estimateJobAgentTimeSaved, formatTimeSaved, maskedActivityFeed, missionStats, needsYouKind, statusBadgeClass, statusTab, subscriberStatus as subscriberUiStatus } from './client/subscriber-ui-model.js';
+import { authoritativeReceiptCount, canonicalConversation, directSourceCoverage, estimateJobAgentTimeSaved, formatTimeSaved, maskedActivityFeed, missionStats, needsYouKind, statusBadgeClass, statusTab, subscriberStatus as subscriberUiStatus, userFacingJobNextStep, userFacingStatus } from './client/subscriber-ui-model.js';
 import {
   CAMPAIGN_TEMPLATES, addCampaign, campaignMetrics, createCampaignStore, operatingContractText, updateCampaignStatus, updatePersistentCampaign,
 } from './client/persistent-campaign.js';
@@ -504,44 +504,61 @@ function vaultInactiveReason() {
   return 'Encrypted account backup is off.';
 }
 
+function factTrustLabel(version) {
+  if (version?.verificationState === 'user-confirmed' || version?.provenance === 'candidate confirmation') return { chip: 'Confirmed by you', kind: 'confirmed' };
+  if (String(version?.provenance || '').includes('resume')) return { chip: 'From your résumé', kind: 'confirmed' };
+  if (version?.autoReuse) return { chip: 'Reusable preference', kind: 'preference' };
+  return { chip: 'Needs review each time', kind: 'unknown' };
+}
+
 function renderVaultStatus() {
   renderJobAgentConsentState();
   const active = vaultEnabled();
   const authenticated = Boolean(hasApiSession() && hasJobAgentAccess());
   const inactiveReason = vaultInactiveReason();
   const statusText = active
-    ? `Encrypted backup active · ${applicantVault.vault.facts.filter(item => item.status === 'active').length} confirmed answer(s) · ${applicantVault.vault.documents.filter(item => item.status === 'active').length} document(s)`
+    ? `Encrypted backup on · ${applicantVault.vault.facts.filter(item => item.status === 'active').length} confirmed answer(s) · ${applicantVault.vault.documents.filter(item => item.status === 'active').length} document(s)`
     : `${inactiveReason} Unsaved details remain only in this tab.`;
   if ($('vaultStatus')) $('vaultStatus').textContent = statusText;
   if ($('questionVaultStatus')) $('questionVaultStatus').textContent = active
     ? 'Encrypted across your signed-in account.'
     : `${inactiveReason} Answers remain only in this tab.`;
   if ($('resumeVaultStatus')) $('resumeVaultStatus').textContent = active
-    ? 'Encrypted across your signed-in account. Passwords, OTPs, and CAPTCHA answers are never stored.'
-    : `${inactiveReason} Your resume remains only in this tab. Passwords, OTPs, and CAPTCHA answers are never stored.`;
+    ? 'Encrypted across your signed-in account. Passwords, one-time codes, and security checks are never stored.'
+    : `${inactiveReason} Your résumé remains only in this tab. Passwords, one-time codes, and security checks are never stored.`;
   if ($('enableVault')) { $('enableVault').hidden = active; $('enableVault').disabled = !authenticated; }
   for (const id of ['exportVault', 'revokeVault', 'deleteVault']) if ($(id)) $(id).disabled = !active;
   renderNeedsYouNotificationPreference();
-  if (!$('vaultList')) return;
   const facts = applicantVault.vault?.facts?.filter(item => item.status === 'active') || [];
   const documents = applicantVault.vault?.documents?.filter(item => item.status === 'active') || [];
+  const selected = applicantVault.vault?.selectedBaseResume;
+  const selectedDocument = documents.find(item => item.id === selected?.documentId);
+  const selectedVersion = selectedDocument?.versions?.find(item => item.version === selected?.version && item.sha256 === selected?.sha256)
+    || selectedDocument?.versions?.find(item => item.version === selected?.version);
+  if ($('vaultSelectedResume')) {
+    $('vaultSelectedResume').hidden = false;
+    $('vaultSelectedResume').innerHTML = selectedDocument && selectedVersion
+      ? `<span class="trust-chip trust-confirmed">Selected résumé</span><strong>${escapeHtml(selectedDocument.title)}</strong><p>Version ${escapeHtml(String(selectedVersion.version))} is the only résumé used to prepare applications. Browser copies are available to review or import, not used automatically.</p>`
+      : `<span class="trust-chip trust-unknown">No résumé selected</span><strong>Choose one reviewed résumé version</strong><p>The Job Agent will not guess which file to use. Select a version below before preparing materials.</p>`;
+  }
+  if (!$('vaultList')) return;
   const scheduleStatus = jobAgentSchedule.status === 'unavailable' ? 'Daily background status is temporarily unavailable.'
     : jobAgentSchedule.schedule?.status === 'active' ? `Daily search active · next run ${new Date(jobAgentSchedule.schedule.nextRunAt).toLocaleString()}`
       : jobAgentSchedule.enabled === false ? 'Daily background search is not enabled for this controlled beta.' : 'Daily background search is off.';
   const scheduleAction = jobAgentSchedule.schedule?.status === 'active' ? 'pause' : 'resume';
-  const scheduleRow = authenticated ? `<div class="desk-row"><div><strong>Daily background search</strong><small>${escapeHtml(scheduleStatus)} · direct-employer discovery only · no applications submitted</small></div><div class="desk-actions"><button data-schedule-action="${scheduleAction}" ${scheduleAction === 'resume' && (!missionState.mission?.role || !activeJobAgentConsent()) ? 'disabled' : ''}>${scheduleAction === 'pause' ? 'Pause daily search' : 'Resume daily search'}</button></div></div>` : '';
+  const scheduleRow = authenticated ? `<div class="desk-row"><div><span class="trust-chip trust-preference">Preference</span><strong>Daily background search</strong><small>${escapeHtml(scheduleStatus)} · finds matching jobs only · no applications submitted</small></div><div class="desk-actions"><button data-schedule-action="${scheduleAction}" ${scheduleAction === 'resume' && (!missionState.mission?.role || !activeJobAgentConsent() || jobAgentSchedule.enabled === false) ? 'disabled' : ''}>${scheduleAction === 'pause' ? 'Pause daily search' : 'Resume daily search'}</button></div></div>` : '';
   $('vaultList').innerHTML = [scheduleRow, ...facts.map(fact => {
     const version = fact.versions.find(item => item.version === fact.currentVersion) || fact.versions.at(-1);
-    if (version?.scope?.memory) return `<div class="desk-row"><div><strong>Remembered about you · ${escapeHtml(version.scope.category)}</strong><p>${escapeHtml(version.value)}</p><small>${escapeHtml(fact.label)} · ${escapeHtml(version.scope.kind)} scope · ${escapeHtml(version.scope.employer)} · ${escapeHtml(version.confirmedAt)} · ${version.scope.expiresAt ? `expires ${escapeHtml(version.scope.expiresAt)}` : 'until you edit or forget'}</small></div><div class="desk-actions"><button data-memory-edit="${escapeHtml(fact.id)}">Edit</button><button data-memory-forget="${escapeHtml(fact.id)}">Forget</button></div></div>`;
-    return `<div class="desk-row"><div><strong>${escapeHtml(fact.label)}</strong><small>Saved securely · ${escapeHtml(version?.provenance || 'candidate confirmation')} · confidence ${Math.round((Number(version?.confidence) || 0) * 100)}% · version ${fact.currentVersion}${version?.autoReuse ? ' · reusable when meaning matches' : ' · manual review required'}</small></div><div class="desk-actions"><button data-vault-edit-fact="${escapeHtml(fact.fieldKey)}">Edit</button><button data-vault-revoke-fact="${escapeHtml(fact.id)}">Revoke</button></div></div>`;
+    const trust = factTrustLabel(version);
+    if (version?.scope?.memory) return `<div class="desk-row"><div><span class="trust-chip trust-${trust.kind}">${escapeHtml(trust.chip)}</span><strong>Remembered about you · ${escapeHtml(version.scope.category)}</strong><p>${escapeHtml(version.value)}</p><small>${escapeHtml(fact.label)} · ${escapeHtml(version.scope.employer)} · saved ${escapeHtml(version.confirmedAt)}${version.scope.expiresAt ? ` · expires ${escapeHtml(version.scope.expiresAt)}` : ' · until you edit or forget'}</small></div><div class="desk-actions"><button data-memory-edit="${escapeHtml(fact.id)}">Edit</button><button data-memory-forget="${escapeHtml(fact.id)}">Forget</button></div></div>`;
+    return `<div class="desk-row"><div><span class="trust-chip trust-${trust.kind}">${escapeHtml(trust.chip)}</span><strong>${escapeHtml(fact.label)}</strong><small>${escapeHtml(version?.value || 'Saved securely')} · ${version?.autoReuse ? 'reusable when the same question comes up' : 'ask me each time'}</small></div><div class="desk-actions"><button data-vault-edit-fact="${escapeHtml(fact.fieldKey)}">Edit</button><button data-vault-revoke-fact="${escapeHtml(fact.id)}">Forget</button></div></div>`;
   }), ...documents.map(document => {
-    const selected = applicantVault.vault?.selectedBaseResume;
     const versions = document.type === 'master-resume' ? document.versions.map(version => {
       const chosen = selected?.documentId === document.id && selected.version === version.version && selected.sha256 === version.sha256;
-      return `<details><summary>Version ${version.version}${chosen ? ' · selected for packages' : ''} · review text</summary><div class="vault-resume-preview">${escapeHtml(version.text)}</div><button type="button" data-vault-base-document="${escapeHtml(document.id)}" data-vault-base-version="${version.version}" ${chosen ? 'disabled' : ''}>${chosen ? 'Selected base résumé' : 'Use this version as base résumé'}</button></details>`;
+      return `<details><summary>Version ${version.version}${chosen ? ' · selected for applications' : ''} · review text</summary><div class="vault-resume-preview">${escapeHtml(version.text)}</div><button type="button" data-vault-base-document="${escapeHtml(document.id)}" data-vault-base-version="${version.version}" ${chosen ? 'disabled' : ''}>${chosen ? 'Selected base résumé' : 'Use this version as base résumé'}</button></details>`;
     }).join('') : '';
-    return `<div class="desk-row"><div><strong>${escapeHtml(document.title)}</strong><small>Encrypted document · ${escapeHtml(document.type)} · ${document.versions.length} version(s)</small>${versions}</div><div class="desk-actions"><button data-vault-revoke-document="${escapeHtml(document.id)}">Revoke</button></div></div>`;
-  })].filter(Boolean).join('') || empty('No encrypted account-backed answers or documents. Unsaved details remain only in this tab.');
+    return `<div class="desk-row"><div><span class="trust-chip ${document.type === 'master-resume' ? 'trust-confirmed' : 'trust-preference'}">${document.type === 'master-resume' ? 'Saved résumé' : 'Saved document'}</span><strong>${escapeHtml(document.title)}</strong><small>${document.versions.length} version${document.versions.length === 1 ? '' : 's'}</small>${versions}</div><div class="desk-actions"><button data-vault-revoke-document="${escapeHtml(document.id)}">Remove</button></div></div>`;
+  })].filter(Boolean).join('') || empty('No saved answers or documents yet. Unsaved details remain only in this tab.');
 }
 
 async function hydrateApplicantVault() {
@@ -1266,7 +1283,7 @@ async function closeDurableBrowserHandoff() {
 function renderAgentAccessState() {
   const active = hasJobAgentAccess();
   const pilotInviteRequired = sessionCapabilities.pilotAccess?.code === 'JOB_AGENT_PILOT_INVITE_REQUIRED';
-  if ($('openAgentAccess')) $('openAgentAccess').textContent = active ? 'Account access enabled' : pilotInviteRequired ? 'Pilot invite required' : 'Sign in';
+  if ($('openAgentAccess')) $('openAgentAccess').textContent = active ? 'Account' : pilotInviteRequired ? 'Invite needed' : 'Sign in';
   if ($('deleteAccountData')) $('deleteAccountData').textContent = 'Delete Job Agent cloud data';
   if (!$('startJobSearch')) return;
   const missionActive = Boolean(missionState.mission?.role);
@@ -1826,6 +1843,13 @@ function renderGuidedLaunch() {
     $('startJobSearchHelp').textContent = blocker;
     $('reviewAddResume').hidden = resumeReady;
     $('startJobSearch').disabled = Boolean(blocker);
+    const scheduleChoice = $('dailyBackgroundSearch')?.closest('label');
+    if ($('dailyBackgroundSearch') && jobAgentSchedule.enabled === false) {
+      $('dailyBackgroundSearch').checked = false;
+      $('dailyBackgroundSearch').disabled = true;
+      const note = scheduleChoice?.querySelector('small');
+      if (note) note.textContent = 'Daily search is not enabled for this beta. Start a search whenever you want new matches.';
+    }
   }
 }
 
@@ -1917,10 +1941,10 @@ function renderOpportunityPaths() {
   }).join('');
   const scan = missionState.pathScan;
   $('pathEvidence').textContent = scan?.status === 'complete'
-    ? `${scan.partial ? 'Some sources could not finish. You can compare again; these results are partial. ' : ''}Compared ${scan.jobsScanned} current postings across ${scan.sourcesChecked} connected direct-employer feeds and ${OPPORTUNITY_PATHS.length} job paths. Your observed rate appears after 5 receipt-verified applications and is not labeled reliable before 20.`
+    ? `${scan.partial ? 'Some sources could not finish. You can compare again; these results are partial. ' : ''}Compared ${scan.jobsScanned} current postings across ${scan.sourcesChecked} connected job sources and ${OPPORTUNITY_PATHS.length} job paths. Your observed rate appears after 5 confirmed applications and is not labeled reliable before 20.`
     : scan?.status === 'error'
       ? `Live comparison needs attention: ${String(scan.message || '').replace(/[.!?]+$/, '')}. Starter paths remain available.`
-      : 'Starter paths come from your confirmed experience. Live opening counts appear only after a direct-employer feed scan.';
+      : 'Starter paths come from your confirmed experience. Live opening counts appear only after a job-source scan.';
   const sectorDecision = $('sectorRoleDecision');
   sectorDecision.hidden = !pendingSectorRole;
   if (pendingSectorRole) $('sectorRoleDecisionText').textContent = `You are exploring ${pendingSectorRole.sectorLabel}. Keep ${pendingSectorRole.pathLabel}, clear it, or choose a replacement below.`;
@@ -2289,7 +2313,7 @@ async function askSmartConcierge(input) {
     resumeAvailable: hasResume(), recommendedPriority: guidance.priority,
     productionCapabilities: { publicEmployerFeedDiscovery: true, externalSubmission: false, managedApplicationWorkspace: 'simulated' },
   };
-  const pending = addMessage('assistant', '<strong>Reviewing your mission and deciding the best next step…</strong>' + workingIndicator('Thinking…'), false);
+  const pending = addMessage('assistant', '<strong>Reviewing your saved search and deciding the best next step…</strong>' + workingIndicator('Checking what is next'), false);
   try {
     const reply = await callAI('concierge', 'fast', `<concierge_state>${escapeXmlData(JSON.stringify(stateSummary))}</concierge_state>\n<user_request>${escapeXmlData(redactChatForModel(input))}</user_request>`, 350);
     pending.remove();
@@ -2309,11 +2333,11 @@ async function discoverMatchingJobs() {
   // The scan is bounded by a shared server deadline and a longer browser
   // allowance, so it always ends - either complete, or partial with whatever
   // was verified in time. The copy promises that behaviour, not a duration.
-  const pending = addMessage('assistant', '<strong>Checking free direct-employer feeds now…</strong>'
-    + '<br>I’ll keep only mission matches and suppress duplicates. If a feed is slow I stop waiting and show whatever was verified by then, clearly marked as partial. External applications remain disabled.'
-    + workingIndicator('Searching employer feeds…'), false);
+  const pending = addMessage('assistant', '<strong>Checking employer job listings now…</strong>'
+    + '<br>I’ll keep only matches for your saved criteria and skip duplicates. If a source is slow I stop waiting and show whatever was verified by then, clearly marked as partial. Nothing is submitted.'
+    + workingIndicator('Checking job requirements'), false);
   pending.setAttribute('aria-busy', 'true');
-  $('agentRunState').textContent = 'Checking public employer feeds';
+  $('agentRunState').textContent = 'Checking job requirements';
   try {
     const headers = apiAuthorizationHeaders();
     const requestId = missionState.discovery?.requestId || crypto.randomUUID();
@@ -2345,7 +2369,7 @@ async function discoverMatchingJobs() {
     if (data.status === 'sources-not-configured') {
       missionState.discovery = { status: 'catalog-needed', checkedAt: new Date().toISOString(), sourcesChecked: 0, matches: 0 };
       saveAll(); renderMission();
-      addMessage('assistant', '<strong>Your search is saved, but this preview has no employer-feed catalog connected yet.</strong><br>I did not use the disabled paid job API or invent results. Greenhouse, Lever, Ashby, and SmartRecruiters feeds can be enabled without a paid search subscription; browser-extension discovery remains the next coverage layer.');
+      addMessage('assistant', '<strong>Your search is saved, but this preview has no employer-feed catalog connected yet.</strong><br>I did not invent results or use a paid job search. Matching job sources can be enabled without a paid search subscription; the browser helper remains the next coverage layer.');
       return;
     }
     let added = 0;
@@ -2592,12 +2616,12 @@ function renderSimpleAgentStatus() {
   $('agentRunState').textContent = status.label;
   $('agentRunState').dataset.tone = status.tone;
   $('agentStatusDetail').textContent = status.detail;
-  $('agentStatusSeen').textContent = status.last ? `Last recorded update: ${relativeActivityTime(status.last)}` : 'No worker activity confirmed yet';
+  $('agentStatusSeen').textContent = status.last ? `Last recorded update: ${relativeActivityTime(status.last)}` : 'No saved activity confirmed yet';
 }
 async function checkSimpleAgentStatus(announce = false) {
   const button = $('checkAgentStatus');
   if (button.disabled) return;
-  button.disabled = true; button.textContent = 'Checking…';
+  button.disabled = true; button.textContent = 'Checking status…';
   try {
     if (hasApiSession() && hasJobAgentAccess()) statusCheckUnavailable = !(await hydrateDurableRun());
     renderRunState();
@@ -2610,7 +2634,7 @@ async function checkSimpleAgentStatus(announce = false) {
 
 function relativeActivityTime(value) {
   const timestamp = new Date(value || 0).getTime();
-  if (!Number.isFinite(timestamp) || timestamp <= 0) return 'Persisted status';
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return 'Saved status';
   const seconds = Math.max(0, Math.round((Date.now() - timestamp) / 1000));
   if (seconds < 60) return 'Just now';
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
@@ -2626,15 +2650,15 @@ function renderCommandCenterEvidence(openActions) {
     : '<li class="command-center-empty">Activity appears after your first saved search. No activity is inferred.</li>';
   $('sourceCoverageState').textContent = coverage.state === 'searching' ? 'Checking now' : coverage.state === 'healthy' ? 'Healthy' : coverage.state === 'partial' ? 'Partial coverage' : 'Not checked yet';
   $('sourceCoverageSummary').textContent = coverage.checked
-    ? `${coverage.healthy} healthy · ${coverage.partial} partial · ${coverage.unavailable} unavailable · ${coverage.verifiedMatches} verified matches`
-    : 'Run a search to measure live employer-feed availability.';
+    ? `${coverage.healthy} healthy · ${coverage.partial} partial · ${coverage.unavailable} unavailable · ${coverage.verifiedMatches} matching roles`
+    : 'Run a search to measure live employer job-source availability.';
   $('sourceProviderList').innerHTML = coverage.providers.length ? coverage.providers.map(provider => {
     const state = provider.unavailable ? 'Needs retry' : provider.partial ? 'Partial' : 'Healthy';
-    return `<li><div><strong>${escapeHtml(provider.label)}</strong><span>${provider.checked} employer feed${provider.checked === 1 ? '' : 's'} checked</span></div><em class="source-${provider.unavailable ? 'error' : provider.partial ? 'partial' : 'healthy'}">${escapeHtml(state)}</em></li>`;
-  }).join('') : '<li class="command-center-empty">Greenhouse, Lever, Ashby, and SmartRecruiters coverage is measured from the latest durable run.</li>';
+    return `<li><div><strong>${escapeHtml(provider.label)}</strong><span>${provider.checked} job source${provider.checked === 1 ? '' : 's'} checked</span></div><em class="source-${provider.unavailable ? 'error' : provider.partial ? 'partial' : 'healthy'}">${escapeHtml(state)}</em></li>`;
+  }).join('') : '<li class="command-center-empty">Employer job-board coverage is measured from your latest saved search.</li>';
   $('sourceCostSummary').textContent = coverage.checked
-    ? `${coverage.requests} public feed request${coverage.requests === 1 ? '' : 's'} · ${coverage.llmTokens} retrieval tokens · no paid job API`
-    : 'No feed or retrieval usage recorded for this view.';
+    ? `${coverage.requests} public job-source check${coverage.requests === 1 ? '' : 's'} · no paid job search`
+    : 'No job-source checks recorded for this view.';
 }
 
 function renderTimeSaved() {
@@ -2733,7 +2757,21 @@ function renderNeedsYouQueue() {
   document.body.classList.toggle('needs-attention', actions.length > 0);
   $('headerNeedsYouCount').textContent = actions.length;
   $('headerNeedsYouCount').hidden = actions.length === 0;
+  $('openNeedsYou').setAttribute('aria-label', actions.length
+    ? `Needs You, ${actions.length} item${actions.length === 1 ? '' : 's'} need${actions.length === 1 ? 's' : ''} your attention`
+    : 'Needs You');
   $('needsYouEmpty').hidden = actions.length > 0;
+  if ($('needsYouSummary')) {
+    $('needsYouSummary').textContent = actions.length
+      ? `${actions.length} item${actions.length === 1 ? '' : 's'} need${actions.length === 1 ? 's' : ''} you. Other safe jobs can keep moving.`
+      : 'Nothing needs you right now. Other safe jobs can keep moving.';
+  }
+  if ($('needsYouContinuity')) {
+    $('needsYouContinuity').hidden = actions.length === 0;
+    $('needsYouContinuity').textContent = actions.length
+      ? `${actions.length === 1 ? 'This application is blocked until you finish this step.' : `${actions.length} applications are blocked until you finish these steps.`} The agent can still find and prepare other jobs.`
+      : 'Nothing is waiting on you.';
+  }
   const attentionCards = actions.map(item => {
     const role = deskState.roles.find(entry => entry.id === item.roleId);
     const label = item.roleLabel || (role ? `${role.employer} · ${role.title}` : 'Your job agent');
@@ -2793,7 +2831,7 @@ function primaryJobAction(role, applicationSession, status) {
   if (!deskState.roles.some(item => item.id === role.id)) return '<span class="job-action-unavailable">Saved job details need secure recovery; refresh to try again.</span>';
   if (role.status === 'Package Ready') return `<button class="job-primary-action" type="button" data-job-application-start="${escapeHtml(role.id)}">Continue application</button>`;
   if (role.packageDraft) return `<button class="job-primary-action" type="button" data-job-package-review="${escapeHtml(role.id)}">Review resume draft</button>`;
-  if (role.sourceType === 'user-captured') return `<button class="job-primary-action" type="button" data-job-captured-resume="${escapeHtml(role.id)}">Use in Resume Builder</button>`;
+  if (role.sourceType === 'user-captured') return `<button class="job-primary-action" type="button" data-job-captured-resume="${escapeHtml(role.id)}">Review captured job</button>`;
   if (['Verified', 'Verified - Package Preparation'].includes(role.status) || (role.status === 'Found' && role.discoveryRunId && role.applyPathActive === true)) {
     const retry = preparationRetryAllowed({ status: role.packageRunStatus, lastErrorCode: role.packageRunErrorCode });
     return `<button class="job-primary-action" type="button" data-job-package-generate="${escapeHtml(role.id)}" data-package-retry="${retry}">${retry ? 'Try preparation again' : role.packageRunId ? 'Continue preparation' : 'Prepare application'}</button>`;
@@ -2817,28 +2855,39 @@ function renderSubscriberJobs() {
   });
   $('jobCardsTitle').textContent = activeJobTab;
   $('jobCardsDescription').textContent = activeJobTab === 'Submitted'
-    ? 'Only applications with authoritative employer receipts are counted here.'
-    : activeJobTab === 'Follow-ups' ? 'User-scheduled reminders that are due. The agent never contacts an employer automatically.'
-      : activeJobTab === 'Closed' ? 'Roles closed by the direct employer source or outcomes you confirmed.'
-    : activeJobTab === 'Needs You' ? 'Secure decisions and employer-site steps that only you can complete.'
-      : 'Captured jobs stay unverified until the direct-employer listing and active Apply path are checked. Prepared is never submitted.';
+    ? 'Only applications with an employer confirmation are listed here. Prepared drafts are not submitted.'
+    : activeJobTab === 'Follow-ups' ? 'Reminders you scheduled. The agent never contacts an employer automatically.'
+      : activeJobTab === 'Closed' ? 'Roles the employer closed, or outcomes you confirmed.'
+    : activeJobTab === 'Needs You' ? 'Steps only you can complete. These applications are blocked; other jobs can continue.'
+      : activeJobTab === 'Preparing' ? 'Materials being prepared or ready for your review. Not sent.'
+      : 'Saved matches. Captured jobs stay unverified until the employer listing is checked. Prepared is never submitted.';
   if (activeJobTab === 'Needs You') {
     $('jobCards').innerHTML = actions.length ? actions.map(item => {
       const role = deskState.roles.find(entry => entry.id === item.roleId);
       const label = item.roleLabel || (role ? `${role.employer} · ${role.title}` : 'Your job agent');
       const target = item.durable ? `data-review-session="${escapeHtml(item.sessionId)}"` : `data-review-action="${escapeHtml(item.id)}"`;
       const next = needsYouNextStep(item, role);
-      return `<article class="simple-job-card needs-card"><header><div><p>${escapeHtml(next.title)}</p><h4>${escapeHtml(label)}</h4></div><span class="status-badge status-needs-you">Needs You</span></header><p>${escapeHtml(next.summary)}</p><footer><button class="job-primary-action" type="button" ${target}>${escapeHtml(next.button)}</button></footer></article>`;
+      return `<article class="simple-job-card needs-card"><header><div><p>${escapeHtml(next.title)}</p><h4>${escapeHtml(label)}</h4></div><span class="status-badge status-needs-you">Needs You</span></header><p>${escapeHtml(next.summary)}</p><p class="job-next">This application is blocked until you finish this step. Other jobs can continue.</p><footer><button class="job-primary-action" type="button" ${target}>${escapeHtml(next.button)}</button></footer></article>`;
     }).join('') : '<div class="jobs-empty">Nothing needs you right now. Other safe work can continue.</div>';
     return;
   }
   const filtered = records.filter(item => item.tab === activeJobTab);
   $('jobCards').innerHTML = filtered.length ? filtered.map(({ role, applicationSession, status }) => {
     const salary = compensationRange(role.salaryMin, role.salaryMax);
-    const fit = 'Why it matches: ' + (role.matchReasons?.[0] || role.fitReasons?.[0] || 'Check the job requirements against your resume.');
+    const reasons = [...(role.matchReasons || []), ...(role.fitReasons || [])].filter(Boolean).slice(0, 2);
+    const fit = reasons.length
+      ? 'Why it matches: ' + reasons.join(' · ')
+      : 'Why it matches: Compare the job requirements with your selected résumé.';
     const location = role.remoteEligibility || role.geographyEligibility || 'Remote and location eligibility not verified';
-    return `<article class="simple-job-card"><header><div><p>${escapeHtml(role.employer || 'Employer unavailable')}</p><h4>${escapeHtml(role.title || 'Job title unavailable')}</h4></div><span class="status-badge ${statusBadgeClass(status)}">${escapeHtml(status)}</span></header><div class="simple-job-meta"><span>${escapeHtml(location)}</span><span>${escapeHtml(salary)}</span></div><footer><strong>${escapeHtml(fit)}</strong>${primaryJobAction(role, applicationSession, status)}</footer></article>`;
-  }).join('') : `<div class="jobs-empty">${escapeHtml(activeJobTab === 'Matches' ? 'No matching jobs yet.' : activeJobTab === 'Interviews' ? 'No interviews yet.' : `No ${activeJobTab.toLowerCase()} jobs yet.`)} Unavailable counts remain zero until persisted evidence exists.</div>`;
+    const label = userFacingStatus(status, role);
+    const next = userFacingJobNextStep(status, role, applicationSession);
+    const trust = role.sourceType === 'user-captured' && status === 'Found' ? 'Captured'
+      : status === 'Receipt Verified' ? 'Confirmed sent'
+        : ['Verified', 'Package Ready'].includes(status) ? 'Checked listing'
+          : status === 'Needs You' ? 'Waiting on you'
+            : 'Saved';
+    return `<article class="simple-job-card"><header><div><p>${escapeHtml(role.employer || 'Employer unavailable')}</p><h4>${escapeHtml(role.title || 'Job title unavailable')}</h4></div><span class="status-badge ${statusBadgeClass(status)}">${escapeHtml(label)}</span></header><div class="simple-job-meta"><span>${escapeHtml(location)}</span><span>${escapeHtml(salary)}</span><span class="trust-chip ${status === 'Receipt Verified' ? 'trust-confirmed' : status === 'Needs You' ? 'trust-unknown' : 'trust-preference'}">${escapeHtml(trust)}</span></div><p class="job-next">${escapeHtml(next)}</p><footer><strong>${escapeHtml(fit)}</strong>${primaryJobAction(role, applicationSession, status)}</footer></article>`;
+  }).join('') : `<div class="jobs-empty">${escapeHtml(activeJobTab === 'Matches' ? 'No matching jobs yet. Start a search or capture a listing with the browser helper.' : activeJobTab === 'Interviews' ? 'No interviews yet.' : `No ${activeJobTab.toLowerCase()} jobs yet.`)} Counts stay at zero until saved evidence exists.</div>`;
 }
 
 function openJobs(tab = 'Matches') { activeJobTab = tab; renderSubscriberJobs(); $('jobsOverlay').classList.add('open'); }
@@ -2969,10 +3018,10 @@ function renderMission() {
     ? `${mission.role} · ${[...(mission.workModes || [mission.workMode]), ...(mission.employmentTypes || [])].filter(Boolean).join(' · ')} · suitable openings only`
     : 'Suitable jobs and verified outcomes matter more than application volume.';
   const discoveryLabels = {
-    searching: 'Searching free direct-employer feeds',
+    searching: 'Checking job requirements',
     complete: `Search complete · ${missionState.discovery?.matches || 0} new matches`,
     'catalog-needed': 'Request saved · employer-feed catalog needed',
-    error: 'Request saved · discovery needs attention',
+    error: 'Request saved · search needs attention',
   };
   $('agentRunState').textContent = missionActive
     ? (discoveryLabels[missionState.discovery?.status] || 'Request saved · ready to search')

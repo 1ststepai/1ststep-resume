@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { authoritativeReceiptCount, canonicalConversation, directSourceCoverage, maskedActivityFeed, missionStats, needsYouKind, statusTab, subscriberStatus } from '../lib/subscriber-ui-model.js';
+import { authoritativeReceiptCount, canonicalConversation, directSourceCoverage, maskedActivityFeed, missionStats, needsYouKind, statusTab, subscriberStatus, userFacingStatus } from '../lib/subscriber-ui-model.js';
 
 const role = { id: 'role-1', packageRunId: 'package-1', status: 'Found' };
 assert.equal(subscriberStatus(role), 'Found');
@@ -19,6 +19,11 @@ assert.equal(statusTab('Receipt Verified'), 'Submitted');
 assert.equal(statusTab('Interview'), 'Interviews');
 assert.equal(statusTab('Follow-up Due'), 'Follow-ups');
 assert.equal(statusTab('Rejected/Closed'), 'Closed');
+assert.equal(userFacingStatus('Package Ready'), 'Ready for review');
+assert.equal(userFacingStatus('Receipt Verified'), 'Confirmation verified');
+assert.equal(userFacingStatus('Found', { sourceType: 'user-captured' }), 'Captured · not verified');
+assert.equal(userFacingStatus('Applying'), 'Working on application');
+assert.doesNotMatch(userFacingStatus('Found'), /Submitted|Sent|Applied/i);
 const durableReceipt = { receipt: { confirmationId: 'EMP-789' }, postSubmission: { status: 'INTERVIEW', followUp: { status: 'NOT_SCHEDULED' } } };
 assert.equal(subscriberStatus(role, durableReceipt), 'Interview');
 assert.equal(subscriberStatus(role, { ...durableReceipt, postSubmission: { status: 'INTERVIEW', followUp: { status: 'SCHEDULED', dueAt: '2020-01-01T00:00:00.000Z' } } }), 'Follow-up Due');
@@ -77,9 +82,9 @@ const activity = maskedActivityFeed({
   roles: [{ status: 'Package Ready', packageDraft: { version: 1 }, updatedAt: '2026-09-01T12:02:00Z' }],
   openActionCount: 1,
 });
-assert.ok(activity.some(item => item.label === 'Direct-employer search completed'));
-assert.ok(activity.some(item => item.label === 'Some employer sources need retry'));
-assert.ok(activity.some(item => item.label === 'Application packages ready'));
+assert.ok(activity.some(item => item.label === 'Job search completed'));
+assert.ok(activity.some(item => item.label === 'Some job sources need retry'));
+assert.ok(activity.some(item => item.label === 'Application materials ready'));
 assert.ok(activity.some(item => item.label === 'Waiting for you'));
 assert.doesNotMatch(JSON.stringify(activity), /password|otp|captcha|email|phone|address|candidate/i);
 

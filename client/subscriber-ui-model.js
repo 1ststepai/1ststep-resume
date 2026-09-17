@@ -192,6 +192,39 @@ export function statusBadgeClass(status) {
   return `status-${String(status || 'Found').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 }
 
+export function userFacingStatus(status, role = null) {
+  if (role?.sourceType === 'user-captured' && (!status || status === 'Found')) return 'Captured · not verified';
+  return ({
+    Found: 'Saved match',
+    Verified: 'Ready to prepare',
+    'Package Ready': 'Ready for review',
+    Applying: 'Working on application',
+    'Needs You': 'Needs You',
+    Submitted: 'Waiting for employer confirmation',
+    'Receipt Verified': 'Confirmation verified',
+    'Follow-up Due': 'Follow-up due',
+    Interview: 'Interview',
+    'Rejected/Closed': 'Closed',
+  })[status] || status || 'Saved match';
+}
+
+export function userFacingJobNextStep(status, role = null, applicationSession = null) {
+  if (applicationSession) return 'Continue the step that needs you. Nothing is sent until you approve it.';
+  if (role?.sourceType === 'user-captured' && (!status || status === 'Found')) return 'Captured from your browser helper. Not verified against the employer listing yet.';
+  return ({
+    Found: 'Next: confirm the employer listing, then prepare materials.',
+    Verified: 'Next: prepare a truthful résumé draft for this role.',
+    'Package Ready': 'Next: review the prepared materials. Not sent.',
+    Applying: 'The agent is working on this application. It has not been submitted.',
+    'Needs You': 'This application is waiting on you. Other jobs can continue.',
+    Submitted: 'We tried to submit this application, but we haven’t received confirmation yet.',
+    'Receipt Verified': 'The employer confirmed they received this application.',
+    'Follow-up Due': 'Your reminder is due. The agent has not contacted the employer.',
+    Interview: 'Interview noted. Practice is optional and never joins a live interview.',
+    'Rejected/Closed': 'This role is closed. It is not counted as submitted.',
+  })[status] || 'Open this job to see the next safe step.';
+}
+
 export function missionStats(roles = [], applicationSessions = [], openActionCount = 0) {
   const normalized = roles.map(role => {
     const session = applicationSessions.find(item => item.packageRunId && item.packageRunId === role.packageRunId) || null;
@@ -293,20 +326,20 @@ export function maskedActivityFeed({ run = null, roles = [], applicationSessions
   const coverage = directSourceCoverage(run);
   const add = (kind, label, detail, at) => rows.push({ kind, label, detail, at: at || null });
   if (['Searching', 'Preparing'].includes(run?.status)) {
-    add('working', 'Direct-employer search is running', 'The durable run can resume if a source is slow.', run.updatedAt);
+    add('working', 'Looking for matching jobs', 'The saved search can resume if a job source is slow.', run.updatedAt);
   } else if (run?.status === 'Finished' && run?.taskType === 'direct_employer_discovery') {
     const responding = coverage.healthy + coverage.partial;
-    add('complete', 'Direct-employer search completed', `${coverage.verifiedMatches} verified match${coverage.verifiedMatches === 1 ? '' : 'es'} from ${responding} responding source${responding === 1 ? '' : 's'}.`, coverage.checkedAt);
+    add('complete', 'Job search completed', `${coverage.verifiedMatches} matching role${coverage.verifiedMatches === 1 ? '' : 's'} from ${responding} responding source${responding === 1 ? '' : 's'}.`, coverage.checkedAt);
   } else if (run?.status === 'Failed') {
     add('attention', 'Search paused safely', 'Progress is saved. A retry is required before more sources are checked.', run.updatedAt);
   }
   if (coverage.state === 'partial') {
-    add('attention', 'Some employer sources need retry', `${coverage.partial + coverage.unavailable} of ${coverage.checked} checked sources were partial or unavailable; healthy results were kept.`, coverage.checkedAt);
+    add('attention', 'Some job sources need retry', `${coverage.partial + coverage.unavailable} of ${coverage.checked} checked sources were partial or unavailable; healthy results were kept.`, coverage.checkedAt);
   }
   const verified = roles.filter(role => ['Verified', 'Verified - Package Preparation'].includes(role?.status)).length;
-  if (verified) add('verified', 'Verified matches ready for preparation', `${verified} direct-employer match${verified === 1 ? '' : 'es'} passed the current mission filters.`, latestTimestamp(roles));
+  if (verified) add('verified', 'Matches ready to prepare', `${verified} matching role${verified === 1 ? '' : 's'} passed your saved criteria.`, latestTimestamp(roles));
   const readyRoles = roles.filter(role => role?.status === 'Package Ready');
-  if (readyRoles.length) add('prepared', 'Application packages ready', `${readyRoles.length} role-specific package${readyRoles.length === 1 ? '' : 's'} can be reviewed.`, latestTimestamp(readyRoles));
+  if (readyRoles.length) add('prepared', 'Application materials ready', `${readyRoles.length} draft${readyRoles.length === 1 ? '' : 's'} can be reviewed. Not sent.`, latestTimestamp(readyRoles));
   const receipts = authoritativeReceiptCount([...roles, ...applicationSessions]);
   if (receipts) add('receipt', 'Employer receipts verified', `${receipts} application${receipts === 1 ? '' : 's'} counted as submitted.`, latestTimestamp([...roles, ...applicationSessions]));
   const actions = Math.max(0, Number(openActionCount) || 0);
