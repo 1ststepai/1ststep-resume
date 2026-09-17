@@ -41,7 +41,7 @@ System observations emit IMPROVEMENT CANDIDATES with `autoApplied: false`. Promo
 
 - No new Redis prefix or second vault.
 - Proposals store `factId`, `factVersion`, `intent`, and class only.
-- Efficiency snapshots are content-free counters and reason codes.
+- Efficiency snapshots are content-free counters and reason codes. `expectedBenefit` / `rollbackPlan` use a closed operational vocabulary on both spaced and unspaced strings; TitleCase/CamelCase, hyphenated names, and URL/domain/path syntax are rejected. Reason codes stay `unspecified` / `http_429` / `ats_*`.
 - Credentials, OTP, CAPTCHA, government IDs, and unnecessary medical data remain rejected.
 - Protected traits are not learning features.
 - Delete/export continue through existing vault and learning deletion.

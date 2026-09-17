@@ -694,4 +694,36 @@ assert.equal(applicationEfficiencySnapshot({
   actions: [{ type: 'EMPLOYER_ATS_FAILURE', metadata: { reasonCode: 'ats_timeout' } }],
 }).atsFailurePoints[0].reasonCode, 'ats_timeout');
 
+for (const expectedBenefit of [
+  'Jordan-Lee',
+  'jordanlee',
+  'www.linkedin.com/in/jordanlee',
+  'linkedin.com/in/jordanlee',
+  'JordanLee',
+  'linkedin.com',
+  'www.example.test',
+  'mailto:jordanlee',
+  '@jordanlee',
+  'in/jordanlee',
+  'jordanlee%2fprofile',
+]) {
+  assert.throws(() => createImprovementCandidate({
+    type: 'repeated-ats-question',
+    expectedBenefit,
+    evidence: { equivalentProposalCount: 1 },
+  }), /content-free|not allowed/i, expectedBenefit);
+}
+assert.throws(() => createImprovementCandidate({
+  type: 'repeated-ats-question',
+  expectedBenefit: 'Reduce repeated ordinary exact-match interruptions.',
+  rollbackPlan: 'www.linkedin.com/in/jordanlee',
+  evidence: { equivalentProposalCount: 1 },
+}), /content-free|not allowed/i);
+assert.throws(() => createImprovementCandidate({
+  type: 'repeated-ats-question',
+  expectedBenefit: 'Reduce repeated ordinary exact-match interruptions.',
+  rollbackPlan: 'Jordan-Lee',
+  evidence: { equivalentProposalCount: 1 },
+}), /content-free|not allowed/i);
+
 console.log('Application efficiency adversarial assertions passed. No employer calls.');
