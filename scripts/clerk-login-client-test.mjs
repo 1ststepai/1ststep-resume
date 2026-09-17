@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import loginPageHandler, { loginContentSecurityPolicy } from '../api/login-page.js';
 import { initializeLoginPage } from '../login.js';
+import { allowedClerkBrowserScriptSrc, PRODUCTION_CLERK_BROWSER_SCRIPT } from '../client/clerk-browser-script.js';
 async function run({signedIn=true, enabled=true, failure=false, mode='', returnTo='', token='fixture.session.token', production=true, frontendApiUrl}={}) {
   const calls=[], cache=new Map(), scripts=[];
   const elements = Object.fromEntries(['loginStatus','retryLogin','clerkSignIn'].map(id=>[id,{hidden:true,textContent:'',addEventListener(type,fn){this[type]=fn;}}]));
@@ -62,6 +63,17 @@ assert.equal(Object.hasOwn(preview.loadOptions,'signUpUrl'),false,'Preview must 
 const mismatched=await run({production:false,frontendApiUrl:'https://clerk.1ststep.ai'});
 assert.equal(mismatched.scripts.length,0,'A test key cannot load the Production Clerk origin');
 assert.match(mismatched.elements.loginStatus.textContent,/invalid/i);
+const extraDevLabel=await run({production:false,frontendApiUrl:'https://foo.evil.clerk.accounts.dev'});
+assert.equal(extraDevLabel.scripts.length,0,'Development Clerk hosts must be exactly one accounts.dev subdomain');
+const attackerSuffix=await run({production:false,frontendApiUrl:'https://fixture.clerk.accounts.dev.evil.example'});
+assert.equal(attackerSuffix.scripts.length,0,'Suffix-style Clerk hostnames must fail closed');
+const javascriptSrc=await run({production:false,frontendApiUrl:'javascript:alert(1)'});
+assert.equal(javascriptSrc.scripts.length,0);
+const httpSrc=await run({production:false,frontendApiUrl:'http://fixture.clerk.accounts.dev'});
+assert.equal(httpSrc.scripts.length,0);
+assert.equal(allowedClerkBrowserScriptSrc('https://clerk.1ststep.ai', true), PRODUCTION_CLERK_BROWSER_SCRIPT);
+assert.equal(allowedClerkBrowserScriptSrc('https://fixture.clerk.accounts.dev', false), 'https://fixture.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js');
+assert.equal(allowedClerkBrowserScriptSrc('https://foo.evil.clerk.accounts.dev', false), '');
 assert.equal((await run({signedIn:false})).signIn,true);
 assert.equal((await run({signedIn:false,mode:'sign-up'})).signUp,true);
 const logout=await run({mode:'sign-out'});

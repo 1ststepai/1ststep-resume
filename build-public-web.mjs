@@ -11,6 +11,7 @@ const publicAssets = [
   'concierge.html',
   'login.js',
   'login.css',
+  'client/clerk-browser-script.js',
   'partner.html',
   'partner.js',
   'partner.css',

@@ -40,6 +40,7 @@ assert.deepEqual(publicAuthenticationConfiguration({ ...clerkReady, VERCEL_ENV: 
 });
 assert.equal(publicAuthenticationConfiguration({ ...clerkReady, CLERK_PUBLISHABLE_KEY: productionKey }).clerk.enabled, false);
 assert.equal(publicAuthenticationConfiguration({ ...clerkReady, CLERK_PUBLISHABLE_KEY: `pk_test_${Buffer.from('accounts.dev.evil.example$').toString('base64url')}` }).clerk.enabled, false);
+assert.equal(publicAuthenticationConfiguration({ ...clerkReady, CLERK_PUBLISHABLE_KEY: `pk_test_${Buffer.from('foo.evil.clerk.accounts.dev$').toString('base64url')}` }).clerk.enabled, false);
 assert.equal(publicAuthenticationConfiguration({ ...clerkReady, VERCEL_ENV: 'production', CLERK_PUBLISHABLE_KEY: `pk_live_${Buffer.from('other.example$').toString('base64url')}` }).clerk.enabled, false);
 
 function responseCapture() {

@@ -1,3 +1,5 @@
+import { allowedClerkBrowserScriptSrc, PRODUCTION_CLERK_BROWSER_SCRIPT } from './client/clerk-browser-script.js';
+
 export async function initializeLoginPage({
   documentRef = document,
   windowRef = window,
@@ -24,8 +26,15 @@ export async function initializeLoginPage({
 
   function loadScript(src, publishableKey) {
     return new Promise((resolve, reject) => {
+      const productionSrc = src === PRODUCTION_CLERK_BROWSER_SCRIPT ? PRODUCTION_CLERK_BROWSER_SCRIPT : '';
+      const developmentMatch = /^https:\/\/([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\.clerk\.accounts\.dev\/npm\/@clerk\/clerk-js@6\/dist\/clerk\.browser\.js$/.exec(String(src || ''));
+      const trustedSrc = productionSrc || (developmentMatch ? `https://${developmentMatch[1]}.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js` : '');
+      if (!trustedSrc) {
+        reject(new Error('Secure sign-in configuration is invalid. Please try again later.'));
+        return;
+      }
       const script = documentRef.createElement('script');
-      script.src = src;
+      script.src = trustedSrc;
       script.async = true;
       script.crossOrigin = 'anonymous';
       if (publishableKey) script.dataset.clerkPublishableKey = publishableKey;
@@ -68,15 +77,11 @@ export async function initializeLoginPage({
     if (!response.ok) throw new Error('Sign-in is temporarily unavailable. Please try again.');
     const configuration = (await response.json()).authentication?.clerk;
     if (!configuration?.enabled) throw new Error('Secure sign-in is not available in this environment yet. Please try again later.');
-    // Use only the server-validated Clerk origin associated with this deployment's public key.
-    const frontendApiUrl = new URL(configuration.frontendApiUrl);
-    const productionKey = configuration.publishableKey.startsWith('pk_live_');
-    const validFrontendApi = frontendApiUrl.protocol === 'https:' && !frontendApiUrl.port
-      && (productionKey
-        ? frontendApiUrl.origin === 'https://clerk.1ststep.ai'
-        : frontendApiUrl.hostname.endsWith('.clerk.accounts.dev'));
-    if (!validFrontendApi) throw new Error('Secure sign-in configuration is invalid. Please try again later.');
-    await loadScript(`${frontendApiUrl.origin}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, configuration.publishableKey);
+    // Load Clerk JS only from an exact reconstructed allowlist, never from JSON text.
+    const productionKey = String(configuration.publishableKey || '').startsWith('pk_live_');
+    const clerkScriptSrc = allowedClerkBrowserScriptSrc(configuration.frontendApiUrl, productionKey);
+    if (!clerkScriptSrc) throw new Error('Secure sign-in configuration is invalid. Please try again later.');
+    await loadScript(clerkScriptSrc, configuration.publishableKey);
     const clerkOptions = {
       signInForceRedirectUrl: callback, signUpForceRedirectUrl: callback,
     };

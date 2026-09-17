@@ -120,6 +120,7 @@ const expectedStatic = [
   'client/admin-cost-dashboard.js',
   'client/admin-system-alerts.js',
   'client/prohibited-secret.js',
+  'client/clerk-browser-script.js',
   '1ststep-logo.png',
   'og-1ststep-ai.png',
   '1ststep-ai-icon.png',
@@ -176,6 +177,7 @@ async function verifyPublicModuleClosure(entryModule) {
 const publicModuleClosure = new Set([
   ...await verifyPublicModuleClosure('app.js'),
   ...await verifyPublicModuleClosure('concierge.js'),
+  ...await verifyPublicModuleClosure('login.js'),
 ]);
 
 const forbiddenExact = [
