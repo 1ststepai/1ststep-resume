@@ -44,6 +44,8 @@ const routePolicies = Object.freeze({
   'job-agent-schedule.js': /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/,
   'job-agent-worker.js': /safeEquals\(req\.headers\?\.authorization, expected\)/,
   'jobs.js': /authenticateApiRequest/,
+  // Public sign-in shell only; session creation remains in authenticated user-session exchange.
+  'login-page.js': /req\.method !== 'GET' && req\.method !== 'HEAD'/,
   'notify-signup.js': /authenticateApiRequest/,
   'partner.js': /authenticate\(req, \{ requireOpaqueSession: true \}\)/,
   'session-capabilities.js': /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/,
@@ -130,12 +132,21 @@ assert.match(learningMigration, /force row level security/);
 assert.match(learningMigration, /revoke all on candidate_preferences/);
 assert.match(clerkIdentity, /authorizedParties/);
 assert.match(clerkIdentity, /verification\?\.status/);
-assert.doesNotMatch(clerkIdentity, /console\.(?:log|error|warn)/);
+const fixedClerkLogger = 'reportFailure = event => console.warn(JSON.stringify(event))';
+assert.ok(clerkIdentity.includes(fixedClerkLogger), 'Clerk diagnostics must use the reviewed fixed-category logger.');
+assert.doesNotMatch(clerkIdentity.replace(fixedClerkLogger, ''), /console\.(?:log|error|warn)/);
+assert.match(clerkIdentity, /reportFailure\(\{ type: 'clerk-identity-rejected', stage \}\)/);
+assert.deepEqual([...clerkIdentity.matchAll(/\bstage\s*=\s*([^;]+);/g)].map(match => match[1]), [
+  "'token-verification'", "'subject-validation'", "'identity-lookup'", "'verified-primary-email'",
+], 'Only fixed failure categories may enter Clerk diagnostics.');
 assert.match(r2Storage, /IfNoneMatch: options\.allowOverwrite === false \? '\*'/);
 assert.doesNotMatch(r2Storage, /ACL:\s*['"]public/i);
 
 const vercel = JSON.parse(await read('vercel.json'));
-const globalHeaders = Object.fromEntries(vercel.headers.find(item => item.source === '/(.*)').headers.map(item => [item.key.toLowerCase(), item.value]));
+// Login serves its instance-bound CSP from the dynamic handler, tested by clerk-login-client-test.
+const globalHeaderRule = vercel.headers.find(item => item.source === '/((?!login\\.html$).*)');
+assert.ok(globalHeaderRule, 'The shared security headers must cover every path except the dynamic login shell.');
+const globalHeaders = Object.fromEntries(globalHeaderRule.headers.map(item => [item.key.toLowerCase(), item.value]));
 for (const key of ['strict-transport-security', 'content-security-policy', 'x-frame-options', 'x-content-type-options', 'referrer-policy']) assert.ok(globalHeaders[key], `${key} is required.`);
 assert.match(globalHeaders['strict-transport-security'], /includeSubDomains/);
 assert.equal(globalHeaders['x-frame-options'], 'DENY');

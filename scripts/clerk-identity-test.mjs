@@ -65,6 +65,32 @@ for (const stage of ['token-verification', 'subject-validation', 'identity-looku
 assert.doesNotMatch(JSON.stringify(diagnostics), /private|header|signature|sk_test|@/);
 assert.equal((await authenticateClerkIdentity(req, { env, verify: async () => { throw new Error('rejected'); }, reportFailure: () => { throw new Error('logger unavailable'); } })).ok, false);
 
+// Exercise the production logger, not only the injected diagnostic callback.
+const originalWarn = console.warn;
+const warnings = [];
+try {
+  console.warn = (...args) => warnings.push(args);
+  for (const stage of ['token-verification', 'subject-validation', 'identity-lookup', 'verified-primary-email']) {
+    const result = await authenticateClerkIdentity(req, {
+      env,
+      verify: async () => {
+        if (stage === 'token-verification') throw new Error(`private ${token}`);
+        return { sub: stage === 'subject-validation' ? 'private@example.test' : 'user_fixture123' };
+      },
+      clerkClient: { users: { getUser: async () => {
+        if (stage === 'identity-lookup') throw new Error('private@example.test sk_test_private');
+        return { primaryEmailAddressId: 'e1', emailAddresses: [{ id: 'e1', emailAddress: 'private@example.test', verification: { status: 'unverified' } }] };
+      } } },
+    });
+    assert.deepEqual(result, { ok: false, status: 401, code: 'CLERK_SESSION_INVALID' });
+    assert.deepEqual(warnings.at(-1), [JSON.stringify({ type: 'clerk-identity-rejected', stage })]);
+  }
+  assert.equal(warnings.length, 4);
+  assert.doesNotMatch(JSON.stringify(warnings), /private|header|signature|sk_test|@/);
+} finally {
+  console.warn = originalWarn;
+}
+
 const sessionApi = await readFile(new URL('../api/user-session.js', import.meta.url), 'utf8');
 assert.match(sessionApi, /action\s*\|\| ''\) === 'clerk-exchange'/);
 assert.match(sessionApi, /sendVerifiedSubscriptionSession\([\s\S]*res, identity.subject/, 'Use the server-verified email with the shared Stripe resolver.');

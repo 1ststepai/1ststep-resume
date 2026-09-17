@@ -92,6 +92,7 @@ try{
     loginPageHandler({method,url},response);
     assert.equal(captured.statusCode,200,`${method} ${url} must reach the login response`);
     assert.equal(captured.headers['Cache-Control'],'no-store');
+    assert.equal(captured.headers['Set-Cookie'],undefined,'The public login shell must not create a session');
     assert.match(captured.headers['Content-Security-Policy'],/first-impala-7783\.clerk\.accounts\.dev/);
     assert.match(captured.headers['Content-Security-Policy'],/frame-ancestors 'none'/);
     assert.doesNotMatch(captured.headers['Content-Security-Policy'],/clerk\.1ststep\.ai/);
@@ -101,6 +102,15 @@ try{
     assert.equal(captured.headers['Permissions-Policy'],'camera=(), microphone=(), geolocation=(self)');
     if(method==='HEAD')assert.equal(captured.body,'');
     else assert.match(captured.body,/src="\/login\.js"/);
+  }
+  for(const method of ['POST','PUT','PATCH','DELETE','OPTIONS']){
+    const captured={headers:{},statusCode:null,body:null};
+    const response={setHeader:(key,value)=>{captured.headers[key]=value;},status(code){captured.statusCode=code;return this;},send(body){captured.body=body;return this;},end(){return this;}};
+    loginPageHandler({method,url:'/api/login-page'},response);
+    assert.equal(captured.statusCode,405,`${method} cannot mutate through the public login shell`);
+    assert.equal(captured.headers.Allow,'GET, HEAD');
+    assert.equal(captured.headers['Set-Cookie'],undefined);
+    assert.equal(captured.body,null);
   }
 }finally{
   for(const key of Object.keys(process.env))if(!Object.hasOwn(priorEnvironment,key))delete process.env[key];
