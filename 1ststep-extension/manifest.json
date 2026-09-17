@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "1stStep.ai Job Agent",
-  "version": "1.5.0",
-  "description": "Capture jobs from major ATS sites without copy and paste, then review them in Resume Builder or Job Agent. Greenhouse filling never submits.",
+  "version": "1.6.0",
+  "description": "Capture job postings without copy and paste, save them to Job Agent, and fill approved fields on supported pages.",
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
@@ -12,8 +12,7 @@
     "storage",
     "activeTab",
     "scripting",
-    "sidePanel",
-    "tabs"
+    "contextMenus"
   ],
   "host_permissions": [
     "https://*.greenhouse.io/*",
@@ -27,11 +26,19 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "1stStep.ai - Resume Tailor & Apply",
+    "default_title": "Save this job to 1stStep.ai",
     "default_icon": {
       "16": "icons/icon-16.png",
       "48": "icons/icon-48.png",
       "128": "icons/icon-128.png"
+    }
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+1"
+      },
+      "description": "Capture the job on this page with 1stStep.ai"
     }
   },
   "content_scripts": [
@@ -48,8 +55,5 @@
       "js": ["auth-bridge.js"],
       "run_at": "document_idle"
     }
-  ],
-  "side_panel": {
-    "default_path": "sidepanel.html"
-  }
+  ]
 }

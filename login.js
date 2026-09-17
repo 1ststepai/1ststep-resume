@@ -1,3 +1,5 @@
+import { allowedClerkBrowserScriptSrc, DEVELOPMENT_CLERK_BROWSER_SCRIPT, PRODUCTION_CLERK_BROWSER_SCRIPT } from './client/clerk-browser-script.js';
+
 export async function initializeLoginPage({
   documentRef = document,
   windowRef = window,
@@ -25,7 +27,12 @@ export async function initializeLoginPage({
   function loadScript(src, publishableKey) {
     return new Promise((resolve, reject) => {
       const script = documentRef.createElement('script');
-      script.src = src;
+      if (src === PRODUCTION_CLERK_BROWSER_SCRIPT) script.src = PRODUCTION_CLERK_BROWSER_SCRIPT;
+      else if (src === DEVELOPMENT_CLERK_BROWSER_SCRIPT) script.src = DEVELOPMENT_CLERK_BROWSER_SCRIPT;
+      else {
+        reject(new Error('Secure sign-in configuration is invalid. Please try again later.'));
+        return;
+      }
       script.async = true;
       script.crossOrigin = 'anonymous';
       if (publishableKey) script.dataset.clerkPublishableKey = publishableKey;
@@ -68,12 +75,17 @@ export async function initializeLoginPage({
     if (!response.ok) throw new Error('Sign-in is temporarily unavailable. Please try again.');
     const configuration = (await response.json()).authentication?.clerk;
     if (!configuration?.enabled) throw new Error('Secure sign-in is not available in this environment yet. Please try again later.');
-    // Use this application's verified Clerk origin, never a URL supplied by a query string.
-    await loadScript('https://clerk.1ststep.ai/npm/@clerk/clerk-js@6/dist/clerk.browser.js', configuration.publishableKey);
-    await windowRef.Clerk.load({
-      signInUrl: 'https://accounts.1ststep.ai/sign-in', signUpUrl: 'https://accounts.1ststep.ai/sign-up',
+    // Load Clerk JS only from an exact reconstructed allowlist, never from JSON text.
+    const productionKey = String(configuration.publishableKey || '').startsWith('pk_live_');
+    const clerkScriptSrc = allowedClerkBrowserScriptSrc(configuration.frontendApiUrl, productionKey);
+    if (!clerkScriptSrc) throw new Error('Secure sign-in configuration is invalid. Please try again later.');
+    await loadScript(clerkScriptSrc, configuration.publishableKey);
+    const clerkOptions = {
       signInForceRedirectUrl: callback, signUpForceRedirectUrl: callback,
-    });
+    };
+    if (configuration.signInUrl) clerkOptions.signInUrl = configuration.signInUrl;
+    if (configuration.signUpUrl) clerkOptions.signUpUrl = configuration.signUpUrl;
+    await windowRef.Clerk.load(clerkOptions);
     if (mode === 'sign-out') {
       // Clear both identity and app sessions; this route never exchanges on logout.
       const result = await fetchImpl('/api/user-session', { method: 'DELETE', credentials: 'same-origin' });

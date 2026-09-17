@@ -11,6 +11,8 @@ const required = [
   "Capture the job once with the Chrome extension.",
   "Get the Chrome extension",
   "Start an ongoing Job Agent search",
+  "Create free account",
+  'href="https://app.1ststep.ai/login.html?mode=sign-up&amp;returnTo=%2Fapp"',
   "Nothing is sent automatically.",
   "Start free. No card required. You review before anything is sent.",
   "Verified founder test · August 24",
@@ -111,6 +113,11 @@ if (primaryCtas < 3)
   throw new Error(
     `Expected at least three extension CTAs, found ${primaryCtas}`,
   );
+
+const accountCtas = (html.match(/>Create free account<\/a/g) || []).length;
+if (accountCtas !== 3) {
+  throw new Error(`Expected three account creation CTAs, found ${accountCtas}`);
+}
 
 for (const noisyMotion of [
   "@keyframes fsFloat",

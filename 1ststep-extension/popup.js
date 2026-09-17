@@ -5,7 +5,7 @@
 const APP_URL = 'https://app.1ststep.ai';
 
 // Keep in sync with background.js MODES
-const MODES = { TAILOR: 'tailor', COVER_LETTER: 'coverLetter', JOB_AGENT: 'jobAgent' };
+const MODES = { TAILOR: 'tailor', JOB_AGENT: 'jobAgent' };
 
 const statusBadge    = document.getElementById('statusBadge');
 const loadingState   = document.getElementById('loadingState');
@@ -22,6 +22,9 @@ const tailorBtn      = document.getElementById('tailorBtn');
 const autofillBtn    = document.getElementById('autofillBtn');
 const autofillEmptyBtn = document.getElementById('autofillEmptyBtn');
 const openAppLink    = document.getElementById('openAppLink');
+const fillResultEl   = document.getElementById('fillResult');
+const retryCaptureBtn = document.getElementById('retryCaptureBtn');
+const openJobsBtn = document.getElementById('openJobsBtn');
 
 // ─── AUTH ────────────────────────────────────────────────────
 
@@ -40,7 +43,7 @@ async function checkAuth() {
 
 async function init() {
   try {
-    const auth = await checkAuth();
+    const [auth, job] = await Promise.all([checkAuth(), getCurrentJob()]);
 
     unauthState.style.display = 'none';
     statusBadge.textContent = auth.jobAgentAccess
@@ -48,15 +51,14 @@ async function init() {
       : auth.code === 'JOB_AGENT_APP_BRIDGE_UNAVAILABLE' ? 'Reconnect Agent' : 'Resume Tools';
     statusBadge.classList.toggle('authenticated', auth.jobAgentAccess);
 
-    const job = await getCurrentJob();
     if (job) {
       showJobCard(job, auth);
     } else {
-      showEmptyState(auth);
+      await showEmptyState(auth);
     }
   } catch (err) {
     console.error('[1stStep] Init error:', err);
-    showEmptyState(null);
+    await showEmptyState(null);
   } finally {
     loadingState.style.display = 'none';
   }
@@ -72,24 +74,32 @@ function showUnauthState() {
   openAppLink.addEventListener('click', () => chrome.tabs.create({ url: `${APP_URL}/app/resume` }));
 }
 
-function showEmptyState(auth) {
+async function showEmptyState(auth) {
   loadingState.style.display = 'none';
   jobState.style.display     = 'block';
   jobCard.classList.remove('visible');
   emptyState.style.display   = 'flex';
 
-  // Wire manual paste → open in app
-  const manualOpenBtn = document.getElementById('manualOpenBtn');
-  if (manualOpenBtn) {
-    manualOpenBtn.onclick = () => {
-      const jd = document.getElementById('manualJdInput')?.value?.trim();
-      if (!jd) { manualOpenBtn.textContent = 'Paste a description first'; setTimeout(() => { manualOpenBtn.textContent = 'Use in Resume Builder'; }, 2000); return; }
-      openInApp({ jobTitle: '', company: '', jobDescription: jd, applyUrl: '', site: 'manual' }, manualOpenBtn);
-    };
-  }
+  if (retryCaptureBtn) retryCaptureBtn.onclick = async () => {
+    retryCaptureBtn.disabled = true;
+    retryCaptureBtn.textContent = 'Checking this page…';
+    const job = await getCurrentJob();
+    if (job) showJobCard(job, auth);
+    else {
+      retryCaptureBtn.textContent = 'No complete job found';
+      setTimeout(() => { retryCaptureBtn.textContent = 'Try this page again'; retryCaptureBtn.disabled = false; }, 2200);
+    }
+  };
+  if (openJobsBtn) openJobsBtn.onclick = () => chrome.tabs.create({ url: `${APP_URL}/concierge#jobs` });
 
-  // Auto-fill still works without a detected job
-  if (autofillEmptyBtn && auth?.jobAgentAccess) {
+  // A failed capture can still leave a supported Greenhouse application that
+  // the server-authorized fill path can inspect. Never offer that action on an
+  // unsupported host, where no fill content script exists.
+  const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  let greenhousePage = false;
+  try { greenhousePage = /(^|\.)greenhouse\.io$/i.test(new URL(activeTab?.url || '').hostname); } catch (_) {}
+  if (autofillEmptyBtn && auth?.jobAgentAccess && greenhousePage) {
+    autofillEmptyBtn.style.display = 'inline';
     autofillEmptyBtn.onclick = () => autofillPage(auth, autofillEmptyBtn);
   } else if (autofillEmptyBtn) {
     autofillEmptyBtn.style.display = 'none';
@@ -111,10 +121,11 @@ function showJobCard(job, auth) {
   }
 
   const titleMissing = !job.jobTitle || job.jobTitle === 'Unknown Role';
+  const companyMissing = !job.company;
 
   jobTitleEl.textContent = job.jobTitle || 'Unknown Role';
   companyEl.textContent  = job.company  || '';
-  siteEl.textContent     = (job.site    || 'unknown').toUpperCase();
+  siteEl.textContent     = (job.site || 'Job posting').replace(/^www\./i, '');
   if (capturedDetailsEl) {
     capturedDetailsEl.textContent = [job.location, job.salaryText].filter(Boolean).join(' · ');
     capturedDetailsEl.style.display = capturedDetailsEl.textContent ? 'block' : 'none';
@@ -146,8 +157,8 @@ function showJobCard(job, auth) {
   if (companyInput)  companyInput.value  = job.company || '';
 
   // Show edit form immediately if title unknown; show edit link otherwise
-  if (jobInfoForm) jobInfoForm.style.display = titleMissing ? 'block' : 'none';
-  if (editJobBtn)  editJobBtn.style.display  = titleMissing ? 'none'  : 'inline';
+  if (jobInfoForm) jobInfoForm.style.display = titleMissing || companyMissing ? 'block' : 'none';
+  if (editJobBtn)  editJobBtn.style.display  = titleMissing || companyMissing ? 'none' : 'inline';
 
   if (editJobBtn) {
     editJobBtn.onclick = () => {
@@ -180,39 +191,34 @@ function showJobCard(job, auth) {
 
   function validateAndOpen(btn, mode = MODES.TAILOR) {
     const title = jobTitleInput?.value.trim() || job.jobTitle || '';
-    if (!title || title === 'Unknown Role') {
+    const company = companyInput?.value.trim() || job.company || '';
+    if (!title || title === 'Unknown Role' || !company) {
       if (jobInfoForm) jobInfoForm.style.display = 'block';
-      if (jobTitleInput) {
+      if ((!title || title === 'Unknown Role') && jobTitleInput) {
         jobTitleInput.classList.add('required-error');
         jobTitleInput.focus();
         jobTitleInput.placeholder = 'Job Title is required';
       }
+      if (!company && companyInput) {
+        companyInput.classList.add('required-error');
+        if (title && title !== 'Unknown Role') companyInput.focus();
+        companyInput.placeholder = 'Company Name is required';
+      }
       return;
     }
     if (jobTitleInput) jobTitleInput.classList.remove('required-error');
+    if (companyInput) companyInput.classList.remove('required-error');
     openInApp(buildJob(), btn, mode);
   }
 
-  tailorBtn.onclick = () => validateAndOpen(tailorBtn);
-
-  const coverLetterBtn = document.getElementById('coverLetterBtn');
-  if (coverLetterBtn) {
-    coverLetterBtn.onclick = () => {
-      const title = jobTitleInput?.value.trim() || job.jobTitle || '';
-      if (!title || title === 'Unknown Role') {
-        if (jobInfoForm) jobInfoForm.style.display = 'block';
-        if (jobTitleInput) { jobTitleInput.classList.add('required-error'); jobTitleInput.focus(); }
-        return;
-      }
-      if (jobTitleInput) jobTitleInput.classList.remove('required-error');
-      openInApp(buildJob(), coverLetterBtn, MODES.COVER_LETTER);
-    };
-  }
+  tailorBtn.textContent = auth?.jobAgentAccess ? 'Save to My Jobs' : 'Use in Resume Builder';
+  tailorBtn.onclick = () => validateAndOpen(tailorBtn, auth?.jobAgentAccess ? MODES.JOB_AGENT : MODES.TAILOR);
 
   const jobAgentBtn = document.getElementById('jobAgentBtn');
   if (jobAgentBtn && auth?.jobAgentAccess) {
     jobAgentBtn.style.display = 'block';
-    jobAgentBtn.onclick = () => validateAndOpen(jobAgentBtn, MODES.JOB_AGENT);
+    jobAgentBtn.textContent = 'Use in Resume Builder';
+    jobAgentBtn.onclick = () => validateAndOpen(jobAgentBtn, MODES.TAILOR);
   } else if (jobAgentBtn) {
     jobAgentBtn.style.display = 'none';
   }
@@ -253,50 +259,12 @@ async function getCurrentJob() {
       });
       if (result?.jobDescription) return result;
 
-      // The user clicked the extension for this tab, so activeTab grants a
-      // one-time, page-scoped read. No always-on access to arbitrary sites.
-      let injected;
-      try {
-        injected = await chrome.scripting.executeScript({
-          target: { tabId: tab.id, allFrames: true },
-          files: ['generic-capture.js'],
-        });
-      } catch (_) {
-        // A protected cross-origin frame can reject an all-frame request even
-        // though the selected top page is readable. Preserve normal capture.
-        injected = await chrome.scripting.executeScript({
-          target: { tabId: tab.id, allFrames: false },
-          files: ['generic-capture.js'],
-        });
-      }
-      const candidates = (injected || [])
-        .map(frame => frame?.result)
-        .filter(candidate => candidate?.jobDescription)
-        .map(candidate => {
-          // Keep the page the user chose as the canonical Apply URL even when
-          // the description came from an accessible embedded ATS frame.
-          let pageSite = candidate.site || 'job-page';
-          try { pageSite = new URL(tab.url).hostname.replace(/^www\./, ''); } catch (_) {}
-          return { ...candidate, applyUrl: tab.url || candidate.applyUrl, site: pageSite };
-        });
-      const captured = candidates.sort((left, right) => {
-        const methodPriority = {
-          'structured-job-posting': 5,
-          'greenhouse-job-data': 4,
-          'workday-visible': 3,
-          'lever-visible': 3,
-          'ashby-visible': 3,
-          'smartrecruiters-visible': 3,
-          'selected-text': 2,
-          'visible-page': 1,
-        };
-        const score = candidate => (methodPriority[candidate.captureMethod] || 0) * 100_000
-          + candidate.jobDescription.length
-          + (candidate.jobTitle ? 500 : 0)
-          + (candidate.company ? 250 : 0);
-        return score(right) - score(left);
-      })[0] || null;
-      if (captured) return captured;
+      // The click grants one-time, page-scoped access. The service worker also
+      // uses this path for explicit context-menu capture, without all-sites access.
+      const capture = await new Promise(resolve => chrome.runtime.sendMessage({ action: 'CAPTURE_ACTIVE_TAB' }, response => {
+        resolve(chrome.runtime.lastError ? null : response?.job || null);
+      }));
+      if (capture) return capture;
     }
   } catch (_) {}
   return null;
@@ -324,7 +292,8 @@ async function openInApp(job, btn, mode = 'tailor') {
     site:            job.site            || 'unknown',
     location:        job.location        || '',
     salaryText:      job.salaryText      || '',
-    captureMethod:   job.captureMethod   || 'unknown'
+    captureMethod:   job.captureMethod   || 'unknown',
+    jobId:           job.jobId           || ''
   };
 
   chrome.runtime.sendMessage({ action: 'OPEN_IN_APP', jobData, mode }, (response) => {
@@ -377,6 +346,10 @@ async function autofillPage(auth, btn) {
     if (response?.reviewRequired) {
       btn.dataset.precisionReviewed = 'true';
       btn.textContent = 'Fill approved fields';
+      if (fillResultEl) {
+        fillResultEl.textContent = 'Match reviewed. Click again to fill only approved fields; you will still review and submit the application yourself.';
+        fillResultEl.style.display = 'block';
+      }
       btn.disabled = false;
       return;
     }
@@ -386,11 +359,16 @@ async function autofillPage(auth, btn) {
     }
 
     delete btn.dataset.precisionReviewed;
-    btn.textContent = `✓ ${response.filled}/${response.total}`;
-    setTimeout(() => {
-      btn.textContent = originalLabel;
-      btn.disabled    = false;
-    }, 3000);
+    const reviewCount = Number(response.reviewCount || 0);
+    btn.textContent = reviewCount ? `Filled ${response.filled}/${response.total} · review ${reviewCount}` : `Filled ${response.filled}/${response.total}`;
+    btn.disabled = false;
+    if (fillResultEl) {
+      const labels = Array.isArray(response.reviewLabels) ? response.reviewLabels.slice(0, 3).join(', ') : '';
+      fillResultEl.textContent = reviewCount
+        ? `${reviewCount} highlighted field${reviewCount === 1 ? '' : 's'} still need you${labels ? `: ${labels}` : ''}. Nothing was submitted.`
+        : 'Approved fields are filled. Review the application before submitting it yourself.';
+      fillResultEl.style.display = 'block';
+    }
   } catch (err) {
     console.error('[1stStep] Autofill error:', err);
     btn.textContent = 'Autofill failed — try again';

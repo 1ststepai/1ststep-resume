@@ -108,6 +108,65 @@ const ashbyJobs = normalizePublicPostings(ashby, { apiVersion: '1', jobs: [{
 assert.equal(ashbyJobs[0].remote, true);
 assert.equal(ashbyJobs[0].salaryMax, 140000);
 assert.equal(normalizePublicPostings(ashby, { apiVersion: '1', jobs: [{ ...ashbyJobs[0], isListed: false }] }).length, 0);
+const remoteMission = { role: 'Buyer', workModes: ['Remote'] };
+const hybridMission = { role: 'Buyer', workModes: ['Hybrid'] };
+const workSettingFixtures = [
+  {
+    source: greenhouse,
+    posting: (location, extra = {}) => ({ jobs: [{
+      id: 43, title: 'Buyer', absolute_url: 'https://boards.greenhouse.io/fixtureco/jobs/43',
+      location: { name: location }, content: 'Supplier sourcing and purchasing.', ...extra,
+    }] }),
+  },
+  {
+    source: lever,
+    posting: (location, extra = {}) => [{
+      id: 'LEV-8', text: 'Buyer', hostedUrl: 'https://jobs.lever.co/leverfixture/LEV-8',
+      applyUrl: 'https://jobs.lever.co/leverfixture/LEV-8/apply',
+      categories: { location }, descriptionPlain: 'Supplier sourcing and purchasing.', ...extra,
+    }],
+  },
+  {
+    source: ashby,
+    posting: (location, extra = {}) => ({ apiVersion: '1', jobs: [{
+      id: 'ASH-10', title: 'Buyer', jobUrl: 'https://jobs.ashbyhq.com/ashbyfixture/ASH-10',
+      applyUrl: 'https://jobs.ashbyhq.com/ashbyfixture/ASH-10/application',
+      location, descriptionPlain: 'Supplier sourcing and purchasing.', ...extra,
+    }] }),
+  },
+];
+for (const { source, posting } of workSettingFixtures) {
+  for (const location of ['Not Remote - New York, NY', 'No remote work - New York, NY', 'Remote not available']) {
+    const [job] = normalizePublicPostings(source, posting(location));
+    assert.equal(job.remote, false, `${source.provider}: ${location} must not claim Remote`);
+    assert.equal(job.workplaceType, 'Unknown', `${source.provider}: ${location} must remain uncertain`);
+    assert.equal(jobMatchesMission(job, remoteMission), false, `${source.provider}: ${location} passed a Remote-only mission`);
+  }
+  const [positive] = normalizePublicPostings(source, posting('Remote - United States', source.provider === 'ashby' ? { isRemote: true, workplaceType: 'Remote' } : {}));
+  assert.equal(positive.remote, true, `${source.provider}: affirmative Remote was lost`);
+  assert.equal(jobMatchesMission(positive, remoteMission), true);
+  const [hybrid] = normalizePublicPostings(source, posting('Hybrid - New York, NY', { workplaceType: 'Hybrid' }));
+  assert.equal(hybrid.workplaceType, 'Hybrid', `${source.provider}: Hybrid was lost`);
+  assert.equal(hybrid.remote, false);
+  assert.equal(jobMatchesMission(hybrid, hybridMission), true);
+  assert.equal(jobMatchesMission(hybrid, remoteMission), false);
+  const [unknown] = normalizePublicPostings(source, posting('United States'));
+  assert.equal(unknown.remote, false, `${source.provider}: unknown work setting became Remote`);
+}
+for (const [source, posting, label] of [
+  [lever, workSettingFixtures[1].posting('Remote - United States', { workplaceType: 'on-site' }), 'Lever on-site metadata'],
+  [lever, workSettingFixtures[1].posting('Not Remote - New York, NY', { workplaceType: 'remote' }), 'Lever remote metadata versus negated location'],
+  [ashby, workSettingFixtures[2].posting('United States', { isRemote: false, workplaceType: 'Remote' }), 'Ashby explicit non-remote flag'],
+  [ashby, workSettingFixtures[2].posting('United States', { isRemote: true, workplaceType: 'On-site' }), 'Ashby conflicting on-site metadata'],
+  [ashby, workSettingFixtures[2].posting('On-site - New York, NY', { isRemote: true }), 'Ashby conflicting on-site location'],
+  [ashby, workSettingFixtures[2].posting('No remote work - New York, NY', { isRemote: true }), 'Ashby remote flag versus negated location'],
+]) {
+  const [job] = normalizePublicPostings(source, posting);
+  assert.equal(job.remote, false, `${label} must fail closed`);
+  assert.equal(job.workplaceType, 'Unknown', `${label} must not assert a work setting`);
+  assert.equal(jobMatchesMission(job, remoteMission), false);
+}
+assert.equal(normalizePublicPostings(lever, workSettingFixtures[1].posting('United States', { workplaceType: 'remote' }))[0].remote, true);
 const smartRecruitersJobs = normalizePublicPostings(smartRecruiters, { content: [{
   id: '744000123456789', name: 'Procurement Program Manager', releasedDate: '2026-08-29T12:00:00Z',
   location: { city: 'New York', region: 'NY', country: 'US', remote: true }, typeOfEmployment: { label: 'Full-time' },

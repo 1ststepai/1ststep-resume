@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import handler, { publicAuthenticationConfiguration } from '../api/app-config.js';
 
-const clerkDisabled = { clerk: { enabled: false, publishableKey: null } };
+const clerkDisabled = { clerk: { enabled: false, publishableKey: null, frontendApiUrl: null, signInUrl: null, signUpUrl: null } };
 assert.deepEqual(publicAuthenticationConfiguration({}), { restoreAccessAvailable: false, ...clerkDisabled });
 
 const readyEnvironment = {
@@ -18,10 +18,30 @@ const readyEnvironment = {
 assert.deepEqual(publicAuthenticationConfiguration(readyEnvironment), { restoreAccessAvailable: true, ...clerkDisabled });
 assert.deepEqual(publicAuthenticationConfiguration({ ...readyEnvironment, RESEND_FROM: '' }), { restoreAccessAvailable: false, ...clerkDisabled });
 assert.deepEqual(publicAuthenticationConfiguration({ ...readyEnvironment, BETA_DATA_ENCRYPTION_KEY: '' }), { restoreAccessAvailable: false, ...clerkDisabled });
-const clerkReady = { ...readyEnvironment, CLERK_IDENTITY_ENABLED: 'true', CLERK_SECRET_KEY: 'synthetic-clerk-secret', CLERK_JWT_KEY: 'synthetic-public-key', CLERK_PUBLISHABLE_KEY: 'pk_live_fixture' };
-assert.deepEqual(publicAuthenticationConfiguration(clerkReady).clerk, { enabled: true, publishableKey: 'pk_live_fixture' });
+const developmentKey = `pk_test_${Buffer.from('fixture.clerk.accounts.dev$').toString('base64url')}`;
+const productionKey = `pk_live_${Buffer.from('clerk.1ststep.ai$').toString('base64url')}`;
+const clerkReady = { ...readyEnvironment, VERCEL_ENV: 'preview', CLERK_IDENTITY_ENABLED: 'true', CLERK_SECRET_KEY: 'synthetic-clerk-secret', CLERK_JWT_KEY: 'synthetic-public-key', CLERK_PUBLISHABLE_KEY: developmentKey };
+assert.deepEqual(publicAuthenticationConfiguration(clerkReady).clerk, {
+  enabled: true,
+  publishableKey: developmentKey,
+  frontendApiUrl: 'https://fixture.clerk.accounts.dev',
+  signInUrl: null,
+  signUpUrl: null,
+});
 assert.equal(JSON.stringify(publicAuthenticationConfiguration(clerkReady)).includes('synthetic-clerk-secret'), false);
 assert.equal(publicAuthenticationConfiguration({ ...clerkReady, CLERK_JWT_KEY: '' }).clerk.enabled, false);
+assert.equal(publicAuthenticationConfiguration({ ...clerkReady, VERCEL_ENV: 'production' }).clerk.enabled, false);
+assert.deepEqual(publicAuthenticationConfiguration({ ...clerkReady, VERCEL_ENV: 'production', CLERK_PUBLISHABLE_KEY: productionKey }).clerk, {
+  enabled: true,
+  publishableKey: productionKey,
+  frontendApiUrl: 'https://clerk.1ststep.ai',
+  signInUrl: 'https://accounts.1ststep.ai/sign-in',
+  signUpUrl: 'https://accounts.1ststep.ai/sign-up',
+});
+assert.equal(publicAuthenticationConfiguration({ ...clerkReady, CLERK_PUBLISHABLE_KEY: productionKey }).clerk.enabled, false);
+assert.equal(publicAuthenticationConfiguration({ ...clerkReady, CLERK_PUBLISHABLE_KEY: `pk_test_${Buffer.from('accounts.dev.evil.example$').toString('base64url')}` }).clerk.enabled, false);
+assert.equal(publicAuthenticationConfiguration({ ...clerkReady, CLERK_PUBLISHABLE_KEY: `pk_test_${Buffer.from('foo.evil.clerk.accounts.dev$').toString('base64url')}` }).clerk.enabled, false);
+assert.equal(publicAuthenticationConfiguration({ ...clerkReady, VERCEL_ENV: 'production', CLERK_PUBLISHABLE_KEY: `pk_live_${Buffer.from('other.example$').toString('base64url')}` }).clerk.enabled, false);
 
 function responseCapture() {
   const capture = { statusCode: null, headers: {}, body: null };

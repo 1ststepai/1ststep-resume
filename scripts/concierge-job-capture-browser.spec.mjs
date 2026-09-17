@@ -22,6 +22,14 @@ test('a generic extension capture is visibly added to Job Agent for supervised r
     contentType: 'application/json',
     body: JSON.stringify({ jobAgentAccess: true, tier: 'owner', sessionAuthentication: 'opaque-session' }),
   }));
+  await page.route('**/api/captured-jobs', async route => {
+    const body = route.request().postDataJSON();
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify({ job: { ...body.job, captureId: body.captureId, verification: 'unverified', applyPathActive: false } }),
+    });
+  });
 
   await page.goto(`${baseUrl}?jobCaptureId=${captureId}&mode=jobAgent`, { waitUntil: 'networkidle' });
   await page.evaluate(({ captureId }) => window.postMessage({
@@ -51,7 +59,7 @@ test('a generic extension capture is visibly added to Job Agent for supervised r
     pending: sessionStorage.getItem('1ststep_pending_capture'),
     jobAgentCapture: sessionStorage.getItem('1ststep_job_agent_capture_v1'),
   }));
-  expect(state.acknowledgements).toEqual([]);
+  expect(state.acknowledgements).toEqual([captureId]);
   expect(state.pending).toBeNull();
   expect(state.jobAgentCapture).toBeNull();
 

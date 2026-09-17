@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { jobAgentPolicyBundle } from '../lib/job-agent-policy-bundle.js';
 import { jobAgentStatus } from '../client/concierge-router.js';
-import { grantVaultConsent } from '../lib/applicant-vault-domain.js';
+import { grantVaultConsent, selectVaultBaseResume, upsertVaultDocument, upsertVaultFact } from '../lib/applicant-vault-domain.js';
 import { rememberApplicationAnswer, resolveApplicationAnswer, forgetAnswerMemory } from '../lib/application-answer-memory.js';
 
 const baseUrl = process.env.CONCIERGE_TEST_URL || 'http://127.0.0.1:4175/concierge';
@@ -19,6 +19,87 @@ async function openApplicationFromPrimary(page) {
   if (await attention.isVisible()) await attention.click();
   else await resume.click();
 }
+
+test('Saved Info explicitly selects one reviewed historical base resume version', async ({ page }) => {
+  let vault = grantVaultConsent(), version = 1, selection;
+  vault = upsertVaultDocument(vault, { type: 'master-resume', text: 'Version one candidate resume. '.repeat(16), provenance: 'candidate-reviewed' });
+  const documentId = vault.documents[0].id;
+  vault = upsertVaultDocument(vault, { id: documentId, type: 'master-resume', text: 'Version two candidate resume. '.repeat(16), provenance: 'candidate-reviewed' });
+  await page.route('**/api/session-capabilities*', route => route.fulfill({ json: { jobAgentAccess: true, sessionAuthentication: 'opaque-session' } }));
+  await page.route('**/api/applicant-vault', async route => {
+    if (route.request().method() === 'POST') {
+      const body = route.request().postDataJSON();
+      if (body.action === 'select-base-resume') {
+        selection = body.input;
+        vault = selectVaultBaseResume(vault, body.input);
+        version++;
+      }
+    }
+    await route.fulfill({ json: { vault, version } });
+  });
+  page.on('dialog', dialog => dialog.accept());
+  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await page.locator('#openVault').click();
+  await expect(page.locator('#vaultList')).toContainText('Version 1');
+  await expect(page.locator('#vaultList')).toContainText('Version 2');
+  await page.locator('#vaultList details').first().locator('summary').click();
+  await expect(page.locator('#vaultList details').first()).toContainText('Version one candidate resume');
+  await page.locator('#vaultList details').first().locator('button').click();
+  await expect(page.locator('#vaultList')).toContainText('Selected base résumé');
+  expect(selection).toEqual({ documentId, version: 1, reviewed: true });
+  expect(vault.selectedBaseResume.version).toBe(1);
+  expect(vault.documents[0].currentVersion).toBe(2);
+});
+
+test('package preparation requires a source review bound to the selected résumé, facts, and requisition', async ({ page }) => {
+  const baseText = 'Candidate-reviewed sourcing experience and education. '.repeat(10);
+  let vault = grantVaultConsent();
+  vault = upsertVaultFact(vault, { fieldKey: 'employment', value: 'Senior sourcing specialist at Example Company',
+    provenance: 'candidate confirmation', confidence: 1, verificationState: 'user-confirmed', originKind: 'candidate-confirmed', autoReuse: true });
+  vault = upsertVaultDocument(vault, { type: 'master-resume', text: baseText, provenance: 'candidate-reviewed' });
+  vault = selectVaultBaseResume(vault, { documentId: vault.documents[0].id, version: 1, reviewed: true });
+  const role = { id: 'review-role', employer: 'Example Company', title: 'Sourcing Manager', requisitionId: 'REQ-REVIEW-1',
+    status: 'Verified', directEmployerUrl: 'https://boards.greenhouse.io/example/jobs/111',
+    discoveryRunId: 'run_review_1', applyPathActive: true, fitScore: 90 };
+  let postedPackage = null;
+  await routeApprovedOnboarding(page);
+  await page.route('**/api/applicant-vault', route => route.fulfill({ json: { vault, version: 1 } }));
+  await routeAccountWorkspace(page, { mission: { role: 'Sourcing Manager', roleFamily: 'procurement', location: 'United States' }, jobCards: [role] });
+  await page.route('**/api/job-agent-runs?latest=discovery', route => route.fulfill({ json: { run: {
+    id: 'run_review_1', taskType: 'direct_employer_discovery', status: 'Finished',
+    mission: { role: 'Sourcing Manager', roleFamily: 'procurement', location: 'United States' },
+    result: { jobs: [{ provider: 'greenhouse', employer: role.employer, title: role.title,
+      requisitionId: role.requisitionId, jobUrl: role.directEmployerUrl, applyUrl: role.directEmployerUrl,
+      description: 'Lead sourcing and supplier programs. '.repeat(12), applyPathVerified: true,
+      applyPathVerification: 'current-greenhouse-requisition-fetch', applyPathVerifiedAt: '2026-09-14T12:00:00.000Z' }] },
+  } } }));
+  await page.route('**/api/application-packages', route => {
+    postedPackage = route.request().postDataJSON()?.package;
+    return route.fulfill({ json: { run: { id: 'package_review_1', status: 'Preparing',
+      mission: { roleId: role.id, employer: role.employer, title: role.title }, result: null } } });
+  });
+  page.on('dialog', dialog => dialog.accept());
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await page.locator('#openJobs').click();
+  await page.locator('[data-job-tab="Preparing"]').click();
+  const prepare = page.locator('[data-job-package-generate="review-role"]');
+  await expect(prepare).toHaveText('Prepare application');
+  await prepare.click();
+  await expect(page.locator('#packageSourceReviewDialog')).toBeVisible();
+  await expect(page.locator('#packageSourceReviewBase')).toContainText('Candidate-reviewed sourcing experience');
+  await expect(page.locator('#packageSourceReviewFacts')).toContainText('Senior sourcing specialist');
+  await expect(page.locator('#packageSourceReviewJob')).toContainText('REQ-REVIEW-1');
+  await expect(page.locator('#packageSourceReviewConfirm')).toBeDisabled();
+  await page.getByRole('button', { name: 'Needs correction' }).click();
+  expect(postedPackage).toBeNull();
+  await prepare.click();
+  await page.locator('#packageSourceReviewChecked').check();
+  await page.locator('#packageSourceReviewConfirm').click();
+  await expect.poll(() => postedPackage).not.toBeNull();
+  expect(postedPackage.sourceReview).toEqual({ accepted: true,
+    baseResumeSha256: vault.selectedBaseResume.sha256,
+    verifiedFactsHash: vault.selectedBaseResume.factsHash, requisitionId: role.requisitionId });
+});
 
 test('Needs You remembers an exact answer, restores attribution, and forgets it without transmission', async ({ page }) => {
   let vault = grantVaultConsent(), version = 1, patch;
@@ -278,6 +359,44 @@ test('a stale legacy bearer is never sent to the Job Agent and returns to opaque
   await expect(page.locator('#agentAccessCredentialFields')).toBeHidden();
 });
 
+test('Clerk-ready concierge sends sign-in to the same-origin login route', async ({ page }) => {
+  await page.route('**/api/app-config', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ authentication: { clerk: { enabled: true } } }),
+  }));
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await page.locator('#openAgentAccess').click();
+  await expect(page).toHaveURL(/\/login\.html\?returnTo=%2Fconcierge$/);
+});
+
+test('Clerk-disabled concierge fails closed without sending an access code', async ({ page }) => {
+  let subscriptionRequests = 0;
+  await page.route('**/api/app-config', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ authentication: { clerk: { enabled: false }, restoreAccessAvailable: true } }),
+  }));
+  await page.route('**/api/subscription*', route => { subscriptionRequests++; return route.abort(); });
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await page.locator('#openAgentAccess').click();
+  await expect(page.locator('#agentAccessOverlay')).toHaveClass(/open/);
+  await expect(page.locator('#agentAccessCredentialFields')).toBeHidden();
+  await expect(page.locator('#verifyAgentAccess')).toBeDisabled();
+  await expect(page.locator('#agentAccessMessage')).toContainText('Secure sign-in is not configured for this environment. No code was sent.');
+  expect(subscriptionRequests).toBe(0);
+});
+
+test('login page shows progress then a retryable configuration error', async ({ page }) => {
+  let releaseConfig;
+  const configPending = new Promise(resolve => { releaseConfig = resolve; });
+  await page.route('**/api/app-config', async route => {
+    await configPending;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ authentication: { clerk: { enabled: false } } }) });
+  });
+  await page.goto(new URL('/login.html', baseUrl).toString(), { waitUntil: 'commit' });
+  await expect(page.locator('#loginStatus')).toHaveText('Opening secure sign-in…');
+  releaseConfig();
+  await expect(page.locator('#loginStatus')).toContainText('Secure sign-in is not available in this environment yet.');
+  await expect(page.locator('#retryLogin')).toBeVisible();
+});
+
 test('a signed but non-invited pilot user keeps data controls without agent access', async ({ page }) => {
   await page.route('**/api/session-capabilities*', route => route.fulfill({
     status: 200, contentType: 'application/json',
@@ -511,7 +630,9 @@ test('the guided tap-through launch starts a truthful no-submit search in a few 
   await expect(page.locator('#startJobSearch')).toBeEnabled();
   await page.locator('#startJobSearch').click();
   await expect(page.locator('#runStateTrack [data-run-state="Preparing"]')).toHaveClass(/active/);
-  await expect(page.locator('#messages')).toContainText('Found 0 matching jobs');
+  await expect(page.locator('#messages')).toContainText('Added 0 new jobs to My Jobs');
+  await expect(page.locator('#messages')).toContainText('12 employer-feed listings scanned');
+  await expect(page.locator('#messages')).toContainText('11 listings outside your search requirements');
   await expect(page.locator('#messages')).toContainText('Found—not Submitted');
   expect(submittedMission?.location).toBe('United States');
   expect(submittedMission?.searchGoal).toBe('best-fit');
@@ -546,6 +667,119 @@ test('a signed user restores the latest encrypted discovery run on a new device 
   expect(await page.evaluate(() => localStorage.getItem('1ststep_job_agent_run_v1'))).toBeNull();
   expect(await page.evaluate(() => sessionStorage.getItem('1ststep_job_agent_run_v1'))).toBeNull();
   expect(latestRestoreRequests).toBe(1);
+});
+
+test('two saved discovery runs keep both My Jobs cards actionable after sign-in', async ({ page }) => {
+  const mission = { role: 'Sourcing Manager', roleFamily: 'procurement', workModes: ['Remote'], employmentTypes: ['Full-time'], location: 'United States', target: 10 };
+  const oldMission = { ...mission, role: 'Procurement Analyst' };
+  const job = (employer, requisitionId, title = 'Sourcing Manager') => ({
+    provider: 'greenhouse', employer, title, requisitionId,
+    jobUrl: `https://boards.greenhouse.io/example/jobs/${requisitionId}`,
+    applyUrl: `https://boards.greenhouse.io/example/jobs/${requisitionId}`,
+    location: 'United States', remote: true, workplaceType: 'Remote', employmentType: 'Full-time',
+    description: `Lead sourcing and supplier management. ${'Verified employer responsibility. '.repeat(12)}`,
+    applyPathVerified: true, applyPathVerification: 'current-greenhouse-requisition-fetch',
+  });
+  const oldJob = job('Older Employer', 'REQ-OLD', 'Procurement Analyst');
+  const newJob = job('Newest Employer', 'REQ-NEW');
+  const card = (id, runId, employer, requisitionId, title = 'Sourcing Manager', status = 'Verified') => ({
+    id, employer, title, requisitionId, status, fitScore: 90,
+    directEmployerUrl: `https://boards.greenhouse.io/example/jobs/${requisitionId}`,
+    sourceProvider: 'greenhouse', sourceType: 'direct-employer', discoveryRunId: runId, applyPathActive: true,
+  });
+  await page.route('**/api/session-capabilities', route => route.fulfill({ json: { adminConsole: false, jobAgentAccess: true, tier: 'complete', sessionAuthentication: 'opaque-session' } }));
+  let selectedVault = grantVaultConsent();
+  selectedVault = upsertVaultDocument(selectedVault, { type: 'master-resume',
+    text: 'Reviewed procurement and sourcing experience. '.repeat(12), provenance: 'candidate-reviewed' });
+  selectedVault = selectVaultBaseResume(selectedVault, { documentId: selectedVault.documents[0].id, version: 1, reviewed: true });
+  await page.route('**/api/applicant-vault', route => route.fulfill({ json: { vault: selectedVault, version: 1 } }));
+  await routeAccountWorkspace(page, { mission, jobCards: [card('old-card', 'run_old', 'Older Employer', 'REQ-OLD', 'Procurement Analyst', 'Found'), card('new-card', 'run_new', 'Newest Employer', 'REQ-NEW')] });
+  await page.route('**/api/job-agent-runs?latest=discovery', route => route.fulfill({ json: { run: { id: 'run_new', taskType: 'direct_employer_discovery', status: 'Finished', mission, result: { jobs: [newJob] } } } }));
+  let oldRunRequests = 0;
+  let oldRunAvailable = true;
+  await page.route('**/api/job-agent-runs?id=run_old', route => {
+    oldRunRequests += 1;
+    if (!oldRunAvailable) return route.fulfill({ status: 404, json: { error: 'Run not found.' } });
+    return route.fulfill({ json: { run: { id: 'run_old', taskType: 'direct_employer_discovery', status: 'Finished', mission: oldMission, result: { jobs: [oldJob] } } } });
+  });
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await page.locator('#openJobs').click();
+  await page.locator('[data-job-tab="Matches"]').click();
+  await expect(page.locator('#jobCards')).toContainText('Older Employer');
+  await expect(page.locator('[data-job-package-generate="old-card"]')).toBeVisible();
+  let oldPackageRequest = null;
+  let packageAttempts = 0;
+  await page.route('**/api/application-packages', route => {
+    oldPackageRequest = route.request().postDataJSON();
+    packageAttempts += 1;
+    if (packageAttempts === 1) return route.fulfill({ status: 409, json: { code: 'RESUME_REVIEW_REQUIRED',
+      conflicts: [{ type: 'VERIFIED_FACTS_CHANGED' }] } });
+    return route.fulfill({ status: 202, json: { run: { id: 'package_old', taskType: 'application_package', status: 'Preparing', mission: { roleId: 'old-card' }, result: null } } });
+  });
+  page.on('dialog', dialog => dialog.accept());
+  await page.locator('[data-job-package-generate="old-card"]').click();
+  await expect(page.locator('#packageSourceReviewDialog')).toBeVisible();
+  await expect(page.locator('#packageSourceReviewJob')).toContainText('REQ-OLD');
+  await page.locator('#packageSourceReviewChecked').check();
+  await page.locator('#packageSourceReviewConfirm').click();
+  await expect.poll(() => packageAttempts).toBe(1);
+  await expect(page.locator('#messages')).toContainText('Résumé review required');
+  await page.locator('#openJobs').click();
+  await page.locator('[data-job-tab="Matches"]').click();
+  await expect(page.locator('[data-job-package-generate="old-card"]')).toBeVisible();
+  await page.locator('[data-job-package-generate="old-card"]').click();
+  await page.locator('#packageSourceReviewChecked').check();
+  await page.locator('#packageSourceReviewConfirm').click();
+  await expect.poll(() => packageAttempts).toBe(2);
+  expect(oldPackageRequest?.package).toMatchObject({ roleId: 'old-card', discoveryRunId: 'run_old', requisitionId: 'REQ-OLD' });
+  expect(oldPackageRequest.package.sourceReview).toMatchObject({ accepted: true,
+    baseResumeSha256: selectedVault.selectedBaseResume.sha256,
+    verifiedFactsHash: selectedVault.selectedBaseResume.factsHash, requisitionId: 'REQ-OLD' });
+  await page.locator('[data-job-tab="Preparing"]').click();
+  await expect(page.locator('#jobCards')).toContainText('Newest Employer');
+  await expect(page.locator('[data-job-package-generate="new-card"]')).toBeVisible();
+  expect(oldRunRequests).toBe(1);
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.locator('#openJobs').click();
+  await page.locator('[data-job-tab="Matches"]').click();
+  await expect(page.locator('[data-job-package-generate="old-card"]')).toHaveCount(1);
+  await page.locator('[data-job-tab="Preparing"]').click();
+  await expect(page.locator('[data-job-package-generate="new-card"]')).toHaveCount(1);
+  expect(oldRunRequests).toBe(2);
+  oldRunAvailable = false;
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.locator('#openJobs').click();
+  await page.locator('[data-job-tab="Matches"]').click();
+  await expect(page.locator('#jobCards')).toContainText('Older Employer');
+  await expect(page.locator('#jobCards')).toContainText('Saved job details need secure recovery');
+  await expect(page.locator('[data-job-package-generate="old-card"]')).toHaveCount(0);
+});
+
+test('two saved runs for one Greenhouse requisition show one My Jobs card', async ({ page }) => {
+  const mission = { role: 'Sourcing Manager', roleFamily: 'procurement', workModes: ['Remote'], employmentTypes: ['Full-time'], location: 'United States', target: 10 };
+  const requisitionId = 'REQ-SAME';
+  const url = `https://boards.greenhouse.io/example/jobs/${requisitionId}`;
+  const job = { provider: 'greenhouse', employer: 'Same Employer', title: 'Sourcing Manager', requisitionId,
+    jobUrl: url, applyUrl: url, location: 'United States', remote: true, workplaceType: 'Remote', employmentType: 'Full-time',
+    description: `Lead sourcing and supplier management. ${'Verified employer responsibility. '.repeat(12)}`,
+    applyPathVerified: true, applyPathVerification: 'current-greenhouse-requisition-fetch' };
+  const card = (id, runId) => ({ id, employer: job.employer, title: job.title, requisitionId,
+    status: 'Verified', fitScore: 90, directEmployerUrl: url, sourceProvider: 'greenhouse', sourceType: 'direct-employer',
+    discoveryRunId: runId, applyPathActive: true });
+  await page.route('**/api/session-capabilities', route => route.fulfill({ json: { adminConsole: false, jobAgentAccess: true, tier: 'complete', sessionAuthentication: 'opaque-session' } }));
+  await routeAccountWorkspace(page, { mission, jobCards: [card('old-card', 'run_old'), card('new-card', 'run_new')] });
+  await page.route('**/api/job-agent-runs?latest=discovery', route => route.fulfill({ json: { run: { id: 'run_new', taskType: 'direct_employer_discovery', status: 'Finished', mission, result: { jobs: [job] } } } }));
+  await page.route('**/api/job-agent-runs?id=run_old', route => route.fulfill({ json: { run: { id: 'run_old', taskType: 'direct_employer_discovery', status: 'Finished', mission, result: { jobs: [job] } } } }));
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await page.locator('#openJobs').click();
+  await page.locator('[data-job-tab="Preparing"]').click();
+  await expect(page.locator('#jobCards .simple-job-card')).toHaveCount(1);
+  await expect(page.locator('#jobCards [data-job-package-generate]')).toHaveCount(1);
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.locator('#openJobs').click();
+  await page.locator('[data-job-tab="Preparing"]').click();
+  await expect(page.locator('#jobCards .simple-job-card')).toHaveCount(1);
+  await expect(page.locator('#jobCards [data-job-package-generate]')).toHaveCount(1);
 });
 
 test('a stale device run cannot hide a newer tenant discovery run', async ({ page }) => {
@@ -727,7 +961,8 @@ test('a signed-in user gives one-time scoped authorization before any agent run 
   await page.locator('#startJobSearch').click();
   await expect.poll(() => runStarts).toBe(1);
   expect(savedAttestations).toEqual({ age18OrOlder: true, termsAccepted: true, privacyAcknowledged: true, candidateAuthorizationAccepted: true });
-  await expect(page.locator('#messages')).toContainText('Found 0 matching jobs');
+  await expect(page.locator('#messages')).toContainText('Added 0 new jobs to My Jobs');
+  await expect(page.locator('#messages')).toContainText('0 employer-feed listings scanned');
 });
 
 test('the same saved-info area can revoke authorization and pause the agent', async ({ page }) => {

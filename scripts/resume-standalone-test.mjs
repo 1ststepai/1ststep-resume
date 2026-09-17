@@ -12,6 +12,16 @@ const [html, config, robots, sitemap] = await Promise.all([
 assert.equal((html.match(/<h1\b/g) || []).length, 1);
 assert.match(html, /Tailor your résumé and cover letter\./);
 assert.match(html, /Start an ongoing Job Agent search/);
+assert.equal(
+  (html.match(/https:\/\/app\.1ststep\.ai\/login\.html\?mode=sign-up&amp;returnTo=%2Fapp/g) || []).length,
+  3,
+  'resume landing must offer account creation through the existing app Clerk flow',
+);
+assert.equal(
+  (html.match(/>Create free account<\/a/g) || []).length,
+  3,
+  'resume landing must expose account creation in navigation, hero, and closing CTA',
+);
 assert.match(html, /Start free\. No card required\. You review before anything is sent\./);
 assert.match(html, /<link rel="canonical" href="https:\/\/resume\.1ststep\.ai\/">/);
 assert.match(html, /Verified founder test · August 24, 2026/);

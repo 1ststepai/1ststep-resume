@@ -1,5 +1,6 @@
 export function draftReviewGuidance(draft = {}) {
   const messages = (draft.atsIssues || []).map(issue => {
+    if (/UNVERIFIED_.*_WORDING/.test(issue)) return 'Review this draft against your selected resume and verified facts, including employer attribution and omitted context. Document files remain blocked. Correct or verify the source information before retrying; every draft must still pass the document checks.';
     if (/UNMAPPED|SOURCE_MAP|UNSUPPORTED|CLAIM|FACT/.test(issue)) return 'Compare claims with your original resume. Correct anything that adds experience, skills, or results you cannot support.';
     if (/TABLE|TAB|FORMAT|ORDER|LAYOUT/.test(issue)) return 'Keep the layout simple. Use clear headings and ordinary paragraphs so employers can read your resume easily.';
     if (/LENGTH|SHORT|EMPTY/.test(issue)) return 'Check that your relevant experience and contact details are included.';

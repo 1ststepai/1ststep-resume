@@ -38,6 +38,16 @@ assert.match(readiness, /name:\s*Production dependency vulnerability audit[\s\S]
 assert.match(readiness, /^\s*contents:\s*read\s*$/m, 'Production readiness must use read-only repository contents');
 
 const qa = workflows['.github/workflows/qa.yml'];
+for (const workflow of ['production-readiness', 'qa', 'codeql']) {
+  const source = workflows[`.github/workflows/${workflow}.yml`];
+  const checkouts = source.match(/uses:\s*actions\/checkout@/g) || [];
+  const candidateRefs = source.match(/ref:\s*\$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/g) || [];
+  assert.equal(candidateRefs.length, checkouts.length, `${workflow} must validate the exact candidate revision, not an implicit merge revision`);
+}
+const packageScripts = JSON.parse(readFileSync('package.json', 'utf8')).scripts;
+for (const command of ['test:browser:job-agent', 'test:trust-remediation', 'test:extension-unpacked']) {
+  assert.ok(packageScripts['release:gate'].includes(`npm run ${command}`), `${command} must be a release gate`);
+}
 assert.match(qa, /node-version:\s*['"]24['"]/, 'QA must use application Node 24');
 assert.match(qa, /run:\s*npm ci --ignore-scripts/, 'QA must install the locked dependency graph');
 assert.match(qa, /run:\s*npm run smoke/, 'QA must use the package smoke command');

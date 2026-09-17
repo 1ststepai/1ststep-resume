@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
 import { createDraftAutosave, createRevisionWriter, draftReviewGuidance } from '../client/draft-review.js';
+const wordingGuidance = draftReviewGuidance({ atsIssues: ['UNVERIFIED_RESUME_WORDING', 'UNVERIFIED_COVER_LETTER_WORDING'] })[0];
+assert.match(wordingGuidance, /selected resume and verified facts/);
+assert.match(wordingGuidance, /Document files remain blocked/);
+assert.match(wordingGuidance, /every draft must still pass the document checks/);
 
 let value = { resumeText: 'original', coverLetterText: '' };
 let release;

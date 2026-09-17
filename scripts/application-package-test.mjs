@@ -47,8 +47,10 @@ assert.equal(validateApplicationPackageInput(packageInput).roleId, 'role_verifie
 assert.throws(() => validateApplicationPackageInput({ ...packageInput, applyPathActive: false }), /active direct-employer Apply path/i);
 assert.throws(() => validateApplicationPackageInput({ ...packageInput, resumeText: `${resumeText}\npassword=hunter2` }), /not allowed/i);
 
-const safeGeneratedResume = `Candidate Name\ncandidate@example.test\n\nPROFESSIONAL SUMMARY\nProcurement leader experienced in strategic sourcing, supplier negotiations, and contract workflows.\n\nEXPERIENCE\n${sourceLine}\n${'Managed supplier relationships and contract workflows across business teams.\n'.repeat(8)}\n\nEDUCATION\nVerified university degree.\n\nSKILLS\nStrategic sourcing, supplier negotiations, contract workflows, stakeholder partnership.`;
-const safeCoverLetter = `Dear Hiring Team,\n\nI bring procurement experience grounded in strategic sourcing, supplier negotiations, and contract workflows. The Procurement Manager role aligns directly with that work.\n\nAt Acme Corporation, I managed supplier relationships and contract workflows across business teams. That experience supports the role's need for sound procurement judgment and stakeholder partnership.\n\nI would welcome a conversation about how this experience can support your procurement organization.\n\nSincerely,\nCandidate Name`;
+const safeGeneratedResume = resumeText;
+// Only unchanged source context can clear automatic artifact checks. A normal
+// tailored cover letter remains reviewable text until its facts are resolved.
+const safeCoverLetter = `Dear Hiring Team,\n\n${resumeText}\n\nThank you for considering my application.\n\nSincerely,`;
 const sourceMap = [
   { output_claim: 'strategic sourcing', source_excerpt: 'Strategic sourcing and supplier negotiations' },
   { output_claim: 'supplier negotiations', source_excerpt: 'Strategic sourcing and supplier negotiations' },
@@ -56,6 +58,26 @@ const sourceMap = [
 ];
 const qa = validateGeneratedApplicationPackage({ sourceResume: resumeText, jobDescription, resumeText: safeGeneratedResume, coverLetterText: safeCoverLetter, sourceMap });
 assert.deepEqual(qa.issues, []);
+for (const invented of ['Certified Scrum Master.', 'Led global engineering teams.', 'Fluent in Mandarin.']) {
+  const result = validateGeneratedApplicationPackage({ sourceResume: resumeText, jobDescription, resumeText: `${safeGeneratedResume}\n${invented}`, coverLetterText: safeCoverLetter, sourceMap });
+  assert.ok(result.issues.includes('UNVERIFIED_RESUME_WORDING'), 'valid source links cannot conceal an unlinked claim');
+}
+assert.ok(validateGeneratedApplicationPackage({ sourceResume: `${resumeText}\nNot certified in AWS.`, jobDescription, resumeText: `${safeGeneratedResume}\nCertified in AWS.`, coverLetterText: '', sourceMap }).issues.includes('UNVERIFIED_RESUME_WORDING'));
+assert.ok(validateGeneratedApplicationPackage({ sourceResume: `${resumeText}\nNot:\nCertified in AWS.`, jobDescription, resumeText: `${safeGeneratedResume}\nCertified in AWS.`, coverLetterText: '', sourceMap }).issues.includes('UNVERIFIED_RESUME_WORDING'), 'dropping a separate negation line requires review');
+const attributedSource = `${resumeText}\nAcme\nManaged global engineering teams.\nBeta Logistics\nManaged supplier contracts.`;
+const reassignedResume = `${resumeText}\nAcme\nManaged supplier contracts.\nBeta Logistics\nManaged global engineering teams.`;
+assert.ok(validateGeneratedApplicationPackage({ sourceResume: attributedSource, jobDescription, resumeText: reassignedResume, coverLetterText: '', sourceMap }).issues.includes('UNVERIFIED_RESUME_WORDING'), 'reassigning existing source lines to a different employer requires review');
+assert.ok(validateGeneratedApplicationPackage({ sourceResume: `${resumeText}\nNot:\nCertified in AWS.`, jobDescription, resumeText: `${resumeText}\nNot:\nCertified in AWS.`, coverLetterText: 'Dear Hiring Team,\nCertified in AWS.\nSincerely,', sourceMap }).issues.includes('UNVERIFIED_COVER_LETTER_WORDING'), 'selected cover-letter excerpts cannot discard source context');
+const negatedSource = `${resumeText}\nNot:\nCertified in AWS.`;
+for (const framing of ['Sincerely,', 'Dear Hiring Team,', 'Thank you for considering my application.']) {
+  const interruptedCover = `Dear Hiring Team,\n${negatedSource.replace('Not:\n', `Not:\n${framing}\n`)}\nSincerely,`;
+  assert.ok(validateGeneratedApplicationPackage({ sourceResume: negatedSource, jobDescription, resumeText: negatedSource, coverLetterText: interruptedCover, sourceMap }).issues.includes('UNVERIFIED_COVER_LETTER_WORDING'), 'letter framing cannot interrupt factual source context');
+}
+assert.ok(validateGeneratedApplicationPackage({ sourceResume: resumeText, jobDescription, resumeText, coverLetterText: `Dear Hiring Team,\n${safeCoverLetter}`, sourceMap }).issues.includes('UNVERIFIED_COVER_LETTER_WORDING'), 'repeated framing requires review');
+assert.ok(validateGeneratedApplicationPackage({ sourceResume: resumeText, jobDescription, resumeText: safeGeneratedResume, coverLetterText: `${safeCoverLetter}\nI led global engineering teams.`, sourceMap }).issues.includes('UNVERIFIED_COVER_LETTER_WORDING'));
+assert.ok(validateGeneratedApplicationPackage({ sourceResume: resumeText, jobDescription, resumeText: safeGeneratedResume, coverLetterText: '', sourceMap: [...sourceMap, { output_claim: 'Procurement Manager', source_excerpt: 'Verified university degree.' }] }).issues.includes('UNSUPPORTED_SOURCE_MAPPING'));
+assert.deepEqual(validateGeneratedApplicationPackage({ sourceResume: resumeText, jobDescription, resumeText: safeGeneratedResume.replace('Managed supplier', '  Managed   supplier'), coverLetterText: safeCoverLetter, sourceMap }).issues, [], 'ordinary whitespace formatting preserves source wording');
+assert.ok(validateGeneratedApplicationPackage({ sourceResume: `${resumeText}\n- 500`, jobDescription, resumeText: `${safeGeneratedResume}\n500`, coverLetterText: '', sourceMap }).issues.includes('UNVERIFIED_RESUME_WORDING'), 'a possible numeric minus sign must not be treated as a bullet');
 assert.match(validateGeneratedApplicationPackage({ sourceResume: resumeText, jobDescription, resumeText: `${safeGeneratedResume}\nDelivered 47% savings using AI.`, coverLetterText: '', sourceMap: [] }).issues.join(','), /UNSUPPORTED_NUMERIC_CLAIM|AI_LANGUAGE_NOT_ROLE_RELEVANT|SOURCE_MAP_MISSING/);
 
 const redis = new FakeRedis();
@@ -123,6 +145,23 @@ assert.equal(openAiFinished.status, 'Finished');
 assert.equal(openAiFinished.result.documentMode, 'text-only');
 assert.equal(openAiFinished.result.transmission, 'none');
 assert.deepEqual(openAiFinished.result.artifacts, []);
+
+const unsafeCreated = await createJobAgentRun({ ...config, mission: packageInput, taskType: 'application_package', idempotencyKey: 'package_unlinked_claim_0001', now: new Date('2026-08-29T16:00:05.000Z') });
+const unsafeClaimed = await claimJobAgentRun({ redis, runId: unsafeCreated.run.id, dataEncryptionKey: config.dataEncryptionKey, now: new Date('2026-08-29T16:00:05.000Z') });
+const unsafeResult = await executeClaimedApplicationPackageRun({
+  claimed: unsafeClaimed, redis, dataEncryptionKey: config.dataEncryptionKey,
+  env: { ANTHROPIC_API_KEY: 'test-key', AI_PROVIDER: 'anthropic', AI_QUALITY_MODEL: 'test-model' },
+  fetchImpl: async () => ({ ok: true, json: async () => ({ content: [{ text: JSON.stringify({ resume_text: `${safeGeneratedResume}\nCertified Scrum Master.`, cover_letter_text: '', source_map: sourceMap }) }] }) }),
+  now: new Date('2026-08-29T16:00:06.000Z'),
+});
+assert.equal(unsafeResult.status, 'Waiting for You');
+assert.equal(unsafeResult.lastErrorCode, 'PACKAGE_REVIEW_REQUIRED');
+assert.equal(unsafeResult.result.qaStatus, 'human-review-required');
+assert.deepEqual(unsafeResult.result.artifacts, [], 'unverified text must not produce application documents');
+assert.equal(unsafeResult.result.transmission, 'none');
+assert.equal(unsafeResult.result.submission, 'none');
+assert.equal(unsafeResult.result.externalApplicationExecution, false);
+assert.match(unsafeResult.result.resumeText, /Certified Scrum Master/, 'preserve the draft for correction rather than silently deleting claims');
 
 const revisionMission = {
   ...packageInput,

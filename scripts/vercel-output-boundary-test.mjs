@@ -1,52 +1,74 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { chromium } from '@playwright/test';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const projectLinkPath = path.join(root, '.vercel', 'project.json');
-let temporaryProjectLink = false;
-if (!existsSync(projectLinkPath)) {
-  const projectId = String(process.env.VERCEL_PROJECT_ID || '');
-  const orgId = String(process.env.VERCEL_ORG_ID || '');
-  if (!/^prj_[A-Za-z0-9]{20,}$/.test(projectId) || !/^team_[A-Za-z0-9]{20,}$/.test(orgId)) {
-    throw new Error('A local Vercel project link or the non-secret VERCEL_PROJECT_ID and VERCEL_ORG_ID identifiers are required.');
-  }
-  mkdirSync(path.dirname(projectLinkPath), { recursive: true });
-  const projectLink = {
-    projectId,
-    orgId,
-    projectName: '1ststep-resume',
-    settings: {
-      framework: null,
-      devCommand: null,
-      installCommand: null,
-      buildCommand: null,
-      outputDirectory: null,
-      rootDirectory: null,
-      directoryListing: false,
-      nodeVersion: '24.x',
-    },
-  };
-  writeFileSync(projectLinkPath, `${JSON.stringify(projectLink, null, 2)}\n`, { flag: 'wx' });
-  temporaryProjectLink = true;
+const expectedProjectId = 'prj_Lo7pjU6rfjxa30mEFE6TFuU0ZTcI';
+const expectedOrgId = 'team_hCdrlUnNBwc8vozwFwF5WkjP';
+for (const [name, expected] of [['VERCEL_PROJECT_ID', expectedProjectId], ['VERCEL_ORG_ID', expectedOrgId]]) {
+  assert.ok(!process.env[name] || process.env[name] === expected, `${name} must identify the canonical Job Agent project.`);
 }
-const buildCommand = process.platform === 'win32'
-  ? { command: process.env.ComSpec || 'cmd.exe', args: ['/d', '/s', '/c', 'npx vercel build --prod --yes'] }
-  : { command: 'npx', args: ['vercel', 'build', '--prod', '--yes'] };
-const buildEnvironment = { ...process.env, VERCEL_TELEMETRY_DISABLED: '1' };
-delete buildEnvironment.VERCEL_TOKEN;
-const build = spawnSync(buildCommand.command, buildCommand.args, {
-  cwd: root,
-  encoding: 'utf8',
-  stdio: 'pipe',
-  maxBuffer: 20 * 1024 * 1024,
-  env: buildEnvironment,
-});
-if (temporaryProjectLink) rmSync(projectLinkPath, { force: true });
+if (existsSync(projectLinkPath)) {
+  const link = JSON.parse(readFileSync(projectLinkPath, 'utf8'));
+  assert.equal(link.projectId, expectedProjectId, 'Refusing build against a noncanonical Vercel project link.');
+  assert.equal(link.orgId, expectedOrgId, 'Refusing build against a noncanonical Vercel team.');
+  assert.ok(link.settings && typeof link.settings === 'object', 'Offline build requires local project settings; no remote pull is permitted.');
+}
+// Do not let dotenv files supply deployment credentials or production data configuration.
+for (const directory of [root, path.join(root, '.vercel')]) {
+  if (!existsSync(directory)) continue;
+  assert.ok(!readdirSync(directory).some(name => /^\.env(?:$|\.)/.test(name) && name !== '.env.example'),
+    'Local environment files are not permitted in this isolated build; use a clean candidate checkout.');
+}
+// npm's Windows .cmd shim requires shell quoting; invoke its installed JS entry directly.
+const cliPath = process.env.VERCEL_CLI_PATH || (process.platform === 'win32'
+  ? [path.join(root, 'node_modules', 'vercel', 'dist', 'vc.js'),
+    ...String(process.env.PATH || process.env.Path || '').split(path.delimiter)
+      .map(directory => path.join(directory, 'node_modules', 'vercel', 'dist', 'vc.js'))]
+    .find(candidate => existsSync(candidate))
+  : undefined);
+assert.ok(process.platform !== 'win32' || cliPath,
+  'An installed Vercel CLI is required; set VERCEL_CLI_PATH to its absolute dist/vc.js entry.');
+if (cliPath) assert.ok(path.isAbsolute(cliPath) && existsSync(cliPath), 'VERCEL_CLI_PATH must identify an installed CLI entry point.');
+const buildEnvironment = {};
+for (const [name, value] of Object.entries(process.env)) {
+  if (/^(?:PATH|PATHEXT|SYSTEMROOT|WINDIR|COMSPEC|TEMP|TMP|TMPDIR|HOME|USERPROFILE|APPDATA|LOCALAPPDATA|PROGRAMFILES|PROGRAMFILES\(X86\))$/i.test(name)) buildEnvironment[name] = value;
+}
+buildEnvironment.VERCEL_TELEMETRY_DISABLED = '1';
+buildEnvironment.NO_UPDATE_NOTIFIER = '1';
+buildEnvironment.CI = '1';
+const isolatedConfig = mkdtempSync(path.join(tmpdir(), 'firststep-vercel-build-'));
+let temporaryProjectLink = false;
+let build;
+try {
+  if (!existsSync(projectLinkPath)) {
+    mkdirSync(path.dirname(projectLinkPath), { recursive: true });
+    writeFileSync(projectLinkPath, `${JSON.stringify({
+      projectId: expectedProjectId,
+      orgId: expectedOrgId,
+      projectName: '1ststep-resume',
+      settings: { framework: null, devCommand: null, installCommand: null, buildCommand: null,
+        outputDirectory: null, rootDirectory: null, directoryListing: false, nodeVersion: '24.x' },
+    }, null, 2)}\n`, { flag: 'wx' });
+    temporaryProjectLink = true;
+  }
+  // Native global-config isolation excludes cached Vercel accounts. Never use npx auto-install.
+  const args = ['build', '--prod', '--yes', '--global-config', isolatedConfig];
+  const command = cliPath ? process.execPath : 'vercel';
+  const commandArgs = cliPath ? [cliPath, ...args] : args;
+  build = spawnSync(command, commandArgs, { cwd: root, encoding: 'utf8', stdio: 'pipe',
+    maxBuffer: 20 * 1024 * 1024, env: buildEnvironment });
+} finally {
+  if (temporaryProjectLink) rmSync(projectLinkPath, { force: true });
+  rmSync(isolatedConfig, { recursive: true, force: true });
+}
 
 if (build.status !== 0) {
   process.stderr.write(build.stdout || '');
@@ -90,6 +112,7 @@ const expectedStatic = [
   'client/concierge-domain.js',
   'client/job-intelligence.js',
   'client/job-mission-relevance.js',
+  'client/discovery-screening-summary.js',
   'client/interview-practice.js',
   'client/opportunity-paths.js',
   'client/subscriber-ui-model.js',
@@ -97,6 +120,7 @@ const expectedStatic = [
   'client/admin-cost-dashboard.js',
   'client/admin-system-alerts.js',
   'client/prohibited-secret.js',
+  'client/clerk-browser-script.js',
   '1ststep-logo.png',
   'og-1ststep-ai.png',
   '1ststep-ai-icon.png',
@@ -106,6 +130,55 @@ const expectedStatic = [
 for (const file of expectedStatic) {
   assert(staticFiles.has(file), `Expected public asset missing from Vercel output: ${file}`);
 }
+assert(!staticFiles.has('login.html'), 'Static login.html shadows the environment-specific login response and its security headers');
+
+function relativeModuleSpecifiers(source) {
+  const specifiers = new Set();
+  const patterns = [
+    /^\s*(?:import|export)\s+[\s\S]*?\sfrom\s+['"](\.{1,2}\/[^'"]+)['"]/gm,
+    /^\s*import\s+['"](\.{1,2}\/[^'"]+)['"]/gm,
+    /\bimport\s*\(\s*['"](\.{1,2}\/[^'"]+)['"]\s*\)/g,
+  ];
+  for (const pattern of patterns) {
+    for (const match of source.matchAll(pattern)) specifiers.add(match[1]);
+  }
+  return [...specifiers];
+}
+
+function resolvePublicModule(importer, specifier) {
+  const cleanSpecifier = specifier.split(/[?#]/, 1)[0];
+  const resolved = path.posix.normalize(path.posix.join(path.posix.dirname(importer), cleanSpecifier));
+  assert(!resolved.startsWith('../') && resolved !== '..', `Public module escapes generated output: ${importer} -> ${specifier}`);
+  const candidates = path.posix.extname(resolved)
+    ? [resolved]
+    : [resolved, `${resolved}.js`, `${resolved}/index.js`];
+  const match = candidates.find(candidate => staticFiles.has(candidate));
+  assert(match, `Public module dependency missing from generated output: ${importer} -> ${specifier}`);
+  return match;
+}
+
+async function verifyPublicModuleClosure(entryModule) {
+  const pending = [entryModule];
+  const visited = new Set();
+  while (pending.length > 0) {
+    const modulePath = pending.pop();
+    if (visited.has(modulePath)) continue;
+    assert(staticFiles.has(modulePath), `Public module entry missing from generated output: ${modulePath}`);
+    visited.add(modulePath);
+    const source = await readFile(path.join(staticRoot, modulePath), 'utf8');
+    for (const specifier of relativeModuleSpecifiers(source)) {
+      const dependency = resolvePublicModule(modulePath, specifier);
+      if (!visited.has(dependency)) pending.push(dependency);
+    }
+  }
+  return visited;
+}
+
+const publicModuleClosure = new Set([
+  ...await verifyPublicModuleClosure('app.js'),
+  ...await verifyPublicModuleClosure('concierge.js'),
+  ...await verifyPublicModuleClosure('login.js'),
+]);
 
 const forbiddenExact = [
   'lib/job-agent-spend-ledger.js',
@@ -156,8 +229,10 @@ for (const requiredFunction of [
   'health.func',
   'app-config.func',
   'concierge-state.func',
+  'captured-jobs.func',
   'job-agent-runs.func',
   'user-session.func',
+  'partner.func',
   'health/live.func',
   'health/ready.func',
   'health/dependencies.func',
@@ -166,11 +241,45 @@ for (const requiredFunction of [
   assert(functionNames.has(requiredFunction), `Expected serverless API function missing: api/${requiredFunction}`);
 }
 assert(functionNames.has('job-agent-discord-relay.func'), 'Expected serverless API function missing: api/job-agent-discord-relay.func');
-assert.equal(functionNames.size, 42, `Unexpected API function count: ${functionNames.size}`);
+assert(functionNames.has('login-page.func'), 'Expected environment-specific login CSP function missing: api/login-page.func');
+assert.equal(functionNames.size, 45, `Unexpected API function count: ${functionNames.size}`);
+
+function cspDirectiveSources(csp, directive) {
+  const prefix = `${directive} `;
+  const part = String(csp || '').split(';').map(item => item.trim())
+    .find(item => item === directive || item.startsWith(prefix));
+  return part ? part.slice(directive.length).trim().split(/\s+/).filter(Boolean) : [];
+}
+
+function cspHasExactHttpsOrigin(csp, directive, origin) {
+  const expected = new URL(origin);
+  if (expected.protocol !== 'https:' || expected.username || expected.password || expected.port
+    || expected.pathname !== '/' || expected.search || expected.hash) {
+    throw new Error('CSP origin comparison requires an exact HTTPS origin.');
+  }
+  return cspDirectiveSources(csp, directive).some(source => {
+    try {
+      const url = new URL(source);
+      return url.protocol === 'https:' && !url.username && !url.password && !url.port
+        && url.pathname === '/' && !url.search && !url.hash && url.origin === expected.origin;
+    } catch {
+      return false;
+    }
+  });
+}
 
 const outputConfig = JSON.parse(await readFile(path.join(outputRoot, 'config.json'), 'utf8'));
 const routeText = JSON.stringify(outputConfig.routes || []);
-for (const route of ['/app', '/concierge', '/pricing', '/terms', '/privacy']) {
+assert(routeText.includes('login-page'), 'Environment-specific login page rewrite is missing');
+const loginPageRoute = (outputConfig.routes || []).find(route => route.src === '^/login\\.html$' && route.dest === '/api/login-page');
+assert(loginPageRoute, 'Compiled /login.html route must reach the environment-specific login function');
+const loginFunctionConfig = JSON.parse(await readFile(path.join(outputRoot, 'functions', 'api', 'login-page.func', '.vc-config.json'), 'utf8'));
+assert.equal(loginFunctionConfig.filePathMap?.['login.html'], 'login.html', 'Login HTML must remain available to the server-only login function');
+const defaultCspRoute = (outputConfig.routes || []).find(route => (
+  cspHasExactHttpsOrigin(route.headers?.['Content-Security-Policy'], 'form-action', 'https://buy.stripe.com')
+));
+assert(defaultCspRoute?.src.includes('?!login'), 'Site-wide CSP must exclude the environment-specific login response');
+for (const route of ['/app', '/partner', '/concierge', '/pricing', '/terms', '/privacy']) {
   assert(routeText.includes(route), `Expected route missing from Vercel output config: ${route}`);
 }
 assert(routeText.includes('/api'), 'Expected API function routing missing from Vercel output config');
@@ -198,7 +307,14 @@ const outputServer = createServer(async (request, response) => {
     response.writeHead(404);
     return response.end('Not found');
   }
-  response.writeHead(200);
+  const contentTypes = {
+    '.css': 'text/css; charset=utf-8',
+    '.html': 'text/html; charset=utf-8',
+    '.js': 'text/javascript; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
+    '.svg': 'image/svg+xml',
+  };
+  response.writeHead(200, { 'Content-Type': contentTypes[path.extname(relative)] || 'application/octet-stream' });
   return response.end(await readFile(path.join(staticRoot, relative)));
 });
 await new Promise((resolve, reject) => {
@@ -225,8 +341,33 @@ try {
   ]) {
     assert.equal((await fetch(`${origin}${route}`)).status, 404, `Internal path was unexpectedly public: ${route}`);
   }
+
+  const browser = await chromium.launch();
+  try {
+    for (const route of ['/app?uiFixture=subscriber', '/concierge?uiFixture=subscriber']) {
+      const page = await browser.newPage();
+      const moduleErrors = [];
+      page.on('pageerror', error => moduleErrors.push(`pageerror: ${error.message}`));
+      page.on('requestfailed', request => {
+        if (/\.(?:m?js)(?:[?#]|$)/i.test(request.url())) {
+          moduleErrors.push(`requestfailed: ${request.url()} (${request.failure()?.errorText || 'unknown'})`);
+        }
+      });
+      page.on('response', response => {
+        if (/\.(?:m?js)(?:[?#]|$)/i.test(response.url()) && response.status() >= 400) {
+          moduleErrors.push(`module response: ${response.status()} ${response.url()}`);
+        }
+      });
+      await page.goto(`${origin}${route}`, { waitUntil: 'load' });
+      await page.waitForFunction(() => document.querySelector('#timeSavedTotal')?.textContent?.trim() === '47 min');
+      assert.deepEqual(moduleErrors, [], `Built-output module loading failed for ${route}:\n${moduleErrors.join('\n')}`);
+      await page.close();
+    }
+  } finally {
+    await browser.close();
+  }
 } finally {
   await new Promise(resolve => outputServer.close(resolve));
 }
 
-console.log(`Vercel output boundary verified: ${staticFiles.size} intentional static files, ${functionNames.size} API functions, no internal-source or extension-package leaks.`);
+console.log(`Vercel output boundary verified: ${staticFiles.size} intentional static files, ${publicModuleClosure.size} reachable public modules, ${functionNames.size} API functions, no internal-source or extension-package leaks.`);

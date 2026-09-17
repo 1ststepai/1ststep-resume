@@ -10,14 +10,18 @@ assert.match(conciergeSource, /captureId !== jobCaptureIdFromUrl\(\)/);
 assert.match(conciergeSource, /pendingJobAgentCapture = \{ captureId, jobData \}/);
 assert.doesNotMatch(conciergeSource, /JOB_CAPTURE_KEY|sessionStorage\.setItem\('1ststep_pending_capture'/,
   'Job Agent must not duplicate the raw captured posting into clear-text browser storage');
-assert.doesNotMatch(conciergeSource.slice(conciergeSource.indexOf("event.data.type !== '1STSTEP_JOB_CAPTURE'"), conciergeSource.indexOf('const LOCAL_APPLICATION_UI_FIXTURE')), /1STSTEP_JOB_CAPTURE_ACK/,
-  'Job Agent must leave the extension capture available for an explicit Resume Builder handoff');
+assert.match(conciergeSource.slice(conciergeSource.indexOf('async function consumeJobAgentCapture'), conciergeSource.indexOf('function workingIndicator')), /fetch\('\/api\/captured-jobs'/,
+  'Job Agent must persist the selected capture to the signed-in account');
+assert.match(conciergeSource.slice(conciergeSource.indexOf('async function consumeJobAgentCapture'), conciergeSource.indexOf('function workingIndicator')), /1STSTEP_JOB_CAPTURE_ACK/,
+  'Job Agent may retire the extension copy only after account-backed persistence succeeds');
 assert.doesNotMatch(conciergeSource.slice(conciergeSource.indexOf('function consumeJobAgentCapture'), conciergeSource.indexOf('function workingIndicator')), /runTailoring\(|generateDurablePackage\(|startDurableApplication\(/,
   'receiving a generic capture must not generate, apply, or spend automatically');
 assert.match(conciergeSource, /Captured page: \$\{job\.location\} \(not independently verified\)/,
   'captured location must be shown as unverified evidence');
 assert.match(conciergeSource, /Captured page: \$\{job\.salaryText\} \(not independently verified\)/,
   'captured pay must be shown as unverified evidence');
+assert.match(conciergeSource, /get\('welcome'\) === 'extension'/);
+assert.match(conciergeSource, /The browser helper is connected\./);
 
 const added = addRole(createDeskState({}), {
   id: 'captured_test', employer: 'Example Supply', title: 'Senior Buyer',
@@ -50,4 +54,4 @@ assert.throws(() => validateDurableCampaignState({
   subscriberView: { ...durableState.subscriberView, jobCards: [{ ...durableState.subscriberView.jobCards[0], jobDescription: 'private captured text' }] },
 }), /Unsupported durable subscriber field/);
 
-console.log('Job Agent capture stays in memory, user-selected, unverified, metadata-only when durable, visible for review, and never auto-generates or submits.');
+console.log('Job Agent capture is account-backed, fail-closed until verified, metadata-only in campaign state, visible for review, and never auto-generates or submits.');

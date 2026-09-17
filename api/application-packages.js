@@ -10,6 +10,8 @@ import { JOB_AGENT_POLICY_LEVELS, requireJobAgentPolicyLevel } from '../lib/job-
 import { deleteApplicationPackageArtifacts } from '../lib/job-agent-object-storage.js';
 import { jobAgentThroughputDecision, publicJobAgentThroughput } from '../lib/job-agent-throughput-policy.js';
 import { reviewablePackageBase } from '../lib/application-package-revision.js';
+import { readApplicantVault } from '../lib/applicant-vault-store.js';
+import { packageSourceReviewMatches, reconcilePackageResumeInput } from '../lib/resume-package-reconciliation.js';
 import { waitUntil } from '@vercel/functions';
 
 export const maxDuration = 60;
@@ -111,9 +113,23 @@ export default async function handler(req, res) {
         },
       };
     } else {
+      const vault = (await readApplicantVault({ ...config, subject: auth.subject })).vault;
+      const reconciled = reconcilePackageResumeInput({ vault, browserText: packageMission?.resumeText });
+      if (reconciled.status === 'needs-review') return res.status(409).json({
+        error: reconciled.conflicts.some(item => item.type === 'BASE_RESUME_SELECTION_REQUIRED')
+          ? 'Select one reviewed base résumé version in Saved Info before preparing a package.'
+          : 'Your base resume and verified facts need review before preparing a package.',
+        code: 'RESUME_REVIEW_REQUIRED', conflicts: reconciled.conflicts.slice(0, 20),
+      });
+      if (!packageSourceReviewMatches(packageMission?.sourceReview, reconciled, String(packageMission?.requisitionId || ''))) {
+        return res.status(409).json({ error: 'Review the selected résumé, saved facts, and material narrative for this exact job before preparing a package.', code: 'SOURCE_REVIEW_REQUIRED' });
+      }
       const discoveryRunId = String(packageMission?.discoveryRunId || '');
       const discoveryRun = await readJobAgentRun({ ...config, subject: auth.subject, runId: discoveryRunId });
-      packageMission = await bindPackageToFreshVerifiedDiscovery(discoveryRun, packageMission, { sources: config.sources });
+      const bound = await bindPackageToFreshVerifiedDiscovery(discoveryRun, { ...packageMission, resumeText: reconciled.resumeText }, { sources: config.sources });
+      packageMission = { ...bound, baseResume: reconciled.baseResume, verifiedFacts: reconciled.verifiedFacts,
+        verifiedFactsHash: reconciled.verifiedFactsHash,
+        sourceReview: { ...packageMission.sourceReview, reviewedAt: new Date().toISOString() } };
       await recordConfiguredJobAgentOperationalEvent('direct_employer_reverification_open');
     }
     const created = await createJobAgentRun({
@@ -132,6 +148,7 @@ export default async function handler(req, res) {
     return res.status(run?.status === 'Finished' ? 200 : 202).json({ run: clientRun(run), replayed: created.replayed, throughput: publicJobAgentThroughput(planDecision), submissionsEnabled: false });
   } catch (error) {
     const message = String(error?.message || '');
+    if (/selected (?:account-backed )?base resume|verified applicant fact versions/i.test(message)) return res.status(409).json({ error: 'The selected base résumé or confirmed facts changed. Review Saved Info before preparing a package.', code: 'RESUME_REVIEW_REQUIRED' });
     if (/requisition is closed/i.test(message)) { await recordConfiguredJobAgentOperationalEvent('direct_employer_reverification_closed'); return res.status(409).json({ error: message, code: 'DIRECT_EMPLOYER_REQUISITION_CLOSED' }); }
     if (/requisition changed/i.test(message) || /PUBLIC_ATS_REVERIFICATION_IDENTITY_CHANGED/.test(message)) { await recordConfiguredJobAgentOperationalEvent('direct_employer_reverification_changed'); return res.status(409).json({ error: 'The direct-employer requisition changed. Search again before preparing documents.', code: 'DIRECT_EMPLOYER_REQUISITION_CHANGED' }); }
     if (/could not be reverified/i.test(message) || /PUBLIC_ATS_REVERIFICATION_(?:TRANSIENT|REJECTED|SOURCE_NOT_FOUND)/.test(message)) { await recordConfiguredJobAgentOperationalEvent('direct_employer_reverification_failure'); return res.status(503).json({ error: 'The direct-employer requisition could not be reverified. Try again later.', code: 'DIRECT_EMPLOYER_REVERIFICATION_UNAVAILABLE' }); }
