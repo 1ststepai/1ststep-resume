@@ -3,7 +3,7 @@
 Operational snapshot for Job Agent only. Not 1ststep.ai consultancy, not `resume.1ststep.ai` acquisition, not `partners.1ststep.ai`.
 Chat is not authority. Recency of commits is not authority.
 
-Captured: 2026-09-18
+Captured: 2026-09-18 (portability preserve)
 
 ## Canonical remote
 
@@ -13,21 +13,23 @@ Captured: 2026-09-18
 
 | Layer | SHA | Notes |
 |---|---|---|
-| PRODUCTION integrated SOURCE | `d64e1743a63c40760d2c7ce8ef8f5a2f75d53f29` on `origin/main` | Verified listings #84. Do not assume host equals this until HOSTED VERIFIED. |
+| PRODUCTION integrated SOURCE | `d64e1743a63c40760d2c7ce8ef8f5a2f75d53f29` on `origin/main` | Untouched. Do not assume host equals this until HOSTED VERIFIED. |
 | Owner-reviewed policy baseline | `7ed4e183d445baf2d1129b90e38fcffe3cfec59a` | R2: H1/H2/M2 PASS, M1 FAIL (capability ceiling). |
-| R3 TESTED | `cfa483c77d22b2b6150255744865aee5583235f3` | Independent audit **PASS**. M1 ceiling. |
-| Release lane SOURCE HEAD | local `codex/owner-reviewed-controlled-beta-20260917` **`b391a3f`** (R3 + polish) | COMMITTED locally. **DIRTY.** NOT proven PUSHED / MERGED / DEPLOYED / HOSTED VERIFIED. |
-| UX candidate | `8d3ac083e4906c7d2940e7e4501191b8f4c923d3` | Held. Presentation only. Base was `7ed4e18`. |
-| UX worktree HEAD | `a0d8c1498304161a38becd027173a02bcf1a6765` | **DIRTY** action-first + landing conversion uncommitted. |
+| R3 TESTED | `cfa483c77d22b2b6150255744865aee5583235f3` | Independent audit **PASS**. Capability ceiling. **Authoritative security/release SHA.** |
+| Release lane SOURCE | `codex/owner-reviewed-controlled-beta-20260917` contains R3 + presentation polish `b391a3f` + this handoff docs | Application authority for security remains R3. Do not treat later docs commits as a new R3. |
+| Existing UX polish | `8d3ac083e4906c7d2940e7e4501191b8f4c923d3` | Ancestor of the final UX candidate. Presentation only vs `7ed4e18`. |
+| Action-first + landing | `6aa7b50a8121929d26d7aa852d4a5b37b49609e5` | Inspect-only successor on the UX branch. |
+| FINAL UX CANDIDATE | `cdab3c98af2cde461150adf5e59b5483758d2b35` on `cursor/job-agent-ui-ux-polish-20260917` | Action-first + landing + tester-accepted one-action/auto-prepare overlay. **Not merged into R3.** |
+| Launch-access preservation | `afcd97351fd23f03b768e0ff5a7befc2aa42987a` on `cursor/owner-reviewed-launch-access-20260918` | Page-owner admin + invited-tester access. Isolated. Not R3. |
 | Engineering PR #86 | `bbb6ee31bffdd6c84729639c29d1d94c5ddb320e` | **FROZEN.** |
 | DEPLOYED Production `https://app.1ststep.ai` | **NOT VERIFIED** as R3/UX SHAs | Do not infer from local commits. |
 
 ## Worktrees
 
-- Release: `C:\Users\evanp\Documents\Claude\Projects\1ststep.ai\.worktrees\owner-reviewed-controlled-beta-20260917` — DIRTY (concierge/entitlement/session files). **SAFE TO SWITCH: NO.**
-- UX: `C:\Users\evanp\Documents\Claude\Projects\1ststep.ai\.worktrees\job-agent-ui-ux-polish-20260917` — DIRTY. **SAFE TO SWITCH: NO.**
-- Chrome extension / store policy `7a57fd7` and partners affiliate branches: **ACTIVE ISOLATED**, not this release lane.
-- Post-beta streams: isolated; must not enter controlled-beta.
+- Release: `C:\Users\evanp\Documents\Claude\Projects\1ststep.ai\.worktrees\owner-reviewed-controlled-beta-20260917` — may still hold local copies of already-preserved files. Do not switch a second executor onto it.
+- UX: `...\job-agent-ui-ux-polish-20260917` — final UX candidate committed and pushed.
+- Launch-access: `...\owner-reviewed-launch-access-20260918` — isolated preservation.
+- Chrome extension / store policy, partners, post-beta: **ACTIVE ISOLATED**, not this release lane.
 
 ## Gates
 
@@ -35,36 +37,37 @@ Captured: 2026-09-18
 |---|---|
 | Independent R2 | FAIL M1 (historical) |
 | R3 implementation + independent audit | PASS on `cfa483c` |
-| UX integrate | held — Director only; do not auto-integrate |
-| Zero-user Preview | pending / blocked |
+| UX integrate | held — **Director only**; do not auto-integrate |
+| Zero-user Preview | pending / owner gate |
 | One invited test user E2E | pending |
 | Complete human E2E | pending |
-| Controlled 5-user beta | **0/5** |
-| Counsel / Production signedBeta | blocked; `JOB_AGENT_COUNSEL_APPROVED` unset |
+| Controlled 5-user beta | **0/5** in this handoff (do not enable tenants in the portability job) |
+| Counsel / Production signedBeta | blocked; `JOB_AGENT_COUNSEL_APPROVED` unset / false |
 
 ## Current blocker
 
-Dirty release + UX worktrees. After hygiene: Director may integrate `8d3ac08` onto clean R3 lineage and run release tests. **No Preview, no tenant enablement, no Production.**
+Director-only integrate of `cdab3c9` onto a **new** worktree of `cfa483c`. Then tests, Chrome extension exact-RC, zero-user Preview, one-user E2E, controlled beta up to 5.
 
 ## Active job
 
-Dispatcher: `JA-UX-CANDIDATE` BLOCKED (held). R3 audit PASS. Post-beta isolated.
+`JA-UX-INTEGRATE` (Director). Portability preserve is complete once this handoff is PUSHED.
 
 ## Next executor
 
-Not Codex on these dirty worktrees. Preserve dirty files first. Then Director/implementation on a **clean** copy of `cfa483c`/`b391a3f` if the owner commits polish separately.
+Fresh Codex: `git fetch` + new worktree of the release handoff branch. Identify R3 `cfa483c` and UX `cdab3c9`. Do not deploy. Do not set counsel. Do not modify PR #86.
 
 ## Chrome extension / landing
 
-- Extension: Greenhouse-only controlled-release (decision D-2026-09-04). Store-policy worktree dirty — not beta gate.
-- Landing conversion + action-first: IMPLEMENTED in UX dirty tree, not COMMITTED. Waitlist ≠ beta tenants.
+- Extension: Greenhouse-only controlled-release (decision D-2026-09-04). Store-policy worktrees remain isolated — exact-RC verification is a later job.
+- Landing waitlist ≠ beta tenants (`grantsBetaAccess: false`).
 
 ## Branch classes
 
 | Ref | Class |
 |---|---|
 | `origin/main` `d64e174` | AUTHORITATIVE production integration |
-| `codex/owner-reviewed-controlled-beta-20260917` | ACTIVE ISOLATED release |
-| `cursor/job-agent-ui-ux-polish-20260917` | ACTIVE ISOLATED UX |
-| PR #86 `bbb6ee3` | FROZEN / HISTORICAL for this lane |
-| Chrome-store / partners / learning R&D worktrees | ACTIVE ISOLATED or UNKNOWN — not Job Agent beta authority |
+| `codex/owner-reviewed-controlled-beta-20260917` | ACTIVE ISOLATED release handoff |
+| `cursor/job-agent-ui-ux-polish-20260917` | ACTIVE ISOLATED UX candidate |
+| `cursor/owner-reviewed-launch-access-20260918` | ACTIVE ISOLATED access preservation |
+| PR #86 `bbb6ee3` | FROZEN |
+| Chrome-store / partners / post-beta | ACTIVE ISOLATED — not Job Agent beta authority |
