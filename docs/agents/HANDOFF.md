@@ -5,26 +5,26 @@ Keep this file short. Update it before relinquishing control.
 
 ACTIVE AGENT: none (baton open for the next competent agent)
 LAST AGENT: Cursor
-TIMESTAMP: 2026-09-18T12:30:00-04:00
+TIMESTAMP: 2026-09-18T13:15:00-04:00
 REPOSITORY: https://github.com/1ststepai/1ststep-resume.git
 CANONICAL BRANCH: `main` (production integrated SHA is `origin/main`)
-HEAD SHA: `a0d8c1498304161a38becd027173a02bcf1a6765`
+HEAD SHA: `6aa7b50a8121929d26d7aa852d4a5b37b49609e5`
 ACTIVE BRANCH: `cursor/job-agent-ui-ux-polish-20260917`
 ACTIVE WORKTREE: `C:/Users/evanp/Documents/Claude/Projects/1ststep.ai/.worktrees/job-agent-ui-ux-polish-20260917`
 TASK ID: UX-POLISH-20260917
-TASK: Make every canonical Job Agent screen action-first without changing beta/security/release semantics.
-STATUS: Action-first UX IMPLEMENTED in this dirty working tree (includes prior landing conversion). UX polish remains COMMITTED at `8d3ac08`. Protocol remains COMMITTED at `616e450` / snapshot `a0d8c14`. None of these SHAs are PUSHED, MERGED, DEPLOYED, or HOSTED VERIFIED.
-LAST COMPLETED ACTION: Applied action-first P0/P1: one Start Job Agent landing CTA, Step X of Y setup, Saved Info / My Jobs / Needs You / extension journey CTAs, customer-facing jargon stripped. Report: `docs/UX_ACTION_FIRST_2026-09-18.md`.
-FILES CHANGED: uncommitted landing, concierge, extension, tests, and agent docs listed in git status. Do not mix with the dirty owner-reviewed worktree.
-COMMITS CREATED: none for action-first or landing conversion. Prior commits on this branch: `8d3ac08` polish, `616e450` handoff protocol, `a0d8c14` git snapshot.
-UNCOMMITTED CHANGES: action-first UX plus landing conversion. Sibling: `codex/owner-reviewed-controlled-beta-20260917` HEAD `b391a3f` is DIRTY (many concierge/entitlement files, not only `lib/employer-browser-session-provider.js`). R3 TESTED SHA `cfa483c`. SAFE TO SWITCH NO.
-BLOCKERS: action-first and landing conversion are not COMMITTED (owner must request a commit). Release-lane review of `8d3ac08` has not happened and must not wait on this dirty tree. Do not check out owner-reviewed until dirty files are preserved. Do not deploy. Do not enable beta tenants. Do not set `JOB_AGENT_COUNSEL_APPROVED`. Zero-user Preview / one-user E2E / 5-user beta remain pending (0/5).
-NEXT ACTION: Preserve dirty trees. Review UI/UX candidate `8d3ac083e4906c7d2940e7e4501191b8f4c923d3` from a **new** worktree of R3 `cfa483c77d22b2b6150255744865aee5583235f3` with `git diff 7ed4e18 8d3ac08`. Confirm presentation-only. Action-first/landing stays uncommitted unless the owner asks. Do not push/merge/deploy without owner approval.
-TESTS RUN: `npm run test:homepage` PASS; `node scripts/concierge-test.mjs` PASS; `node scripts/subscriber-ui-model-test.mjs` PASS; `node scripts/agent-handoff-status-test.mjs` PASS; Playwright landing-conversion + extension-popup PASS.
-TEST RESULTS: all of the above PASS. Full `npm run release:gate` has not been claimed.
-KNOWN FAILURES: none recorded yet.
+TASK: Produce one clean reviewable action-first UX successor without merging onto the controlled-beta baseline.
+STATUS: Action-first + landing UX COMMITTED at `6aa7b50`. Includes polish `8d3ac08`. Protocol at `616e450` / `a0d8c14` / `05f411f`. NOT MERGED, DEPLOYED, or HOSTED VERIFIED. Do not merge onto owner-reviewed.
+LAST COMPLETED ACTION: Committed inspect-only UX successor `6aa7b50a8121929d26d7aa852d4a5b37b49609e5`. Report: `docs/UX_ACTION_FIRST_2026-09-18.md`.
+FILES CHANGED: landing, waitlist APIs, concierge/extension presentation, tests, UX reports. Owner-reviewed dirty worktree was not touched.
+COMMITS CREATED: `6aa7b50` action-first+landing successor. Prior: `8d3ac08` polish, `616e450` handoff, `a0d8c14` / `05f411f` snapshots.
+UNCOMMITTED CHANGES: handoff snapshot in progress. Sibling: `codex/owner-reviewed-controlled-beta-20260917` HEAD `b391a3f` is DIRTY. R3 TESTED SHA `cfa483c`. SAFE TO SWITCH NO.
+BLOCKERS: Do not merge this UX SHA onto the controlled-beta release baseline. R3 remains authoritative. Do not check out owner-reviewed until dirty files are preserved. Do not deploy. Do not enable beta tenants. Do not set `JOB_AGENT_COUNSEL_APPROVED`. Zero-user Preview / one-user E2E / 5-user beta remain pending (0/5).
+NEXT ACTION: Preserve the dirty owner-reviewed worktree. Codex inspects UX successor `6aa7b50a8121929d26d7aa852d4a5b37b49609e5` (includes polish `8d3ac08`) from a new worktree of that SHA. Diff `git diff 7ed4e18 6aa7b50`. Confirm presentation-only. Do not merge onto `codex/owner-reviewed-controlled-beta-20260917`. R3 `cfa483c` remains the security authority. After inspect, run `npm run pretest:concierge`.
+TESTS RUN: `npm run test:homepage` PASS; `npm run pretest:concierge && npm run test:concierge` PASS; `node scripts/subscriber-ui-model-test.mjs` PASS; `node scripts/agent-handoff-status-test.mjs` PASS; Playwright landing-conversion + beta-request (390/1440) PASS; extension-popup PASS; vault+ui-handoff 54/55 (canonical-view tab hydrate can flake; receipt header count stayed 1). `vercel-output-boundary` failed on stale 45-function count; assertion updated to 47; full `vercel build` not re-claimed.
+TEST RESULTS: required homepage/concierge/subscriber/landing/extension suites PASS. Full `npm run release:gate` has not been claimed.
+KNOWN FAILURES: `scripts/concierge-vault-browser.spec.mjs` “canonical view” can flake after `networkidle` (Matches tab 3 vs 1). Do not treat that as a submission-semantics change.
 DO NOT CHANGE: auth, consent, legal gates, access control, Vault authority, package truth, employer submission authority, PR #86 at `bbb6ee3`, application-answer learning R&D, beta scope, owner-reviewed policy semantics, `JOB_AGENT_PILOT_ALLOWED_TENANTS`.
-NEXT VERIFICATION: After any action-first commit, re-run `npm run test:homepage`, `npm run test:landing-conversion`, `npm run pretest:concierge && npm run test:concierge`, and Playwright `scripts/extension-popup-browser.spec.mjs`. For `8d3ac08` integrate, also run `npm run test:browser:vault` plus Playwright `scripts/concierge-job-capture-browser.spec.mjs` and `scripts/ui-handoff-browser.spec.mjs`.
+NEXT VERIFICATION: Codex inspect `git diff 7ed4e18 6aa7b50 --stat` then `npm run pretest:concierge && npm run test:concierge`. Do not merge. Do not deploy.
 DEPLOYMENT STATUS: NOT DEPLOYED. NOT HOSTED VERIFIED.
 
 ## Machine-captured Git snapshot
@@ -32,14 +32,14 @@ DEPLOYMENT STATUS: NOT DEPLOYED. NOT HOSTED VERIFIED.
 Facts below are regenerated by `npm run agent:handoff-status`. If they disagree with the fields above, trust Git for SHA/branch/dirty files, then reconcile the fields. Do not let this block overwrite TASK, NEXT ACTION, or DO NOT CHANGE.
 
 <!-- git-state:start -->
-- Captured at: `2026-09-18T16:33:27.773Z`
+- Captured at: `2026-09-18T17:09:22.796Z`
 - This worktree: `C:\Users\evanp\Documents\Claude\Projects\1ststep.ai\.worktrees\job-agent-ui-ux-polish-20260917`
 - Active branch: `cursor/job-agent-ui-ux-polish-20260917`
-- HEAD SHA: `a0d8c1498304161a38becd027173a02bcf1a6765`
+- HEAD SHA: `6aa7b50a8121929d26d7aa852d4a5b37b49609e5`
 - Upstream: `(none)`
 - Ahead/behind upstream: `n/a`/`n/a`
 - origin/main: `d64e1743a63c40760d2c7ce8ef8f5a2f75d53f29`
-- Dirty files in this worktree: `M 1ststep-extension/popup.html;  M 1ststep-extension/popup.js;  M build-public-web.mjs;  M client/concierge-router.js;  M client/subscriber-ui-model.js;  M concierge.html;  M concierge.js;  M docs/agents/CURRENT-STATE.md;  M docs/agents/DECISIONS.md;  M docs/agents/GIT-STATE.md;  M docs/agents/HANDOFF.md;  M docs/agents/NEXT-ACTIONS.md;  D home-motion-1f7df326a312.css;  D home-motion-4e0eecde7df1.js;  M index.html;  M package.json;  M persistent-concierge.css;  M resume-tailor-landing/ghl-cro-custom-code.html;  M scripts/beta-request-browser.spec.mjs;  M scripts/concierge-test.mjs;  M scripts/concierge-vault-browser.spec.mjs;  M scripts/extension-popup-browser.spec.mjs;  M scripts/homepage-motion-test.mjs;  M scripts/sherlock-security-review.mjs;  M scripts/vercel-output-boundary-test.mjs;  M vercel.json;  M where-to-find-1ststep-ai/index.html; ?? api/public-funnel-event.js; ?? api/public-waitlist.js; ?? docs/SESSION_RETROS/2026-09-18-action-first-ux.md; ?? docs/SESSION_RETROS/2026-09-18-landing-conversion.md; ?? docs/UX_ACTION_FIRST_2026-09-18.md; ?? docs/UX_LANDING_CONVERSION_2026-09-17.md; ?? home-funnel.js; ?? home-motion-cb30a966e447.css; ?? home-motion-e322125499c6.js; ?? lib/public-waitlist-store.js; ?? scripts/landing-conversion-browser.spec.mjs; ?? scripts/public-waitlist-test.mjs`
+- Dirty files in this worktree: `M docs/UX_ACTION_FIRST_2026-09-18.md;  M docs/agents/CURRENT-STATE.md;  M docs/agents/GIT-STATE.md;  M docs/agents/HANDOFF.md;  M docs/agents/NEXT-ACTIONS.md`
 - Worktree count: `69`
-- Dirty worktrees: `codex/chrome-store-policy-update@7a57fd7 (139 dirty); detached@9add18a (2 dirty); detached@d686aa5 (2 dirty); detached@9add18a (2 dirty); codex/aud029-login-headers-20260916@89acfc1 (9 dirty); detached@bbb6ee3 (25 dirty); codex/job-agent-engineering-os-20260912@345bc9b (5 dirty); cursor/job-agent-ui-ux-polish-20260917@a0d8c14 (39 dirty); codex/owner-reviewed-controlled-beta-20260917@b391a3f (28 dirty); release/consolidated-job-agent-v1.6-20260910@89cbd01 (6 dirty); detached@d64e174 (2 dirty); codex/background-continuation-20260910@8a6ba82 (5 dirty); feature/partners-affiliate-redesign@800bcae (1 dirty); detached@deeb03e (8 dirty); detached@f7c9067 (1 dirty); detached@7a57fd7 (124 dirty); detached@0c590a4 (1 dirty); detached@924cd75 (18 dirty); detached@924cd75 (26 dirty)`
+- Dirty worktrees: `codex/chrome-store-policy-update@7a57fd7 (139 dirty); detached@9add18a (2 dirty); detached@d686aa5 (2 dirty); detached@9add18a (2 dirty); codex/aud029-login-headers-20260916@89acfc1 (9 dirty); detached@bbb6ee3 (25 dirty); codex/job-agent-engineering-os-20260912@345bc9b (5 dirty); cursor/job-agent-ui-ux-polish-20260917@6aa7b50 (5 dirty); codex/owner-reviewed-controlled-beta-20260917@f0a15d5 (28 dirty); release/consolidated-job-agent-v1.6-20260910@89cbd01 (6 dirty); detached@d64e174 (2 dirty); codex/background-continuation-20260910@8a6ba82 (5 dirty); feature/partners-affiliate-redesign@800bcae (1 dirty); detached@deeb03e (8 dirty); detached@f7c9067 (1 dirty); detached@7a57fd7 (124 dirty); detached@0c590a4 (1 dirty); detached@924cd75 (18 dirty); detached@924cd75 (26 dirty)`
 <!-- git-state:end -->

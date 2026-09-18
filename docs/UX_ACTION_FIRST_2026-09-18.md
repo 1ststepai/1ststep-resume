@@ -77,7 +77,7 @@ MOBILE: PASS (thumb-dominant guided CTA, bottom nav, full-width empty-state acti
 SECURITY/CONSENT SEMANTICS CHANGED: NO
 BETA SCOPE CHANGED: NO
 EXISTING UX 8d3ac08 RECONCILED: YES
-UX SUCCESSOR SHA: see the commit on `cursor/job-agent-ui-ux-polish-20260917` that added this report (parent `05f411f2bc834ef9e4ef3093dafb919c20235fe7`). Durable SHA is recorded in `docs/agents/CURRENT-STATE.md` after the snapshot.
+UX SUCCESSOR SHA: `6aa7b50a8121929d26d7aa852d4a5b37b49609e5`
 SAFE FOR RELEASE-LANE REVIEW: YES as an isolated UX inspect candidate. NO for merge onto the owner-reviewed controlled-beta baseline until R3 independently passes and Release Validation integrates it.
 
 ## Remaining P2
