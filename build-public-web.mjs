@@ -9,7 +9,6 @@ const publicAssets = [
   'index.html',
   'app.html',
   'concierge.html',
-  'login.html',
   'login.js',
   'login.css',
   'partner.html',

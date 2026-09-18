@@ -81,14 +81,27 @@ assert.doesNotMatch(previewCsp,/https:\/\/clerk\.1ststep\.ai/,'Preview CSP must 
 const priorEnvironment={...process.env};
 try{
   Object.assign(process.env,{VERCEL_ENV:'preview',CLERK_PUBLISHABLE_KEY:developmentKey});
-  const captured={headers:{},statusCode:null,body:null};
-  const response={setHeader:(key,value)=>{captured.headers[key]=value;},status(code){captured.statusCode=code;return this;},send(body){captured.body=body;return this;},end(){return this;}};
-  loginPageHandler({method:'GET'},response);
-  assert.equal(captured.statusCode,200);
-  assert.match(captured.headers['Content-Security-Policy'],/first-impala-7783\.clerk\.accounts\.dev/);
-  assert.equal(captured.headers['X-Frame-Options'],'DENY');
-  assert.equal(captured.headers['X-Content-Type-Options'],'nosniff');
-  assert.match(captured.body,/src="\/login\.js"/);
+  for(const [method,url] of [
+    ['GET','/login.html'],
+    ['GET','/login.html?mode=sign-up&returnTo=%2Fapp'],
+    ['GET','/login.html?mode=sign-out&returnTo=%2Fpartner'],
+    ['HEAD','/login.html?returnTo=%2Fapp'],
+  ]){
+    const captured={headers:{},statusCode:null,body:null};
+    const response={setHeader:(key,value)=>{captured.headers[key]=value;},status(code){captured.statusCode=code;return this;},send(body){captured.body=body;return this;},end(){return this;}};
+    loginPageHandler({method,url},response);
+    assert.equal(captured.statusCode,200,`${method} ${url} must reach the login response`);
+    assert.equal(captured.headers['Cache-Control'],'no-store');
+    assert.match(captured.headers['Content-Security-Policy'],/first-impala-7783\.clerk\.accounts\.dev/);
+    assert.match(captured.headers['Content-Security-Policy'],/frame-ancestors 'none'/);
+    assert.doesNotMatch(captured.headers['Content-Security-Policy'],/clerk\.1ststep\.ai/);
+    assert.equal(captured.headers['X-Frame-Options'],'DENY');
+    assert.equal(captured.headers['X-Content-Type-Options'],'nosniff');
+    assert.equal(captured.headers['Referrer-Policy'],'strict-origin-when-cross-origin');
+    assert.equal(captured.headers['Permissions-Policy'],'camera=(), microphone=(), geolocation=(self)');
+    if(method==='HEAD')assert.equal(captured.body,'');
+    else assert.match(captured.body,/src="\/login\.js"/);
+  }
 }finally{
   for(const key of Object.keys(process.env))if(!Object.hasOwn(priorEnvironment,key))delete process.env[key];
   Object.assign(process.env,priorEnvironment);
