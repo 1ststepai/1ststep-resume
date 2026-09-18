@@ -48,6 +48,7 @@ import {
   verificationGaps, reconcileConfirmedResumeFacts, reviewConfirmedResumeFacts,
 } from './client/concierge-domain.js';
 import { acquisitionFunnel, evaluateCandidateFit, extractStructuredRequirements, upsertHiringEcosystem } from './client/job-intelligence.js';
+import { firstJobTitleFact, reconcileResumeSources } from './client/resume-reconciliation.js';
 import { JOB_RELEVANCE_POLICY_VERSION, jobTitleMatchesMission, normalizeMissionExclusions, restoredJobCardIsRelevant } from './client/job-mission-relevance.js';
 import { buildAnswerCoachingRequest, summarizePracticeSession } from './client/interview-practice.js';
 import { OPPORTUNITY_PATHS, OPPORTUNITY_SECTORS, mergeAuthoritativeOutcomeEvidence, opportunityPathOutcomeEvidence, rankOpportunityPaths, suggestedOpportunityPaths } from './client/opportunity-paths.js';
@@ -720,6 +721,16 @@ async function generateDurablePackage(roleId, { automatic = false, retryRequeste
   if (!role.jobDescription || role.jobDescription.length < 200) throw new Error('A verified employer job description is required.');
   const resumeText = savedResumeText();
   if (resumeText.length < 200) throw new Error('Save a candidate-reviewed master resume first.');
+  const reconciliation = await currentResumeReconciliation();
+  if (reconciliation.packageReadiness !== 'READY') {
+    const message = reconciliation.packageReadiness === 'INCOMPLETE'
+      ? 'Your secure résumé sources are unavailable or incomplete. Retry account sync before preparing a package.'
+      : reconciliation.conflicts.length
+      ? 'Your current résumé conflicts with a confirmed career fact or the Vault master version. Review Saved Info and resolve the source difference before preparing a package; neither value was overwritten.'
+      : 'Review and save your base résumé in Saved Info before preparing a package. Existing legacy text remains unchanged.';
+    if (automatic) { addMessage('assistant', `<strong>Résumé review needed.</strong><br>${escapeHtml(message)}`); return null; }
+    throw new Error(message);
+  }
   if (!automaticPreparationAuthorized(sessionCapabilities.jobAgentConsent) && localStorage.getItem(PACKAGE_AI_CONSENT_KEY) !== 'approved') {
     if (automatic) return null;
     const approved = window.confirm('Prepare this application package? Your reviewed resume and this verified employer job description will be encrypted in your durable run and sent to 1stStep’s configured AI provider. Nothing is sent to the employer, and no application is submitted.');
@@ -1988,12 +1999,55 @@ function savedResumeRecord() {
       if (String(resumeText || '').trim()) return {
         text: String(resumeText).trim(), source: typeof parsed === 'object' ? String(parsed.source || '') : 'legacy-text',
         fileName: typeof parsed === 'object' ? String(parsed.fileName || '') : '', savedAt: typeof parsed === 'object' ? String(parsed.savedAt || '') : '',
+        builderData: typeof parsed === 'object' ? parsed.builderData || null : null,
       };
     } catch { if (raw.trim()) return { text: raw.trim(), source: 'legacy-text', fileName: '', savedAt: '' }; }
   }
   return { text: '', source: '', fileName: '', savedAt: '' };
 }
 function savedResumeText() { return savedResumeRecord().text; }
+async function currentResumeReconciliation() {
+  const browser = savedResumeRecord();
+  if (!browser.text) return reconcileResumeSources();
+  const hash = async value => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))), byte => byte.toString(16).padStart(2, '0')).join('');
+  const browserHash = await hash(browser.text);
+  const title = browser.builderData?.experience?.[0]?.title || browser.builderData?.title || '';
+  const browserTitle = title
+    ? { fieldKey: 'jobTitle', entityKey: 'primary-role', value: title, source: browser.source, provenance: browser.source }
+    : firstJobTitleFact(browser.text, browser.source);
+  const resumes = [{
+    id: `browser:${browserHash}`, version: browserHash, hash: browserHash, source: browser.source,
+    timestamp: browser.savedAt, selectedAt: browser.savedAt, provenance: browser.source || 'legacy-unknown', selected: true,
+    selectionMode: browser.source === 'concierge-reviewed' ? 'explicit-save' : 'compatibility-current-text',
+    reviewed: browser.source === 'concierge-reviewed', accountBacked: false,
+    facts: browserTitle ? [browserTitle] : [],
+  }];
+  const vaultMaster = applicantVault.vault?.documents?.find(document => document.status === 'active' && document.type === 'master-resume');
+  const vaultVersion = vaultMaster?.versions?.find(version => version.version === vaultMaster.currentVersion);
+  if (vaultVersion?.text) resumes.push({
+    id: vaultMaster.id, version: String(vaultVersion.version), hash: vaultVersion.sha256,
+    source: 'applicant-vault', timestamp: vaultVersion.createdAt, provenance: vaultVersion.provenance,
+    current: true, selected: false, reviewed: true, accountBacked: true,
+  });
+  const facts = [];
+  const addEmployment = (value, source, verificationState, version, timestamp, status) => {
+    const fact = firstJobTitleFact(value, source, verificationState);
+    if (fact) facts.push({ ...fact, version, timestamp, status });
+  };
+  if (deskState.truthProfile.confirmedAt) for (const value of deskState.truthProfile.workHistory) {
+    addEmployment(value, 'saved-info', 'user-confirmed', null, deskState.truthProfile.confirmedAt, 'active');
+  }
+  for (const fact of deskState.reusableFacts) if (fact.fieldKey === 'employment') {
+    addEmployment(fact.value, fact.source || 'saved-info', fact.verificationState, null, fact.updatedAt, 'active');
+  }
+  for (const fact of applicantVault.vault?.facts || []) if (fact.fieldKey === 'employment') {
+    const version = fact.versions?.find(item => item.version === fact.currentVersion);
+    if (version) addEmployment(version.value, `applicant-vault:${version.provenance}`, version.verificationState, version.version, version.confirmedAt, fact.status);
+  }
+  return reconcileResumeSources({ resumes, facts,
+    requiredSourcesAvailable: localStorage.getItem(VAULT_PREFERENCE_KEY) !== 'enabled' || applicantVault.status === 'synced',
+  });
+}
 function sanitizeResumeText(text) {
   let clean = String(text || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ' ');
   const patterns = [

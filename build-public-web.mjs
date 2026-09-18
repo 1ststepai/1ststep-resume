@@ -38,6 +38,7 @@ const publicAssets = [
   'resume-builder.js',
   'client/concierge-router.js',
   'client/concierge-domain.js',
+  'client/resume-reconciliation.js',
   'client/application-preparation.js',
   'client/draft-review.js',
   'client/application-execution-route.js',

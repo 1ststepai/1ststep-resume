@@ -88,6 +88,7 @@ const expectedStatic = [
   'resume-builder.js',
   'client/concierge-router.js',
   'client/concierge-domain.js',
+  'client/resume-reconciliation.js',
   'client/job-intelligence.js',
   'client/job-mission-relevance.js',
   'client/interview-practice.js',
