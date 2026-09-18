@@ -1,5 +1,7 @@
 # Session Retros
 
+Live Cursor ↔ Codex state lives in `docs/agents/`, not here. Use this folder only for compressed session memory after non-trivial work.
+
 Use this folder to preserve compact memory between Claude/Codex sessions.
 
 After non-trivial work, add a dated markdown file using this pattern:

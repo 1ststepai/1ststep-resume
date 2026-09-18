@@ -17,7 +17,7 @@ For setup and verification, see `docs/LEAN_CTX.md`.
 
 ## Token Discipline
 
-1. Read this file and `docs/AI_MEMORY.md` first.
+1. Read this file, `AGENTS.md`, `docs/agents/HANDOFF.md`, and `docs/AI_MEMORY.md` first. Git plus `docs/agents/` are the live Cursor ↔ Codex baton. Chat history is not.
 2. Use search/grep before opening large files.
 3. Identify the smallest relevant files before editing.
 4. Prefer surgical patches over rewrites.
@@ -29,11 +29,12 @@ For setup and verification, see `docs/LEAN_CTX.md`.
 ## Required Workflow
 
 1. Restate the task in one sentence.
-2. Locate only relevant files.
-3. Explain the smallest safe change.
-4. Patch only those files.
-5. Run the relevant verification command.
-6. Append a short note to `docs/SESSION_RETROS/` for non-trivial work.
+2. Run working-tree safety: `git status`, current branch, `HEAD`, `git worktree list`, then read `docs/agents/HANDOFF.md` and `docs/agents/CURRENT-STATE.md`. Do not overwrite a dirty foreign worktree.
+3. Locate only relevant files.
+4. Explain the smallest safe change.
+5. Patch only those files.
+6. Run the relevant verification command.
+7. Update `docs/agents/HANDOFF.md` before stopping. Append a short note to `docs/SESSION_RETROS/` for non-trivial work.
 
 ## Verification
 

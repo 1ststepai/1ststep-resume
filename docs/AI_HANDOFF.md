@@ -1,7 +1,9 @@
 # AI Handoff
 
+Live Cursor ↔ Codex baton: `docs/agents/HANDOFF.md`, `docs/agents/CURRENT-STATE.md`, `docs/agents/NEXT-ACTIONS.md`. This file is background architecture memory, not the live task queue.
+
 ## Future task start
-Before making changes, read `AGENTS.md` first, then `docs/AI_HANDOFF.md`, then only the files directly relevant to the task. Do not scan the whole repo unless those docs are missing or the task genuinely requires broader investigation.
+Before making changes, read `AGENTS.md` first, then `docs/agents/HANDOFF.md`, then `docs/AI_HANDOFF.md`, then only the files directly relevant to the task. Do not scan the whole repo unless those docs are missing or the task genuinely requires broader investigation.
 
 ## Current project summary
 1stStep Resume is a static/Vercel job-search app. The browser app handles resume/job workflow and calls serverless API routes for Claude generation, subscription restore, Stripe access, GHL signup capture, and related server-only work.
