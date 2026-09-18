@@ -60,7 +60,7 @@ test('popup shows the two useful paths without a manual description field', asyn
 
   await expect(page.locator('#jobTitle')).toHaveText('Operations Lead');
   await expect(page.locator('#company')).toHaveText('Example Industries');
-  await expect(page.locator('#tailorBtn')).toHaveText('Save to My Jobs');
+  await expect(page.locator('#tailorBtn')).toHaveText('Save to Job Agent');
   await expect(page.locator('#jobAgentBtn')).toHaveText('Use in Resume Builder');
   await expect(page.locator('textarea')).toHaveCount(0);
   await expect(page.locator('#jobCard')).toBeVisible();

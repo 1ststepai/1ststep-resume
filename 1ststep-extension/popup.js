@@ -211,7 +211,7 @@ function showJobCard(job, auth) {
     openInApp(buildJob(), btn, mode);
   }
 
-  tailorBtn.textContent = auth?.jobAgentAccess ? 'Save to My Jobs' : 'Use in Resume Builder';
+  tailorBtn.textContent = auth?.jobAgentAccess ? 'Save to Job Agent' : 'Use in Resume Builder';
   tailorBtn.onclick = () => validateAndOpen(tailorBtn, auth?.jobAgentAccess ? MODES.JOB_AGENT : MODES.TAILOR);
 
   const jobAgentBtn = document.getElementById('jobAgentBtn');
@@ -307,7 +307,10 @@ async function openInApp(job, btn, mode = 'tailor') {
       setTimeout(() => { btn.textContent = originalLabel; btn.disabled = false; }, 3000);
       return;
     }
-    // Tab is now opening — popup closes naturally
+    // Tab is now opening — keep a single next action if the popup stays open.
+    if (mode === MODES.JOB_AGENT || mode === 'jobAgent') btn.textContent = 'Open in Job Agent';
+    else btn.textContent = originalLabel;
+    btn.disabled = false;
   });
 }
 

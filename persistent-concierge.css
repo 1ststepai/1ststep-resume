@@ -698,3 +698,16 @@ html[data-theme="dark"] .vault-authority,html[data-theme="dark"] .needs-continui
 html[data-theme="dark"] .vault-authority p,html[data-theme="dark"] .simple-job-card .job-next{color:#d6dee8}
 html[data-theme="dark"] body.needs-attention #openNeedsYou{background:#451a03;color:#fcd34d}
 
+.vault-journey-cta{display:block;width:100%;margin:14px 0 0;min-height:48px}
+.vault-more-controls{margin-top:16px}
+.vault-more-controls>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:13px;font-weight:700;color:var(--agent-body,#475569)}
+.vault-more-controls .vault-actions{margin-top:10px}
+.jobs-empty,.needs-you-empty{display:grid;justify-items:center;gap:12px}
+.jobs-empty .job-primary-action,.needs-you-empty .job-primary-action,.desk-empty .job-primary-action{min-width:min(100%,220px)}
+.guided-launch-stage .path-controls{align-items:stretch;flex-wrap:wrap}
+.guided-launch-stage .path-controls .fine-tune{flex:1;min-width:min(100%,220px)}
+@media(max-width:720px){
+  .vault-journey-cta,.jobs-empty .job-primary-action,.needs-you-empty .job-primary-action{width:100%}
+  .guided-launch-footer button{width:100%}
+}
+

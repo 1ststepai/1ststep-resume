@@ -369,6 +369,13 @@ section { padding: clamp(62px, 8vw, 104px) 0; }
 .hero-accent { background: linear-gradient(105deg,#3730a3 5%,#6355ed 55%,#8654ce 100%); color: #4338ca; background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .hero .lede { max-width: 640px; margin: 0 auto; font-size: 19px; }
 .hero-cta { justify-content: center; margin-top: 25px; }
+.hero-lead { display: grid; gap: 10px; margin: 25px auto 0; max-width: 34rem; text-align: left; }
+.hero-lead-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.hero-lead-row input[type="email"] {
+  flex: 1 1 16rem; min-height: 52px; border-radius: 14px; border: 1px solid var(--line, #d7dee8);
+  padding: 10px 14px; font: inherit; background: var(--card, #fff); color: var(--ink);
+}
+.hero-lead-note { margin: 0; color: var(--muted); font-size: 0.92rem; line-height: 1.45; }
 .hero-points { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 22px; margin-top: 18px; }
 .hero-points li { font-size: 12px; padding-left: 16px; }
 .hero-points li::before { left: 0; width: 5px; height: 5px; }
@@ -530,6 +537,9 @@ section { padding: clamp(62px, 8vw, 104px) 0; }
   .hero .lede { max-width: 21rem; font-size: 16px; line-height: 1.5; }
   .hero-cta { width: min(100%, 320px); margin: 24px auto 0; flex-direction: column; }
   .hero-cta .btn { width: 100%; min-height: 52px; }
+  .hero-lead { width: min(100%, 320px); margin: 24px auto 0; }
+  .hero-lead-row { flex-direction: column; }
+  .hero-lead-row input[type="email"], .hero-lead-row .btn { width: 100%; min-height: 52px; }
 
   .demo-stage { padding-top: 18px; }
   .demo-window { border-radius: 18px; }
@@ -707,4 +717,25 @@ section { padding: clamp(62px, 8vw, 104px) 0; }
 .floating-note div > span,.resume-done,.opportunity-group b,
 .conversation-bubble,.journey-foot,.journey-nav button,.footer-motion,
 .time-proof-copy small { font-size: 13px; }
+
+.waitlist-section { padding-top: 24px; }
+.waitlist-form { display: grid; gap: 10px; margin-top: 8px; }
+.waitlist-form label { font-size: 0.92rem; font-weight: 640; color: var(--ink); }
+.waitlist-form .optional { color: var(--muted); font-weight: 500; }
+.waitlist-form input[type="email"],
+.waitlist-form input[type="text"] {
+  width: 100%; min-height: 48px; border-radius: 12px; border: 1px solid var(--line, #d7dee8);
+  padding: 10px 14px; font: inherit; background: var(--card, #fff); color: var(--ink);
+}
+.waitlist-consent { display: flex; gap: 10px; align-items: flex-start; font-weight: 500; color: var(--muted); line-height: 1.45; }
+.waitlist-consent input { margin-top: 4px; }
+.waitlist-status { min-height: 1.4em; color: var(--ink); font-weight: 640; }
+.waitlist-fallback { color: var(--muted); font-size: 0.92rem; }
+.final-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+@media (max-width: 700px) {
+  .waitlist-form input[type="email"], .waitlist-form input[type="text"], .waitlist-form .btn { width: 100%; }
+  .final-cta { flex-direction: column; }
+  .final-cta .btn { width: 100%; min-height: 52px; }
+}
+
 .demo-safety,.journey-foot,.time-proof-copy small { line-height: 1.5; }

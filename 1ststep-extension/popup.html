@@ -170,6 +170,24 @@
       border-color: var(--border2);
     }
 
+    .btn-quiet-link {
+      width: auto;
+      margin: 8px auto 0;
+      padding: 8px 4px;
+      min-height: 44px;
+      background: transparent;
+      border: 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .btn-quiet-link:hover {
+      color: var(--text);
+    }
+
     .empty-state {
       display: flex;
       flex-direction: column;
@@ -478,8 +496,8 @@
         <div class="urgency">You review before anything is sent.</div>
         <div id="agentConnectionHint" class="urgency" role="status" aria-live="polite" style="display:none;"></div>
 
-        <button class="btn-primary" id="tailorBtn" style="width:100%">Save to My Jobs</button>
-        <button class="btn-secondary" id="jobAgentBtn" style="display:none;width:100%;margin-top:8px;flex:none;">Use in Resume Builder</button>
+        <button class="btn-primary" id="tailorBtn" style="width:100%">Save to Job Agent</button>
+        <button class="btn-quiet-link" id="jobAgentBtn" style="display:none;">Use in Resume Builder</button>
         <div id="fillResult" class="fill-result" role="status" aria-live="polite"></div>
 
         <div class="card-footer">
@@ -496,13 +514,13 @@
         <div class="empty-state-title">Open a complete job posting</div>
         <div class="empty-state-desc">Try again, or highlight the job description before reopening 1stStep. No copying and pasting required.</div>
         <button class="btn-primary" id="retryCaptureBtn" style="width:100%; margin-top:14px; flex:none;">Try this page again</button>
-        <button class="btn-secondary" id="openJobsBtn" style="width:100%; margin-top:8px; flex:none;">Open My Jobs</button>
+        <button class="btn-secondary" id="openJobsBtn" style="width:100%; margin-top:8px; flex:none;">Open Job Agent</button>
         <button class="btn-secondary" id="autofillEmptyBtn" style="display:none"></button>
       </div>
     </div>
 
     <!-- Momentum Stats -->
-    <div id="statsSection" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;box-shadow:var(--shadow-xs);">
+    <div id="statsSection" hidden style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;box-shadow:var(--shadow-xs);">
       <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Your Momentum</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         <div style="text-align:center;padding:8px 0;">

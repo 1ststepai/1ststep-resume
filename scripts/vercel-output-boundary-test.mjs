@@ -100,12 +100,13 @@ const expectedStatic = [
   'terms.html',
   'privacy.html',
   'style.css',
-  'home-motion-1f7df326a312.css',
+  'home-motion-cb30a966e447.css',
   'home-momentum-90ff283f0fd8.jpg',
   'persistent-concierge.css',
   'product-choice.css',
   'app.js',
-  'home-motion-4e0eecde7df1.js',
+  'home-motion-e322125499c6.js',
+  'home-funnel.js',
   'concierge.js',
   'resume-builder.js',
   'client/concierge-router.js',
@@ -242,7 +243,9 @@ for (const requiredFunction of [
 }
 assert(functionNames.has('job-agent-discord-relay.func'), 'Expected serverless API function missing: api/job-agent-discord-relay.func');
 assert(functionNames.has('login-page.func'), 'Expected environment-specific login CSP function missing: api/login-page.func');
-assert.equal(functionNames.size, 45, `Unexpected API function count: ${functionNames.size}`);
+assert(functionNames.has('public-waitlist.func'), 'Expected serverless API function missing: api/public-waitlist.func');
+assert(functionNames.has('public-funnel-event.func'), 'Expected serverless API function missing: api/public-funnel-event.func');
+assert.equal(functionNames.size, 47, `Unexpected API function count: ${functionNames.size}`);
 
 function cspDirectiveSources(csp, directive) {
   const prefix = `${directive} `;

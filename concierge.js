@@ -555,10 +555,15 @@ function renderVaultStatus() {
   }), ...documents.map(document => {
     const versions = document.type === 'master-resume' ? document.versions.map(version => {
       const chosen = selected?.documentId === document.id && selected.version === version.version && selected.sha256 === version.sha256;
-      return `<details><summary>Version ${version.version}${chosen ? ' · selected for applications' : ''} · review text</summary><div class="vault-resume-preview">${escapeHtml(version.text)}</div><button type="button" data-vault-base-document="${escapeHtml(document.id)}" data-vault-base-version="${version.version}" ${chosen ? 'disabled' : ''}>${chosen ? 'Selected base résumé' : 'Use this version as base résumé'}</button></details>`;
+      return `<details><summary>Version ${version.version}${chosen ? ' · selected for applications' : ''} · review text</summary><div class="vault-resume-preview">${escapeHtml(version.text)}</div><button type="button" data-vault-base-document="${escapeHtml(document.id)}" data-vault-base-version="${version.version}" ${chosen ? 'disabled' : ''}>${chosen ? 'Selected résumé' : 'Use this résumé'}</button></details>`;
     }).join('') : '';
     return `<div class="desk-row"><div><span class="trust-chip ${document.type === 'master-resume' ? 'trust-confirmed' : 'trust-preference'}">${document.type === 'master-resume' ? 'Saved résumé' : 'Saved document'}</span><strong>${escapeHtml(document.title)}</strong><small>${document.versions.length} version${document.versions.length === 1 ? '' : 's'}</small>${versions}</div><div class="desk-actions"><button data-vault-revoke-document="${escapeHtml(document.id)}">Remove</button></div></div>`;
-  })].filter(Boolean).join('') || empty('No saved answers or documents yet. Unsaved details remain only in this tab.');
+  })].filter(Boolean).join('') || empty('No saved answers or documents yet.') + '<div class="desk-empty"><button class="job-primary-action" type="button" data-vault-add-resume>Add résumé</button></div>';
+  if ($('vaultJourneyCta')) {
+    const ready = Boolean(selectedDocument && selectedVersion);
+    $('vaultJourneyCta').textContent = ready ? 'Continue to My Jobs' : 'Choose a résumé';
+    $('vaultJourneyCta').dataset.vaultJourney = ready ? 'jobs' : 'resume';
+  }
 }
 
 async function hydrateApplicantVault() {
@@ -753,7 +758,7 @@ async function generateDurablePackage(roleId, { automatic = false, retryRequeste
       throw new Error(`Preparation stopped: ${preparationFailureCode(current)}. The failed step needs correction before another provider attempt.`);
     }
     if (current?.status !== 'Failed') {
-      if (current) addMessage('assistant', '<strong>Your package progress is up to date.</strong><br>I’ll keep the draft private and show it here when generation or review is ready.');
+      if (current) addMessage('assistant', '<strong>Your prepared materials are up to date.</strong><br>I’ll keep the draft private and show it here when generation or review is ready.');
       return current;
     }
     const retryResponse = await fetchWithTimeout(`/api/application-packages?id=${encodeURIComponent(role.packageRunId)}`, {
@@ -769,16 +774,16 @@ async function generateDurablePackage(roleId, { automatic = false, retryRequeste
   if (!role.jobDescription || role.jobDescription.length < 200) throw new Error('A verified employer job description is required.');
   const selectedBase = applicantVault.vault?.selectedBaseResume;
   const selectedText = selectedVaultResumeText();
-  if (!selectedBase) throw new Error('Select one reviewed base résumé version in Saved Info before preparing a package. Your browser résumé is available for review or import, not automatic use.');
+  if (!selectedBase) throw new Error('Choose the résumé Job Agent should use in Saved Info before preparing materials. Extra copies on this device are available to review or import, not used automatically.');
   if (selectedBase && !selectedText) throw new Error('Your selected saved résumé version is unavailable. Open Saved Info and review the selection.');
   const resumeText = selectedText;
-  if (resumeText.length < 200) throw new Error('Save a candidate-reviewed master resume first.');
+  if (resumeText.length < 200) throw new Error('Save a reviewed résumé first.');
   if (automatic) return null; // Beta requires a fresh, human-reviewed source attestation for each package.
   const sourceReview = await reviewPackageSources(role, resumeText, selectedBase);
   if (!sourceReview) return null;
   if (!automaticPreparationAuthorized(sessionCapabilities.jobAgentConsent) && localStorage.getItem(PACKAGE_AI_CONSENT_KEY) !== 'approved') {
     if (automatic) return null;
-    const approved = window.confirm('Prepare this application package? Your reviewed resume and this verified employer job description will be encrypted in your durable run and sent to 1stStep’s configured AI provider. Nothing is sent to the employer, and no application is submitted.');
+    const approved = window.confirm('Prepare this application? Your reviewed résumé and this verified employer job description will be encrypted and used to draft materials. Nothing is sent to the employer, and no application is submitted.');
     if (!approved) return null;
     localStorage.setItem(PACKAGE_AI_CONSENT_KEY, 'approved');
   }
@@ -828,10 +833,10 @@ async function prepareDiscoveredApplications() {
   const candidates = preparationCandidates(deskState.roles, { discoveryRunId: durableRun?.id, limit: dailyGoal.target });
   if (!candidates.length) return;
   if (!applicantVault.vault?.selectedBaseResume || selectedVaultResumeText().length < 200) {
-    addMessage('assistant', '<strong>Your matches are saved.</strong><br>Choose one reviewed base résumé version in Saved Info before preparing packages. Browser résumé text can be reviewed or imported, but will not be used automatically. You do not need to repeat the search.');
+    addMessage('assistant', '<strong>Your matches are saved.</strong><br>Choose the résumé Job Agent should use in Saved Info before preparing materials. Extra copies on this device can be reviewed or imported, but will not be used automatically. You do not need to repeat the search.');
     return;
   }
-  addMessage('assistant', '<strong>Your matches are saved for review.</strong><br>Choose Prepare on a job card when you are ready to compare the selected résumé and saved facts for that exact requisition. No package starts automatically during this controlled beta.');
+  addMessage('assistant', '<strong>Your matches are saved for review.</strong><br>Choose Prepare on a job card when you are ready to compare the selected résumé and saved facts for that exact job. Nothing starts automatically during this controlled beta.');
 }
 
 async function renderDurablePackage(roleId) {
@@ -1336,11 +1341,18 @@ function openAgentAccess() {
   $('agentAccessMessage').textContent = hasJobAgentAccess()
     ? 'Your signed account has controlled-beta Job Agent access.'
     : pilotInviteRequired
-      ? 'You’re signed in, but this controlled beta is currently limited to invited members. Your saved-data controls remain available.'
+      ? 'You’re signed in, but this controlled beta is currently limited to invited members. Your saved-data controls remain available. You can join the waitlist without receiving beta access.'
       : sessionCapabilities.pilotAccess?.code === 'JOB_AGENT_PILOT_NOT_CONFIGURED'
         ? 'Controlled-beta admission is temporarily unavailable. No Job Agent work can start.'
         : 'Secure sign-in is not configured for this environment. No code was sent.';
   $('agentAccessMessage').className = hasJobAgentAccess() ? 'good' : pilotInviteRequired ? 'warn' : '';
+  if (!$('agentWaitlistLink')) {
+    const link = document.createElement('p');
+    link.id = 'agentWaitlistLink';
+    link.innerHTML = '<a href="/#waitlist">Join the waitlist for a future invite</a>. Waitlist signup does not grant beta access.';
+    $('agentAccessMessage').after(link);
+  }
+  $('agentWaitlistLink').hidden = !pilotInviteRequired && sessionCapabilities.pilotAccess?.code !== 'JOB_AGENT_PILOT_NOT_CONFIGURED';
   $('agentAccessOverlay').classList.add('open');
 }
 
@@ -1372,7 +1384,7 @@ function renderJobAgentPolicyBundle(bundle = sessionCapabilities.jobAgentConsent
   const expected = ['age18OrOlder', 'termsAccepted', 'privacyAcknowledged', 'candidateAuthorizationAccepted'];
   const attestations = Array.isArray(disclosure?.attestations) ? disclosure.attestations : [];
   const valid = typeof disclosure?.heading === 'string' && typeof disclosure?.introduction === 'string'
-    && typeof disclosure?.scopeHeading === 'string' && Array.isArray(disclosure?.scope) && disclosure.scope.length === 2
+    && typeof disclosure?.scopeHeading === 'string' && Array.isArray(disclosure?.scope) && disclosure.scope.length >= 2
     && expected.every((id, index) => attestations[index]?.id === id && typeof attestations[index]?.statement === 'string');
   if (!valid) return false;
   $('jobAgentConsentTitle').textContent = disclosure.heading;
@@ -1799,12 +1811,20 @@ function renderGuidedLaunch() {
     resetGuidedLaunchScroll(overlay);
   }
   $('guidedLaunchProgress').value = guidedLaunchStep + 1;
-  $('guidedLaunchProgressText').textContent = `${guidedLaunchStep + 1} of ${GUIDED_LAUNCH_STAGES.length}`;
+  $('guidedLaunchProgressText').textContent = `Step ${guidedLaunchStep + 1} of ${GUIDED_LAUNCH_STAGES.length}`;
   $('guidedLaunchBack').disabled = guidedLaunchStep === 0;
   $('guidedLaunchNext').hidden = stage === 'review';
   $('guidedLaunchNext').disabled = !guidedStageIsReady(stage);
   if ($('jobRequest') && document.activeElement !== $('jobRequest')) {
     $('jobRequest').value = normalizeMissionExclusions(guidedSelection.exclusions).join('\n');
+  }
+  const savedResumeBtn = $('quickUseSavedResume');
+  const uploadResumeBtn = $('quickUploadResume');
+  if (savedResumeBtn && uploadResumeBtn) {
+    const ready = hasResume();
+    savedResumeBtn.hidden = !ready;
+    savedResumeBtn.classList.toggle('primary', ready);
+    uploadResumeBtn.classList.toggle('primary', !ready);
   }
   const goalButtons = [...document.querySelectorAll('[data-guided-goal]')];
   goalButtons.forEach((button, index) => {
@@ -2369,7 +2389,7 @@ async function discoverMatchingJobs() {
     if (data.status === 'sources-not-configured') {
       missionState.discovery = { status: 'catalog-needed', checkedAt: new Date().toISOString(), sourcesChecked: 0, matches: 0 };
       saveAll(); renderMission();
-      addMessage('assistant', '<strong>Your search is saved, but this preview has no employer-feed catalog connected yet.</strong><br>I did not invent results or use a paid job search. Matching job sources can be enabled without a paid search subscription; the browser helper remains the next coverage layer.');
+      addMessage('assistant', '<strong>Your search is saved, but this preview has no employer-feed catalog connected yet.</strong><br>I did not invent results or use a paid job search. Matching job sources can be enabled without a paid search subscription; the Chrome extension remains the next coverage layer.');
       return;
     }
     let added = 0;
@@ -2887,7 +2907,7 @@ function renderSubscriberJobs() {
           : status === 'Needs You' ? 'Waiting on you'
             : 'Saved';
     return `<article class="simple-job-card"><header><div><p>${escapeHtml(role.employer || 'Employer unavailable')}</p><h4>${escapeHtml(role.title || 'Job title unavailable')}</h4></div><span class="status-badge ${statusBadgeClass(status)}">${escapeHtml(label)}</span></header><div class="simple-job-meta"><span>${escapeHtml(location)}</span><span>${escapeHtml(salary)}</span><span class="trust-chip ${status === 'Receipt Verified' ? 'trust-confirmed' : status === 'Needs You' ? 'trust-unknown' : 'trust-preference'}">${escapeHtml(trust)}</span></div><p class="job-next">${escapeHtml(next)}</p><footer><strong>${escapeHtml(fit)}</strong>${primaryJobAction(role, applicationSession, status)}</footer></article>`;
-  }).join('') : `<div class="jobs-empty">${escapeHtml(activeJobTab === 'Matches' ? 'No matching jobs yet. Start a search or capture a listing with the browser helper.' : activeJobTab === 'Interviews' ? 'No interviews yet.' : `No ${activeJobTab.toLowerCase()} jobs yet.`)} Counts stay at zero until saved evidence exists.</div>`;
+  }).join('') : `<div class="jobs-empty"><p>${escapeHtml(activeJobTab === 'Matches' ? 'No matching jobs yet. Start a search, or save a listing from the Chrome extension.' : activeJobTab === 'Interviews' ? 'No interviews yet.' : `No ${activeJobTab.toLowerCase()} jobs yet.`)} Counts stay at zero until saved evidence exists.</p><button class="job-primary-action" type="button" data-jobs-start-search>${activeJobTab === 'Matches' ? 'Find jobs' : 'Adjust search'}</button></div>`;
 }
 
 function openJobs(tab = 'Matches') { activeJobTab = tab; renderSubscriberJobs(); $('jobsOverlay').classList.add('open'); }
@@ -3958,7 +3978,8 @@ document.querySelectorAll('[data-guided-goal]').forEach(button => {
 $('quickUseSavedResume').hidden = !hasResume();
 $('quickUseSavedResume').addEventListener('click', () => {
   if (!hasResume()) { openResumeSetup(); return; }
-  saveGuidedLaunchDraft(); renderGuidedLaunch();
+  saveGuidedLaunchDraft();
+  advanceGuidedLaunch();
 });
 $('quickUploadResume').addEventListener('click', () => {
   openResumeSetup();
@@ -4126,6 +4147,11 @@ $('jobTabs').addEventListener('click', event => {
 });
 $('jobCards').addEventListener('click', async event => {
   if (reviewNeedsYouTarget(event.target)) return;
+  if (event.target?.dataset?.jobsStartSearch !== undefined) {
+    closeJobs();
+    requestGuidedLaunch({ step: missionState.mission?.role ? 2 : 0 });
+    return;
+  }
   const generateId = event.target?.dataset?.jobPackageGenerate;
   const reviewId = event.target?.dataset?.jobPackageReview;
   const startApplicationId = event.target?.dataset?.jobApplicationStart;
@@ -4151,7 +4177,7 @@ $('jobCards').addEventListener('click', async event => {
   if (!generateId) return;
   event.target.disabled = true;
   try { const run = await generateDurablePackage(generateId, { retryRequested: event.target.dataset.packageRetry === 'true' }); renderSubscriberJobs(); if (run) showToast(run.result?.resumeText ? 'Private draft ready for review' : 'Preparation saved'); }
-  catch (error) { closeJobs(); addMessage('assistant', `<strong>The package was not created.</strong><br>${escapeHtml(error.message)} Your role and resume remain saved.`); }
+  catch (error) { closeJobs(); addMessage('assistant', `<strong>The application materials were not prepared.</strong><br>${escapeHtml(error.message)} Your role and resume remain saved.`); }
   finally { event.target.disabled = false; }
 });
 $('postSubmissionActions').addEventListener('click', async event => {
@@ -4176,6 +4202,7 @@ $('reviewAttentionNow').addEventListener('click', event => {
   if (!reviewNeedsYouTarget(event.currentTarget)) openNeedsYou();
 });
 $('closeNeedsYou').addEventListener('click', closeNeedsYou);
+$('needsYouViewJobs')?.addEventListener('click', () => { closeNeedsYou(); openJobs(); });
 $('needsYouOverlay').addEventListener('click', event => { if (event.target === $('needsYouOverlay')) closeNeedsYou(); });
 $('pauseRun').addEventListener('click', async () => {
   missionState.runState = 'Paused';
@@ -4213,6 +4240,14 @@ $('resumeRun').addEventListener('click', async () => {
 });
 $('openDesk').addEventListener('click', () => openDesk('pipeline'));
 $('openVault').addEventListener('click', () => { $('vaultOverlay').classList.add('open'); renderVaultStatus(); });
+$('vaultJourneyCta')?.addEventListener('click', () => {
+  if ($('vaultJourneyCta').dataset.vaultJourney === 'jobs') {
+    closeVaultDialog();
+    openJobs();
+    return;
+  }
+  openResumeSetup();
+});
 function closeVaultDialog() {
   const restoreFocus = $('vaultOverlay').contains(document.activeElement);
   $('vaultOverlay').classList.remove('open');
@@ -4247,6 +4282,7 @@ $('deleteVault').addEventListener('click', async () => {
   } catch (error) { $('vaultStatus').textContent = error.message; }
 });
 $('vaultList').addEventListener('click', async event => {
+  if (event.target?.dataset?.vaultAddResume !== undefined) { openResumeSetup(); return; }
   if (event.target?.dataset?.memoryForget) {
     try { await vaultAction('forget-memory', { id: event.target.dataset.memoryForget }); showToast('Forgotten. This answer will no longer be reused.'); }
     catch (error) { $('vaultStatus').textContent = error.message; }
@@ -4277,8 +4313,8 @@ $('vaultList').addEventListener('click', async event => {
   const baseDocumentId = event.target?.dataset?.vaultBaseDocument;
   if (baseDocumentId) {
     const version = Number(event.target.dataset.vaultBaseVersion);
-    if (!window.confirm(`Use saved résumé version ${version} as the base for new application packages? Review its text and your confirmed facts first. Browser copies will not silently replace it.`)) return;
-    try { await vaultAction('select-base-resume', { documentId: baseDocumentId, version, reviewed: true }); showToast(`Base résumé version ${version} selected`); }
+    if (!window.confirm(`Use saved résumé version ${version} for applications? Review its text and your confirmed facts first. Other copies on this device will not silently replace it.`)) return;
+    try { await vaultAction('select-base-resume', { documentId: baseDocumentId, version, reviewed: true }); showToast(`Résumé version ${version} selected`); }
     catch (error) { $('vaultStatus').textContent = error.message; }
     return;
   }

@@ -210,7 +210,7 @@ export function userFacingStatus(status, role = null) {
 
 export function userFacingJobNextStep(status, role = null, applicationSession = null) {
   if (applicationSession) return 'Continue the step that needs you. Nothing is sent until you approve it.';
-  if (role?.sourceType === 'user-captured' && (!status || status === 'Found')) return 'Captured from your browser helper. Not verified against the employer listing yet.';
+  if (role?.sourceType === 'user-captured' && (!status || status === 'Found')) return 'Saved from Chrome. Not verified against the employer listing yet.';
   return ({
     Found: 'Next: confirm the employer listing, then prepare materials.',
     Verified: 'Next: prepare a truthful résumé draft for this role.',

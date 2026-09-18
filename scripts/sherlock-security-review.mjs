@@ -48,6 +48,8 @@ const routePolicies = Object.freeze({
   'login-page.js': /req\.method !== 'GET' && req\.method !== 'HEAD'/,
   'notify-signup.js': /authenticateApiRequest/,
   'partner.js': /authenticate\(req, \{ requireOpaqueSession: true \}\)/,
+  'public-funnel-event.js': /PUBLIC_FUNNEL_EVENTS/,
+  'public-waitlist.js': /grantsBetaAccess: false/,
   'session-capabilities.js': /authenticateApiRequest\(req, \{ requireOpaqueSession: true \}\)/,
   'stripe-webhook.js': /stripe\.webhooks\.constructEvent/,
   'subscription.js': /verifyRestoreChallenge/,

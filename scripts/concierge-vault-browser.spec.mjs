@@ -45,7 +45,7 @@ test('Saved Info explicitly selects one reviewed historical base resume version'
   await page.locator('#vaultList details').first().locator('summary').click();
   await expect(page.locator('#vaultList details').first()).toContainText('Version one candidate resume');
   await page.locator('#vaultList details').first().locator('button').click();
-  await expect(page.locator('#vaultList')).toContainText('Selected base résumé');
+  await expect(page.locator('#vaultList')).toContainText('Selected résumé');
   expect(selection).toEqual({ documentId, version: 1, reviewed: true });
   expect(vault.selectedBaseResume.version).toBe(1);
   expect(vault.documents[0].currentVersion).toBe(2);
@@ -406,7 +406,7 @@ test('a signed but non-invited pilot user keeps data controls without agent acce
     }),
   }));
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
-  await expect(page.locator('#openAgentAccess')).toHaveText('Pilot invite required');
+  await expect(page.locator('#openAgentAccess')).toHaveText('Invite needed');
   await expect(page.locator('#startJobSearch')).toHaveText('Check pilot access');
   await expect(page.locator('#agentAccessOverlay')).toHaveClass(/open/);
   await expect(page.locator('#agentAccessMessage')).toContainText('limited to invited members');
@@ -808,7 +808,7 @@ test('a stale device run cannot hide a newer tenant discovery run', async ({ pag
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await expect(page.locator('#dailyGoalMessage')).toContainText('Supplier Relationship Manager');
-  await expect(page.locator('#agentRunState')).toHaveText('Waiting for a worker update');
+  await expect(page.locator('#agentRunState')).toHaveText('Waiting for a status update');
   expect(await page.evaluate(() => localStorage.getItem('1ststep_job_agent_run_v1'))).toBeNull();
   expect(await page.evaluate(() => sessionStorage.getItem('1ststep_job_agent_run_v1'))).toBeNull();
   expect(exactRunRequests).toBe(0);
@@ -1537,7 +1537,7 @@ test('vault copy names the controlled-beta policy, not storage, when the policy 
 
   // The resume-scoped message must still carry the credential guarantee.
   if (await page.locator('#resumeVaultStatus').count()) {
-    await expect(page.locator('#resumeVaultStatus')).toContainText('Passwords, OTPs, and CAPTCHA answers are never stored');
+    await expect(page.locator('#resumeVaultStatus')).toContainText('Passwords, one-time codes, and security checks are never stored');
     await expect(page.locator('#resumeVaultStatus')).toContainText('remains only in this tab');
   }
 });
