@@ -1332,59 +1332,6 @@
       canonicals.forEach(function (extra) {
         extra.remove();
       });
-      document
-        .querySelectorAll(
-          'script[type="application/ld+json"]:not(#fs-seo-schema)',
-        )
-        .forEach(function (node) {
-          if (/1ststep\.ai/i.test(node.textContent || "")) node.remove();
-        });
-      var schema = document.getElementById("fs-seo-schema");
-      if (!schema) {
-        schema = document.createElement("script");
-        schema.id = "fs-seo-schema";
-        schema.type = "application/ld+json";
-        document.head.appendChild(schema);
-      }
-      schema.textContent = JSON.stringify({
-        "@context": "https://schema.org",
-        "@graph": [
-          {
-            "@type": "Organization",
-            "@id": "https://1ststep.ai/#organization",
-            name: "1stStep.ai",
-            url: "https://1ststep.ai/",
-            sameAs: ["https://www.instagram.com/1ststepdotai/"],
-          },
-          {
-            "@type": "WebSite",
-            "@id": "https://resume.1ststep.ai/#website",
-            url: "https://resume.1ststep.ai/",
-            name: "1stStep.ai",
-            publisher: { "@id": "https://1ststep.ai/#organization" },
-          },
-          {
-            "@type": "WebPage",
-            "@id": seo.url + "#webpage",
-            url: seo.url,
-            name: seo.title,
-            description: seo.description,
-            isPartOf: { "@id": "https://resume.1ststep.ai/#website" },
-            about: { "@id": seo.url + "#software" },
-          },
-          {
-            "@type": "SoftwareApplication",
-            "@id": seo.url + "#software",
-            name: "1stStep.ai Job Agent",
-            url: "https://app.1ststep.ai",
-            applicationCategory: "BusinessApplication",
-            operatingSystem: "Web, Google Chrome",
-            description:
-              "A job application assistant that captures supported jobs, prepares tailored application materials, and keeps the applicant in control of submission.",
-            creator: { "@id": "https://1ststep.ai/#organization" },
-          },
-        ],
-      });
     }
     normalizeSeo();
     window.setTimeout(normalizeSeo, 1000);
