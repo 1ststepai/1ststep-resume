@@ -58,3 +58,5 @@ logo-preview-*.png
 output/
 .playwright-cli/
 .vercel/
+
+.vercel
