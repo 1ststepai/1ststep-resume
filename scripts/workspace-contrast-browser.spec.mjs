@@ -95,8 +95,6 @@ for (const theme of themes) for (const width of [375, 1440]) {
       expect(buttons.every(b => b.font >= 11.2 && b.height >= 44)).toBe(true);
     }
     await page.locator('#openGuidedLaunch').click();
-    await page.locator('[data-guided-goal="best-fit"]').click();
-    await page.locator('#guidedLaunchNext').click();
     await page.locator('#quickUploadResume').click();
     await expect(page.locator('#resumeOverlay')).toHaveClass(/open/);
     const failures = await page.evaluate(AUDIT);

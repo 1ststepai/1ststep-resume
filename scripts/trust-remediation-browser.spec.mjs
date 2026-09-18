@@ -37,14 +37,9 @@ test('approved onboarding saves every answer, survives reloads, and exposes ever
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await page.locator('#openGuidedLaunch').click();
 
-  await page.locator('[data-guided-goal="best-fit"]').click();
-  await expect(page.locator('[data-guided-stage="goal"]')).toBeVisible();
+  await expect(page.locator('[data-guided-stage="work"]')).toBeVisible();
+  await page.locator('#guidedLaunchBack').click();
   await expect.poll(() => account.snapshot().workspace.onboardingDraft?.goal).toBe('best-fit');
-  await reopenAtSavedStep(page);
-  await expect(page.locator('[data-guided-goal="best-fit"]')).toHaveAttribute('aria-checked', 'true');
-
-  await page.locator('#guidedLaunchNext').click();
-  await page.locator('#guidedLaunchNext').click();
   await page.locator('[data-opportunity-path]').filter({ hasText: 'Operations & Project Delivery' }).click();
   await expect.poll(() => account.snapshot().workspace.onboardingDraft?.pathId).toBe('operations');
   await reopenAtSavedStep(page);
@@ -58,19 +53,21 @@ test('approved onboarding saves every answer, survives reloads, and exposes ever
   await expect(page.locator('#launchLocation')).toHaveValue('Newark, NJ');
 
   await page.locator('#guidedLaunchNext').click();
+  await page.locator('#guidedMoreFilters summary').click();
   await page.locator('[data-launch-choice="employmentType"][data-value="Contract"]').click();
   await expect.poll(() => account.snapshot().workspace.onboardingDraft?.employmentType).toBe('Contract');
   await reopenAtSavedStep(page);
+  await page.locator('#guidedMoreFilters summary').click();
+  await expect(page.locator('[data-launch-choice="employmentType"][data-value="Contract"]')).toHaveAttribute('aria-checked', 'true');
 
-  await page.locator('#guidedLaunchNext').click();
   await page.locator('[data-launch-choice="salary"][data-value="100000"]').click();
   await page.locator('[data-guided-stage="salary"] .fine-tune summary').click();
   await page.locator('#jobRequest').fill('Exclude defense contractors');
   await expect.poll(() => account.snapshot().workspace.onboardingDraft).toMatchObject({ salary: 100000, exclusions: ['defense contractors'] });
   await reopenAtSavedStep(page);
+  await page.locator('#guidedMoreFilters summary').click();
   await page.locator('[data-guided-stage="salary"] .fine-tune summary').click();
   await expect(page.locator('#jobRequest')).toHaveValue('defense contractors');
-  await page.locator('#guidedLaunchNext').click();
   await expect(page.locator('#neverIncludeList')).toContainText('Exclude defense contractors');
   await expect(page.locator('#guidedLaunchSaveStatus')).toHaveAttribute('data-state', 'synced');
   await page.screenshot({ path: 'test-results/trust-remediation-desktop.png', fullPage: true });
@@ -112,9 +109,7 @@ test('sector exploration is non-consequential and live comparison has progress, 
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await page.locator('#openGuidedLaunch').click();
-  await page.locator('[data-guided-goal="best-fit"]').click();
-  await page.locator('#guidedLaunchNext').click();
-  await page.locator('#guidedLaunchNext').click();
+  await page.locator('#guidedLaunchBack').click();
   await page.locator('[data-opportunity-path="operations"]').click();
   await page.locator('#jobSectorFilter').selectOption('technology-product');
   await expect(page.locator('#sectorRoleDecision')).toBeVisible();
@@ -130,13 +125,26 @@ test('sector exploration is non-consequential and live comparison has progress, 
   expect(correlationId).toMatch(/^[a-f0-9-]{20,64}$/i);
 });
 
+test('saving a resume closes setup and continues with a resume-based job path', async ({ page }) => {
+  await routeApprovedAccount(page, null, { withResume: false });
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await page.locator('#openGuidedLaunch').click();
+  await expect(page.locator('[data-guided-stage="resume"]')).toBeVisible();
+  await page.locator('#guidedLaunchNext').click();
+  await expect(page.locator('#resumeOverlay')).toHaveClass(/open/);
+  await page.locator('#resumeEditor').fill(`Senior Buyer | Supplier Negotiation, Materials\n${'Procurement, sourcing, and vendor negotiation professional. '.repeat(20)}`);
+  await page.locator('#saveResume').click();
+  await expect(page.locator('#resumeOverlay')).not.toHaveClass(/open/);
+  await expect(page.locator('[data-guided-stage="work"]')).toBeVisible();
+  await expect(page.locator('#guidedLaunchPathSummary')).toContainText('Procurement & Vendor Management');
+  await expect(page.locator('#guidedResumePreview')).toContainText('Senior Buyer');
+});
+
 test('resume generation cannot silently drop confirmed education or skills', async ({ page }) => {
   await routeApprovedAccount(page, null, { withResume: false });
   await page.route('**/api/ai', route => route.fulfill({ json: { text: 'Preview QA User · qa@example.invalid\n\nEXPERIENCE\nQA Coordinator at Example Co, 2022-present' } }));
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await page.locator('#openGuidedLaunch').click();
-  await page.locator('[data-guided-goal="best-fit"]').click();
-  await page.locator('#guidedLaunchNext').click();
   await page.locator('#quickBuildResume').click();
   await page.locator('#questionValue').fill('Preview QA User, qa@example.invalid');
   await page.locator('#questionForm').evaluate(form => form.requestSubmit());
