@@ -3,9 +3,9 @@ import { createHash } from 'node:crypto';
 import { readFileSync, statSync } from 'node:fs';
 import vm from 'node:vm';
 
-const source = readFileSync(new URL('../home-motion-4e0eecde7df1.js', import.meta.url), 'utf8');
+const source = readFileSync(new URL('../home-motion-e322125499c6.js', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const css = readFileSync(new URL('../home-motion-1f7df326a312.css', import.meta.url), 'utf8');
+const css = readFileSync(new URL('../home-motion-cb30a966e447.css', import.meta.url), 'utf8');
 const icon = readFileSync(new URL('../1ststep-ai-icon.png', import.meta.url));
 function element() {
   const values = new Set();
@@ -92,7 +92,7 @@ assert.equal(journeyCards[1].attributes['aria-hidden'], 'false');
 assert(statSync(new URL('../home-momentum-90ff283f0fd8.jpg', import.meta.url)).size < 200_000, 'Hero asset stays under 200 KB');
 const buildSource = readFileSync(new URL('../build-public-web.mjs', import.meta.url), 'utf8');
 const vercelConfig = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
-const immutableAssets = ['home-motion-1f7df326a312.css', 'home-momentum-90ff283f0fd8.jpg', 'home-motion-4e0eecde7df1.js'];
+const immutableAssets = ['home-motion-cb30a966e447.css', 'home-momentum-90ff283f0fd8.jpg', 'home-motion-e322125499c6.js'];
 for (const asset of immutableAssets) {
   assert.match(buildSource, new RegExp(`'${asset.replaceAll('.', '\\.')}'`), `${asset} must be published`);
   const cacheRule = vercelConfig.headers.find(rule => rule.source === `/${asset}`);
@@ -103,8 +103,9 @@ for (const asset of immutableAssets) {
 }
 assert.match(buildSource, /'site-theme\.js'/);
 assert.match(html, /<link rel="preload" as="image" href="\/home-momentum-90ff283f0fd8\.jpg" type="image\/jpeg" fetchpriority="high">/);
-assert.match(html, /<link rel="stylesheet" href="\/home-motion-1f7df326a312\.css">/);
-assert.match(html, /<script src="\/home-motion-4e0eecde7df1\.js" defer><\/script>/);
+assert.match(html, /<link rel="stylesheet" href="\/home-motion-cb30a966e447\.css">/);
+assert.match(html, /<script src="\/home-motion-e322125499c6\.js" defer><\/script>/);
+assert.match(html, /<script src="\/home-funnel\.js" defer><\/script>/);
 const rootCsp = vercelConfig.headers.find(rule => rule.source === '/')?.headers.find(header => header.key === 'Content-Security-Policy')?.value;
 assert(rootCsp, 'Homepage must have a route-specific CSP');
 assert.doesNotMatch(rootCsp, /unsafe-inline|cdn\.|stripe|googletagmanager|leadconnector/i);
@@ -124,11 +125,11 @@ for (const inlineScript of inlineScripts) {
 }
 assert.match(html, /class="demo-label">Product tour<\/span>/);
 assert.doesNotMatch(html, /controlled production beta|invite.paced|Request a beta spot/i);
-assert.match(html, /Request early access/);
+assert.match(html, /Join Early Access/);
 assert.match(html, /does not currently submit applications on your behalf/);
 assert.equal((html.match(/<h1\b/g) || []).length, 1, 'Homepage must expose exactly one H1');
-assert.match(html, /<h1>Find the right jobs\. Build better applications\. <span class="hero-accent">Faster\.<\/span><\/h1>/);
-assert.match(html, /Capture a job with the extension, prepare tailored documents in your workspace/);
+assert.match(html, /<h1>The AI Job Agent that manages the job-search workload\.<\/h1>/);
+assert.match(html, /finds and organizes relevant jobs in My Jobs/);
 assert.match(html, /Verified founder test · August 24, 2026/);
 assert.match(html, /First-round interview invitation received/);
 assert.match(html, /Actual result · LogicSource/);
@@ -140,8 +141,10 @@ assert.match(html, /<script src="\/site-theme\.js" defer><\/script>/);
 assert(icon.length < 50_000, 'Favicon must stay below 50 KB');
 assert.equal(icon.readUInt32BE(16), 128, 'Favicon width must be 128px');
 assert.equal(icon.readUInt32BE(20), 128, 'Favicon height must be 128px');
-assert.equal((html.match(/Start My Job Agent — Free/g) || []).length, 4, 'Every primary Job Agent CTA uses the canonical label');
-assert.match(html, /href="#how">See How It Works<\/a>/);
+assert.match(html, /id="heroLeadForm"/);
+assert.match(html, /href="#lead"/);
+assert.ok((html.match(/Start Job Agent/g) || []).length >= 4, 'Primary Job Agent CTA uses Start Job Agent');
+assert.match(html, /href="#waitlist">Join Early Access<\/a>/);
 assert.match(html, /<link rel="canonical" href="https:\/\/app\.1ststep\.ai\/">/);
 assert.match(html, /<meta name="robots" content="index,follow,max-image-preview:large">/);
 assert.match(html, /<meta property="og:image" content="https:\/\/app\.1ststep\.ai\/og-1ststep-ai\.png">/);
@@ -152,13 +155,14 @@ const structuredDataMatch = html.match(/<script type="application\/ld\+json">\s*
 assert(structuredDataMatch, 'Homepage must include JSON-LD');
 const structuredData = JSON.parse(structuredDataMatch[1]);
 assert.deepEqual(structuredData['@graph'].map(item => item['@type']), ['Organization', 'WebSite', 'SoftwareApplication', 'FAQPage']);
-assert.equal(structuredData['@graph'].find(item => item['@type'] === 'FAQPage').mainEntity.length, 5);
+assert.equal(structuredData['@graph'].find(item => item['@type'] === 'FAQPage').mainEntity.length, 6);
 assert.doesNotMatch(structuredDataMatch[1], /aggregateRating|"review"|"offers"/);
 assert.doesNotMatch(html, /Play animations|featureMotionToggle|journeyMotionToggle/);
 assert.equal((html.match(/class="journey-card"/g) || []).length, 4);
 assert.match(html, /class="journey-viewport"/);
 assert.match(html, /class="journey-track"/);
-assert.equal((html.match(/\/ YOUR GOAL/g) || []).length, 2, 'Interviews and offers must be goals, not claimed results');
+assert.match(html, /01 \/ SAVED INFO/);
+assert.match(html, /04 \/ NEEDS YOU/);
 assert.match(html, /Employers decide interviews and offers/);
 assert.doesNotMatch(html, /40 (?:jobs|applications)|guaranteed interviews/i);
 assert.doesNotMatch(html, /illustrative|fictional|made-up|example only|sample preview/i);

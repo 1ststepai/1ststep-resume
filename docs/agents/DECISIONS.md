@@ -1,0 +1,17 @@
+# DECISIONS — Job Agent
+
+Newest first. If a decision is replaced, keep the old row and point `Supersedes` at it.
+
+| ID | Date | Decision | Affected surface | Rationale | Authority / source | Supersedes |
+|---|---|---|---|---|---|---|
+| D-2026-09-18-portability-isolated-shas | 2026-09-18 | R3 `cfa483c` stays the security/release authority. Final UX candidate `cdab3c9` stays on `cursor/job-agent-ui-ux-polish-20260917` until Director integrate. Launch-access `afcd973` stays isolated. Do not mix dirty UX into R3 to clean a worktree. | Release vs UX vs access branches | Executor switching requires GitHub SHAs, not Cursor dirty trees | Owner portability brief 2026-09-18 | — |
+| D-2026-09-18-ux-successor-inspect-only | 2026-09-18 | Action-first + landing `6aa7b50` plus one-action/auto-prepare overlay `cdab3c9` are inspect/integrate candidates only. They must not be merged onto R3 except by Director job `JA-UX-INTEGRATE`. | UX branch vs release lane | Prevent UX from overwriting R3/security lineage | Owner finalize / portability briefs 2026-09-18 | — |
+| D-2026-09-18-product-boundary | 2026-09-18 | Job Agent is `app.1ststep.ai` / `1ststep-resume` only. `1ststep.ai` consultancy + `/admin` Studio, `resume.1ststep.ai` acquisition, and `partners.1ststep.ai` affiliates are separate products. | Product selection | Prevent mixed application authority | Owner portability brief 2026-09-18 | — |
+| D-2026-09-18-action-first-ux | 2026-09-18 | Every user-facing screen has a purpose and a clearly dominant next action. Do not remove consequential confirmation, consent, résumé authority, or beta gates to reduce clicks. | Landing, concierge, extension popup | Launch requirement | Owner UX authority brief 2026-09-18 | — |
+| D-2026-09-18-waitlist-not-beta | 2026-09-18 | Public waitlist is demand only. It must not write `JOB_AGENT_PILOT_ALLOWED_TENANTS` and must return `grantsBetaAccess: false`. | Waitlist APIs, landing | Capture demand without bypassing the five-user gate | Owner landing-conversion brief 2026-09-17 | — |
+| D-2026-09-18-r3-ceiling | 2026-09-18 | R3 PASS on `cfa483c` is the capability ceiling for this release lane. UX is held until Director-authorized integrate. Preview and tenants remain owner gates. | Release ladder | Independent audit is the security authority | Owner-reviewed R3 | — |
+| D-2026-09-17-owner-reviewed-not-counsel | 2026-09-17 | Owner-reviewed uses `JOB_AGENT_OWNER_REVIEWED_POLICY`, never `JOB_AGENT_COUNSEL_APPROVED`. Preview-only. Cannot satisfy Production signedBeta. | Policy, launch manifest | Prevent false counsel-approval claims | `docs/OWNER_REVIEWED_CONTROLLED_BETA.md` | — |
+| D-2026-09-17-pr86-frozen | 2026-09-17 | PR #86 frozen at `bbb6ee3`. | Login/Clerk preview isolation | Separate freeze from later product work | Owner-reviewed beta instructions | — |
+| D-2026-09-04-receipt-only | 2026-09-04 | Only authoritative employer receipt evidence may produce `Submitted`. | Application ledger | Duplicate prevention and truth-safe status | `docs/AI_MEMORY.md` | — |
+| D-2026-09-04-greenhouse-only-extension | 2026-09-04 | Controlled-release extension is Greenhouse-only. | `1ststep-extension/` | Privacy and store policy | Extension manifest | — |
+| D-2026-09-17-handoff | 2026-09-17 | Cursor and Codex are interchangeable workers. Git + `docs/agents/*` are truth. Chat is not. | Engineering continuity | Zero-loss handoff | Owner request 2026-09-17 | — |

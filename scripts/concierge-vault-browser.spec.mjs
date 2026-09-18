@@ -167,7 +167,7 @@ test('queued status is visible and a running question receives status instead of
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await expect(page.locator('#agentRunState')).toHaveText('Queued — not started yet');
-  await expect(page.locator('#agentStatusDetail')).toContainText('worker has not started');
+  await expect(page.locator('#agentStatusDetail')).toContainText('has not started yet');
   await expect(page.locator('[data-run-state="Searching"]')).not.toHaveClass(/active/);
   await page.locator('#messageInput').fill('is my agent running currently?');
   await page.locator('#composer button[type="submit"]').click();
@@ -257,20 +257,15 @@ async function routeAccountWorkspace(page, { mission, runState = 'Preparing', jo
   }));
 }
 
-async function reachGuidedLaunchReview(page, { goal = 'best-fit', salary = '0' } = {}) {
+async function reachGuidedLaunchReview(page, { salary = '0' } = {}) {
   await page.locator('#openGuidedLaunch').click();
-  await page.locator(`[data-guided-goal="${goal}"]`).click();
-  await page.locator('#guidedLaunchNext').click();
-  await expect(page.locator('#quickResumeState')).toContainText('Resume ready');
-  await page.locator('#guidedLaunchNext').click();
-  await page.locator('[data-opportunity-path]').first().click();
-  await page.locator('#guidedLaunchNext').click();
+  await expect(page.locator('[data-guided-stage="work"]')).toBeVisible();
   await page.locator('[data-launch-choice="workMode"][data-value="Remote"]').click();
   await page.locator('#guidedLaunchNext').click();
-  await page.locator('[data-launch-choice="employmentType"][data-value="Full-time"]').click();
-  await page.locator('#guidedLaunchNext').click();
-  await page.locator(`[data-launch-choice="salary"][data-value="${salary}"]`).click();
-  await page.locator('#guidedLaunchNext').click();
+  if (salary !== '0') {
+    await page.locator('#guidedMoreFilters summary').click();
+    await page.locator(`[data-launch-choice="salary"][data-value="${salary}"]`).click();
+  }
   await expect(page.locator('#startJobSearch')).toBeVisible();
 }
 
@@ -279,8 +274,6 @@ test('two-click resume onboarding stays short and refuses secret-shaped answers 
   await page.addInitScript(() => localStorage.setItem('1ststep_applicant_vault_preference_v1', 'device-only'));
   await page.goto(baseUrl);
   await page.locator('#openGuidedLaunch').click();
-  await page.locator('[data-guided-goal="best-fit"]').click();
-  await page.locator('#guidedLaunchNext').click();
   await page.locator('#quickBuildResume').click();
   await expect(page.locator('#questionOverlay')).toHaveClass(/open/);
   await expect(page.locator('#questionProgress')).toHaveText('Resume setup · 4 essential answers remaining');
@@ -613,29 +606,26 @@ test('the guided tap-through launch starts a truthful no-submit search in a few 
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await page.locator('#openGuidedLaunch').click();
-  await page.locator('[data-guided-goal="best-fit"]').click();
-  await page.locator('#guidedLaunchNext').click();
-  await expect(page.locator('#quickResumeState')).toContainText('Resume ready');
-  await page.locator('#guidedLaunchNext').click();
-  const firstPath = page.locator('[data-opportunity-path]').first();
-  await expect(firstPath).toBeVisible();
-  await firstPath.click();
-  await page.locator('#guidedLaunchNext').click();
+  await expect(page.locator('[data-guided-stage="work"]')).toBeVisible();
+  await expect(page.locator('#guidedLaunchPathSummary')).toContainText('Procurement & Vendor Management');
   await page.locator('[data-launch-choice="workMode"][data-value="Remote"]').click();
   await page.locator('#guidedLaunchNext').click();
-  await page.locator('[data-launch-choice="employmentType"][data-value="Full-time"]').click();
-  await page.locator('#guidedLaunchNext').click();
+  await page.locator('#guidedMoreFilters summary').click();
   await page.locator('[data-launch-choice="salary"][data-value="100000"]').click();
-  await page.locator('#guidedLaunchNext').click();
   await expect(page.locator('#startJobSearch')).toBeEnabled();
   await page.locator('#startJobSearch').click();
   await expect(page.locator('#runStateTrack [data-run-state="Preparing"]')).toHaveClass(/active/);
-  await expect(page.locator('#messages')).toContainText('Added 0 new jobs to My Jobs');
-  await expect(page.locator('#messages')).toContainText('12 employer-feed listings scanned');
-  await expect(page.locator('#messages')).toContainText('11 listings outside your search requirements');
-  await expect(page.locator('#messages')).toContainText('Found—not Submitted');
+  await expect(page.locator('#messages')).toContainText('No matching jobs yet');
+  await expect(page.locator('#messages')).toContainText('try a different type of job');
+  await expect(page.locator('#messages button[data-prompt="Try a different job type"]')).toBeVisible();
+  await expect(page.locator('#messages .bubble.assistant').last().locator('.quick button')).toHaveCount(1);
+  await expect(page.locator('#statusShowJobs')).toHaveText('Try a different job type');
+  await expect(page.locator('#checkAgentStatus')).toBeHidden();
+  await expect(page.locator('#messages')).not.toContainText('Employer-feed screening');
+  await expect(page.locator('#messages')).not.toContainText('Found—not Submitted');
   expect(submittedMission?.location).toBe('United States');
   expect(submittedMission?.searchGoal).toBe('best-fit');
+  expect(submittedMission?.roleFamily).toBe('procurement');
   expect(submittedMission?.salaryMin).toBe(100000);
   expect(submittedMission?.employmentTypes).toEqual(['Full-time']);
 });
@@ -947,22 +937,15 @@ test('a signed-in user gives one-time scoped authorization before any agent run 
   await page.locator('#grantJobAgentConsent').click();
   await expect(page.locator('#jobAgentConsentOverlay')).not.toHaveClass(/open/);
   await expect(page.locator('#guidedLaunchOverlay')).toHaveClass(/open/);
-  await page.locator('[data-guided-goal="best-fit"]').click();
-  await page.locator('#guidedLaunchNext').click();
-  await page.locator('#guidedLaunchNext').click();
-  await page.locator('[data-opportunity-path]').first().click();
-  await page.locator('#guidedLaunchNext').click();
+  await expect(page.locator('[data-guided-stage="work"]')).toBeVisible();
   await page.locator('[data-launch-choice="workMode"][data-value="Remote"]').click();
-  await page.locator('#guidedLaunchNext').click();
-  await page.locator('[data-launch-choice="employmentType"][data-value="Full-time"]').click();
-  await page.locator('#guidedLaunchNext').click();
-  await page.locator('[data-launch-choice="salary"][data-value="0"]').click();
   await page.locator('#guidedLaunchNext').click();
   await page.locator('#startJobSearch').click();
   await expect.poll(() => runStarts).toBe(1);
   expect(savedAttestations).toEqual({ age18OrOlder: true, termsAccepted: true, privacyAcknowledged: true, candidateAuthorizationAccepted: true });
-  await expect(page.locator('#messages')).toContainText('Added 0 new jobs to My Jobs');
-  await expect(page.locator('#messages')).toContainText('0 employer-feed listings scanned');
+  await expect(page.locator('#messages')).toContainText('No matching jobs yet');
+  await expect(page.locator('#messages')).toContainText('try a different type of job');
+  await expect(page.locator('#messages button[data-prompt="Try a different job type"]')).toBeVisible();
 });
 
 test('the same saved-info area can revoke authorization and pause the agent', async ({ page }) => {
@@ -1065,7 +1048,7 @@ test('the guided launch remains usable without horizontal scrolling on mobile', 
   await expect(page.locator('#agentLaunch')).toBeVisible();
   await expect(page.locator('#openGuidedLaunch')).toBeVisible();
   await page.locator('#openGuidedLaunch').click();
-  await expect(page.locator('[data-guided-goal="best-fit"]')).toBeVisible();
+  await expect(page.locator('#resumeStepTitle')).toBeVisible();
   await expect(page.locator('#guidedLaunchNext')).toBeVisible();
   const widths = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, page: document.documentElement.scrollWidth }));
   expect(widths.page).toBeLessThanOrEqual(widths.viewport);
@@ -1144,7 +1127,7 @@ test('status tabs, mission stats, and receipt-only submission counting share one
   await expect(page.locator('[data-job-tab="Submitted"] span')).toHaveText('1');
   await expect(page.locator('[data-job-tab="Interviews"] span')).toHaveText('1');
   await page.locator('[data-job-tab="Submitted"]').click();
-  await expect(page.locator('#jobCards')).toContainText('Receipt Verified');
+  await expect(page.locator('#jobCards')).toContainText('Confirmation verified');
   await expect(page.locator('#jobCards')).not.toContainText('No Receipt Co');
 });
 

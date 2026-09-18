@@ -176,7 +176,7 @@
   ],
   "headers": [
     {
-      "source": "/home-motion-1f7df326a312.css",
+      "source": "/home-motion-cb30a966e447.css",
       "headers": [
         {
           "key": "Cache-Control",
@@ -185,7 +185,7 @@
       ]
     },
     {
-      "source": "/home-motion-4e0eecde7df1.js",
+      "source": "/home-motion-e322125499c6.js",
       "headers": [
         {
           "key": "Cache-Control",
@@ -314,7 +314,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'sha256-tlru7lmslzVtATPDH03eEYkZfwJmBxhEcmDmYMliHqE=' 'sha256-szQLzwZcO98P21QjTSzE0gLx2KOWAUeMBAHoTdkn5hc='; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src 'none'; worker-src 'self'; manifest-src 'self'; media-src 'none'; upgrade-insecure-requests"
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'sha256-tlru7lmslzVtATPDH03eEYkZfwJmBxhEcmDmYMliHqE=' 'sha256-gtXwrGbl0YCqac7Vj5Dx2S+4iuhQq1C9wCeJMXRta9s='; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src 'none'; worker-src 'self'; manifest-src 'self'; media-src 'none'; upgrade-insecure-requests"
         },
         {
           "key": "Cache-Control",
@@ -327,7 +327,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'sha256-tlru7lmslzVtATPDH03eEYkZfwJmBxhEcmDmYMliHqE=' 'sha256-szQLzwZcO98P21QjTSzE0gLx2KOWAUeMBAHoTdkn5hc='; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src 'none'; worker-src 'self'; manifest-src 'self'; media-src 'none'; upgrade-insecure-requests"
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'sha256-tlru7lmslzVtATPDH03eEYkZfwJmBxhEcmDmYMliHqE=' 'sha256-gtXwrGbl0YCqac7Vj5Dx2S+4iuhQq1C9wCeJMXRta9s='; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src 'none'; worker-src 'self'; manifest-src 'self'; media-src 'none'; upgrade-insecure-requests"
         }
       ]
     }

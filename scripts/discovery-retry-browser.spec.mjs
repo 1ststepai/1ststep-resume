@@ -20,8 +20,7 @@ test('slow discovery preserves progress, allows retry, and labels partial result
   await page.goto('http://127.0.0.1:4175/concierge');
   await expect(page).toHaveTitle(/Job Agent/);
   await page.locator('#openGuidedLaunch').click();
-  await page.locator('[data-guided-goal="best-fit"]').click();
-  await page.locator('#guidedLaunchNext').click();
+  await page.locator('#guidedLaunchBack').click();
   await page.locator('#scanOpportunityPaths').click();
   await expect(page.locator('#pathEvidence')).toContainText('try again when ready. Starter');
   await expect(page.locator('#scanOpportunityPaths')).toBeEnabled();

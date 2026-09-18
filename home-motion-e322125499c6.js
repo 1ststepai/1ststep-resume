@@ -102,9 +102,9 @@
     var demo = document.getElementById('runSteps');
     var demoIndex = 0;
     var frames = [
-      ['A role worth a closer look.', 'Your experience comes first', 'Only facts you have confirmed.', 'Match found'],
-      ['Made for this opportunity.', 'Résumé and cover letter prepared', 'Ready for you to read and edit.', 'Documents prepared · not sent'],
-      ['Your call. Always.', 'Your application is ready to review', 'Check the answers and attachments first.', 'Waiting for your review · not sent']
+      ['A role in My Jobs.', 'Prepared for Review', 'Built from Saved Info you confirmed.', 'Needs You'],
+      ['Something Needs You.', 'Human input required', 'The agent asks; it does not submit for you.', 'Needs You · not sent'],
+      ['Prepared for Review.', 'Your application is ready to review', 'Check the answers and attachments first.', 'Waiting for your review · not sent']
     ];
     function showFrame() {
       if (!demo) return;
