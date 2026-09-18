@@ -36,7 +36,7 @@ Stale files that are **not** live authority: `docs/status.md`, `docs/tasks.md`, 
 | Worktree | `C:/Users/evanp/Documents/Claude/Projects/1ststep.ai/.worktrees/job-agent-ui-ux-polish-20260917` |
 | IMPLEMENTED | yes (presentation/layout/copy/a11y/current-flow only) |
 | COMMITTED | yes, local commit `6aa7b50` |
-| PUSHED | pending this cycle |
+| PUSHED | yes, `origin/cursor/job-agent-ui-ux-polish-20260917` |
 | MERGED | no — must not merge onto owner-reviewed by the UX agent |
 | DEPLOYED | no |
 | HOSTED VERIFIED | no |
@@ -109,14 +109,14 @@ Owner-reviewed baseline worktree:
 ## Machine-captured Git snapshot
 
 <!-- git-state:start -->
-- Captured at: `2026-09-18T17:09:22.796Z`
+- Captured at: `2026-09-18T17:10:59.584Z`
 - This worktree: `C:\Users\evanp\Documents\Claude\Projects\1ststep.ai\.worktrees\job-agent-ui-ux-polish-20260917`
 - Active branch: `cursor/job-agent-ui-ux-polish-20260917`
-- HEAD SHA: `6aa7b50a8121929d26d7aa852d4a5b37b49609e5`
-- Upstream: `(none)`
-- Ahead/behind upstream: `n/a`/`n/a`
+- HEAD SHA: `e6c5175ac2593ce560e3936c15a23b2b21d9e849`
+- Upstream: `origin/cursor/job-agent-ui-ux-polish-20260917`
+- Ahead/behind upstream: `0`/`0`
 - origin/main: `d64e1743a63c40760d2c7ce8ef8f5a2f75d53f29`
-- Dirty files in this worktree: `M docs/UX_ACTION_FIRST_2026-09-18.md;  M docs/agents/CURRENT-STATE.md;  M docs/agents/GIT-STATE.md;  M docs/agents/HANDOFF.md;  M docs/agents/NEXT-ACTIONS.md`
+- Dirty files in this worktree: `M docs/agents/CURRENT-STATE.md;  M docs/agents/HANDOFF.md`
 - Worktree count: `69`
-- Dirty worktrees: `codex/chrome-store-policy-update@7a57fd7 (139 dirty); detached@9add18a (2 dirty); detached@d686aa5 (2 dirty); detached@9add18a (2 dirty); codex/aud029-login-headers-20260916@89acfc1 (9 dirty); detached@bbb6ee3 (25 dirty); codex/job-agent-engineering-os-20260912@345bc9b (5 dirty); cursor/job-agent-ui-ux-polish-20260917@6aa7b50 (5 dirty); codex/owner-reviewed-controlled-beta-20260917@f0a15d5 (28 dirty); release/consolidated-job-agent-v1.6-20260910@89cbd01 (6 dirty); detached@d64e174 (2 dirty); codex/background-continuation-20260910@8a6ba82 (5 dirty); feature/partners-affiliate-redesign@800bcae (1 dirty); detached@deeb03e (8 dirty); detached@f7c9067 (1 dirty); detached@7a57fd7 (124 dirty); detached@0c590a4 (1 dirty); detached@924cd75 (18 dirty); detached@924cd75 (26 dirty)`
+- Dirty worktrees: `codex/chrome-store-policy-update@7a57fd7 (139 dirty); detached@9add18a (2 dirty); detached@d686aa5 (2 dirty); detached@9add18a (2 dirty); codex/aud029-login-headers-20260916@89acfc1 (9 dirty); detached@bbb6ee3 (25 dirty); codex/job-agent-engineering-os-20260912@345bc9b (5 dirty); cursor/job-agent-ui-ux-polish-20260917@e6c5175 (2 dirty); codex/owner-reviewed-controlled-beta-20260917@f0a15d5 (28 dirty); release/consolidated-job-agent-v1.6-20260910@89cbd01 (6 dirty); detached@d64e174 (2 dirty); codex/background-continuation-20260910@8a6ba82 (5 dirty); feature/partners-affiliate-redesign@800bcae (1 dirty); detached@deeb03e (8 dirty); detached@f7c9067 (1 dirty); detached@7a57fd7 (124 dirty); detached@0c590a4 (1 dirty); detached@924cd75 (18 dirty); detached@924cd75 (26 dirty)`
 <!-- git-state:end -->
