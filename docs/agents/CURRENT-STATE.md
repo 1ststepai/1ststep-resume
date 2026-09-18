@@ -48,7 +48,7 @@ This candidate is **not** merged, deployed, or hosted-verified.
 ### HANDOFF-PROTOCOL-20260917 — Cursor ↔ Codex continuity layer
 
 - Files: `AGENTS.md`, `docs/agents/*`, `scripts/agent-handoff-status.mjs`, `scripts/agent-handoff-status-test.mjs`
-- Status: IMPLEMENTED in this worktree; COMMITTED only after the protocol commit lands. NOT PUSHED / NOT MERGED / NOT DEPLOYED / NOT HOSTED VERIFIED.
+- Status: COMMITTED locally at `616e4507fe51906e71337e13694beae3893e2b96` on `cursor/job-agent-ui-ux-polish-20260917`. NOT PUSHED / NOT MERGED / NOT DEPLOYED / NOT HOSTED VERIFIED.
 
 ## Active worktree(s)
 
@@ -66,7 +66,7 @@ Material conflict for Job Agent integration:
 
 - `owner-reviewed-controlled-beta-20260917` at `7ed4e18` is dirty: `lib/employer-browser-session-provider.js`. Do not merge/checkout that worktree until that file is committed, stashed, or explicitly discarded.
 
-This worktree's dirty files should only be the handoff-protocol docs/scripts until they are committed. See `docs/agents/GIT-STATE.md`.
+This worktree should be clean of protocol files now that `616e450` is COMMITTED. Confirm with `git status`. Sibling dirty trees remain; they are not this candidate.
 
 Never overwrite another agent's uncommitted files.
 
@@ -74,7 +74,7 @@ Never overwrite another agent's uncommitted files.
 
 - TASK ID: `UX-POLISH-20260917`
 - Presentation-only Job Agent polish is COMMITTED at `8d3ac08`.
-- Remaining: release-lane review and possible integration of `8d3ac08` onto `7ed4e18`. Handoff protocol must be committed so a fresh agent can resume from Git alone.
+- Remaining: release-lane review and possible integration of `8d3ac08` onto `7ed4e18`. Handoff protocol is COMMITTED at `616e450`.
 
 ## Completed work
 
@@ -121,14 +121,14 @@ Never overwrite another agent's uncommitted files.
 ## Machine-captured Git snapshot
 
 <!-- git-state:start -->
-- Captured at: `2026-09-18T03:02:20.953Z`
+- Captured at: `2026-09-18T03:05:52.421Z`
 - This worktree: `C:\Users\evanp\Documents\Claude\Projects\1ststep.ai\.worktrees\job-agent-ui-ux-polish-20260917`
 - Active branch: `cursor/job-agent-ui-ux-polish-20260917`
-- HEAD SHA: `8d3ac083e4906c7d2940e7e4501191b8f4c923d3`
+- HEAD SHA: `616e4507fe51906e71337e13694beae3893e2b96`
 - Upstream: `(none)`
 - Ahead/behind upstream: `n/a`/`n/a`
 - origin/main: `d64e1743a63c40760d2c7ce8ef8f5a2f75d53f29`
-- Dirty files in this worktree: `M AGENTS.md;  M CLAUDE.md;  M docs/AI_HANDOFF.md;  M docs/SESSION_RETROS/README.md;  M package.json; ?? docs/SESSION_RETROS/2026-09-17-cursor-codex-handoff-protocol.md; ?? docs/agents/; ?? scripts/agent-handoff-status-test.mjs; ?? scripts/agent-handoff-status.mjs`
+- Dirty files in this worktree: `M docs/agents/CURRENT-STATE.md;  M docs/agents/GIT-STATE.md;  M docs/agents/HANDOFF.md;  M scripts/agent-handoff-status-test.mjs`
 - Worktree count: `69`
-- Dirty worktrees: `cursor/job-agent-ui-ux-polish-20260917@8d3ac08 (9 dirty)`
+- Dirty worktrees: `codex/chrome-store-policy-update@7a57fd7 (139 dirty); detached@9add18a (2 dirty); detached@d686aa5 (2 dirty); detached@9add18a (2 dirty); codex/aud029-login-headers-20260916@89acfc1 (9 dirty); detached@bbb6ee3 (25 dirty); codex/job-agent-engineering-os-20260912@345bc9b (5 dirty); cursor/job-agent-ui-ux-polish-20260917@616e450 (4 dirty); codex/owner-reviewed-controlled-beta-20260917@7ed4e18 (7 dirty); release/consolidated-job-agent-v1.6-20260910@89cbd01 (6 dirty); detached@d64e174 (2 dirty); codex/background-continuation-20260910@8a6ba82 (5 dirty); feature/partners-affiliate-redesign@800bcae (1 dirty); detached@deeb03e (8 dirty); detached@f7c9067 (1 dirty); detached@7a57fd7 (124 dirty); detached@0c590a4 (1 dirty); detached@924cd75 (18 dirty); detached@924cd75 (26 dirty)`
 <!-- git-state:end -->

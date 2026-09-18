@@ -8,22 +8,22 @@ LAST AGENT: Cursor
 TIMESTAMP: 2026-09-17T22:50:00-04:00
 REPOSITORY: https://github.com/1ststepai/1ststep-resume.git
 CANONICAL BRANCH: `main` (production integrated SHA is `origin/main`)
-HEAD SHA: `8d3ac083e4906c7d2940e7e4501191b8f4c923d3` (branch HEAD at last handoff write; confirm with Git)
+HEAD SHA: `616e4507fe51906e71337e13694beae3893e2b96`
 ACTIVE BRANCH: `cursor/job-agent-ui-ux-polish-20260917`
 ACTIVE WORKTREE: `C:/Users/evanp/Documents/Claude/Projects/1ststep.ai/.worktrees/job-agent-ui-ux-polish-20260917`
 TASK ID: UX-POLISH-20260917
 TASK: Job Agent UI/UX presentation polish on the owner-reviewed controlled-beta baseline, plus install the Cursor ↔ Codex zero-loss handoff layer.
-STATUS: UX candidate COMMITTED locally at `8d3ac08`. Handoff protocol IMPLEMENTED and being COMMITTED on this branch. Candidate is NOT PUSHED, NOT MERGED, NOT DEPLOYED, NOT HOSTED VERIFIED.
-LAST COMPLETED ACTION: Installed `docs/agents/*` + `scripts/agent-handoff-status.mjs`. `npm run test:agent-handoff` PASS. Captured Git snapshot including 19 dirty sibling worktrees.
-FILES CHANGED: protocol layer only after `8d3ac08` (`AGENTS.md`, `CLAUDE.md`, `package.json`, `docs/agents/*`, `docs/AI_HANDOFF.md`, `docs/SESSION_RETROS/*`, `scripts/agent-handoff-status*.mjs`). No Job Agent product files in the protocol change.
-COMMITS CREATED: `8d3ac08` Polish Job Agent presentation for a coherent product loop. Protocol commit SHA is this branch HEAD after the protocol commit lands.
-UNCOMMITTED CHANGES: protocol files until committed; Git snapshot lists them. Sibling: `codex/owner-reviewed-controlled-beta-20260917` has uncommitted `lib/employer-browser-session-provider.js`.
-TESTS RUN: UI/UX targeted concierge/browser suite on `8d3ac08`. `node scripts/agent-handoff-status-test.mjs`. `npm run agent:handoff-status`.
-TEST RESULTS: UI/UX targeted suite PASS. Mobile QA PASS. Accessibility QA PASS. `test:agent-handoff` PASS. `npm run smoke` PASS. Full `npm run release:gate` has not been claimed on `8d3ac08`.
+STATUS: UX candidate COMMITTED at `8d3ac08`. Handoff protocol COMMITTED at `616e450` on the same branch. Neither SHA is PUSHED, MERGED, DEPLOYED, or HOSTED VERIFIED.
+LAST COMPLETED ACTION: Committed handoff protocol `616e4507fe51906e71337e13694beae3893e2b96`. `npm run test:agent-handoff` PASS. `npm run smoke` PASS.
+FILES CHANGED: protocol layer in `616e450` (`AGENTS.md`, `CLAUDE.md`, `package.json`, `docs/agents/*`, `docs/AI_HANDOFF.md`, `docs/SESSION_RETROS/*`, `scripts/agent-handoff-status*.mjs`). UX product files remain in `8d3ac08`.
+COMMITS CREATED: `8d3ac08` Polish Job Agent presentation for a coherent product loop. `616e450` Install a Git-resident Cursor-Codex handoff protocol.
+UNCOMMITTED CHANGES: none expected in this worktree after the protocol commit. Sibling: `codex/owner-reviewed-controlled-beta-20260917` has uncommitted `lib/employer-browser-session-provider.js`.
+TESTS RUN: UI/UX targeted concierge/browser suite on `8d3ac08`. `node scripts/agent-handoff-status-test.mjs`. `npm run agent:handoff-status`. `npm run smoke`.
+TEST RESULTS: UI/UX targeted suite PASS. Mobile QA PASS. Accessibility QA PASS. `test:agent-handoff` PASS. `npm run smoke` PASS. Full `npm run release:gate` has not been claimed on `8d3ac08` or `616e450`.
 KNOWN FAILURES: none on the UI/UX candidate or handoff protocol tests.
 BLOCKERS: release-lane review has not happened. Candidate branch has no upstream. Owner-reviewed worktree is dirty (`lib/employer-browser-session-provider.js`) — do not integrate onto that worktree until that file is committed, stashed, or explicitly discarded. Do not deploy. Do not enable beta tenants. Do not set `JOB_AGENT_COUNSEL_APPROVED`.
 DO NOT CHANGE: auth, consent, legal gates, access control, Vault authority, package truth, employer submission authority, PR #86 at `bbb6ee3`, application-answer learning R&D, beta scope, owner-reviewed policy semantics.
-NEXT ACTION: If `docs/agents/` is still untracked in this worktree, commit the protocol files listed above. Then independently review UI/UX candidate `8d3ac083e4906c7d2940e7e4501191b8f4c923d3` with `git diff 7ed4e18 8d3ac083e4906c7d2940e7e4501191b8f4c923d3`. Confirm presentation-only against `docs/OWNER_REVIEWED_CONTROLLED_BETA.md`. Do not check out `owner-reviewed-controlled-beta-20260917` to merge until its dirty `lib/employer-browser-session-provider.js` is resolved. After a clean integrate, run `npm run pretest:concierge && npm run test:concierge && npm run test:browser:vault` plus Playwright `scripts/concierge-job-capture-browser.spec.mjs` and `scripts/ui-handoff-browser.spec.mjs`. Record the integration SHA. Do not push, merge to `main`, deploy, or mark HOSTED VERIFIED without explicit owner approval.
+NEXT ACTION: Independently review UI/UX candidate `8d3ac083e4906c7d2940e7e4501191b8f4c923d3` with `git diff 7ed4e18 8d3ac083e4906c7d2940e7e4501191b8f4c923d3`. Confirm presentation-only against `docs/OWNER_REVIEWED_CONTROLLED_BETA.md`. Do not check out `owner-reviewed-controlled-beta-20260917` to merge until its dirty `lib/employer-browser-session-provider.js` is resolved. After a clean integrate, run `npm run pretest:concierge && npm run test:concierge && npm run test:browser:vault` plus Playwright `scripts/concierge-job-capture-browser.spec.mjs` and `scripts/ui-handoff-browser.spec.mjs`. Record the integration SHA. Do not push, merge to `main`, deploy, or mark HOSTED VERIFIED without explicit owner approval.
 NEXT VERIFICATION: `npm run smoke` in this worktree after the protocol commit, then the targeted concierge/browser suite on the SHA proposed for integration.
 DEPLOYMENT STATUS: NOT DEPLOYED. NOT HOSTED VERIFIED.
 
@@ -32,14 +32,14 @@ DEPLOYMENT STATUS: NOT DEPLOYED. NOT HOSTED VERIFIED.
 Facts below are regenerated by `npm run agent:handoff-status`. If they disagree with the fields above, trust Git for SHA/branch/dirty files, then reconcile the fields. Do not let this block overwrite TASK, NEXT ACTION, or DO NOT CHANGE.
 
 <!-- git-state:start -->
-- Captured at: `2026-09-18T03:02:20.953Z`
+- Captured at: `2026-09-18T03:05:52.421Z`
 - This worktree: `C:\Users\evanp\Documents\Claude\Projects\1ststep.ai\.worktrees\job-agent-ui-ux-polish-20260917`
 - Active branch: `cursor/job-agent-ui-ux-polish-20260917`
-- HEAD SHA: `8d3ac083e4906c7d2940e7e4501191b8f4c923d3`
+- HEAD SHA: `616e4507fe51906e71337e13694beae3893e2b96`
 - Upstream: `(none)`
 - Ahead/behind upstream: `n/a`/`n/a`
 - origin/main: `d64e1743a63c40760d2c7ce8ef8f5a2f75d53f29`
-- Dirty files in this worktree: `M AGENTS.md;  M CLAUDE.md;  M docs/AI_HANDOFF.md;  M docs/SESSION_RETROS/README.md;  M package.json; ?? docs/SESSION_RETROS/2026-09-17-cursor-codex-handoff-protocol.md; ?? docs/agents/; ?? scripts/agent-handoff-status-test.mjs; ?? scripts/agent-handoff-status.mjs`
+- Dirty files in this worktree: `M docs/agents/CURRENT-STATE.md;  M docs/agents/GIT-STATE.md;  M docs/agents/HANDOFF.md;  M scripts/agent-handoff-status-test.mjs`
 - Worktree count: `69`
-- Dirty worktrees: `cursor/job-agent-ui-ux-polish-20260917@8d3ac08 (9 dirty)`
+- Dirty worktrees: `codex/chrome-store-policy-update@7a57fd7 (139 dirty); detached@9add18a (2 dirty); detached@d686aa5 (2 dirty); detached@9add18a (2 dirty); codex/aud029-login-headers-20260916@89acfc1 (9 dirty); detached@bbb6ee3 (25 dirty); codex/job-agent-engineering-os-20260912@345bc9b (5 dirty); cursor/job-agent-ui-ux-polish-20260917@616e450 (4 dirty); codex/owner-reviewed-controlled-beta-20260917@7ed4e18 (7 dirty); release/consolidated-job-agent-v1.6-20260910@89cbd01 (6 dirty); detached@d64e174 (2 dirty); codex/background-continuation-20260910@8a6ba82 (5 dirty); feature/partners-affiliate-redesign@800bcae (1 dirty); detached@deeb03e (8 dirty); detached@f7c9067 (1 dirty); detached@7a57fd7 (124 dirty); detached@0c590a4 (1 dirty); detached@924cd75 (18 dirty); detached@924cd75 (26 dirty)`
 <!-- git-state:end -->
