@@ -57,6 +57,13 @@ class FakeRedis {
       return ['paused', JSON.stringify(record)];
     }
     if (script.includes("return {'created', ARGV[2]}") && script.includes('ZADD')) {
+      if (this.beforeRunCreate) await this.beforeRunCreate(keys, args);
+      if (keys[4]) {
+        const schedule = JSON.parse(this.values.get(keys[4]) || 'null');
+        if (!schedule || schedule.status !== 'active' || schedule.leaseTokenHash !== args[5]
+          || schedule.version !== Number(args[6]) || schedule.leaseUntil !== args[7]
+          || Number(args[8]) <= (this.serverNow ?? Number(args[2]))) return ['schedule_lease_lost'];
+      }
       const replay = this.values.get(keys[1]);
       if (replay) return ['replayed', replay];
       this.values.set(keys[0], args[0]); this.values.set(keys[1], args[1]); this.zadd(keys[2], args[2], args[1]); this.zadd(keys[3], args[2], args[1]);
@@ -109,4 +116,25 @@ assert.equal(await completeJobAgentSchedule({ ...config, tenantId: pauseClaim.te
 await deleteJobAgentSchedule({ ...config, subject: 'candidate@example.test' });
 assert.equal((await readJobAgentSchedule({ ...config, subject: 'candidate@example.test' })).schedule, null);
 
-console.log('Encrypted tenant-isolated daily schedule, lease recovery, idempotency, consent hook, and global budget tests passed.');
+// Simulate user changes after the worker reads preferences but before atomic admission.
+for (const change of ['pause', 'edit', 'delete', 'reclaim', 'expire']) {
+  const raceRedis = new FakeRedis();
+  const raceConfig = { ...config, redis: raceRedis };
+  const subject = 'race@example.test';
+  const due = new Date('2026-08-30T12:01:00.000Z');
+  await saveJobAgentSchedule({ ...raceConfig, subject, mission, expectedVersion: 0, idempotencyKey: 'schedule_race_create', now: start });
+  raceRedis.beforeRunCreate = async keys => {
+    const schedule = JSON.parse(await raceRedis.get(keys[4]));
+    if (change === 'pause') await pauseJobAgentScheduleForTenant({ ...raceConfig, tenantId: schedule.tenantId, now: due });
+    if (change === 'edit') await saveJobAgentSchedule({ ...raceConfig, subject, mission: { ...mission, role: 'Updated role' }, expectedVersion: schedule.version, idempotencyKey: 'schedule_race_edit', now: due });
+    if (change === 'delete') await deleteJobAgentSchedule({ ...raceConfig, subject });
+    if (change === 'reclaim') await claimNextJobAgentSchedule({ ...raceConfig, now: new Date(due.getTime() + 121_000) });
+    if (change === 'expire') raceRedis.serverNow = due.getTime() + 120_000;
+  };
+  const result = await processNextJobAgentSchedule({ ...raceConfig, env: { JOB_AGENT_SCHEDULE_ENABLED: 'true', JOB_AGENT_SCHEDULE_GLOBAL_DAILY_RUNS: '5' }, now: due });
+  assert.deepEqual(result, { status: 'deferred', reason: 'SCHEDULE_LEASE_LOST' }, change);
+  assert.ok(![...raceRedis.values.keys()].some(key => key.startsWith('1ststep:job-agent:v1:')), `${change}: no run or replay marker created`);
+  assert.ok(![...raceRedis.sorted.keys()].some(key => key.startsWith('1ststep:job-agent:v1:')), `${change}: no queue or tenant index created`);
+}
+
+console.log('Encrypted daily schedules, lease recovery, idempotency, budget, and atomic pause/edit/delete/reclaim/expiry fencing passed.');

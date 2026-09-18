@@ -1,5 +1,17 @@
 # Background application work
 
+## September 10 continuation — local candidate
+
+Based on `origin/main` at `8a6ba82`, in `background-continuation-20260910`. The dirty primary checkout was preserved.
+
+Scheduled discovery admission now checks the active schedule, claimed version, worker token, and Redis-clock lease expiry in the same Lua transaction that creates the run and queues it. Pausing, changing, deleting, or reclaiming the schedule before admission prevents the old worker from adding a run. A rejected worker returns `SCHEDULE_LEASE_LOST` without rescheduling the newer owner's work. Already accepted runs retain their existing lifecycle controls; this is not cancellation of previously queued work.
+
+Validation: schedule race tests, actual Redis Lua via the existing development `fakeredis[lua]` installation, durable-run tests, worker API tests, and `npm run smoke` passed (zero failures, six existing warnings). No live worker, AI generation, employer request, or deployment was triggered. Run the Lua check with `PYTHONPATH` pointing to the existing `output/package-identity-test-deps`, then `python scripts/job-agent-schedule-lua-test.py`.
+
+Next product gap remains server-side qualification and draft dispatch for scheduled discovery, using confirmed saved preferences, shared usage accounting, and cross-history duplicate admission. No unattended application claim is justified by this fix.
+
+## September 7 historical release
+
 Deployed to app.1ststep.ai as `dpl_HMBB6EBHAHRpHen5EWT4wmK2WaHj` from the isolated `../release-job-agent-20260907` snapshot. Rollback: `dpl_Bj6QpHJgy8FpYwLgi1QMkdQW2MoH`. The Windows prebuilt candidate was rejected in staging for a missing Linux canvas binding; the verified release was built on Vercel Linux.
 
 - Automatic draft requests now persist with `runNow: false`. The client continues queuing eligible matches when previous drafts are Searching or Preparing, instead of waiting for AI output. The existing API still checks authorization, rate limits, plan allowance, and fresh employer identity. Accepted automatic requests use Vercel waitUntil to start immediately after responding; cron retains interrupted-run recovery.
