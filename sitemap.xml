@@ -13,6 +13,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://app.1ststep.ai/where-to-find-1ststep-ai/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://app.1ststep.ai/privacy</loc>
     <lastmod>2026-04-30</lastmod>
     <changefreq>yearly</changefreq>

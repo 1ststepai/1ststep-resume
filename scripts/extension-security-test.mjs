@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const paths = ['content.js', 'background.js', 'auth-bridge.js', 'popup.js', 'popup.html', 'manifest.json'];
+const paths = ['content.js', 'job-capture.js', 'background.js', 'auth-bridge.js', 'popup.js', 'popup.html', 'manifest.json'];
 const files = Object.fromEntries(await Promise.all(paths.map(async path => [path, await readFile(new URL(`../1ststep-extension/${path}`, import.meta.url), 'utf8')])));
 const combined = Object.values(files).join('\n');
 const manifest = JSON.parse(files['manifest.json']);
@@ -24,32 +24,35 @@ assert.match(files['auth-bridge.js'], /credentials: 'include'/);
 assert.match(files['auth-bridge.js'], /\/api\/extension-application-handoff/);
 assert.match(files['auth-bridge.js'], /\['prepare', 'document', 'complete'\]/);
 assert.doesNotMatch(files['background.js'], /chrome\.storage\.(?:local|session)\.set\([^\n]*(?:document|contentBase64|resumeDocument)/);
-// -- Job capture destination (regression guard) -----------------------------
-// /app serves the Job Agent since 2026-09-04. Captured jobs must open the
-// legacy workspace at /app/resume, because that is where the
-// 1STSTEP_JOB_CAPTURE listener lives. auth-bridge.js deletes the pending job
-// from chrome.storage as it delivers, so a wrong destination loses the capture
-// silently instead of failing loudly. These three assertions pin the whole
-// chain: background opens the route -> auth-bridge posts -> app.js receives.
-const appJs = await readFile(new URL('../app.js', import.meta.url), 'utf8');
-assert.match(files['background.js'], /\$\{APP_URL\}\/app\/resume\?jobCaptureId=/,
-  'job capture must open /app/resume');
-assert.doesNotMatch(files['background.js'], /\$\{APP_URL\}\/app\?jobCaptureId=/,
-  'job capture must not open /app, which now serves the Job Agent');
+// -- Job capture destination and durable acknowledgement --------------------
+const conciergeJs = await readFile(new URL('../concierge.js', import.meta.url), 'utf8');
+assert.match(files['background.js'], /\$\{APP_URL\}\/concierge\?jobCaptureId=/,
+  'job capture must open the Job Agent');
 assert.match(files['auth-bridge.js'], /type: '1STSTEP_JOB_CAPTURE'/,
   'auth-bridge must still post the capture contract message');
-assert.match(appJs, /event\.data\.type !== '1STSTEP_JOB_CAPTURE'/,
-  'app.js must still listen for the capture contract message');
+assert.match(conciergeJs, /event\.data\?\.type !== '1STSTEP_JOB_CAPTURE'/,
+  'concierge.js must listen for the capture contract message');
+assert.match(conciergeJs, /campaignSync\.status !== 'synced'/,
+  'the Job Agent must not acknowledge before secure persistence succeeds');
+assert.ok(conciergeJs.indexOf("campaignSync.status !== 'synced'") < conciergeJs.indexOf('acknowledgeExtensionCapture(capture.captureId)'),
+  'secure persistence must be checked before acknowledgement');
 
 assert.deepEqual(manifest.host_permissions.sort(), ['https://*.greenhouse.io/*', 'https://app.1ststep.ai/*'].sort());
 assert.equal(manifest.content_scripts[0].all_frames, false);
 assert.equal('web_accessible_resources' in manifest, false);
-assert.equal(manifest.description.toLowerCase().includes('greenhouse'), true);
+assert.equal(manifest.description.toLowerCase().includes('greenhouse'), false);
+assert.equal(manifest.permissions.includes('activeTab'), true);
+assert.equal(manifest.permissions.includes('scripting'), true);
+assert.equal(manifest.permissions.includes('tabs'), false);
+assert.equal(manifest.host_permissions.includes('<all_urls>'), false);
+assert.match(files['job-capture.js'], /CAPTURE_JOB_PAGE/);
+assert.doesNotMatch(files['job-capture.js'], /querySelectorAll\([^)]*(?:input|textarea|select)|document\.forms|localStorage|sessionStorage|document\.cookie/i,
+  'job capture must not read user-entered form values or browser storage');
 
 assert.match(files['content.js'], /sendResponse\(\{ success: true, reviewRequired: true, matchAssessment, filled: 0, submitted: false/);
 assert.ok(files['content.js'].indexOf('reviewRequired: true') < files['content.js'].indexOf('if (await fillApprovedResume'), 'match review must happen before document or ordinary-field mutation');
 assert.match(files['content.js'], /confirmPrecision: true|msg\.confirmPrecision === true/);
 assert.match(files['popup.js'], /btn\.dataset\.precisionReviewed = 'true'/);
-assert.match(files['popup.html'], /Review match &amp; fill/);
+assert.match(files['popup.html'], /Review &amp; fill application/);
 
-console.log('Controlled Greenhouse extension uses transient server-authorized values and integrity-checked resume bytes, requires match evidence and explicit review before fill, stores no raw profile or document data, performs no AI field guessing, keeps narrow hosts, and never submits.');
+console.log('Controlled extension captures only user-invoked job content, uses transient server-authorized values and integrity-checked resume bytes for supported fill, stores no raw profile or document data, keeps narrow persistent hosts, and never submits.');

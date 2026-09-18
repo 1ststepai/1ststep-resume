@@ -23,7 +23,10 @@ import { createHmac, randomBytes, randomInt, timingSafeEqual } from 'crypto';
 import { alertOnAbuse } from './_alert.js';
 import { enforceDurableRateLimit, sendRateLimitResult } from '../lib/durable-rate-limit.js';
 import { accessSessionToken, clearAccessSessionCookie, isOriginAllowed, setAccessSessionCookie } from '../lib/api-security.js';
-import { createUserSession, readUserSession, revokeAllUserSessions, revokeUserSession, userSessionRuntimeConfiguration } from '../lib/user-session-store.js';
+import {
+  consumeRestoreChallenge, createUserSession, invalidateRestoreChallenge, readUserSession,
+  registerRestoreChallenge, restoreChallengeRuntimeConfiguration, revokeAllUserSessions, revokeUserSession, userSessionRuntimeConfiguration,
+} from '../lib/user-session-store.js';
 import { jobAgentEntitlementsForSubscription } from '../lib/job-agent-entitlement.js';
 import { isAdministratorSubject } from '../lib/admin-subject.js';
 
@@ -121,21 +124,34 @@ function hashRestoreCode(email, code) {
     .digest('hex');
 }
 
-function createRestoreChallenge(email, code) {
-  const payload = Buffer.from(JSON.stringify({
+export function createRestoreChallenge(email, code, client = 'legacy', now = Date.now()) {
+  const data = {
     email: String(email).toLowerCase(),
     codeHash: hashRestoreCode(email, code),
-    exp: Date.now() + RESTORE_CODE_TTL_MS,
+    purpose: 'subscription-restore',
+    client,
+    iat: now,
+    exp: now + RESTORE_CODE_TTL_MS,
     nonce: randomBytes(12).toString('hex'),
-  })).toString('base64url');
-  return signPayload(payload);
+  };
+  const payload = Buffer.from(JSON.stringify(data)).toString('base64url');
+  return { token: signPayload(payload), data };
 }
 
-function verifyRestoreChallenge(email, code, challenge) {
+export function verifyRestoreChallenge(email, code, challenge, client = 'legacy', now = Date.now()) {
   const data = verifySignedPayload(challenge);
-  if (!data || Date.now() > Number(data.exp)) return false;
-  if (String(data.email || '').toLowerCase() !== String(email || '').toLowerCase()) return false;
-  return safeSecretEquals(data.codeHash, hashRestoreCode(email, code));
+  if (!data || now > Number(data.exp) || Number(data.iat) > now || Number(data.exp) - Number(data.iat) !== RESTORE_CODE_TTL_MS) return null;
+  if (data.purpose !== 'subscription-restore' || data.client !== client || !/^[a-f0-9]{24}$/.test(String(data.nonce || ''))) return null;
+  if (String(data.email || '').toLowerCase() !== String(email || '').toLowerCase()) return null;
+  return safeSecretEquals(data.codeHash, hashRestoreCode(email, code)) ? data : null;
+}
+
+export async function redeemSubscriptionRestoreChallenge({ email, code, challenge, client, runtime, now = Date.now(), onRedeemed }) {
+  const verified = verifyRestoreChallenge(email, code, challenge, client, now);
+  if (!verified) return { status: 'invalid' };
+  const consumed = await consumeRestoreChallenge({ ...runtime, subject: email, nonce: verified.nonce, client });
+  if (!consumed.consumed) return { status: 'replayed' };
+  return { status: 'redeemed', value: await onRedeemed(verified) };
 }
 
 // ── Owner restore access ─────────────────────────────────────────────────────
@@ -505,38 +521,76 @@ export default async function handler(req, res) {
   }
 
   if (action === 'restore-code') {
+    const runtime = restoreChallengeRuntimeConfiguration();
+    if (!runtime) return res.status(503).json({ tier: 'free', error: 'Restore verification is temporarily unavailable.' });
+    const restoreClient = String(req.query?.client || '') === 'job-agent' ? 'job-agent' : 'legacy';
     const code = String(randomInt(100000, 1000000));
-    const restoreChallenge = createRestoreChallenge(email, code);
-    if (!restoreChallenge) {
+    const restoreChallenge = createRestoreChallenge(email, code, restoreClient);
+    if (!restoreChallenge.token) {
       console.error('TIER_SECRET not set. Subscription restore challenge unavailable.');
       return res.status(500).json({ tier: 'free', error: 'Restore verification unavailable.' });
     }
+    try {
+      await registerRestoreChallenge({
+        ...runtime,
+        subject: email,
+        nonce: restoreChallenge.data.nonce,
+        client: restoreClient,
+        ttlSeconds: Math.ceil((restoreChallenge.data.exp - Date.now()) / 1000),
+      });
+    } catch {
+      return res.status(503).json({ tier: 'free', error: 'Restore verification is temporarily unavailable.' });
+    }
     const sent = await sendSubscriptionRestoreCode(email, code);
     if (!sent) {
+      await invalidateRestoreChallenge({ ...runtime, subject: email, nonce: restoreChallenge.data.nonce, client: restoreClient }).catch(() => {});
       return res.status(503).json({ tier: 'free', error: 'Could not send verification code.' });
     }
     return res.status(200).json({
       tier: 'free',
       status: 'verification_code_sent',
       verificationRequired: true,
-      restoreChallenge,
+      restoreChallenge: restoreChallenge.token,
     });
   }
 
   const subscriptionRestoreCode = req.headers['x-subscription-restore-code'] || '';
   const subscriptionRestoreChallenge = req.headers['x-subscription-restore-challenge'] || '';
-  if (!verifyRestoreChallenge(email, subscriptionRestoreCode, subscriptionRestoreChallenge)) {
+  const restoreClient = String(req.query?.client || '') === 'job-agent' ? 'job-agent' : 'legacy';
+  const runtime = restoreChallengeRuntimeConfiguration();
+  if (!runtime) return res.status(503).json({ tier: 'free', error: 'Restore verification is temporarily unavailable.' });
+  let redemption;
+  try {
+    redemption = await redeemSubscriptionRestoreChallenge({
+      email,
+      code: subscriptionRestoreCode,
+      challenge: subscriptionRestoreChallenge,
+      client: restoreClient,
+      runtime,
+      onRedeemed: () => sendVerifiedSubscriptionSession(req, res, email),
+    });
+  } catch {
+    return res.status(503).json({ tier: 'free', error: 'Restore verification is temporarily unavailable.' });
+  }
+  if (redemption.status !== 'redeemed') {
     return res.status(200).json({
       tier: 'free',
       status: 'verification_required',
       verificationRequired: true,
+      ...(redemption.status === 'replayed' ? { replayRejected: true } : {}),
     });
   }
+  return redemption.value;
+}
 
+// Only call after proving control of this exact email, through the restore
+// challenge or Clerk's server-verified primary email. Never use request email.
+export async function sendVerifiedSubscriptionSession(req, res, email, identityFields = {}, stripeClient = null) {
+  const send = (tier, fields) => sendSignedSession(req, res, email, tier, { ...identityFields, ...fields });
   // A successfully completed email challenge proves control of the configured
   // owner inbox. Only then may an administrator receive the owner session.
   if (isAdministratorSubject(email)) {
-    return sendSignedSession(req, res, email, 'complete', {
+    return send('complete', {
       status: 'owner_verified_access',
       expiresAt: null,
       expiresInDays: null,
@@ -545,23 +599,23 @@ export default async function handler(req, res) {
 
   // Legacy private-access users no longer receive paid entitlement by email alone.
   if (isBetaEmail(email)) {
-    return sendSignedSession(req, res, email, 'free', { status: 'legacy_access_free', expiresAt: null, expiresInDays: null });
+    return sendSignedSession(req, res, email, 'free', { ...identityFields, status: 'legacy_access_free', expiresAt: null, expiresInDays: null });
   }
 
-  if (!process.env.STRIPE_SECRET_KEY) {
+  if (!stripeClient && !process.env.STRIPE_SECRET_KEY) {
     console.error('STRIPE_SECRET_KEY not set. Subscription check unavailable.');
-    return sendSignedSession(req, res, email, 'free', { error: 'Subscription check unavailable.' });
+    return res.status(503).json({ error: 'Subscription check unavailable. Please try again.' });
   }
 
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' });
+    const stripe = stripeClient || new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20', timeout: 8000, maxNetworkRetries: 0 });
 
     // Find customers with this email
     const customers = await stripe.customers.list({ email, limit: 5 });
 
     if (!customers.data.length) {
       // Return same shape as 'free' — don't reveal whether the email has ever been seen
-      return sendSignedSession(req, res, email, 'free', { status: 'no_active_subscription' });
+      return send('free', { status: 'no_active_subscription' });
     }
 
     // Check each customer for an active subscription
@@ -585,7 +639,7 @@ export default async function handler(req, res) {
               const expiresMs = passExpMs || periodEndMs;
               const expiresAt = expiresMs ? new Date(expiresMs).toISOString() : null;
               const expiresInDays = expiresMs ? Math.max(0, Math.ceil((expiresMs - Date.now()) / 86400000)) : null;
-              return sendSignedSession(req, res, email, tier, { status: sub.status, expiresAt, expiresInDays });
+              return send(tier, { status: sub.status, expiresAt, expiresInDays });
             }
           }
         }
@@ -608,7 +662,7 @@ export default async function handler(req, res) {
               const expiresMs = sub.current_period_end ? sub.current_period_end * 1000 : null;
               const expiresAt = expiresMs ? new Date(expiresMs).toISOString() : null;
               const expiresInDays = expiresMs ? Math.max(0, Math.ceil((expiresMs - Date.now()) / 86400000)) : null;
-              return sendSignedSession(req, res, email, tier, { status: 'trialing', expiresAt, expiresInDays });
+              return send(tier, { status: 'trialing', expiresAt, expiresInDays });
             }
           }
         }
@@ -616,11 +670,11 @@ export default async function handler(req, res) {
     }
 
     // Customer exists but no active paid or trialing subscription found
-    return sendSignedSession(req, res, email, 'free', { status: 'no_active_subscription' });
+    return send('free', { status: 'no_active_subscription' });
 
   } catch (err) {
     console.error(JSON.stringify({ type: 'stripe-subscription-check-error', name: err?.name || 'unknown' }));
-    // Fail closed to free access when Stripe is unavailable or returns an unexpected error.
-    return sendSignedSession(req, res, email, 'free', { error: 'Subscription check failed.' });
+    // Do not overwrite a paid session with free access during an outage.
+    return res.status(503).json({ error: 'Subscription check failed. Please try again.' });
   }
 }

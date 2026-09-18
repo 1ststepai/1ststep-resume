@@ -27,18 +27,12 @@ import {
 } from '../lib/stripe-webhook-idempotency.js';
 import { recordConfiguredJobAgentOperationalEvent } from '../lib/job-agent-operational-metrics.js';
 import { sendConfiguredJobAgentOperatorAlert } from '../lib/job-agent-operator-alert.js';
+import { isRequestBodyTooLarge, readBoundedRawRequestBody } from '../lib/bounded-raw-request-body.js';
 
 // Webhooks must receive the raw body — disable body parsing
 export const config = { api: { bodyParser: false } };
 
-async function getRawBody(req) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    req.on('data', chunk => chunks.push(chunk));
-    req.on('end', () => resolve(Buffer.concat(chunks)));
-    req.on('error', reject);
-  });
-}
+const STRIPE_WEBHOOK_BODY_LIMIT_BYTES = 1_048_576;
 
 // ── Admin email alert via Resend ─────────────────────────────────────────────
 // Sends a transactional email via Resend so Evan gets an alert for critical events.
@@ -257,17 +251,22 @@ async function getTierFromSession(stripe, sessionId) {
 
 // ── Main handler ─────────────────────────────────────────────────────────────
 
-export default async function handler(req, res) {
+export async function handleStripeWebhookRequest(req, res, {
+  env = process.env,
+  StripeImpl = Stripe,
+  idempotencyConfiguration = stripeWebhookIdempotencyConfiguration,
+  idempotencyOperations = { claim: claimStripeWebhookEvent, complete: completeStripeWebhookEvent, release: releaseStripeWebhookEvent },
+} = {}) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
+  if (!env.STRIPE_SECRET_KEY || !env.STRIPE_WEBHOOK_SECRET) {
     console.error('Stripe env vars missing');
     return res.status(500).json({ error: 'Webhook not configured' });
   }
 
-  const idempotency = stripeWebhookIdempotencyConfiguration(process.env);
+  const idempotency = idempotencyConfiguration(env);
   if (!idempotency) {
     console.error('Durable Stripe webhook idempotency is not configured');
     await recordConfiguredJobAgentOperationalEvent('stripe_webhook_failure');
@@ -275,13 +274,19 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: 'Webhook processing is temporarily unavailable.' });
   }
 
-  const stripe  = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' });
-  const rawBody = await getRawBody(req);
+  const stripe  = new StripeImpl(env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' });
+  let rawBody;
+  try {
+    rawBody = await readBoundedRawRequestBody(req, { limitBytes: STRIPE_WEBHOOK_BODY_LIMIT_BYTES });
+  } catch (error) {
+    if (isRequestBodyTooLarge(error)) return res.status(413).json({ error: 'Payload too large' });
+    throw error;
+  }
   const sig     = req.headers['stripe-signature'];
 
   let event;
   try {
-    event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(rawBody, sig, env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.error(JSON.stringify({ type: 'stripe-webhook-signature-failed', name: err?.name || 'unknown' }));
     alertOnAbuse('webhook_sig_failure', req.headers['x-real-ip'] || 'unknown', err.message);
@@ -290,7 +295,7 @@ export default async function handler(req, res) {
 
   let claim;
   try {
-    claim = await claimStripeWebhookEvent({ ...idempotency, eventId: event.id });
+    claim = await idempotencyOperations.claim({ ...idempotency, eventId: event.id });
   } catch (error) {
     console.error('Stripe webhook durable claim failed:', error?.name || 'unknown');
     await recordConfiguredJobAgentOperationalEvent('stripe_webhook_failure');
@@ -381,10 +386,10 @@ export default async function handler(req, res) {
     default:
       console.log(`Unhandled event type: ${event.type}`);
     }
-    await completeStripeWebhookEvent({ ...idempotency, eventId: event.id, leaseToken: claim.leaseToken });
+    await idempotencyOperations.complete({ ...idempotency, eventId: event.id, leaseToken: claim.leaseToken });
     await recordConfiguredJobAgentOperationalEvent('stripe_webhook_completed');
   } catch (error) {
-    await releaseStripeWebhookEvent({ ...idempotency, eventId: event.id, leaseToken: claim.leaseToken }).catch(() => {});
+    await idempotencyOperations.release({ ...idempotency, eventId: event.id, leaseToken: claim.leaseToken }).catch(() => {});
     console.error('Stripe webhook processing failed:', error?.name || 'unknown');
     await recordConfiguredJobAgentOperationalEvent('stripe_webhook_failure');
     await sendConfiguredJobAgentOperatorAlert('stripe_webhook_processing_failure');
@@ -392,4 +397,8 @@ export default async function handler(req, res) {
   }
 
   return res.status(200).json({ received: true });
+}
+
+export default function handler(req, res) {
+  return handleStripeWebhookRequest(req, res);
 }

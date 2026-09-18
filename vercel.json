@@ -67,7 +67,14 @@
         { "key": "Referrer-Policy",           "value": "strict-origin-when-cross-origin" },
         { "key": "Permissions-Policy",        "value": "camera=(), microphone=(), geolocation=(self)" },
         { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
-        { "key": "Content-Security-Policy",   "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' https://buy.stripe.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.tailwindcss.com https://widgets.leadconnectorhq.com https://stcdn.leadconnectorhq.com https://services.leadconnectorhq.com https://js.stripe.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.bunny.net; font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net; img-src 'self' data: https:; connect-src 'self' https://www.google-analytics.com https://www.google.com https://services.leadconnectorhq.com https://services.msgsndr.com https://widgets.leadconnectorhq.com https://stcdn.leadconnectorhq.com https://nominatim.openstreetmap.org https://ipapi.co; frame-src https://js.stripe.com https://buy.stripe.com; worker-src blob: https://cdnjs.cloudflare.com;" }
+        { "key": "Content-Security-Policy",   "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' https://buy.stripe.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.tailwindcss.com https://widgets.leadconnectorhq.com https://stcdn.leadconnectorhq.com https://services.leadconnectorhq.com https://js.stripe.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.bunny.net; font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net; img-src 'self' data: https:; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://www.google.com https://services.leadconnectorhq.com https://services.msgsndr.com https://widgets.leadconnectorhq.com https://stcdn.leadconnectorhq.com https://nominatim.openstreetmap.org https://ipapi.co; frame-src https://js.stripe.com https://buy.stripe.com; worker-src blob: https://cdnjs.cloudflare.com;" }
+      ]
+    },
+    {
+      "source": "/login.html",
+      "headers": [
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' https://clerk.1ststep.ai https://challenges.cloudflare.com https://*.protect.clerk.com; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://img.clerk.com; connect-src 'self' https://clerk.1ststep.ai https://*.protect.clerk.com:*; frame-src 'self' https://challenges.cloudflare.com https://*.protect.clerk.com; worker-src 'self' blob:; upgrade-insecure-requests" },
+        { "key": "Cache-Control", "value": "no-store" }
       ]
     },
     {
@@ -86,7 +93,7 @@
     {
       "source": "/app/resume",
       "headers": [
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' https://buy.stripe.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.tailwindcss.com https://widgets.leadconnectorhq.com https://stcdn.leadconnectorhq.com https://services.leadconnectorhq.com https://js.stripe.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.bunny.net; font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net; img-src 'self' data: https:; connect-src 'self' https://www.google-analytics.com https://www.google.com https://services.leadconnectorhq.com https://services.msgsndr.com https://widgets.leadconnectorhq.com https://stcdn.leadconnectorhq.com https://nominatim.openstreetmap.org https://ipapi.co; frame-src https://js.stripe.com https://buy.stripe.com; worker-src blob: https://cdnjs.cloudflare.com;" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' https://buy.stripe.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.tailwindcss.com https://widgets.leadconnectorhq.com https://stcdn.leadconnectorhq.com https://services.leadconnectorhq.com https://js.stripe.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.bunny.net; font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net; img-src 'self' data: https:; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://www.google.com https://services.leadconnectorhq.com https://services.msgsndr.com https://widgets.leadconnectorhq.com https://stcdn.leadconnectorhq.com https://nominatim.openstreetmap.org https://ipapi.co; frame-src https://js.stripe.com https://buy.stripe.com; worker-src blob: https://cdnjs.cloudflare.com;" },
         { "key": "Cache-Control", "value": "no-store" }
       ]
     },
@@ -112,4 +119,3 @@
     }
   ]
 }
-

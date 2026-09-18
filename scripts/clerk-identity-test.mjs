@@ -52,8 +52,8 @@ assert.equal(unverified.code, 'CLERK_SESSION_INVALID');
 
 const sessionApi = await readFile(new URL('../api/user-session.js', import.meta.url), 'utf8');
 assert.match(sessionApi, /action\s*\|\| ''\) === 'clerk-exchange'/);
-assert.match(sessionApi, /tier: 'free', entitlements: \[\]/, 'Clerk identity exchange must never manufacture paid access.');
-assert.match(sessionApi, /requires-existing-stripe-resolution/);
+assert.match(sessionApi, /sendVerifiedSubscriptionSession\([\s\S]*res, identity.subject/, 'Use the server-verified email with the shared Stripe resolver.');
+assert.doesNotMatch(sessionApi, /tier: 'complete'/, 'Clerk identity alone must not grant a paid tier.');
 assert.doesNotMatch(sessionApi, /CLERK[^\n]*(?:complete|job-agent-controlled-beta)/, 'Clerk configuration must not be coupled to paid entitlement.');
 
 console.log('Clerk identity is opt-in, origin-bound, verified-email-only, and separate from paid entitlement.');

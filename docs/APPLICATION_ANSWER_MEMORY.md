@@ -13,3 +13,12 @@ Persistence order is vault save, then version-checked application update. If the
 Verification: `npm run test:answer-memory`; `npx playwright test scripts/concierge-vault-browser.spec.mjs --workers=1`; existing application-session and employer-worker tests; `npm run smoke`.
 
 Remaining release checks: real encrypted signed-user save/reload/edit/forget drill in isolated staging; API-level concurrent revocation testing; independent review before deployment. Semantic paraphrase reuse and authorized screening-field materialization require separate verified adapters, not relaxed matching or permissions.
+# Local update: September 7, 2026
+
+During an authorized employer inspection, ordinary exact-match questions now reuse the current user-confirmed vault answer reference without another confirmation. Reuse respects consent, scope, expiry, revocation, manual-only settings, pause, and submission-attempt boundaries. Sensitive answers and permissions remain manual. This supersedes the repeat-confirmation behavior described below for this inspection path only.
+
+This is private answer preparation. The current employer adapter still needs screening-field materialization before these references can fill employer forms. It does not enable unattended daily submission. Daily discovery, document preparation, employer filling, and receipt verification must be connected and verified before advertising that capability.
+
+## Explicit save-choice UX
+
+The Needs You answer step is intentionally two-stage. The user first writes or reviews the answer, then sees a plain-language prompt: **Remember for similar applications**, **Use only for this application**, or **Change my answer**. No save request is preselected and no vault write happens before that choice. The broad option remains limited to ordinary, exact-question meaning matches; sensitive, permission, credential, challenge, and other consequential answers remain manual or application-scoped. Both save paths show that nothing is sent or submitted and continue to expose Edit/Forget controls in Saved Info.

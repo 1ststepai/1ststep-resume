@@ -11,12 +11,13 @@ try {
   const second = await buildControlledExtension({ outputDirectory: join(directory, 'second') });
   assert.equal(first.sha256, second.sha256, 'controlled extension build must be reproducible');
   assert.equal(first.capability, 'supervised-greenhouse-no-submit');
+  assert.equal(first.captureScope, 'user-invoked-active-tab-job-content');
   assert.equal(first.containsCandidateValues, false);
 
   const zip = await JSZip.loadAsync(await readFile(first.outputPath));
   const names = Object.keys(zip.files).filter(name => !zip.files[name].dir).sort();
   assert.deepEqual(names, [
-    'RELEASE-INTEGRITY.json', 'auth-bridge.js', 'background.js', 'content.js',
+    'RELEASE-INTEGRITY.json', 'auth-bridge.js', 'background.js', 'content.js', 'job-capture.js',
     'icons/icon-128.png', 'icons/icon-16.png', 'icons/icon-48.png', 'manifest.json',
     'popup.html', 'popup.js', 'sidepanel.html', 'sidepanel.js',
   ].sort());
@@ -24,10 +25,11 @@ try {
   assert.equal(names.some(name => /screenshot|store_listing|testing_guide|hook|result/i.test(name)), false);
 
   const releaseManifest = JSON.parse(await zip.file('RELEASE-INTEGRITY.json').async('string'));
-  assert.equal(releaseManifest.files.length, 11);
+  assert.equal(releaseManifest.files.length, 12);
   assert.equal(releaseManifest.excludesLegacyModules, true);
   assert.equal(releaseManifest.containsCandidateValues, false);
   assert.equal(releaseManifest.capability, 'supervised-greenhouse-no-submit');
+  assert.equal(releaseManifest.captureScope, 'user-invoked-active-tab-job-content');
   for (const file of releaseManifest.files) {
     assert.match(file.sha256, /^[a-f0-9]{64}$/);
     assert.ok(file.bytes > 0);
@@ -43,8 +45,11 @@ try {
   assert.deepEqual(manifest.host_permissions.sort(), ['https://*.greenhouse.io/*', 'https://app.1ststep.ai/*'].sort());
   assert.equal(manifest.permissions.includes('debugger'), false);
   assert.equal(manifest.permissions.includes('<all_urls>'), false);
+  assert.equal(manifest.permissions.includes('activeTab'), true);
+  assert.equal(manifest.permissions.includes('scripting'), true);
+  assert.equal(manifest.permissions.includes('tabs'), false);
 } finally {
   await rm(directory, { recursive: true, force: true });
 }
 
-console.log('Reproducible Greenhouse-only controlled extension release boundary tests passed.');
+console.log('Reproducible controlled extension release boundary tests passed.');

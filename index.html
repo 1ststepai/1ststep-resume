@@ -3,14 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>1stStep.ai — Stop rewriting your résumé for every job</title>
-<meta name="description" content="1stStep finds roles that are still open, writes a résumé and cover letter for each one from facts you have confirmed, and asks you before anything is sent.">
+<title>1stStep.ai — AI Job Agent for finding jobs and tailoring applications</title>
+<meta name="description" content="An AI Job Agent for job seekers: it finds openings that are still live and prepares a tailored résumé and cover letter for each one. You approve everything.">
+<meta name="robots" content="index,follow,max-image-preview:large">
 <meta name="theme-color" content="#FFFFFF">
 <link rel="canonical" href="https://app.1ststep.ai/">
-<meta property="og:title" content="1stStep.ai — Stop rewriting your résumé for every job">
-<meta property="og:description" content="Verified job discovery, a tailored résumé for every role, and one queue for anything that needs you. Controlled beta.">
+<meta property="og:site_name" content="1stStep.ai">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="1stStep.ai — Your AI Job Agent">
+<meta property="og:description" content="Find the right jobs. Build better applications. Faster. Your AI Job Agent prepares a tailored résumé and cover letter for every role — you approve before anything is sent.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://app.1ststep.ai/">
+<meta property="og:image" content="https://app.1ststep.ai/og-1ststep-ai.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="1stStep.ai — an AI Job Agent that finds open roles, writes a résumé for each one, and waits for your approval.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="1stStep.ai — Your AI Job Agent">
+<meta name="twitter:description" content="Find the right jobs. Build better applications. Faster. You approve before anything is sent.">
+<meta name="twitter:image" content="https://app.1ststep.ai/og-1ststep-ai.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
@@ -25,28 +36,28 @@
 <!-- ── Navigation ─────────────────────────────────────────────────────────── -->
 <header class="nav" id="siteNav">
   <div class="wrap nav-inner">
-    <a class="brand" href="/"><img class="brand-logo" src="/1ststep-logo.png" alt="1stStep.ai" width="480" height="100"></a>
+    <a class="brand" href="/"><img class="brand-logo" src="/1ststep-logo.png" alt="1stStep.ai — home" width="480" height="100"></a>
     <nav class="nav-links" aria-label="Primary">
       <a href="#paths">Product</a>
       <a href="#how">How it works</a>
       <a href="#inside">What it does</a>
-      <a href="#compare">Compare</a>
       <a href="/pricing">Pricing</a>
     </nav>
     <div class="nav-actions">
       <a class="nav-signin" href="/app">Sign in</a>
-      <a class="btn btn-primary btn-sm" href="/concierge">Get started free</a>
+      <a class="btn btn-primary btn-sm" href="/concierge">Start my Job Agent — free</a>
     </div>
     <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="navSheet">Menu</button>
   </div>
-  <div class="nav-sheet" id="navSheet">
+  <nav class="nav-sheet" id="navSheet" aria-label="Primary, compact">
     <a href="#paths">Product</a>
     <a href="#how">How it works</a>
     <a href="#inside">What it does</a>
     <a href="#compare">Compare</a>
     <a href="/pricing">Pricing</a>
     <a href="/app">Sign in</a>
-  </div>
+    <a class="btn btn-primary btn-block nav-sheet-cta" href="/concierge">Start my Job Agent — free</a>
+  </nav>
 </header>
 
 <main id="main">
@@ -55,18 +66,19 @@
 <section class="hero">
   <div class="wrap hero-grid">
     <div class="hero-copy">
-      <p class="pill"><span class="pill-tag">Beta</span> Controlled production beta — invite paced</p>
-      <h1>Stop rewriting your résumé for every job.</h1>
-      <p class="lede">1stStep finds roles that are still open, writes a résumé and cover letter for each one from facts you have confirmed, and asks you before anything is sent.</p>
+      <p class="pill"><span class="pill-tag">Beta</span> AI Job Agent · controlled beta, invite paced</p>
+      <h1>Find the right jobs. Build better applications. Faster.</h1>
+      <p class="lede">Your AI Job Agent finds openings that are still live, then writes a résumé and cover letter for each one from facts you have confirmed. You review and approve everything before it is sent.</p>
       <div class="hero-cta">
-        <a class="btn btn-primary btn-lg" href="/concierge">Get started free</a>
+        <a class="btn btn-primary btn-lg" href="/concierge">Start my Job Agent — free</a>
         <a class="btn btn-quiet btn-lg" href="#how">See how it works</a>
       </div>
       <ul class="hero-points">
-        <li>Free during the beta — no card, nothing charged</li>
+        <li>Free to start — no credit card, nothing charged</li>
+        <li>Nothing is sent to an employer without your approval</li>
         <li>Setup takes about two minutes</li>
-        <li>Nothing is submitted without your say-so</li>
       </ul>
+      <p class="hero-payoff">Your next role. One step closer.</p>
     </div>
 
     <div class="hero-panel">
@@ -90,9 +102,9 @@
 </section>
 
 <!-- ── Sources ────────────────────────────────────────────────────────────── -->
-<section class="strip">
+<section class="strip" aria-labelledby="sourcesHeading">
   <div class="wrap">
-    <p class="strip-label">Roles come straight from the source</p>
+    <h2 class="strip-label" id="sourcesHeading">Roles come straight from the source</h2>
     <ul class="strip-list">
       <li>Company career pages</li>
       <li>Greenhouse</li>
@@ -103,8 +115,27 @@
   </div>
 </section>
 
+<!-- ── What you get ───────────────────────────────────────────────────────── -->
+<section id="outcomes">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">What you get</p>
+      <h2>Built for a search that lasts months.</h2>
+      <p class="section-sub">The repetitive part of a job search — finding live roles, rewriting for each one, keeping track — handled, without handing over the decisions.</p>
+    </div>
+    <div class="how">
+      <div class="how-card reveal"><h3>Jobs that are actually open</h3><p>Company career pages plus Greenhouse-, Lever- and Ashby-hosted roles, re-checked before anything is written.</p></div>
+      <div class="how-card reveal" data-delay="1"><h3>A résumé per role</h3><p>Plain, human-sounding, ATS-safe, built from facts you confirmed. No invented jobs and no filler.</p></div>
+      <div class="how-card reveal" data-delay="2"><h3>One list of what needs you</h3><p>Every blocked step in one place, sensitive values hidden, anything secure handed back to you.</p></div>
+      <div class="how-card reveal"><h3>Every version kept</h3><p>See exactly what you sent to whom, and start the next one from it.</p></div>
+      <div class="how-card reveal" data-delay="1"><h3>Honest tracking</h3><p>Status reflects what the employer confirmed. Attempts and confirmations are never blended into one number.</p></div>
+      <div class="how-card reveal" data-delay="2"><h3>Pick up anywhere</h3><p>Sign in from another browser and your facts, runs and documents are still there, encrypted at rest.</p></div>
+    </div>
+  </div>
+</section>
+
 <!-- ── Two paths ──────────────────────────────────────────────────────────── -->
-<section id="paths">
+<section id="paths" class="band">
   <div class="wrap">
     <div class="section-head reveal">
       <p class="eyebrow">Two ways to use it</p>
@@ -123,7 +154,7 @@
         <p class="path-note">Nothing is sent anywhere. What it writes stays in your workspace until you download or copy it.</p>
         <div class="path-foot">
           <a class="btn btn-quiet btn-block" href="/app/resume">Build my résumé</a>
-          <a class="btn btn-quiet btn-block" href="https://chromewebstore.google.com/detail/1ststepai-%E2%80%93-tailor-your-r/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener noreferrer" data-chrome-web-store-url>Get the Chrome extension</a>
+          <a class="btn btn-quiet btn-block path-secondary" href="https://chromewebstore.google.com/detail/1ststepai-%E2%80%93-tailor-your-r/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener noreferrer" data-chrome-web-store-url>Get the Chrome extension</a>
         </div>
       </article>
 
@@ -138,9 +169,12 @@
         </ul>
         <p class="path-note"><b>$39/month when it opens.</b> Free during the invite-paced beta — nothing is charged yet. It prepares by default: sending your details or submitting an application always needs a separate yes from you.</p>
         <div class="path-foot">
-          <a class="btn btn-quiet btn-block" href="mailto:evan@1ststep.ai?subject=Job%20Agent%20beta%20request" data-beta-request>Request a beta spot</a>
-          <p class="path-note">Free access for the first 10 approved beta testers. Email Evan to request an invitation. No card required, no automatic billing, and no automatic switch to a paid plan. Sending a request does not reserve a spot. Any later subscription requires your separate agreement.</p>
-          <a class="btn btn-primary btn-block" href="/concierge">Start my Job Agent</a>
+          <a class="btn btn-primary btn-block" href="/concierge">Start my Job Agent — free</a>
+          <p class="path-note path-access">
+            <b>Two different things:</b> setting up your agent is open to everyone and costs nothing. Letting it <i>run</i> your search is invite paced while we are in a controlled beta, with free access for the first 10 approved beta testers —
+            <a href="mailto:evan@1ststep.ai?subject=Job%20Agent%20beta%20request" data-beta-request>request a beta invite</a>.
+            No card required, no automatic billing, and no automatic switch to a paid plan. Sending a request does not reserve a spot. Any later subscription requires your separate agreement.
+          </p>
         </div>
       </article>
     </div>
@@ -148,7 +182,7 @@
 </section>
 
 <!-- ── How it works ───────────────────────────────────────────────────────── -->
-<section id="how" class="band">
+<section id="how">
   <div class="wrap">
     <div class="section-head reveal">
       <p class="eyebrow">How it works</p>
@@ -176,7 +210,7 @@
 </section>
 
 <!-- ── Inside a run ───────────────────────────────────────────────────────── -->
-<section id="inside">
+<section id="inside" class="band">
   <div class="wrap">
     <div class="section-head reveal">
       <p class="eyebrow">What it actually does</p>
@@ -222,24 +256,6 @@
   </div>
 </section>
 
-<!-- ── What you get ───────────────────────────────────────────────────────── -->
-<section class="band">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <p class="eyebrow">What you get</p>
-      <h2>Built for a search that lasts months.</h2>
-    </div>
-    <div class="how">
-      <div class="how-card reveal"><h3>Jobs that are actually open</h3><p>Company career pages plus Greenhouse-, Lever- and Ashby-hosted roles, re-checked before anything is written.</p></div>
-      <div class="how-card reveal" data-delay="1"><h3>A résumé per role</h3><p>Plain, human-sounding, ATS-safe, built from facts you confirmed. No invented jobs and no filler.</p></div>
-      <div class="how-card reveal" data-delay="2"><h3>One list of what needs you</h3><p>Every blocked step in one place, sensitive values hidden, anything secure handed back to you.</p></div>
-      <div class="how-card reveal"><h3>Every version kept</h3><p>See exactly what you sent to whom, and start the next one from it.</p></div>
-      <div class="how-card reveal" data-delay="1"><h3>Honest tracking</h3><p>Status reflects what the employer confirmed. Attempts and confirmations are never blended into one number.</p></div>
-      <div class="how-card reveal" data-delay="2"><h3>Pick up anywhere</h3><p>Sign in from another browser and your facts, runs and documents are still there, encrypted at rest.</p></div>
-    </div>
-  </div>
-</section>
-
 <!-- ── Compare ────────────────────────────────────────────────────────────── -->
 <section id="compare">
   <div class="wrap">
@@ -281,6 +297,7 @@
       <div class="how-card reveal" data-delay="1"><h3>We do not make things up about you</h3><p>Citizenship, clearance, criminal history, disability, veteran status and referrals are never guessed. Those questions come to you.</p></div>
       <div class="how-card reveal" data-delay="2"><h3>We do not hold your logins</h3><p>Passwords, one-time codes and CAPTCHA answers are never kept as reusable facts. Those steps are always yours.</p></div>
     </div>
+    <p class="fineprint reveal">No customer quotes, logos, ratings or user counts appear here until we have approved, attributable ones. Our verified public listings and profiles are indexed on <a href="/where-to-find-1ststep-ai/">where to find 1stStep.ai</a>.</p>
   </div>
 </section>
 
@@ -289,7 +306,8 @@
   <div class="wrap">
     <div class="section-head reveal">
       <p class="eyebrow">Security and control</p>
-      <h2>In plain language.</h2>
+      <h2>AI does the prep. You make the call.</h2>
+      <p class="section-sub">In plain language, here is where the agent stops and hands the decision back to you.</p>
     </div>
     <div class="how">
       <div class="how-card reveal"><h3>Facts are confirmed before reuse</h3><p>Anything pulled off your résumé starts unconfirmed. It is not used on an application until you say it is right.</p></div>
@@ -311,6 +329,7 @@
       <h2>Straight answers.</h2>
     </div>
     <div class="faq reveal">
+      <details><summary>What is 1stStep.ai?</summary><div class="faq-body">An AI Job Agent for job seekers. It finds openings that are still live on employer career pages and ATS boards, prepares a tailored résumé and cover letter for each one from facts you have confirmed, and keeps you in control of anything that gets sent.</div></details>
       <details><summary>Will it apply for me without asking?</summary><div class="faq-body">No. What you agree to at the start covers preparation only. Sending your details and final submission each need a separate yes at the time. Final submission is switched off product-wide during the beta.</div></details>
       <details><summary>Does it need my passwords?</summary><div class="faq-body">No. Employer passwords are never asked for or kept as reusable facts. If a site makes you sign in, that step is handed to you.</div></details>
       <details><summary>What happens at a security code or CAPTCHA?</summary><div class="faq-body">It stops and puts the step in your list. It does not try to solve CAPTCHAs, and it does not store one-time codes.</div></details>
@@ -325,13 +344,13 @@
 </section>
 
 <!-- ── Close ──────────────────────────────────────────────────────────────── -->
-<section class="close">
+<section class="close" aria-labelledby="closeHeading">
   <div class="wrap">
     <div class="close-inner reveal">
-      <h2>Start with one job, or hand over the search.</h2>
-      <p>Setup takes about two minutes. Free during the beta, and you can change paths later without re-entering anything.</p>
+      <h2 id="closeHeading">Start with one job, or hand over the search.</h2>
+      <p>Setup takes about two minutes. Free to start, no credit card, and you can change paths later without re-entering anything.</p>
       <div class="hero-cta center">
-        <a class="btn btn-primary btn-lg" href="/concierge">Get started free</a>
+        <a class="btn btn-primary btn-lg" href="/concierge">Start my Job Agent — free</a>
         <a class="btn btn-quiet btn-lg" href="#compare">Compare the two</a>
       </div>
     </div>
@@ -344,19 +363,19 @@
 <footer class="foot">
   <div class="wrap foot-grid">
     <div>
-      <a class="brand" href="/"><img class="brand-logo" src="/1ststep-logo.png" alt="1stStep.ai" width="480" height="100"></a>
+      <a class="brand" href="/"><img class="brand-logo" src="/1ststep-logo.png" alt="1stStep.ai — home" width="480" height="100"></a>
       <p class="foot-note">A job search that keeps moving while you do other things, without giving up control of what gets sent.</p>
     </div>
     <div>
-      <h4>Product</h4>
-      <ul><li><a href="/app/resume">Résumé Builder</a></li><li><a href="/concierge">Job Agent</a></li><li><a href="https://chromewebstore.google.com/detail/1ststepai-%E2%80%93-tailor-your-r/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener noreferrer" data-chrome-web-store-url>Chrome extension</a></li><li><a href="/pricing">Pricing</a></li></ul>
+      <h2 class="foot-h">Product</h2>
+      <ul><li><a href="/app/resume">Résumé Builder</a></li><li><a href="/concierge">Job Agent</a></li><li><a href="https://chromewebstore.google.com/detail/1ststepai-%E2%80%93-tailor-your-r/gnbjcmennlcbkmakameknfcnioohnjkp" target="_blank" rel="noopener noreferrer" data-chrome-web-store-url>Chrome extension</a></li><li><a href="/where-to-find-1ststep-ai/">Where to find app.1ststep.ai</a></li><li><a href="/pricing">Pricing</a></li></ul>
     </div>
     <div>
-      <h4>Account</h4>
-      <ul><li><a href="/app">Sign in</a></li><li><a href="/app">Restore access</a></li><li><a href="/concierge">Get started</a></li></ul>
+      <h2 class="foot-h">Account</h2>
+      <ul><li><a href="/app">Sign in</a></li><li><a href="/app">Restore access</a></li><li><a href="/concierge">Start my Job Agent</a></li></ul>
     </div>
     <div>
-      <h4>Legal &amp; support</h4>
+      <h2 class="foot-h">Legal &amp; support</h2>
       <ul><li><a href="/terms">Terms of Service</a></li><li><a href="/privacy">Privacy Policy</a></li><li><a href="mailto:support@1ststep.ai">Support</a></li></ul>
     </div>
   </div>
@@ -365,6 +384,112 @@
     <span>Controlled production beta</span>
   </div>
 </footer>
+
+<!-- Structured data. Every claim below is also visible on this page.
+     No aggregateRating, no review, and no `offers` — the Job Agent has no
+     checkout and creates no charge today (see lib/job-agent-pricing.js). -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://app.1ststep.ai/#organization",
+      "name": "1stStep.ai",
+      "url": "https://app.1ststep.ai/",
+      "logo": "https://app.1ststep.ai/1ststep-logo.png",
+      "email": "support@1ststep.ai",
+      "sameAs": [
+        "https://chromewebstore.google.com/detail/1ststepai-job-agent/gnbjcmennlcbkmakameknfcnioohnjkp",
+        "https://www.linkedin.com/company/1ststep-ai"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://app.1ststep.ai/#website",
+      "url": "https://app.1ststep.ai/",
+      "name": "1stStep.ai",
+      "publisher": { "@id": "https://app.1ststep.ai/#organization" },
+      "inLanguage": "en-US"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://app.1ststep.ai/#software",
+      "name": "1stStep.ai Job Agent",
+      "url": "https://app.1ststep.ai/",
+      "applicationCategory": "BusinessApplication",
+      "applicationSubCategory": "AI job search assistant",
+      "operatingSystem": "Web browser",
+      "publisher": { "@id": "https://app.1ststep.ai/#organization" },
+      "description": "An AI Job Agent for job seekers. It finds openings that are still live on employer career pages and ATS boards, prepares a tailored résumé and cover letter for each one from facts the job seeker has confirmed, and requires the job seeker's approval before anything is sent to an employer.",
+      "featureList": [
+        "Direct-employer job discovery with the listing re-checked before work starts",
+        "A tailored, ATS-safe résumé and cover letter for each role",
+        "A single queue for every step that needs the job seeker",
+        "Interview practice",
+        "Application status reported only on confirmed employer receipt"
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://app.1ststep.ai/#faq",
+      "isPartOf": { "@id": "https://app.1ststep.ai/#website" },
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is 1stStep.ai?",
+          "acceptedAnswer": { "@type": "Answer", "text": "An AI Job Agent for job seekers. It finds openings that are still live on employer career pages and ATS boards, prepares a tailored résumé and cover letter for each one from facts you have confirmed, and keeps you in control of anything that gets sent." }
+        },
+        {
+          "@type": "Question",
+          "name": "Will it apply for me without asking?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. What you agree to at the start covers preparation only. Sending your details and final submission each need a separate yes at the time. Final submission is switched off product-wide during the beta." }
+        },
+        {
+          "@type": "Question",
+          "name": "Does it need my passwords?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. Employer passwords are never asked for or kept as reusable facts. If a site makes you sign in, that step is handed to you." }
+        },
+        {
+          "@type": "Question",
+          "name": "What happens at a security code or CAPTCHA?",
+          "acceptedAnswer": { "@type": "Answer", "text": "It stops and puts the step in your list. It does not try to solve CAPTCHAs, and it does not store one-time codes." }
+        },
+        {
+          "@type": "Question",
+          "name": "Will the résumé sound like a robot wrote it?",
+          "acceptedAnswer": { "@type": "Answer", "text": "It is built from facts you confirmed and written for that specific job. Nothing is invented, and the output stays plain and ATS-safe rather than padded with buzzwords." }
+        },
+        {
+          "@type": "Question",
+          "name": "How does it pick jobs?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Against the criteria and confirmed facts you set. Roles under your stated bar are filtered out rather than counted toward a quota. Protected characteristics are never used for ranking." }
+        },
+        {
+          "@type": "Question",
+          "name": "How are applications counted?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Only when the employer confirms receipt. Written, ready, and waiting on you are tracked separately and never counted as submitted." }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I actually send the application?",
+          "acceptedAnswer": { "@type": "Answer", "text": "You send it. 1stStep prepares the résumé and cover letter for each role and hands them to you with everything it knows about that job. Submitting on your behalf is not part of the product today, and final submission is switched off product-wide during the beta." }
+        },
+        {
+          "@type": "Question",
+          "name": "What does it cost?",
+          "acceptedAnswer": { "@type": "Answer", "text": "The Job Agent will be $39/month when it opens. Nothing is charged for it today — there is no Job Agent checkout, and beta access is invite paced and free. Any charge would be explained and separately agreed first. Current résumé and tailoring plans are on the pricing page." }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I stop it?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes, at any time. You can pause a run, edit or delete confirmed facts, withdraw permission, and ask for your data to be deleted." }
+        }
+      ]
+    }
+  ]
+}
+</script>
 
 <!-- Approved, attributable testimonials go here — see DESIGN.md. Empty is correct.
      window.STEP_TESTIMONIALS = [{ quote, name, role, source }] -->

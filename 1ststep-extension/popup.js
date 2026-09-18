@@ -4,9 +4,6 @@
 
 const APP_URL = 'https://app.1ststep.ai';
 
-// Keep in sync with background.js MODES
-const MODES = { TAILOR: 'tailor', COVER_LETTER: 'coverLetter' };
-
 const statusBadge    = document.getElementById('statusBadge');
 const loadingState   = document.getElementById('loadingState');
 const unauthState    = document.getElementById('unauthState');
@@ -20,6 +17,8 @@ const tailorBtn      = document.getElementById('tailorBtn');
 const autofillBtn    = document.getElementById('autofillBtn');
 const autofillEmptyBtn = document.getElementById('autofillEmptyBtn');
 const openAppLink    = document.getElementById('openAppLink');
+const retryCaptureBtn = document.getElementById('retryCaptureBtn');
+const openJobsBtn = document.getElementById('openJobsBtn');
 
 // ─── AUTH ────────────────────────────────────────────────────
 
@@ -34,19 +33,13 @@ async function checkAuth() {
 
 async function init() {
   try {
-    const auth = await checkAuth();
-
-    if (!auth.isAuthenticated) {
-      showUnauthState();
-      return;
-    }
-
-    statusBadge.textContent = 'Agent Connected';
-    statusBadge.classList.add('authenticated');
-
-    const job = await getCurrentJob();
+    const [auth, job] = await Promise.all([checkAuth(), getCurrentJob()]);
+    statusBadge.textContent = auth.isAuthenticated ? 'Agent connected' : 'Sign in to continue';
+    statusBadge.classList.toggle('authenticated', auth.isAuthenticated);
     if (job) {
       showJobCard(job, auth);
+    } else if (!auth.isAuthenticated) {
+      showUnauthState();
     } else {
       showEmptyState(auth);
     }
@@ -64,8 +57,8 @@ function showUnauthState() {
   loadingState.style.display = 'none';
   unauthState.style.display  = 'block';
   jobState.style.display     = 'none';
-  statusBadge.textContent    = 'Sign In';
-  openAppLink.addEventListener('click', () => chrome.tabs.create({ url: `${APP_URL}/app` }));
+  statusBadge.textContent    = 'Sign in to continue';
+  openAppLink.onclick = () => chrome.tabs.create({ url: `${APP_URL}/concierge` });
 }
 
 function showEmptyState(auth) {
@@ -74,22 +67,18 @@ function showEmptyState(auth) {
   jobCard.classList.remove('visible');
   emptyState.style.display   = 'flex';
 
-  // Wire manual paste → open in app
-  const manualOpenBtn = document.getElementById('manualOpenBtn');
-  if (manualOpenBtn) {
-    manualOpenBtn.onclick = () => {
-      const jd = document.getElementById('manualJdInput')?.value?.trim();
-      if (!jd) { manualOpenBtn.textContent = 'Paste a description first'; setTimeout(() => { manualOpenBtn.textContent = 'Open in 1stStep.ai'; }, 2000); return; }
-      openInApp({ jobTitle: '', company: '', jobDescription: jd, applyUrl: '', site: 'manual' }, manualOpenBtn);
-    };
-  }
-
-  // Auto-fill still works without a detected job
-  if (autofillEmptyBtn && auth) {
-    autofillEmptyBtn.onclick = () => autofillPage(auth, autofillEmptyBtn);
-  } else if (autofillEmptyBtn) {
-    autofillEmptyBtn.style.display = 'none';
-  }
+  if (retryCaptureBtn) retryCaptureBtn.onclick = async () => {
+    retryCaptureBtn.disabled = true;
+    retryCaptureBtn.textContent = 'Checking this page…';
+    const job = await captureActiveJob();
+    if (job) showJobCard(job, auth);
+    else {
+      retryCaptureBtn.textContent = 'No complete job found';
+      setTimeout(() => { retryCaptureBtn.textContent = 'Try this page again'; retryCaptureBtn.disabled = false; }, 2200);
+    }
+  };
+  if (openJobsBtn) openJobsBtn.onclick = () => chrome.tabs.create({ url: `${APP_URL}/concierge#jobs` });
+  if (autofillEmptyBtn) autofillEmptyBtn.style.display = 'none';
 }
 
 function showJobCard(job, auth) {
@@ -99,10 +88,11 @@ function showJobCard(job, auth) {
   emptyState.style.display   = 'none';
 
   const titleMissing = !job.jobTitle || job.jobTitle === 'Unknown Role';
+  const companyMissing = !job.company;
 
   jobTitleEl.textContent = job.jobTitle || 'Unknown Role';
   companyEl.textContent  = job.company  || '';
-  siteEl.textContent     = (job.site    || 'unknown').toUpperCase();
+  siteEl.textContent     = job.sourceLabel || (() => { try { return new URL(job.applyUrl).hostname.replace(/^www\./, ''); } catch (_) { return 'Job posting'; } })();
 
   const jobUrlEl      = document.getElementById('jobUrl');
   const jobInfoForm   = document.getElementById('jobInfoForm');
@@ -130,8 +120,8 @@ function showJobCard(job, auth) {
   if (companyInput)  companyInput.value  = job.company || '';
 
   // Show edit form immediately if title unknown; show edit link otherwise
-  if (jobInfoForm) jobInfoForm.style.display = titleMissing ? 'block' : 'none';
-  if (editJobBtn)  editJobBtn.style.display  = titleMissing ? 'none'  : 'inline';
+  if (jobInfoForm) jobInfoForm.style.display = titleMissing || companyMissing ? 'block' : 'none';
+  if (editJobBtn)  editJobBtn.style.display  = titleMissing || companyMissing ? 'none' : 'inline';
 
   if (editJobBtn) {
     editJobBtn.onclick = () => {
@@ -145,7 +135,11 @@ function showJobCard(job, auth) {
   if (jobTitleInput) jobTitleInput.oninput = () => { jobTitleEl.textContent = jobTitleInput.value.trim() || 'Unknown Role'; };
   if (companyInput)  companyInput.oninput  = () => { companyEl.textContent  = companyInput.value.trim(); };
 
-  if (autofillBtn) autofillBtn.onclick = () => autofillPage(auth, autofillBtn);
+  if (autofillBtn) {
+    const supportedFill = auth?.isAuthenticated && job.site === 'greenhouse';
+    autofillBtn.style.display = supportedFill ? 'inline' : 'none';
+    if (supportedFill) autofillBtn.onclick = () => autofillPage(auth, autofillBtn);
+  }
 
   // The authoritative tracker lives in the account-backed application workflow.
   renderTrackerStatus(job);
@@ -158,34 +152,28 @@ function showJobCard(job, auth) {
 
   function validateAndOpen(btn) {
     const title = jobTitleInput?.value.trim() || job.jobTitle || '';
-    if (!title || title === 'Unknown Role') {
+    const company = companyInput?.value.trim() || job.company || '';
+    if (!title || title === 'Unknown Role' || !company) {
       if (jobInfoForm) jobInfoForm.style.display = 'block';
-      if (jobTitleInput) {
+      if ((!title || title === 'Unknown Role') && jobTitleInput) {
         jobTitleInput.classList.add('required-error');
         jobTitleInput.focus();
         jobTitleInput.placeholder = 'Job Title is required';
       }
+      if (!company && companyInput) {
+        companyInput.classList.add('required-error');
+        if (title && title !== 'Unknown Role') companyInput.focus();
+        companyInput.placeholder = 'Company Name is required';
+      }
       return;
     }
     if (jobTitleInput) jobTitleInput.classList.remove('required-error');
+    if (companyInput) companyInput.classList.remove('required-error');
     openInApp(buildJob(), btn);
   }
 
+  tailorBtn.textContent = auth?.isAuthenticated ? 'Save to My Jobs' : 'Sign in & save this job';
   tailorBtn.onclick = () => validateAndOpen(tailorBtn);
-
-  const coverLetterBtn = document.getElementById('coverLetterBtn');
-  if (coverLetterBtn) {
-    coverLetterBtn.onclick = () => {
-      const title = jobTitleInput?.value.trim() || job.jobTitle || '';
-      if (!title || title === 'Unknown Role') {
-        if (jobInfoForm) jobInfoForm.style.display = 'block';
-        if (jobTitleInput) { jobTitleInput.classList.add('required-error'); jobTitleInput.focus(); }
-        return;
-      }
-      if (jobTitleInput) jobTitleInput.classList.remove('required-error');
-      openInApp(buildJob(), coverLetterBtn, MODES.COVER_LETTER);
-    };
-  }
 
 }
 
@@ -225,18 +213,20 @@ async function getCurrentJob() {
     }
   } catch (_) {}
 
-  // 2. Fall back to background cache (e.g. tab without content script).
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage({ action: 'GET_CURRENT_JOB' }, (response) => {
-      if (chrome.runtime.lastError) { resolve(null); return; }
-      resolve(response?.job || null);
-    });
-  });
+  // 2. User invoked the extension, so temporarily inspect only this active tab.
+  return captureActiveJob();
+}
+
+function captureActiveJob() {
+  return new Promise(resolve => chrome.runtime.sendMessage({ action: 'CAPTURE_ACTIVE_JOB' }, response => {
+    if (chrome.runtime.lastError) return resolve(null);
+    resolve(response?.success ? response.job : null);
+  }));
 }
 
 // ─── OPEN IN APP ─────────────────────────────────────────────
 
-async function openInApp(job, btn, mode = 'tailor') {
+async function openInApp(job, btn) {
   btn = btn || tailorBtn;
   const originalLabel = btn.textContent;
   btn.disabled    = true;
@@ -253,10 +243,16 @@ async function openInApp(job, btn, mode = 'tailor') {
     company:         job.company         || '',
     jobDescription:  job.jobDescription,
     applyUrl:        job.applyUrl        || '',
-    site:            job.site            || 'unknown'
+    site:            job.site            || 'unknown',
+    sourceLabel:     job.sourceLabel     || '',
+    jobId:           job.jobId           || '',
+    location:        job.location        || '',
+    salary:          job.salary          || '',
+    employmentType:  job.employmentType  || '',
+    postedDate:      job.postedDate      || '',
   };
 
-  chrome.runtime.sendMessage({ action: 'OPEN_IN_APP', jobData, mode }, (response) => {
+  chrome.runtime.sendMessage({ action: 'OPEN_IN_APP', jobData }, (response) => {
     if (chrome.runtime.lastError) {
       btn.textContent = 'Extension error — try reloading';
       setTimeout(() => { btn.textContent = originalLabel; btn.disabled = false; }, 3000);

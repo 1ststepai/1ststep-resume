@@ -652,7 +652,7 @@ export function recordGeneratedPackage(inputState, roleId, input, at) {
   let state = createDeskState(inputState);
   const role = state.roles.find(item => item.id === roleId);
   if (!role) throw new Error('Role not found.');
-  if (!['Verified', 'Verified - Package Preparation', 'Package Ready', 'Awaiting Approval'].includes(role.status)) throw new Error('A role must be Verified before generating its package.');
+  if (!['Found', 'Verified', 'Verified - Package Preparation', 'Package Ready', 'Awaiting Approval'].includes(role.status)) throw new Error('This role cannot receive a private package draft.');
   if (!asText(input.historyId) || !asText(input.documentVersion) || !asText(input.resumeText)) throw new Error('Generated package history ID, document version, and resume text are required.');
   const packageDraft = {
     historyId: asText(input.historyId), documentVersion: asText(input.documentVersion),

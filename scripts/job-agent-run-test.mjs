@@ -20,6 +20,7 @@ class FakeRedis {
   }
   #zset(key) { if (!this.sorted.has(key)) this.sorted.set(key, new Map()); return this.sorted.get(key); }
   async eval(script, keys, args) {
+    assert.ok(args.every(value => value !== undefined && value !== null), 'Redis EVAL rejects null arguments');
     if (script.includes("local replay = redis.call('GET', KEYS[2])")) {
       const replay = this.values.get(keys[1]);
       if (replay) return ['replayed', replay];
@@ -78,6 +79,15 @@ assert.equal(await readJobAgentRun({ redis, subject: 'different@example.test', p
 let claimed = await claimJobAgentRun({ redis, runId: first.run.id, dataEncryptionKey, now });
 assert.equal(claimed.run.attempt, 1);
 assert.equal(claimed.run.lifecycleState, 'Searching');
+// Production Redis may omit null envelope fields when serializing a claimed run.
+// Heartbeats must still send a JSON string, never a null REST argument.
+for (const [key, raw] of redis.values) {
+  if (typeof raw !== 'string' || !raw.startsWith('{')) continue;
+  const record = JSON.parse(raw);
+  if (record.id !== first.run.id) continue;
+  delete record.resultEnvelope;
+  redis.values.set(key, JSON.stringify(record));
+}
 let heartbeat = await heartbeatJobAgentRun({ redis, runId: first.run.id, leaseToken: claimed.leaseToken, dataEncryptionKey, now });
 assert.equal(heartbeat.status, 'Searching');
 assert.equal(heartbeat.lastHeartbeatAt, now.toISOString());

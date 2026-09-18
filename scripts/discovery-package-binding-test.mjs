@@ -41,4 +41,16 @@ await assert.rejects(() => bindPackageToFreshVerifiedDiscovery(staleRun, staleRe
   fetchImpl: async () => ({ ok: true, status: 200, json: async () => ({ ...rawGreenhouse, title: 'Strategic Sourcing Director' }) }),
 }), /requisition changed/);
 
-console.log('Tenant discovery-to-package identity binding and exact-requisition freshness tests passed.');
+const smartJob = { ...job, applyUrl: 'https://jobs.smartrecruiters.com/VerifiedEmployer/744000123456789' };
+const smartRun = { ...run, result: { ...run.result, jobs: [smartJob] } };
+assert.equal(bindPackageToVerifiedDiscovery(smartRun, { ...requested, directEmployerUrl: smartJob.applyUrl.toLowerCase() }, { now }).requisitionId, job.requisitionId);
+assert.throws(() => bindPackageToVerifiedDiscovery(smartRun, { ...requested, directEmployerUrl: 'https://jobs.smartrecruiters.com/anotheremployer/744000123456789' }, { now }), /exactly matches/);
+assert.throws(() => bindPackageToVerifiedDiscovery(run, { ...requested, directEmployerUrl: job.applyUrl.toLowerCase() }, { now }), /exactly matches/);
+const contactPosting = { ...rawGreenhouse, content: '<p>Lead supplier sourcing. Contact hiring@example.test or 212-555-1212.</p>' };
+const contactJob = normalizePublicPostings(greenhouseSource, { jobs: [contactPosting] })[0];
+const storedContactJob = { ...contactJob, description: contactJob.description.replace('hiring@example.test', '[contact omitted]').replace('212-555-1212', '[phone omitted]'), applyPathVerified: true, applyPathVerifiedAt: now.toISOString() };
+delete storedContactJob.salaryCurrency;
+await bindPackageToFreshVerifiedDiscovery({ ...staleRun, result: { ...staleRun.result, jobs: [storedContactJob] } }, staleRequested, {
+  sources: [greenhouseSource], now, fetchImpl: async () => ({ ok: true, status: 200, json: async () => contactPosting }),
+});
+console.log('Identity binding preserves employer/requisition checks, handles provider slug casing and compares privacy-filtered snapshots consistently.');

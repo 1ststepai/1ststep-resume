@@ -20,7 +20,7 @@ async function relayThroughApp(operation, payload = {}) {
 // change. The content-script bridge reads pendingJobs for delivery but never
 // writes it.
 
-const CAPTURE_TTL_MS = 2 * 60 * 1000;
+const CAPTURE_TTL_MS = 24 * 60 * 60 * 1000;
 let pendingJobsMutation = Promise.resolve();
 
 function expirePendingJobs(pendingJobs, now = Date.now()) {
@@ -73,6 +73,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const jobs = await chrome.storage.session.get(['current_job']);
         return sendResponse({ success: true, job: jobs.current_job });
       }
+      if (request.action === 'CAPTURE_ACTIVE_JOB') {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab?.id || !/^https?:\/\//i.test(tab.url || '')) {
+          return sendResponse({ success: false, error: 'Open a job posting in a regular browser tab, then try again.' });
+        }
+        await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['job-capture.js'] });
+        const captured = await new Promise(resolve => chrome.tabs.sendMessage(tab.id, { action: 'CAPTURE_JOB_PAGE' }, { frameId: 0 }, response => {
+          resolve(chrome.runtime.lastError ? null : response?.job || null);
+        }));
+        if (!captured) return sendResponse({ success: false, error: 'This page does not look like a complete job posting.' });
+        await chrome.storage.session.set({ current_job: { ...captured, detectedAt: Date.now() } });
+        return sendResponse({ success: true, job: captured });
+      }
       if (request.action === 'CONSUME_JOB_CAPTURE') {
         // Only the page bridge on our own app origin may retire a capture.
         if (!String(sender?.url || '').startsWith(`${APP_URL}/`)) {
@@ -88,7 +101,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           expirePendingJobs(pendingJobs);
           pendingJobs[jobCaptureId] = { jobData: request.jobData, mode, createdAt: Date.now() };
         });
-        const targetUrl = mode === MODES.COVER_LETTER ? `${APP_URL}/app/resume?jobCaptureId=${jobCaptureId}&mode=${mode}` : `${APP_URL}/funnel?jobCaptureId=${jobCaptureId}`;
+        const targetUrl = `${APP_URL}/concierge?jobCaptureId=${jobCaptureId}`;
         const tabs = await chrome.tabs.query({ url: `${APP_URL}/*` });
         if (tabs.length) await chrome.tabs.update(tabs[0].id, { active: true, url: targetUrl });
         else await chrome.tabs.create({ url: targetUrl });

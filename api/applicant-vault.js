@@ -20,6 +20,19 @@ function configuration() {
   return { redis: Redis.fromEnv(), partitionSecret, dataEncryptionKey };
 }
 
+export function publicVaultError(error) {
+  if (error?.code === 'MEMORY_CONFLICT') return { status: 409, body: {
+    error: 'This differs from your remembered answer. Replace the previous answer, or keep this answer only for this application?',
+    code: 'MEMORY_CONFLICT',
+    factVersion: Number.isSafeInteger(error.version) && error.version > 0 ? error.version : null,
+  } };
+  const message = String(error?.message || '');
+  if (/sensitive-memory opt-in/.test(message)) return { status: 400, body: { error: 'Explicit sensitive-memory opt-in is required, or answer only on the employer site.', code: 'SENSITIVE_MEMORY_OPT_IN_REQUIRED' } };
+  if (/certain answer/.test(message)) return { status: 400, body: { error: 'Please clarify what you know before continuing.', code: 'ANSWER_CLARIFICATION_REQUIRED' } };
+  if (/required|not allowed|invalid|exceeds|limit|unsupported|must be/i.test(message)) return { status: 400, body: { error: 'The answer could not be saved. Check the input and your saved-information consent, then try again.', code: 'VAULT_INPUT_INVALID' } };
+  return { status: 500, body: { error: 'Applicant vault could not be synchronized.', code: 'VAULT_SYNC_FAILED' } };
+}
+
 export default async function handler(req, res) {
   applyApiHeaders(req, res);
   if (req.method === 'OPTIONS') {
@@ -100,10 +113,8 @@ export default async function handler(req, res) {
     if (result.conflict) return res.status(409).json({ error: 'Applicant vault changed in another session.', code: 'VERSION_CONFLICT', version: result.version });
     return res.status(200).json({ ...result, vault: publicVaultSummary(vault) });
   } catch (error) {
-    if (error.code === 'MEMORY_CONFLICT') return res.status(409).json({ error: error.message, code: error.code, factId: error.factId, factVersion: error.version });
-    const message = String(error?.message || '');
-    if (/required|not allowed|invalid|exceeds|limit|unsupported|must be/i.test(message)) return res.status(400).json({ error: message });
-    console.error(JSON.stringify({ type: 'applicant-vault-error', name: error?.name || 'unknown' }));
-    return res.status(500).json({ error: 'Applicant vault could not be synchronized.' });
+    const safe = publicVaultError(error);
+    if (safe.status === 500) console.error(JSON.stringify({ type: 'applicant-vault-error' }));
+    return res.status(safe.status).json(safe.body);
   }
 }

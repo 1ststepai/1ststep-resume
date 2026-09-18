@@ -63,6 +63,8 @@ Treat every existing non-deleted record as a duplicate candidate, including New,
 
 Each state-changing command must carry a stable idempotency key derived from tenant, canonical job identity, action type, and relevant version. Replayed commands return the prior result. Concurrent workers must not create parallel sessions, packages, final-action tasks, or receipts.
 
+Local package implementation (2026-09-07, not yet deployed): `lib/application-package-identity.js` reconciles retained package/session/subscriber-card history and atomically reserves tenant-hashed employer/requisition and canonical URL aliases with package queue insertion. Its one-year identity ledger survives private run expiry; unknown, conflicting, revised, or oversized history holds new generation. See `docs/PACKAGE_IDENTITY_2026-09-07.md` for validation and remaining continuation/accounting/history-recovery work. This is package admission protection, not a claim that all session/submission stores already share a unique identity constraint.
+
 ### Submission and state rules
 
 - Package generation does not mean Applied or Submitted.

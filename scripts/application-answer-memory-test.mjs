@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
+import './applicant-vault-error-test.mjs';
 import { grantVaultConsent, revokeVaultFact } from '../lib/applicant-vault-domain.js';
-import { matchingAnswerMemory, rememberApplicationAnswer, resolveApplicationAnswer, forgetAnswerMemory } from '../lib/application-answer-memory.js';
+import { matchingAnswerMemory, rememberApplicationAnswer, resolveApplicationAnswer, forgetAnswerMemory, reuseApplicationAnswers } from '../lib/application-answer-memory.js';
 import { applicationSessionPolicyLevel, validateApplicationSessionMutationBody } from '../api/application-sessions.js';
 const session = { id:'application_test_1', state:'Waiting for You', stage:'employer_form', role:{employer:'Example Employer'}, actions:[{id:'action_test_1',type:'AMBIGUOUS_FACT',status:'open',metadata:{question:'Describe your vendor warranty experience.'}}], timeline:[], approvals:{} };
 const input = {actionId:'action_test_1',statement:'I handled equipment warranty claims and terms and conditions with vendors at Example Company.'};
@@ -38,3 +39,24 @@ assert.equal(JSON.stringify(forgetAnswerMemory(vault,fact.id)).includes(input.st
 const expired = rememberApplicationAnswer(blank,session,{...input,expiresAt:'2030-01-01'},new Date('2029-01-01'));
 assert.equal(matchingAnswerMemory(expired,{question:session.actions[0].metadata.question,now:Date.parse('2031-01-01')}),null);
 console.log('Application memory safety assertions passed. No external calls.');
+
+const futureSession = { ...session, id: 'future_application', role: { employer: 'Another Employer' } };
+const reused = reuseApplicationAnswers(futureSession, vault);
+assert.equal(reused.actions[0].status, 'resolved');
+assert.equal(reused.actions[0].metadata.answerReference.factVersion, 1);
+assert.equal(JSON.stringify(reused).includes(input.statement), false);
+assert.deepEqual(reused.approvals, futureSession.approvals);
+assert.equal(reuseApplicationAnswers(reused, vault), reused);
+assert.equal(reuseApplicationAnswers(futureSession, forgotten), futureSession);
+assert.equal(reuseApplicationAnswers(futureSession, scoped), futureSession);
+assert.equal(reuseApplicationAnswers(futureSession, expired, new Date('2031-01-01')), futureSession);
+assert.equal(reuseApplicationAnswers(futureSession, { ...vault, consent: { status: 'revoked' } }), futureSession);
+const paused = { ...futureSession, state: 'Paused' };
+assert.equal(reuseApplicationAnswers(paused, vault), paused);
+const attempted = { ...futureSession, submissionAttempt: { status: 'unknown' } };
+assert.equal(reuseApplicationAnswers(attempted, vault), attempted);
+const manual = { ...vault, facts: vault.facts.map(f => ({ ...f, versions: f.versions.map(v => ({ ...v, autoReuse: false })) })) };
+assert.equal(reuseApplicationAnswers(futureSession, manual), futureSession);
+assert.equal(reuseApplicationAnswers(futureSession, corrected).actions[0].metadata.answerReference.factVersion, 2);
+assert.equal(applicationSessionPolicyLevel({ action: 'prepare-employer-step' }), 'AUTHORIZATION');
+console.log('Automatic answer reuse respects current versions, scopes, revocation, pause, and authorization.');

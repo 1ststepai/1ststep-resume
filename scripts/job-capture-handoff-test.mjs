@@ -2,8 +2,8 @@
 //
 // These run the real background.js and auth-bridge.js inside sandboxes with a
 // fake chrome API, wire the bridge's runtime messages to the real background
-// listener, and drive the protocol end to end. They also run the real receiver
-// listeners extracted from funnel.html and app.js.
+// listener, and drive the protocol end to end. They also run the legacy funnel
+// receiver and pin the authenticated Job Agent's durable receiver contract.
 //
 // They are deliberately not regex checks over source. The properties being
 // protected -- nothing is deleted before acknowledgement, a forged
@@ -19,7 +19,7 @@ const ROOT = new URL('../', import.meta.url);
 const backgroundSource = await readFile(new URL('1ststep-extension/background.js', ROOT), 'utf8');
 const bridgeSource = await readFile(new URL('1ststep-extension/auth-bridge.js', ROOT), 'utf8');
 const funnelSource = await readFile(new URL('funnel.html', ROOT), 'utf8');
-const appSource = await readFile(new URL('app.js', ROOT), 'utf8');
+const conciergeSource = await readFile(new URL('concierge.js', ROOT), 'utf8');
 
 const ORIGIN = 'https://app.1ststep.ai';
 const settle = () => new Promise(resolve => setImmediate(() => setImmediate(resolve)));
@@ -65,7 +65,7 @@ function createExtension({ pendingJobs = {} } = {}) {
   assert.ok(messageListener, 'background.js must register a message listener');
 
   /** Calls the real background listener the way chrome.runtime.sendMessage does. */
-  const sendToBackground = (request, sender = { url: `${ORIGIN}/funnel` }) =>
+  const sendToBackground = (request, sender = { url: `${ORIGIN}/concierge` }) =>
     new Promise(resolve => {
       const handled = messageListener(request, sender, resolve);
       if (!handled) resolve(undefined);
@@ -75,12 +75,12 @@ function createExtension({ pendingJobs = {} } = {}) {
 }
 
 /** Boots auth-bridge.js as a page bridge attached to the given extension. */
-function attachBridge(ext, { search = '', senderUrl = `${ORIGIN}/funnel` } = {}) {
+function attachBridge(ext, { search = '', senderUrl = `${ORIGIN}/concierge` } = {}) {
   const listeners = [];
   const posted = [];
 
   const windowStub = {
-    location: { search, origin: ORIGIN, href: `${ORIGIN}/funnel${search}` },
+    location: { search, origin: ORIGIN, href: `${ORIGIN}/concierge${search}` },
     addEventListener(type, handler) { if (type === 'message') listeners.push(handler); },
     postMessage(data, targetOrigin) { posted.push({ data, targetOrigin }); },
   };
@@ -211,7 +211,7 @@ const job = id => ({ jobData: { jobTitle: `Role ${id}`, company: `Co ${id}` }, m
 // A7. An expired capture is not delivered.
 {
   const stale = job(1);
-  stale.createdAt = Date.now() - (3 * 60 * 1000);
+  stale.createdAt = Date.now() - (25 * 60 * 60 * 1000);
   const ext = createExtension({ pendingJobs: { 'cap-1': stale } });
   const page = attachBridge(ext, { search: '?jobCaptureId=cap-1' });
   await settle();
@@ -367,11 +367,6 @@ const FUNNEL_REGION = {
   from: "const CAPTURE_ID = new URLSearchParams(location.search).get('jobCaptureId')",
   to: '// Visible states for the capture.',
 };
-const APP_REGION = {
-  from: "    window.addEventListener('message', (event) => {",
-  balanced: true,
-};
-
 // C1. funnel: the same capture delivered twice applies once, acknowledges twice.
 {
   const r = runReceiver(funnelSource, { ...FUNNEL_REGION, search: '?jobCaptureId=cap-1' });
@@ -398,27 +393,19 @@ const APP_REGION = {
   assert.equal(noUrlId.acks.length, 0, 'and must acknowledge nothing');
 }
 
-// C3. app.js: the same capture delivered twice acknowledges twice, applies once.
+// C3. The Job Agent accepts only its URL capture, requires account authority,
+// and acknowledges only after the secure campaign store reports synced.
 {
-  const r = runReceiver(appSource, { ...APP_REGION, search: '?jobCaptureId=cap-1' });
-  const payload = { type: '1STSTEP_JOB_CAPTURE', captureId: 'cap-1', jobData: { jobTitle: 'Role 1' } };
-  r.deliver(payload);
-  assert.equal(r.acks.length, 1, 'app.js must acknowledge the first delivery');
-  r.deliver(payload);
-  assert.equal(r.acks.length, 2, `app.js must acknowledge both deliveries, acked ${r.acks.length}`);
-}
-
-// C4. app.js rejects a missing capture id.
-{
-  const r = runReceiver(appSource, { ...APP_REGION, search: '?jobCaptureId=cap-1' });
-  r.deliver({ type: '1STSTEP_JOB_CAPTURE', jobData: { jobTitle: 'Role 1' } });
-  r.deliver({ type: '1STSTEP_JOB_CAPTURE', captureId: '', jobData: { jobTitle: 'Role 1' } });
-  r.deliver({ type: '1STSTEP_JOB_CAPTURE', captureId: 'other', jobData: { jobTitle: 'Role 1' } });
-  assert.equal(r.acks.length, 0, 'app.js must not acknowledge a capture without a matching id');
-
-  const noUrlId = runReceiver(appSource, { ...APP_REGION, search: '' });
-  noUrlId.deliver({ type: '1STSTEP_JOB_CAPTURE', captureId: 'cap-1', jobData: { jobTitle: 'Role 1' } });
-  assert.equal(noUrlId.acks.length, 0, 'a page opened without a capture id must accept nothing');
+  const required = [
+    "event.data?.type !== '1STSTEP_JOB_CAPTURE'",
+    'captureId !== expectedCaptureId',
+    '!accountWorkflowIsAuthoritative()',
+    "campaignSync.status !== 'synced'",
+    'acknowledgeExtensionCapture(capture.captureId)',
+  ];
+  for (const needle of required) assert.ok(conciergeSource.includes(needle), `concierge receiver must contain: ${needle}`);
+  assert.ok(conciergeSource.indexOf("campaignSync.status !== 'synced'") < conciergeSource.indexOf('acknowledgeExtensionCapture(capture.captureId)'),
+    'the Job Agent must confirm durable sync before acknowledgement');
 }
 
 // ===========================================================================
@@ -450,4 +437,4 @@ const APP_REGION = {
   }
 }
 
-console.log('Job capture handoff: exact identity in both receivers, delivery before deletion, background-owned serialized mutations, race-free overlapping add/acknowledge, forged-acknowledgement rejection, exact-capture retry, apply-once re-delivery, and visible success/failure states all verified.');
+console.log('Job capture handoff: exact identity, delivery before deletion, durable Job Agent acknowledgement, serialized mutations, overlapping add/acknowledge safety, forged-acknowledgement rejection, retry, and visible failure states verified.');

@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import { localApplicationRoute } from '../client/application-execution-route.js';
+const session = { id: 'session_test_123', version: 3, state: 'Preparing', role: { directEmployerUrl: 'https://boards.greenhouse.io/example/jobs/123' } };
+const route = localApplicationRoute(session);
+assert.equal(route.mode, 'extension');
+const url = new URL(route.href);
+assert.equal(url.search, '');
+assert.equal(new URLSearchParams(url.hash.slice(1)).get('1ststep-session'), session.id);
+assert.equal(new URLSearchParams(url.hash.slice(1)).get('1ststep-version'), '3');
+for (const target of ['https://jobs.smartrecruiters.com/example/123','https://boards.greenhouse.io.attacker.test/example/jobs/123','https://boards.greenhouse.io/example']) assert.equal(localApplicationRoute({ ...session, role: { directEmployerUrl: target } }).mode, 'manual');
+for (const target of ['javascript:alert(1)','http://boards.greenhouse.io/example/jobs/123','https://secret@boards.greenhouse.io/example/jobs/123']) assert.equal(localApplicationRoute({ ...session, role: { directEmployerUrl: target } }).href, '');
+for (const key of ['workerExecution','submissionExecution']) assert.equal(localApplicationRoute({ ...session, [key]: { status: 'outcome-unknown' } }).mode, 'reconcile');
+assert.equal(localApplicationRoute({ ...session, state: 'Submitted' }).href, '');
+console.log('Local routing preserves exact session/version, rejects unsafe URLs, excludes unsupported adapters, and blocks unresolved/complete attempts.');

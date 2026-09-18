@@ -6,7 +6,7 @@ import { prepareEmployerBrowserTaskRecord } from '../lib/employer-browser-task-s
 import { enforceDurableRateLimit, sendRateLimitResult } from '../lib/durable-rate-limit.js';
 import { readJobAgentRun } from '../lib/job-agent-run-store.js';
 import { readApplicantVault } from '../lib/applicant-vault-store.js';
-import { resolveApplicationAnswer } from '../lib/application-answer-memory.js';
+import { resolveApplicationAnswer, reuseApplicationAnswers } from '../lib/application-answer-memory.js';
 import { jobAgentRuntimeConfiguration } from '../lib/job-agent-runtime-configuration.js';
 import { recordConfiguredJobAgentOperationalEvent } from '../lib/job-agent-operational-metrics.js';
 import { jobAgentConsentGate } from '../lib/job-agent-consent-store.js';
@@ -32,7 +32,7 @@ export const EXTERNAL_APPLICATION_SESSION_ACTIONS = Object.freeze([
 ]);
 
 /* Actions where the agent resumes working unattended on the user's behalf. */
-export const AUTHORIZED_APPLICATION_SESSION_ACTIONS = Object.freeze(['resume', 'resolve-remembered-answer']);
+export const AUTHORIZED_APPLICATION_SESSION_ACTIONS = Object.freeze(['resume', 'resolve-remembered-answer', 'prepare-employer-step']);
 
 /* This module mixes internal preparation state with employer-facing steps. Classify per
    ACTION, never per file: an internal operation must not inherit a weaker gate because
@@ -158,6 +158,8 @@ export default async function handler(req, res) {
       const session = createApplicationSession({
         packageRunId, packageQaVerified: true, documentVersion: result.documentVersion, employer: result.employer,
         title: result.title, requisitionId: result.requisitionId, directEmployerUrl: packageRun.mission.directEmployerUrl,
+        roleEvidence: packageRun.mission.roleEvidence,
+        evidenceMapSummary: { mappedClaims: Array.isArray(result.sourceMap) ? result.sourceMap.length : 0, qaIssues: result.qa?.issues || [] },
         proposedFields: req.body?.proposedFields,
       });
       const created = await createDurableApplicationSession({ ...config, subject: auth.subject, session, idempotencyKey: String(req.headers?.['idempotency-key'] || '') });
@@ -246,6 +248,10 @@ export default async function handler(req, res) {
       } else {
         const plan = planEmployerFormStep({ session, pageUrl: inspection.pageUrl, fields: inspection.fields });
         updated = applyEmployerInspectionPlan(session, plan);
+        if (plan.status === 'waiting-for-user') {
+          const stored = await readApplicantVault({ ...config, subject: auth.subject });
+          updated = reuseApplicationAnswers(updated, stored.vault);
+        }
         workerResult = { planStatus: plan.status, executionStatus: 'inspection-complete' };
         if (plan.status === 'ready-to-fill') {
           const tenantId = jobAgentTenantId(auth.subject, config.partitionSecret);

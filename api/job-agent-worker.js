@@ -180,7 +180,7 @@ async function executeBoundedCycle({
       break;
     }
   }
-  const limit = Math.min(3, Math.max(1, Number(query.limit) || 1));
+  const limit = Math.min(3, Math.max(1, Number(query.limit) || 3));
   for (let index = 0; index < limit; index += 1) {
     try {
       const run = await processRun(config);

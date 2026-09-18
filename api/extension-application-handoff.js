@@ -14,6 +14,7 @@ import { notifyNewApplicationNeedsYouAction } from '../lib/application-needs-you
 import { reverifyPublicJob } from '../lib/public-ats-discovery.js';
 import { recordConfiguredJobAgentOperationalEvent } from '../lib/job-agent-operational-metrics.js';
 import { evaluateCandidateFit } from '../client/job-intelligence.js';
+import { buildTransientExtensionResume } from '../lib/transient-extension-resume.js';
 
 export const maxDuration = 30;
 
@@ -80,7 +81,12 @@ export function verifiedResumeArtifact(run, session) {
 
 async function restoreVerifiedResume({ config, subject, session }) {
   const run = await readJobAgentRun({ ...config, subject, runId: session.packageRunId });
-  return { run, artifact: verifiedResumeArtifact(run, session) };
+  try {
+    return { run, artifact: verifiedResumeArtifact(run, session), bytes: null, delivery: 'private-object-storage' };
+  } catch (error) {
+    if (String(error?.message || '') !== 'GREENHOUSE_APPROVED_RESUME_NOT_READY') throw error;
+    return { run, ...await buildTransientExtensionResume(run, session) };
+  }
 }
 
 export default async function handler(req, res) {
@@ -206,8 +212,9 @@ export default async function handler(req, res) {
         || session.workerExecution?.fieldSchemaHash !== claims.fieldSchemaHash) {
         return res.status(409).json({ error: 'The approved résumé handoff is expired or was already replaced.', code: 'EXTENSION_HANDOFF_STATE_MISMATCH' });
       }
-      const { artifact } = await restoreVerifiedResume({ config, subject: auth.subject, session });
-      const bytes = await readApplicationPackageArtifact({
+      const restored = await restoreVerifiedResume({ config, subject: auth.subject, session });
+      const { artifact } = restored;
+      const bytes = restored.bytes || await readApplicationPackageArtifact({
         artifact, tenantId: jobAgentTenantId(auth.subject, config.partitionSecret), runId: session.packageRunId,
         dataEncryptionKey: config.dataEncryptionKey, configuration: config.objectStorage,
       });

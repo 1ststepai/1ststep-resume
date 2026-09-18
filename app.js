@@ -62,7 +62,7 @@ function collapseLetterSpacing(text) {
     let _analyticsDisabled = false;
     const _analyticsQueue = [];
     const _trackedActivationEvents = new Set();
-    const FREE_TO_PRO_PRICE = '$24.99/month';
+    const JOB_AGENT_FUTURE_PRICE = '$39/month when paid access opens';
     const APP_GA_ID = 'G-RYPRPJDLVE';
     const PRO_TIER_ALIASES = new Set(['essential', 'complete', 'pro']);
     function authenticatedJsonHeaders() {
@@ -74,39 +74,39 @@ function collapseLetterSpacing(text) {
     const PRO_FEATURE_COPY = {
       coverLetter: {
         headline: 'Create unlimited cover letters',
-        body: 'Free includes 1 cover letter. Upgrade to Job Hunt Pass for unlimited cover letters that match each tailored resume and role.',
+        body: 'Free includes 1 cover letter. Paid checkout is paused; request Job Agent beta access for current availability.',
       },
       positioningBrief: {
         headline: 'Career Positioning Brief included',
-        body: 'Your free account includes positioning analysis. Job Hunt Pass unlocks unlimited tailoring, full vault access, and extension workflows.',
+        body: 'Your free account includes positioning analysis. Job Agent access is currently limited to approved beta testers.',
       },
       saveJobLimit: {
         headline: 'Keep tracking every application',
-        body: 'Free includes 3 saved jobs. Upgrade to Job Hunt Pass for unlimited tracking, version history, and follow-up planning.',
+        body: 'Free includes 3 saved jobs. Paid checkout is paused; request Job Agent beta access for current availability.',
       },
       tailors: {
         headline: 'Keep tailoring resumes',
-        body: 'You have used your 3 free tailored resumes. Upgrade to Job Hunt Pass for unlimited resume tailoring.',
+        body: 'You have used your 3 free tailored resumes. Paid checkout is paused while Job Agent automation is completed.',
       },
       vault: {
         headline: 'Unlock full version history',
-        body: 'Upgrade to Job Hunt Pass to keep every tailored resume, cover letter, and job version organized.',
+        body: 'Full version history is limited to existing subscribers and approved Job Agent beta testers.',
       },
       bulkApply: {
         headline: 'Unlock Bulk Apply',
-        body: 'Upgrade to Job Hunt Pass to tailor multiple roles faster with bulk apply and extension workflows.',
+        body: 'Bulk Apply is limited to existing subscribers and approved beta testers while the workflow is completed.',
       },
       linkedin: {
         headline: 'Unlock LinkedIn workflows',
-        body: 'Upgrade to Job Hunt Pass to use LinkedIn import, optimization, and extension-assisted job capture.',
+        body: 'LinkedIn workflows are limited to existing subscribers and approved beta testers.',
       },
       advancedAts: {
         headline: 'Unlock advanced role match scoring',
-        body: 'Upgrade to Job Hunt Pass for deeper ATS scoring, matched requirements, gaps, and improvement proof.',
+        body: 'Advanced matching is limited to existing subscribers and approved beta testers.',
       },
       general: {
-        headline: 'Upgrade to Job Hunt Pass',
-        body: 'Unlock unlimited tailoring, unlimited cover letters, full vault access, full tracking, and the Chrome extension workflow.',
+        headline: 'Request Job Agent beta access',
+        body: 'Paid checkout is paused while extension-assisted applications are completed and verified. Existing subscribers keep their access.',
       },
     };
 
@@ -2930,7 +2930,7 @@ ${resume.slice(0, 3000)}
       lockIcon.textContent = remaining > 0 ? ' 1 free' : ' Upgrade';
       lockIcon.title = remaining > 0
         ? 'Free includes 1 cover letter'
-        : 'Upgrade to Job Hunt Pass for unlimited cover letters';
+        : 'View Job Agent beta access for expanded cover letter tools';
     }
 
     // -- LLM-07: Universal prose output sanitizer -----------------------------
@@ -3918,8 +3918,8 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
         <div class="error-box" style="text-align:center;padding:32px 24px">
           <div style="font-size:2rem;margin-bottom:8px">Locked</div>
           <strong style="font-size:1.1rem">You've used your ${getLimit('tailors')} free tailors this month</strong>
-          <p style="margin:10px 0 20px;opacity:0.85">Most users land interviews within the first week.<br>Unlock unlimited tailoring - cancel anytime.</p>
-          <button class="btn-run" style="width:auto;padding:10px 28px;font-size:0.95rem" id="limitErrorPassBtn">Upgrade to Job Hunt Pass -></button>
+          <p style="margin:10px 0 20px;opacity:0.85">Your free monthly limit has been reached.<br>Paid checkout is paused while Job Agent remains in controlled beta.</p>
+          <button class="btn-run" style="width:auto;padding:10px 28px;font-size:0.95rem" id="limitErrorPassBtn">View beta access -></button>
         </div>`;
           document.getElementById('limitErrorPassBtn')?.addEventListener('click', openUpgradeModal);
           setTimeout(() => openUpgradeModal(), 400);
@@ -3927,9 +3927,9 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
           document.getElementById('resumeOutput').innerHTML = `
         <div class="error-box" style="text-align:center;padding:32px 24px">
           <div style="font-size:2rem;margin-bottom:8px">Locked</div>
-          <strong style="font-size:1.1rem">Job Hunt Pass required</strong>
-          <p style="margin:10px 0 20px;opacity:0.85">This feature requires Job Hunt Pass.</p>
-          <button class="btn-run" style="width:auto;padding:10px 28px;font-size:0.95rem" id="tierErrorPassBtn">Upgrade to Job Hunt Pass -></button>
+          <strong style="font-size:1.1rem">Controlled access required</strong>
+          <p style="margin:10px 0 20px;opacity:0.85">This feature is limited to existing subscribers and approved beta testers.</p>
+          <button class="btn-run" style="width:auto;padding:10px 28px;font-size:0.95rem" id="tierErrorPassBtn">View beta access -></button>
         </div>`;
           document.getElementById('tierErrorPassBtn')?.addEventListener('click', openUpgradeModal);
           setTimeout(() => openUpgradeModal(), 400);
@@ -4371,29 +4371,28 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
 
     // -- Monthly Usage Limits ---------------------------------------------------
     // Free: 5 searches / 3 tailors / 0 cover letters / 3 saved jobs.
-    // Pro $24.99/mo: unlimited core job-search workflow.
+    // Existing paid aliases retain their access; new paid checkout is intentionally paused.
     const LIMITS = {
       free:      { searches: 5, tailors: 3, coverLetters: 1, savedJobs: 3, vaultVisible: 3 },
       essential: { searches: 999, tailors: 999, coverLetters: 999, savedJobs: 999, vaultVisible: 999 },
       complete:  { searches: 999, tailors: 999, coverLetters: 999, savedJobs: 999, vaultVisible: 999 },
       pro:       { searches: 999, tailors: 999, coverLetters: 999, savedJobs: 999, vaultVisible: 999 },
     };
-    // Job Hunt Pass - monthly Stripe subscription
-    const STRIPE_PASS_URL = 'https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00';
-    // Stripe payment links (legacy tier keys kept for backwards compatibility; all route to Job Hunt Pass).
+    // Current access page. Legacy tier keys remain for backwards-compatible entitlement rendering.
+    const CURRENT_ACCESS_URL = '/pricing#job-agent-pricing';
     const STRIPE_LINKS = {
       essential: {
-        monthly: STRIPE_PASS_URL,
-        annual: STRIPE_PASS_URL,
+        monthly: CURRENT_ACCESS_URL,
+        annual: CURRENT_ACCESS_URL,
       },
       complete: {
-        monthly: STRIPE_PASS_URL,
-        annual: STRIPE_PASS_URL,
+        monthly: CURRENT_ACCESS_URL,
+        annual: CURRENT_ACCESS_URL,
       },
     };
-    const STRIPE_ESSENTIAL = STRIPE_PASS_URL; // fallback
-    const STRIPE_COMPLETE = STRIPE_PASS_URL;  // fallback
-    const UPGRADE_URL = STRIPE_PASS_URL;
+    const STRIPE_ESSENTIAL = CURRENT_ACCESS_URL; // legacy variable name
+    const STRIPE_COMPLETE = CURRENT_ACCESS_URL;  // legacy variable name
+    const UPGRADE_URL = CURRENT_ACCESS_URL;
 
     function isProTier(tier = currentTier) {
       return PRO_TIER_ALIASES.has(tier);
@@ -4407,7 +4406,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
         tier: currentTier,
         plan: isProTier() ? 'pro' : 'free',
         isPro: isProTier(),
-        priceMonthly: FREE_TO_PRO_PRICE,
+        priceMonthly: JOB_AGENT_FUTURE_PRICE,
         usage: { ...usage, savedJobs },
         limits,
         remainingTailors: Math.max((limits.tailors || 0) - (usage.tailors || 0), 0),
@@ -4456,7 +4455,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       const headline = document.getElementById('paywallHeadline');
       const sub = document.getElementById('paywallSubheadline');
       if (headline) headline.textContent = copy.headline;
-      if (sub) sub.textContent = `${copy.body} Job Hunt Pass is ${FREE_TO_PRO_PRICE}.`;
+      if (sub) sub.textContent = `${copy.body} Planned paid access is ${JOB_AGENT_FUTURE_PRICE}.`;
       document.getElementById('upgradeModal').style.display = 'flex';
     }
     function closeUpgradeModal() { document.getElementById('upgradeModal').style.display = 'none'; }
@@ -4465,7 +4464,7 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       const unlock = document.getElementById('paywallUnlockBtn');
       if (unlock) {
         unlock.href = UPGRADE_URL;
-        unlock.textContent = `Start Job Hunt Pass - ${FREE_TO_PRO_PRICE}`;
+        unlock.textContent = 'View Job Agent beta access';
       }
     }
 
@@ -4545,9 +4544,9 @@ Rules: Professional but human tone. NO "I am writing to express my interest". 25
       document.getElementById('jobList').innerHTML = `
     <div class="no-jobs-box" style="text-align:left">
       <p style="margin-bottom:6px"><strong>You've used all ${limit} searches for this month.</strong></p>
-      <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Upgrade to Job Hunt Pass for unlimited resume tailoring, unlimited cover letters, and full tracking, or search directly on job boards in the meantime.</p>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Paid checkout is paused while Job Agent is in controlled beta. Existing subscribers retain access, and approved testers can use enabled beta tools.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-        <button onclick="openUpgradeModal()" style="padding:8px 16px;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;border:none;cursor:pointer">Upgrade to Job Hunt Pass</button>
+        <button onclick="openUpgradeModal()" style="padding:8px 16px;background:linear-gradient(135deg,#1A56DB,#6366F1);color:white;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;border:none;cursor:pointer">View beta access</button>
       </div>
       <div class="quick-links" style="justify-content:flex-start">
         <a class="quick-link-btn" href="#" onclick="openJobBoard('indeed'); return false">Search Indeed</a>
@@ -5372,32 +5371,49 @@ ${_resumeSlice}
     }
 
     // -- Normalise JSearch job to common format --------------------------------
+    function safeJobFeedId(value) {
+      const id = String(value || '');
+      return /^[A-Za-z0-9][A-Za-z0-9._:=-]{0,254}$/.test(id) ? id : '';
+    }
+
+    function safeJobFeedUrl(value) {
+      try {
+        const url = new URL(String(value || ''));
+        if (url.protocol !== 'https:' || url.username || url.password || (url.port && url.port !== '443')) return '';
+        return url.href;
+      } catch {
+        return '';
+      }
+    }
+
     function normaliseMuseJob(job) {
-      const city = job.job_city || '';
-      const state = job.job_state || '';
-      const locationStr = city && state ? `${city}, ${state}` : city || state || job.job_country || '';
+      const feedText = (value, maxLength = 10_000) => typeof value === 'string' ? value.slice(0, maxLength) : '';
+      const city = feedText(job.job_city, 200);
+      const state = feedText(job.job_state, 200);
+      const locationStr = city && state ? `${city}, ${state}` : city || state || feedText(job.job_country, 200);
       const salaryMin = job.job_min_salary;
       const salaryMax = job.job_max_salary;
 
       // Pull Indeed link + easy-apply flag out of apply_options array
-      const applyOptions = job.apply_options || [];
-      const indeedOpt = applyOptions.find(o => /indeed/i.test(o.publisher || ''));
-      const indeedUrl = indeedOpt?.apply_link || null;
+      const applyOptions = Array.isArray(job.apply_options) ? job.apply_options : [];
+      const indeedOpt = applyOptions.find(o => o && /indeed/i.test(feedText(o.publisher, 200)));
+      const indeedUrl = safeJobFeedUrl(indeedOpt?.apply_link);
       const indeedEasyApply = !!(indeedOpt?.is_direct);   // true = Indeed Easy Apply (no redirect)
 
       // Also check the primary link itself - if it's an Indeed URL, use it
-      const primaryLink = job.job_apply_link || job.job_google_link || '';
-      const primaryIsIndeed = /indeed\.com/i.test(primaryLink);
+      const primaryLink = safeJobFeedUrl(job.job_apply_link || job.job_google_link);
+      const primaryHostname = (() => { try { return new URL(primaryLink).hostname.toLowerCase(); } catch { return ''; } })();
+      const primaryIsIndeed = primaryHostname === 'indeed.com' || primaryHostname.endsWith('.indeed.com');
 
       return {
-        id: job.job_id || `job_${globalThis.crypto.randomUUID()}`,
-        title: job.job_title || 'Position',
-        company: { display_name: job.employer_name || '' },
+        id: safeJobFeedId(job.job_id) || `job_${globalThis.crypto.randomUUID()}`,
+        title: feedText(job.job_title, 500) || 'Position',
+        company: { display_name: feedText(job.employer_name, 500) },
         location: { display_name: locationStr },
-        description: (job.job_description || '').slice(0, 400), // card preview only
-        fullDescription: job.job_description || '',             // full text for tailoring
+        description: feedText(job.job_description, 400), // card preview only
+        fullDescription: feedText(job.job_description),  // full text for tailoring
         redirect_url: primaryLink,
-        indeed_url: indeedUrl || (primaryIsIndeed ? primaryLink : null),
+        indeed_url: indeedUrl || (primaryIsIndeed ? primaryLink : ''),
         indeed_easy_apply: indeedEasyApply || (primaryIsIndeed && !!job.job_apply_is_direct),
         created: job.job_posted_at_datetime_utc,
         expiration: job.job_offer_expiration_datetime_utc || null,
@@ -5467,7 +5483,7 @@ ${_resumeSlice}
 
       const jobList = document.getElementById('jobList');
       clearEmptyStateKey(jobList, 'searchResults');
-      jobList.innerHTML = visibleJobs.map(job => buildJobCard(job)).join('');
+      jobList.replaceChildren(...visibleJobs.map(job => buildJobCard(job)));
       // Store visible jobs for tailoring (all jobs including applied kept internally)
       window._jobResults = jobs;
       trackProductEvent('job_search_completed', {
@@ -5549,56 +5565,83 @@ ${jobList}`,
 
 
     function buildJobCard(job) {
-      const title = escHtml(job.title || 'Untitled Position');
-      const company = escHtml(job.company?.display_name || 'Company');
-      const location = job.location?.display_name || job.location?.area?.join(', ') || '';
-      const desc = escHtml((job.description || '').slice(0, 300));
+      const title = String(job.title || 'Untitled Position');
+      const company = String(job.company?.display_name || 'Company');
+      const location = String(job.location?.display_name || job.location?.area?.join(', ') || '');
+      const desc = String(job.description || '').slice(0, 300);
       const salaryStr = job.salary_min && job.salary_max
         ? `$${Math.round(job.salary_min / 1000)}k - $${Math.round(job.salary_max / 1000)}k/yr`
         : job.salary_min ? `From $${Math.round(job.salary_min / 1000)}k/yr` : '';
       const salaryEst = job.salary_estimate || ''; // AI-estimated fallback
       const isRemote = /remote/i.test(job.title + ' ' + job.description);
-      const jobUrl = job.redirect_url || '#';
+      const jobUrl = safeJobFeedUrl(job.redirect_url);
+      const indeedUrl = safeJobFeedUrl(job.indeed_url);
       const dist = job.distanceMiles !== null && job.distanceMiles !== undefined
         ? `${job.distanceMiles < 1 ? '< 1' : Math.round(job.distanceMiles)} mi`
-        : location ? escHtml(location.split(',')[0]) : 'Nearby';
+        : location ? location.split(',')[0] : 'Nearby';
 
       const postedDate = job.created ? new Date(job.created).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-      const jobId = escHtml(job.id || '');
+      const jobId = safeJobFeedId(job.id);
+      if (!jobId) throw new Error('Job feed returned an invalid identifier.');
+      const element = (tag, className, text) => {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+      };
+      const stop = callback => event => { event.stopPropagation(); callback(); };
 
-      // Salary display: real data > AI estimate > loading placeholder
-      const salaryDisplay = salaryStr
-        ? `<div class="job-salary-badge">${salaryStr}</div>`
-        : salaryEst
-          ? `<div class="job-salary-badge estimated">~${escHtml(salaryEst)} <span style="font-size:10px;opacity:0.7">(est.)</span></div>`
-          : `<div class="job-salary-badge unknown" id="sal-${jobId}"> Estimating...</div>`;
+      const card = element('div', 'job-card');
+      card.addEventListener('click', () => expandJob(jobId));
+      const header = element('div', 'job-card-header');
+      const heading = element('div');
+      heading.append(element('div', 'job-title', title), element('div', 'job-company', company));
+      header.append(heading, element('div', 'job-distance-badge', dist));
+      card.append(header);
 
-      return `
-  <div class="job-card" onclick="expandJob('${jobId}')">
-    <div class="job-card-header">
-      <div>
-        <div class="job-title">${title}</div>
-        <div class="job-company">${company}</div>
-      </div>
-      <div class="job-distance-badge"> ${dist}</div>
-    </div>
-    ${salaryDisplay}
-    <div class="job-meta" style="margin-top:6px">
-      ${location ? `<span class="job-meta-pill"> ${escHtml(location)}</span>` : ''}
-      ${isRemote ? `<span class="job-meta-pill remote">  Remote OK</span>` : ''}
-      ${postedDate ? `<span class="job-meta-pill"> ${postedDate}</span>` : ''}
-      <span class="freshness-badge freshness-checking" id="fresh-${jobId}">Verifying...</span>
-    </div>
-    ${desc ? `<div class="job-desc">${desc}...</div>` : ''}
-    <div class="job-card-footer">
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn-applied-check ${isApplied(job.id) ? 'is-applied' : ''}" id="applied-btn-${jobId}" onclick="event.stopPropagation(); ${isApplied(job.id) ? `openApplyModal('${jobId}')` : `quickLogApplied('${jobId}')`}">${isApplied(job.id) ? 'Applied' : 'Applied?'}</button>
-        ${jobUrl !== '#' ? `<a class="btn-view-job" href="${escHtml(jobUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">View job</a>` : ''}
-        ${job.indeed_url ? `<a class="btn-indeed ${job.indeed_easy_apply ? 'easy' : ''}" href="${escHtml(job.indeed_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="${job.indeed_easy_apply ? 'Indeed Easy Apply - apply without leaving Indeed' : 'Apply on Indeed'}">Indeed${job.indeed_easy_apply ? ' Easy Apply' : ''}</a>` : ''}
-        <button class="btn-tailor-job" onclick="event.stopPropagation(); tailorForJob('${jobId}')">Tailor Resume</button>
-      </div>
-    </div>
-  </div>`;
+      const salary = salaryStr
+        ? element('div', 'job-salary-badge', salaryStr)
+        : element('div', `job-salary-badge ${salaryEst ? 'estimated' : 'unknown'}`, salaryEst ? `~${salaryEst} (est.)` : 'Estimating...');
+      if (!salaryStr && !salaryEst) salary.id = `sal-${jobId}`;
+      card.append(salary);
+
+      const meta = element('div', 'job-meta');
+      meta.style.marginTop = '6px';
+      if (location) meta.append(element('span', 'job-meta-pill', location));
+      if (isRemote) meta.append(element('span', 'job-meta-pill remote', 'Remote OK'));
+      if (postedDate) meta.append(element('span', 'job-meta-pill', postedDate));
+      const freshness = element('span', 'freshness-badge freshness-checking', 'Verifying...');
+      freshness.id = `fresh-${jobId}`;
+      meta.append(freshness);
+      card.append(meta);
+      if (desc) card.append(element('div', 'job-desc', `${desc}...`));
+
+      const footer = element('div', 'job-card-footer');
+      const actions = element('div');
+      Object.assign(actions.style, { display: 'flex', gap: '6px', flexWrap: 'wrap' });
+      const applied = element('button', `btn-applied-check ${isApplied(jobId) ? 'is-applied' : ''}`, isApplied(jobId) ? 'Applied' : 'Applied?');
+      applied.id = `applied-btn-${jobId}`;
+      applied.addEventListener('click', stop(() => isApplied(jobId) ? openApplyModal(jobId) : quickLogApplied(jobId)));
+      actions.append(applied);
+      if (jobUrl) {
+        const link = element('a', 'btn-view-job', 'View job');
+        link.href = jobUrl; link.target = '_blank'; link.rel = 'noopener noreferrer';
+        link.addEventListener('click', event => event.stopPropagation());
+        actions.append(link);
+      }
+      if (indeedUrl) {
+        const link = element('a', `btn-indeed ${job.indeed_easy_apply ? 'easy' : ''}`, `Indeed${job.indeed_easy_apply ? ' Easy Apply' : ''}`);
+        link.href = indeedUrl; link.target = '_blank'; link.rel = 'noopener noreferrer';
+        link.title = job.indeed_easy_apply ? 'Indeed Easy Apply - apply without leaving Indeed' : 'Apply on Indeed';
+        link.addEventListener('click', event => event.stopPropagation());
+        actions.append(link);
+      }
+      const tailor = element('button', 'btn-tailor-job', 'Tailor Resume');
+      tailor.addEventListener('click', stop(() => tailorForJob(jobId)));
+      actions.append(tailor);
+      footer.append(actions);
+      card.append(footer);
+      return card;
     }
 
     // -- Tailor Resume for a Job -----------------------------------------------
@@ -5652,7 +5695,8 @@ ${desc}`;
       // For now, open the job URL
       const jobs = window._jobResults || [];
       const job = jobs.find(j => j.id === jobId);
-      if (job?.redirect_url) window.open(job.redirect_url, '_blank');
+      const url = safeJobFeedUrl(job?.redirect_url);
+      if (url) window.open(url, '_blank', 'noopener,noreferrer');
     }
 
     // ===========================================================================
@@ -5694,7 +5738,7 @@ ${desc}`;
       );
       if (isDupe) return;
       if (!canSaveTrackedJob()) {
-        showToast('Free includes 3 saved jobs. Upgrade to Job Hunt Pass to keep tracking every application.', 'warning');
+        showToast('Free includes 3 saved jobs. View Job Agent beta access for expanded tracking.', 'warning');
         openUpgradeModal('saveJobLimit');
         return;
       }
@@ -5761,7 +5805,7 @@ ${desc}`;
       const job = jobs.find(j => j.id === jobId);
       if (!job) return;
       if (!canSaveTrackedJob(jobId)) {
-        showToast('Free includes 3 saved jobs. Upgrade to Job Hunt Pass to save and track more roles.', 'warning');
+        showToast('Free includes 3 saved jobs. View Job Agent beta access to save and track more roles.', 'warning');
         openUpgradeModal('saveJobLimit');
         return;
       }
@@ -5798,7 +5842,6 @@ ${desc}`;
       if (btn) {
         btn.classList.add('is-applied');
         btn.textContent = 'Applied';
-        btn.onclick = (e) => { e.stopPropagation(); openApplyModal(jobId); };
       }
 
       updateTrackerBadge();
@@ -5813,7 +5856,6 @@ ${desc}`;
         if (b) {
           b.classList.remove('is-applied');
           b.textContent = 'Applied?';
-          b.onclick = (e) => { e.stopPropagation(); quickLogApplied(jobId); };
         }
         showToast('Undone - application removed', 'warning');
       };
@@ -5872,7 +5914,7 @@ ${desc}`;
       const job = jobs.find(j => j.id === pendingApplyJobId);
       if (!job) return;
       if (!canSaveTrackedJob(pendingApplyJobId)) {
-        showToast('Free includes 3 saved jobs. Upgrade to Job Hunt Pass to save and track more roles.', 'warning');
+        showToast('Free includes 3 saved jobs. View Job Agent beta access to save and track more roles.', 'warning');
         openUpgradeModal('saveJobLimit');
         return;
       }
@@ -5999,7 +6041,7 @@ ${desc}`;
         </select>
         <span class="${followUpCls}">${escHtml(followUpLabel)}</span>
         <div style="display:flex;gap:4px;margin-top:2px">
-          ${app.jobUrl ? `<a class="btn-view-job" href="${escHtml(app.jobUrl)}" target="_blank" rel="noopener" style="font-size:11px;padding:3px 8px">View job</a>` : ''}
+          ${safeJobFeedUrl(app.jobUrl) ? `<a class="btn-view-job" href="${escHtml(safeJobFeedUrl(app.jobUrl))}" target="_blank" rel="noopener" style="font-size:11px;padding:3px 8px">View job</a>` : ''}
           <button onclick="editApplication('${appId}')" class="btn-view-job" style="font-size:11px;padding:3px 8px">Edit</button>
           <button onclick="removeApplication('${appId}')" class="btn-view-job" style="font-size:11px;padding:3px 8px;color:#FCA5A5" aria-label="Remove application">Remove</button>
         </div>
@@ -6421,8 +6463,8 @@ ${desc}`;
           </div>
           <div class="vault-lock-overlay">
             <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Unlock your full Job Tracker</div>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.4">All your tailored resumes are saved.<br>Upgrade to track every application.</div>
-            <button id="vaultLockCta" style="padding:9px 20px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Upgrade to Job Hunt Pass</button>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.4">All your tailored resumes are saved.<br>Expanded tracking is currently available through controlled access.</div>
+            <button id="vaultLockCta" style="padding:9px 20px;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">View beta access</button>
           </div>
         </div>`;
       }
@@ -6941,7 +6983,7 @@ ${desc}`;
               <div class="pscard-label">Free</div>
               <div class="pscard-desc">3 resume tailors/month - 1 cover letter - vault preview</div>
             </div>
-            <button class="pscard-cta" id="pricingCardCta">Upgrade to Job Hunt Pass</button>
+            <button class="pscard-cta" id="pricingCardCta">View Job Agent beta access</button>
           </div>`;
         document.getElementById('pricingCardCta')?.addEventListener('click', () => {
           _pingTracker('pricing_cta_click');
@@ -6984,7 +7026,7 @@ ${desc}`;
 
     // -- Mobile Bottom Nav ---------------------------------------------------------
     // Free-to-Pro v1 pricing card override. Keeps legacy subscription tiers working
-    // while presenting one paid plan: Pro at $24.99/month.
+    // while preserving existing paid access and presenting controlled-beta access to new users.
     renderPricingCard = function () {
       const card = document.getElementById('pricingStatusCard');
       if (!card) return;
@@ -6996,7 +7038,7 @@ ${desc}`;
               <div class="pscard-label">Free</div>
             <div class="pscard-desc">3 resume tailors/month - 1 cover letter - vault preview</div>
             </div>
-            <button class="pscard-cta" id="pricingCardCta">Upgrade to Job Hunt Pass</button>
+            <button class="pscard-cta" id="pricingCardCta">View Job Agent beta access</button>
           </div>`;
         document.getElementById('pricingCardCta')?.addEventListener('click', () => {
           _pingTracker('pricing_cta_click');
@@ -7216,8 +7258,8 @@ Rules:
           showToast('Monthly limit reached - upgrade to continue', 'warning');
           setTimeout(() => openUpgradeModal(), 800);
         } else if (err.code === 'TIER_REQUIRED' || err.code === 'COMPLETE_REQUIRED' || err.status === 403) {
-          document.getElementById('liEmpty').textContent = 'This feature requires Job Hunt Pass.';
-          showToast('Upgrade to use LinkedIn optimization', 'warning');
+          document.getElementById('liEmpty').textContent = 'This feature requires controlled access.';
+          showToast('View Job Agent beta access to use LinkedIn optimization', 'warning');
           setTimeout(() => openUpgradeModal(), 400);
         } else {
           document.getElementById('liEmpty').textContent = 'Something went wrong - please try again.';
@@ -7423,7 +7465,7 @@ ${job.jd.slice(0, 1000)}
           console.error(`Bulk job ${job.title} failed:`, err);
           // If a tier or rate error fires mid-batch, abort the rest and prompt upgrade
           if (err.code === 'TIER_REQUIRED' || err.code === 'COMPLETE_REQUIRED' || err.status === 403) {
-            showToast('Upgrade to Job Hunt Pass to use Bulk Apply', 'warning');
+            showToast('Bulk Apply is limited to existing subscribers and approved beta testers.', 'warning');
             setTimeout(() => openUpgradeModal('bulkApply'), 400);
             break; // stop processing remaining jobs
           }

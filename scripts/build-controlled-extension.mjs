@@ -11,6 +11,7 @@ const RELEASE_FILES = Object.freeze([
   'manifest.json',
   'background.js',
   'content.js',
+  'job-capture.js',
   'auth-bridge.js',
   'popup.html',
   'popup.js',
@@ -74,6 +75,7 @@ export async function buildControlledExtension({ outputDirectory = join(ROOT, 'd
     product: '1ststep-job-agent-controlled-greenhouse-extension',
     version: manifest.version,
     capability: 'supervised-greenhouse-no-submit',
+    captureScope: 'user-invoked-active-tab-job-content',
     files: entries.map(({ name, sha256: digest, bytes }) => ({ name, sha256: digest, bytes })),
     excludesLegacyModules: true,
     containsCandidateValues: false,
@@ -94,6 +96,7 @@ export async function buildControlledExtension({ outputDirectory = join(ROOT, 'd
     bytes: archive.length,
     fileCount: entries.length + 1,
     capability: integrity.capability,
+    captureScope: integrity.captureScope,
     containsCandidateValues: false,
   };
 }

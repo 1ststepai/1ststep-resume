@@ -1,16 +1,16 @@
-# 1stStep Job Agent extension — controlled beta
+# 1stStep Job Agent extension
 
-This package is the supervised Greenhouse execution surface for the account-backed Job Agent. It does not keep a second profile, résumé, tracker, auth token, password, OTP, CAPTCHA answer, or employer answer in Chrome storage.
+This extension saves job postings to the account-backed Job Agent without copy and paste. On supported application pages, it can also fill approved ordinary fields under user supervision. It does not keep a second profile, résumé, tracker, auth token, password, OTP, CAPTCHA answer, or employer answer in Chrome storage.
 
 ## User flow
 
-1. Sign in to `app.1ststep.ai/concierge` and complete the reusable fact vault.
-2. Open a Package Ready application and approve the exact masked sharing scope.
-3. Click **Open secure employer page**. The app adds a non-sensitive application-session reference to the URL fragment.
-4. Click **Auto-fill** in the extension. The extension sends only the Greenhouse URL and value-free field schema through the signed-in app tab.
-5. The server verifies the tenant, entitlement, consent, exact requisition, approval, document version, field schema, and reusable vault facts. It consumes the single-use approval before returning transient ordinary values.
-6. The extension retrieves the exact isolated-render-verified résumé under the same two-minute, single-use transmission approval, verifies its SHA-256 in memory, attaches it to the recognized résumé control, fills ordinary fields, and never submits. CAPTCHA, OTP, identity, certification, consequential, unknown, non-résumé file-upload, or partial-fill steps return to **Needs You**.
-7. The extension reports only filled/failed field keys. Final submission remains a separate action-time confirmation, and the tracker cannot show Submitted without an authoritative receipt.
+1. Open a complete job posting and click the extension.
+2. Review the detected title and company, then choose **Save to My Jobs**.
+3. The extension opens `app.1ststep.ai/concierge` and keeps the capture until secure account saving is confirmed.
+4. The Job Agent adds the role as **Found** with employer and apply-path verification still pending.
+5. For a Package Ready application on a supported page, approve the exact masked sharing scope before fill.
+6. The extension attaches only the exact approved résumé, fills only verified ordinary fields, and never submits. CAPTCHA, OTP, identity, consequential, unknown, or partial-fill steps return to **Needs You**.
+7. The tracker cannot show Submitted without an authoritative employer receipt.
 
 ## Local verification
 

@@ -16,18 +16,21 @@
  *   TALLY_SIGNING_SECRET — (optional) from Tally webhook settings — enables signature verification
  */
 
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHash, createHmac, timingSafeEqual } from 'crypto';
+import { isRequestBodyTooLarge, readBoundedRawRequestBody } from '../lib/bounded-raw-request-body.js';
+import {
+  claimTallyWebhookEvent, completeTallyWebhookEvent, releaseTallyWebhookEvent,
+  tallyWebhookIdempotencyConfiguration,
+} from '../lib/tally-webhook-idempotency.js';
 
 export const maxDuration = 15;
 
 // ── Optional signature verification ──────────────────────────────────────────
 // Tally signs webhook payloads with HMAC-SHA256 when a signing secret is set.
-// Set TALLY_SIGNING_SECRET in Vercel to enable verification.
-// If the env var is not set, fail closed unless ALLOW_UNSIGNED_TALLY_WEBHOOKS=true
-// is set for a temporary local/test environment.
-function verifyTallySignature(rawBody, signature) {
-  const secret = process.env.TALLY_SIGNING_SECRET;
-  if (!secret || secret.length < 32) return process.env.VERCEL_ENV !== 'production' && process.env.ALLOW_UNSIGNED_TALLY_WEBHOOKS === 'true';
+// TALLY_SIGNING_SECRET is mandatory in every deployed environment.
+function verifyTallySignature(rawBody, signature, env = process.env) {
+  const secret = env.TALLY_SIGNING_SECRET;
+  if (!secret || secret.length < 32) return false;
   if (!signature) return false;
   const expected = createHmac('sha256', secret)
     .update(rawBody)
@@ -82,14 +85,14 @@ function parseTallyFields(fields = []) {
 
 // ── GHL helpers ───────────────────────────────────────────────────────────────
 
-async function upsertGHLContact(email) {
-  const apiKey     = process.env.GHL_API_KEY;
-  const locationId = process.env.GHL_LOCATION_ID;
+async function upsertGHLContact(email, { env = process.env, fetchImpl = fetch, sleep = ms => new Promise(resolve => setTimeout(resolve, ms)) } = {}) {
+  const apiKey     = env.GHL_API_KEY;
+  const locationId = env.GHL_LOCATION_ID;
   if (!apiKey || !locationId) return null;
 
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      const r = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
+      const r = await fetchImpl('https://services.leadconnectorhq.com/contacts/upsert', {
         method:  'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
@@ -106,70 +109,85 @@ async function upsertGHLContact(email) {
         return contactId;
       } else {
         console.error(JSON.stringify({ type: 'ghl-feedback-upsert-failed', attempt, status: r.status }));
-        if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
+        if (attempt < 2) await sleep(1000);
       }
     } catch (err) {
       console.error(JSON.stringify({ type: 'ghl-feedback-upsert-error', attempt, name: err?.name || 'unknown' }));
-      if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
+      if (attempt < 2) await sleep(1000);
     }
   }
-  return null;
+  throw new Error('GHL feedback contact upsert failed.');
 }
 
-async function addGHLNote(contactId, noteBody) {
-  const apiKey     = process.env.GHL_API_KEY;
-  const locationId = process.env.GHL_LOCATION_ID;
+async function addGHLNote(contactId, noteBody, eventReference, { env = process.env, fetchImpl = fetch } = {}) {
+  const apiKey     = env.GHL_API_KEY;
+  const locationId = env.GHL_LOCATION_ID;
   if (!apiKey || !locationId || !contactId) return;
 
-  try {
-    const r = await fetch(`https://services.leadconnectorhq.com/contacts/${contactId}/notes`, {
+  const url = `https://services.leadconnectorhq.com/contacts/${encodeURIComponent(contactId)}/notes`;
+  const headers = {
+    'Authorization': `Bearer ${apiKey}`,
+    'Version':       '2021-07-28',
+    'Content-Type':  'application/json',
+  };
+  const marker = `[tally-event:${eventReference}]`;
+  const existingResponse = await fetchImpl(url, { method: 'GET', headers });
+  if (!existingResponse.ok) throw new Error(`GHL note lookup returned ${existingResponse.status}`);
+  const existing = await existingResponse.json();
+  const notes = Array.isArray(existing.notes) ? existing.notes : [];
+  if (notes.some(note => String(note?.body || '').includes(marker))) return { status: 'exists' };
+
+  const r = await fetchImpl(url, {
       method:  'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Version':       '2021-07-28',
-        'Content-Type':  'application/json',
-      },
-      body: JSON.stringify({ userId: locationId, body: noteBody }),
-    });
-    if (!r.ok) throw new Error(`GHL returned ${r.status}`);
-    const data = await r.json();
-    if (data.note?.id) {
-      console.log(JSON.stringify({ type: 'ghl-feedback-note', outcome: 'created' }));
-    } else {
-      console.error(JSON.stringify({ type: 'ghl-feedback-note-failed', status: r.status }));
-    }
-  } catch (err) {
-    console.error(JSON.stringify({ type: 'ghl-feedback-note-error', name: err?.name || 'unknown' }));
-  }
+      headers,
+      body: JSON.stringify({ userId: locationId, body: `${noteBody}\n\n${marker}` }),
+  });
+  if (!r.ok) throw new Error(`GHL returned ${r.status}`);
+  const data = await r.json();
+  if (!data.note?.id) throw new Error('GHL feedback note response was missing an ID.');
+  console.log(JSON.stringify({ type: 'ghl-feedback-note', outcome: 'created' }));
+  return { status: 'created' };
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────
 
 export const config = { api: { bodyParser: false } }; // need raw body for signature check
 
-async function getRawBody(req) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    req.on('data', chunk => chunks.push(chunk));
-    req.on('end',  () => resolve(Buffer.concat(chunks)));
-    req.on('error', reject);
-  });
+const TALLY_WEBHOOK_BODY_LIMIT_BYTES = 256_000;
+const TALLY_EVENT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const TALLY_EVENT_FUTURE_SKEW_MS = 5 * 60 * 1000;
+
+function tallyEventTimestampIsFresh(payload, now = Date.now()) {
+  const createdAt = new Date(payload?.createdAt).getTime();
+  return Number.isFinite(createdAt)
+    && createdAt <= now + TALLY_EVENT_FUTURE_SKEW_MS
+    && createdAt >= now - TALLY_EVENT_MAX_AGE_MS;
 }
 
-export default async function handler(req, res) {
+export async function handleTallyWebhookRequest(req, res, {
+  env = process.env,
+  fetchImpl = fetch,
+  sleep,
+  idempotencyConfiguration = tallyWebhookIdempotencyConfiguration,
+  idempotencyOperations = { claim: claimTallyWebhookEvent, complete: completeTallyWebhookEvent, release: releaseTallyWebhookEvent },
+  now = Date.now(),
+} = {}) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const rawBody  = await getRawBody(req);
-  if (rawBody.length > 256_000) {
-    return res.status(413).json({ error: 'Payload too large' });
+  let rawBody;
+  try {
+    rawBody = await readBoundedRawRequestBody(req, { limitBytes: TALLY_WEBHOOK_BODY_LIMIT_BYTES });
+  } catch (error) {
+    if (isRequestBodyTooLarge(error)) return res.status(413).json({ error: 'Payload too large' });
+    throw error;
   }
   const bodyStr  = rawBody.toString('utf8');
   const signature = req.headers['tally-signature'] || '';
 
   // Verify signature if secret is configured
-  if (!verifyTallySignature(bodyStr, signature)) {
+  if (!verifyTallySignature(rawBody, signature, env)) {
     console.error('Tally webhook signature mismatch');
     return res.status(401).json({ error: 'Invalid signature' });
   }
@@ -185,15 +203,36 @@ export default async function handler(req, res) {
   if (payload.eventType !== 'FORM_RESPONSE') {
     return res.status(200).json({ ok: true, skipped: true, reason: `Event type: ${payload.eventType}` });
   }
+  if (!tallyEventTimestampIsFresh(payload, now)) {
+    return res.status(401).json({ error: 'Webhook event is outside the accepted time window.' });
+  }
+
+  const payloadHash = createHash('sha256').update(rawBody).digest('hex');
+  const eventId = String(payload.eventId || '');
+  const idempotency = idempotencyConfiguration(env);
+  if (!idempotency) return res.status(503).json({ error: 'Webhook processing is temporarily unavailable.' });
+
+  let claim;
+  try {
+    claim = await idempotencyOperations.claim({ ...idempotency, eventId, payloadHash });
+  } catch (error) {
+    console.error(JSON.stringify({ type: 'tally-webhook-claim-error', name: error?.name || 'unknown' }));
+    return res.status(503).json({ error: 'Webhook processing is temporarily unavailable.' });
+  }
+  if (claim.status === 'completed' || claim.status === 'busy') {
+    return res.status(200).json({ ok: true, duplicate: true });
+  }
 
   const fields   = payload.data?.fields || [];
   const { email, answers } = parseTallyFields(fields);
   const formName = payload.data?.formName || 'Beta Feedback';
-  const submittedAt = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
+  const submittedDate = new Date(payload.createdAt);
+  const submittedAt = (Number.isFinite(submittedDate.getTime()) ? submittedDate : new Date()).toLocaleString('en-US', { timeZone: 'America/New_York' });
 
   if (!email) {
     console.warn('Tally webhook: no email field found in submission — skipping GHL sync');
     console.log('Fields received:', fields.map(f => `${f.label} (${f.type})`).join(', '));
+    await idempotencyOperations.complete({ ...idempotency, eventId, payloadHash, leaseToken: claim.leaseToken });
     return res.status(200).json({ ok: true, skipped: true, reason: 'No email field found' });
   }
 
@@ -207,10 +246,19 @@ export default async function handler(req, res) {
   const noteBody = noteLines.join('\n\n');
 
   // Upsert contact + add note
-  const contactId = await upsertGHLContact(email);
-  if (contactId) {
-    await addGHLNote(contactId, noteBody);
+  try {
+    const contactId = await upsertGHLContact(email, { env, fetchImpl, sleep });
+    if (contactId) await addGHLNote(contactId, noteBody, claim.eventReference, { env, fetchImpl });
+    await idempotencyOperations.complete({ ...idempotency, eventId, payloadHash, leaseToken: claim.leaseToken });
+  } catch (error) {
+    await idempotencyOperations.release({ ...idempotency, eventId, payloadHash, leaseToken: claim.leaseToken }).catch(() => {});
+    console.error(JSON.stringify({ type: 'tally-webhook-processing-error', name: error?.name || 'unknown' }));
+    return res.status(503).json({ error: 'Webhook processing failed and will be retried.' });
   }
 
   return res.status(200).json({ ok: true, email, answersCount: answers.length });
+}
+
+export default function handler(req, res) {
+  return handleTallyWebhookRequest(req, res);
 }

@@ -1,341 +1,63 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>1stStep.ai Resume Tailor</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>1stStep.ai Job Agent</title>
   <style>
-    :root {
-      --brand: #4338CA;
-      --brand-dark: #3730A3;
-      --brand-glow: rgba(67, 56, 202, 0.22);
-      --bg: #F8FAFC;
-      --surface: #FFFFFF;
-      --surface2: #F1F5F9;
-      --border: #E2E8F0;
-      --border2: #CBD5E1;
-      --text: #0F172A;
-      --text2: #475569;
-      --muted: #94A3B8;
-      --green: #059669;
-      --green-light: #ECFDF5;
-      --red: #DC2626;
-      --red-light: #FEF2F2;
-      --amber: #D97706;
-      --amber-light: #FFFBEB;
-      --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
-      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-
-    a:focus-visible,
-    button:focus-visible,
-    input:focus-visible,
-    textarea:focus-visible,
-    select:focus-visible,
-    [tabindex]:focus-visible {
-      outline: 3px solid #FBBF24;
-      outline-offset: 3px;
-    }
-
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      padding: 16px;
-      overflow-y: auto;
-      max-width: 420px;
-    }
-
-    .header {
-      margin-bottom: 20px;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 12px;
-    }
-
-    .logo {
-      font-weight: 700;
-      font-size: 12px;
-      color: var(--brand);
-      letter-spacing: -0.3px;
-      margin-bottom: 6px;
-      text-transform: uppercase;
-    }
-
-    h1 {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 4px;
-      color: var(--text);
-    }
-
-    .subtitle {
-      font-size: 13px;
-      color: var(--text2);
-    }
-
-    .section {
-      margin-bottom: 20px;
-    }
-
-    .section-title {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.6px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 10px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .form-group {
-      margin-bottom: 12px;
-    }
-
-    label {
-      display: block;
-      font-size: 13px;
-      font-weight: 500;
-      margin-bottom: 6px;
-      color: var(--text);
-    }
-
-    label span {
-      color: var(--text2);
-      font-weight: 400;
-    }
-
-    input, textarea, select {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1.5px solid transparent;
-      border-radius: 10px;
-      background: var(--surface2);
-      color: var(--text);
-      font-size: 14px;
-      font-family: 'Inter', inherit;
-      transition: all 0.15s;
-      outline: none;
-    }
-
-    input:focus, textarea:focus, select:focus {
-      border-color: var(--brand);
-      background: var(--surface);
-      box-shadow: 0 0 0 3px var(--brand-glow);
-    }
-
-    input::placeholder, textarea::placeholder {
-      color: var(--muted);
-    }
-
-    textarea {
-      resize: vertical;
-      min-height: 80px;
-      font-family: 'Inter', monospace;
-      font-size: 13px;
-      line-height: 1.6;
-    }
-
-    .button-group {
-      display: flex;
-      gap: 10px;
-      margin-top: 16px;
-    }
-
-    button {
-      flex: 1;
-      padding: 11px 14px;
-      border: none;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .btn-primary {
-      background: var(--brand);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background: var(--brand-dark);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .btn-primary:disabled {
-      background: var(--muted);
-      cursor: not-allowed;
-    }
-
-    .btn-secondary {
-      background: var(--surface2);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-
-    .btn-secondary:hover {
-      background: var(--border);
-      border-color: var(--border2);
-    }
-
-    .result-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
-      margin-top: 12px;
-      display: none;
-      box-shadow: var(--shadow-xs);
-    }
-
-    .result-card.visible {
-      display: block;
-    }
-
-    .result-title {
-      font-weight: 600;
-      font-size: 13px;
-      margin-bottom: 10px;
-      color: var(--green);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .result-content {
-      font-size: 13px;
-      line-height: 1.6;
-      color: var(--text);
-      max-height: 300px;
-      overflow-y: auto;
-      background: var(--surface2);
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 12px;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-    }
-
-    .alert {
-      padding: 12px 14px;
-      border-radius: 10px;
-      font-size: 13px;
-      margin-bottom: 12px;
-      border: 1.5px solid transparent;
-    }
-
-    .alert-warning {
-      background: var(--amber-light);
-      border-color: rgba(217, 119, 6, 0.3);
-      color: #92400e;
-    }
-
-    .alert-success {
-      background: var(--green-light);
-      border-color: rgba(5, 150, 105, 0.3);
-      color: #065f46;
-    }
-
-    .alert-error {
-      background: var(--red-light);
-      border-color: rgba(220, 38, 38, 0.3);
-      color: #991b1b;
-    }
-
-    .loading {
-      text-align: center;
-      padding: 20px;
-      color: var(--text2);
-      font-size: 13px;
-    }
-
-    .spinner {
-      display: inline-block;
-      width: 14px;
-      height: 14px;
-      border: 2px solid var(--border);
-      border-top-color: var(--brand);
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
-      margin-right: 6px;
-      vertical-align: middle;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    :root { color-scheme:dark; --bg:#09090b; --card:#141419; --line:#2b2b33; --text:#f7f7f8; --muted:#aaaab5; --violet:#6d5dfc; --green:#42d39b; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-width:280px; background:var(--bg); color:var(--text); font:14px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif; }
+    main { padding:20px; }
+    header { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding-bottom:16px; }
+    .brand { font-size:18px; font-weight:900; letter-spacing:-.04em; }
+    .brand span { color:#aaa3ff; }
+    #connection { color:var(--muted); font-size:12px; }
+    .card { margin-top:18px; padding:18px; border:1px solid var(--line); border-radius:14px; background:var(--card); }
+    .eyebrow { color:var(--green); font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+    h1 { margin:8px 0 6px; font-size:22px; line-height:1.15; letter-spacing:-.035em; }
+    p { margin:0; color:var(--muted); }
+    dl { margin:16px 0 0; }
+    dl div { display:grid; grid-template-columns:74px 1fr; gap:10px; padding:9px 0; border-top:1px solid var(--line); }
+    dt { color:var(--muted); }
+    dd { margin:0; overflow-wrap:anywhere; }
+    button { width:100%; min-height:48px; margin-top:12px; border:1px solid var(--line); border-radius:10px; background:transparent; color:var(--text); font:inherit; font-weight:800; cursor:pointer; }
+    button.primary { border-color:transparent; background:var(--violet); color:#fff; }
+    button:disabled { opacity:.55; cursor:wait; }
+    button:focus-visible { outline:3px solid #fbbf24; outline-offset:3px; }
+    .edit { margin-top:10px; }
+    label { display:block; margin-top:10px; color:var(--muted); font-size:12px; }
+    input { width:100%; min-height:42px; margin-top:5px; padding:9px 10px; border:1px solid var(--line); border-radius:9px; background:var(--bg); color:var(--text); font:inherit; }
+    input:focus-visible { outline:3px solid #fbbf24; outline-offset:2px; }
+    #message { min-height:21px; margin-top:12px; font-size:12px; }
+    .privacy { margin-top:16px; font-size:11px; }
+    [hidden] { display:none !important; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="logo">1stStep.ai</div>
-    <h1>Resume Tailoring</h1>
-    <div class="subtitle">Customize your resume for this role</div>
-  </div>
-
-  <div id="alert" class="alert" role="alert" aria-live="assertive" style="display: none;"></div>
-
-  <div id="contentArea">
-    <!-- Job Detection Section -->
-    <div class="section">
-      <div class="section-title">Detected Job</div>
-      <div class="form-group">
-        <label for="detectedTitle">Job Title</label>
-        <input type="text" id="detectedTitle" aria-label="Detected job title" readonly>
+  <main>
+    <header><div class="brand">1stStep<span>.ai</span></div><span id="connection" role="status">Checking…</span></header>
+    <section class="card">
+      <div class="eyebrow">Current page</div>
+      <h1 id="title">Open a job posting</h1>
+      <p id="summary">Capture it in one click. No copying or pasting.</p>
+      <dl id="details" hidden>
+        <div><dt>Company</dt><dd id="company">—</dd></div>
+        <div><dt>Source</dt><dd id="source">—</dd></div>
+      </dl>
+      <button class="edit" id="edit" hidden>Edit job details</button>
+      <div id="editFields" hidden>
+        <label for="jobTitle">Job title</label>
+        <input id="jobTitle" autocomplete="off" required>
+        <label for="companyName">Company name</label>
+        <input id="companyName" autocomplete="organization" required>
       </div>
-      <div class="form-group">
-        <label for="detectedCompany">Company</label>
-        <input type="text" id="detectedCompany" aria-label="Detected company" readonly>
-      </div>
-    </div>
-
-    <!-- Job Description Section -->
-    <div class="section">
-      <div class="section-title">Job Description</div>
-      <div class="form-group">
-        <label for="jobDescription">Job Description <span style="color: #6b7591;">(auto-detected or paste)</span></label>
-        <textarea id="jobDescription" aria-label="Job description" placeholder="Job description will appear here or paste manually..."></textarea>
-      </div>
-    </div>
-
-    <!-- Actions Section -->
-    <div class="section">
-      <div class="button-group">
-        <button class="btn-primary" id="tailorBtn">Tailor Resume</button>
-        <button class="btn-secondary" id="resetBtn">Clear</button>
-      </div>
-    </div>
-
-    <!-- Result Section -->
-    <div id="resultCard" class="result-card" role="region" aria-live="polite" aria-label="Tailored resume result">
-      <div class="result-title">✓ Tailored Resume</div>
-      <div id="resultContent" class="result-content"></div>
-      <div class="button-group">
-        <button class="btn-primary" id="downloadBtn">Download DOCX</button>
-        <button class="btn-secondary" id="copyBtn">Copy Text</button>
-      </div>
-    </div>
-  </div>
-
+      <button class="primary" id="capture">Capture this job</button>
+      <button id="openJobs">Open My Jobs</button>
+      <p id="message" role="status" aria-live="polite"></p>
+    </section>
+    <p class="privacy">The extension reads job-posting content only after you click Capture. It does not read passwords or answers you typed into forms.</p>
+  </main>
   <script src="sidepanel.js"></script>
 </body>
 </html>

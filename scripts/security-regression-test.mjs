@@ -161,7 +161,8 @@ assert.match(files['lib/job-card-freshness-worker.js'], /containsCandidateValues
 assert.match(files['lib/job-card-freshness-worker.js'], /expectedVersion:\s*restored\.version/);
 assert.match(files['api/job-agent-worker.js'], /job_card_freshness_checked/);
 assert.doesNotMatch(files['api/app-config.js'], /AGENT_ANALYTICS_TOKEN|analyticsToken/);
-assert.match(files['api/tally-webhook.js'], /VERCEL_ENV !== 'production'/);
+assert.doesNotMatch(files['api/tally-webhook.js'], /ALLOW_UNSIGNED_TALLY_WEBHOOKS|VERCEL_ENV !== 'production'/);
+assert.match(files['api/tally-webhook.js'], /tallyEventTimestampIsFresh/);
 assert.match(files['api/beta-expiry-check.js'], /Cron authentication is not configured/);
 assert.match(files['api/subscription.js'], /setAccessSessionCookie/);
 assert.match(files['api/subscription.js'], /jobAgentEntitlementsForSubscription/);

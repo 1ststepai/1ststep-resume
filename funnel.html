@@ -32,17 +32,18 @@
     }
 
     :root {
-      --brand:      #4338CA;
-      --brand-dark: #3730A3;
-      --bg:         #F8FAFC;
-      --surface:    #FFFFFF;
-      --border:     #E2E8F0;
-      --text:       #0F172A;
-      --text2:      #475569;
-      --muted:      #94A3B8;
-      --green:      #059669;
-      --green-bg:   #ECFDF5;
-      --red:        #DC2626;
+      color-scheme: dark;
+      --brand:      #8B87F5;
+      --brand-dark: #6D67E8;
+      --bg:         #0D0D0D;
+      --surface:    #171717;
+      --border:     #303030;
+      --text:       #ECECEC;
+      --text2:      #B4B4B4;
+      --muted:      #8F8F8F;
+      --green:      #62D3A8;
+      --green-bg:   #15251F;
+      --red:        #FB9AA9;
     }
 
     body {
@@ -199,15 +200,15 @@
     .btn-primary:disabled { background: var(--muted); cursor: not-allowed; box-shadow: none; }
     .btn-secondary {
       flex: 1;
-      background: #F1F5F9;
+      background: #212121;
       color: var(--text);
       border: 1px solid var(--border);
     }
-    .btn-secondary:hover { background: #E2E8F0; }
+    .btn-secondary:hover { background: #303030; }
 
     /* ── Progress bar ───────────────────────────────── */
     .progress-wrap {
-      background: #E2E8F0;
+      background: #303030;
       border-radius: 100px;
       height: 6px;
       overflow: hidden;
@@ -253,7 +254,7 @@
       color: var(--text);
       line-height: 1.55;
       padding: 10px 14px;
-      background: #F8FAFC;
+      background: #212121;
       border-left: 3px solid var(--brand);
       border-radius: 0 8px 8px 0;
     }
@@ -293,9 +294,9 @@
     .paywall-price { font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 3px; letter-spacing: -0.5px; }
     .paywall-cancel { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
     .paywall-urgency {
-      background: #FFFBEB;
-      border: 1px solid #FDE68A;
-      color: #92400E;
+      background: #2A2418;
+      border: 1px solid #66522B;
+      color: #F2C66D;
       border-radius: 8px;
       padding: 8px 12px;
       font-size: 12px;
@@ -315,8 +316,8 @@
 
     /* ── Error ──────────────────────────────────────── */
     .error-box {
-      background: #FEF2F2;
-      border: 1px solid #FECACA;
+      background: #2B1B1E;
+      border: 1px solid #69363E;
       color: var(--red);
       border-radius: 8px;
       padding: 10px 14px;
@@ -441,10 +442,10 @@
       </div>
 
       <!-- Edit job info panel -->
-      <div id="editJobPanel" style="display:none;margin-top:16px;padding:14px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;">
-        <div style="font-size:12px;font-weight:600;color:#92400E;margin-bottom:8px;">Update job details:</div>
-        <input type="text" id="funnelJobTitleInput" aria-label="Job title" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:8px;font-size:13px;font-family:inherit;margin-bottom:8px;outline:none;box-sizing:border-box;" placeholder="Job Title">
-        <input type="text" id="funnelCompanyInput" aria-label="Company name" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:8px;font-size:13px;font-family:inherit;margin-bottom:10px;outline:none;box-sizing:border-box;" placeholder="Company Name">
+      <div id="editJobPanel" style="display:none;margin-top:16px;padding:14px;background:#2A2418;border:1px solid #66522B;border-radius:10px;">
+        <div style="font-size:12px;font-weight:600;color:#F2C66D;margin-bottom:8px;">Update job details:</div>
+        <input type="text" id="funnelJobTitleInput" aria-label="Job title" style="width:100%;padding:8px 10px;border:1px solid #424242;border-radius:8px;background:#171717;color:#ECECEC;font-size:13px;font-family:inherit;margin-bottom:8px;outline:none;box-sizing:border-box;" placeholder="Job Title">
+        <input type="text" id="funnelCompanyInput" aria-label="Company name" style="width:100%;padding:8px 10px;border:1px solid #424242;border-radius:8px;background:#171717;color:#ECECEC;font-size:13px;font-family:inherit;margin-bottom:10px;outline:none;box-sizing:border-box;" placeholder="Company Name">
         <button class="btn btn-primary" id="saveJobInfoBtn" style="padding:9px 16px;font-size:13px;">Save</button>
       </div>
     </div>
@@ -476,10 +477,10 @@
         <li><span class="check">✓</span> Full match breakdown</li>
       </ul>
 
-      <div class="paywall-price">$24.99<span style="font-size:14px;font-weight:500;color:var(--muted)">/mo</span></div>
-      <div class="paywall-cancel">Billed monthly. Cancel anytime.</div>
+      <div class="paywall-price">Job Agent beta</div>
+      <div class="paywall-cancel">No paid checkout while the application workflow is being completed.</div>
 
-      <button class="btn btn-primary" id="unlockBtn">🔒 Unlock My Resume</button>
+      <button class="btn btn-primary" id="unlockBtn">See current access options</button>
 
       <div class="paywall-urgency">Limited-time free preview — don't lose your tailored version.</div>
 
@@ -527,7 +528,7 @@ function collapseLetterSpacing(text) {
 }
 
 // ── Config ──────────────────────────────────────────────────────
-const STRIPE_URL = 'https://buy.stripe.com/5kQ4gA7OFgH14u89fhfIs00';
+const CURRENT_ACCESS_URL = '/pricing#job-agent-pricing';
 
 // ── State ────────────────────────────────────────────────────────
 const S = {
@@ -1093,7 +1094,7 @@ document.getElementById('saveEmailBtn').addEventListener('click', () => {
 
 // ── Paywall ──────────────────────────────────────────────────────
 document.getElementById('unlockBtn').addEventListener('click', () => {
-  window.location.href = STRIPE_URL;
+  window.location.href = CURRENT_ACCESS_URL;
 });
 
 document.getElementById('verifyLink').addEventListener('click', e => {
