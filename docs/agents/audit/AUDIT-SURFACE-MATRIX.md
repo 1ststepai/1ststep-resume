@@ -1,5 +1,15 @@
 # Independent audit surface matrix
 
+## Cycle 4 current overlay — reconciled 2026-09-16
+
+| Surface / seam | Current attributable evidence | Status / limit |
+| --- | --- | --- |
+| `app.1ststep.ai` | READY Production `dpl_229cmvzCQvh3hvcXZuKBPf9EwCyy`, Vercel API `source=cli`, `prebuilt=true`, declared commit `7412af1` on the integration branch; 88/88 pre-fix public assets byte-match clean candidate. Live login security headers absent (AUD-029), discovery module 404, Clerk config enabled but no signed lifecycle. | **LIVE / BLOCKED**. Public static parity does not prove a clean complete tree, 46 function artifacts, release authorization or First Real User. |
+| `resume.1ststep.ai` | READY Production `dpl_6pb5ERtApySGNdQapLcqRHforj2o`, CLI source per App Loop; three live free-account CTAs lead to app `/login.html`. | **PUBLIC LIVE / BLOCKED** by target AUD-029. AUD-030 misleading-admission claim requires signed free-account proof; no automatic CTA rollback. |
+| `partners.1ststep.ai` | No Cycle 4 change or signed attribution/tenant evidence. | **NOT OPERATIONAL / BLOCKED** by AUD-008; no inferred shared-user proof. |
+| Exact P0 Preview | GitHub associates `89acfc1` with READY protected `dpl_GAncaMbr84FviGPPiUwcedEttRMy`; authenticated CLI bytes for missing module and `/app`/`/concierge` match source. Authorized SSO browser shows the module in script resources and working My Jobs handler on both routes, with no browser errors. | **PATCH PREVIEW VERIFIED IN BOUNDED SCOPE**; exact MIME header and signed identity/persistence/tenant path remain unproven. Production unchanged. |
+| APIs, workers, Clerk/session, Redis/Postgres | No Cycle 4 signed/hosted two-account, persistence, recovery or receipt proof. Production and Preview function digests differ; do not infer identical server artifacts from public bytes. | **UNVERIFIED** for G2/G6; AUD-002/004/019 and related gates remain open. |
+
 Cycle 0 independently assessed these tracks on 2026-09-12, often only by source or public shell. "Last audited" states scope, not full coverage. The consulting site 1ststep.ai is excluded. Current reconciliation is not a new independent audit; dated versions/claims remain dated unless explicitly rechecked. See AUDIT-FINDINGS.md for durable IDs.
 
 | Track | Canonical source | Live target / known version | Evidence and limit | Last independently audited | Status | Outstanding verification |

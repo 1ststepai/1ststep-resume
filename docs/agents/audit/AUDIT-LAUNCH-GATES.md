@@ -1,5 +1,18 @@
 # Independent audit view of launch gates
 
+## Cycle 4 live-Production overlay — ingested 2026-09-16
+
+The independent Cycle 4 verdict is **BLOCKED**. A live deployment is not a gate PASS or authorization. This dated overlay supersedes the older runtime rows below where they conflict; their original decisions and definitions remain historical evidence.
+
+| Gate / seam | Current evidence | Status / first missing proof |
+| --- | --- | --- |
+| G1 app public and sign-in shell | Production `/` has intended headers. `GET /login.html` is static 200 without CSP, frame, nosniff, referrer or permissions headers; `/api/login-page` has them. Discovery module is 404 in Production. | **FAIL** — AUD-029 and public-module P0. A clean two-file module fix `89acfc1` has bounded independent patch review and signed-SSO Preview startup proof, but is not deployed or audited as full release. |
+| G1 résumé landing | Three live “Create free account” links reach the degraded login page. Free résumé account admission may still be valid; no signed path was tested. | **FAIL via AUD-029; AUD-030 admission/copy harm NEEDS REVERIFICATION.** |
+| G1 partners / G5 | No new signed attribution/role evidence; Production surface unchanged in Cycle 4. | **BLOCKED** — AUD-008. |
+| Auth and G2 signed limited beta | Production `/api/app-config` reports Clerk enabled with Production-shaped configuration. No end-to-end sign-in, server exchange, refresh, logout, second sign-in or two-account denial. | **BLOCKED** — AUD-002/004; First Real User **0/10 hosted PASS**. Config is not lifecycle proof. |
+| Paid/owner entitlement | Browser/API tier-token mismatch remains; now-live paid/owner reliance is UNKNOWN. | **PENDING OWNER RE-DECISION** — AUD-019; prior deferral covered clean integration/Preview conditionally, not an assumed Production waiver. |
+| Provenance / G6 full Production | App alias `dpl_229cmvzCQvh3hvcXZuKBPf9EwCyy` is READY, CLI/prebuilt, declared commit `7412af1`; 88 pre-fix public assets match source. GitHub Production record still points to `d64e174`; complete CLI tree/function parity and exact approval binding are not established. | **BLOCKED** — AUD-003/010/029, hosted identity/data and owner release decision. No merge, redeploy, rollback or Preview-artifact promotion follows. |
+
 ## Cycle 2 / app product-family overlay (2026-09-13)
 
 The table below is the Cycle 0 gate definition and historical limited reconciliation; it is **not** a fresh hosted or Production verdict. Independent Cycle 2 reported local **PASS WITH FINDINGS**, hosted **BLOCKED**, integration **YES WITH CONDITIONS**, Production **NOT AUTHORIZED**. Main audit anchor `d64e174` and partial PR #80 anchor `b071371` are unchanged. AUD-017..028 are now in `AUDIT-FINDINGS.md`; their release effects augment the earlier blockers, never waive them.
