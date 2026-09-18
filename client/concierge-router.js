@@ -22,7 +22,13 @@ export function jobAgentStatus({ run, discovery = {}, paused = false, needsYou =
   if (status === 'Queued') return result('Queued — not started yet', 'Your search is saved, but it has not started yet. Check status for an update.', 'waiting');
   if (status === 'Retrying') return result('Waiting to retry', 'A job source needs another attempt. Saved results are kept; this is not an active-search confirmation.', 'waiting');
   if (status === 'Failed Safely' || run?.status === 'Failed' || discovery.status === 'error') return result('Search needs attention', 'The last attempt did not finish. Review Agent Status before retrying.', 'attention');
-  if (['Completed', 'Partially Completed', 'Finished'].includes(status)) return result(status === 'Partially Completed' ? 'Finished with partial results' : 'Search finished', 'Open My Jobs to review the results. This does not mean applications were submitted.', 'complete');
+  if (['Completed', 'Partially Completed', 'Finished'].includes(status)) {
+    const matches = Number(discovery.matches);
+    if (Number.isFinite(matches) && matches <= 0) {
+      return result('No matching jobs yet', 'Next: try a different type of job. Nothing was submitted.', 'complete');
+    }
+    return result('Search finished', 'Next: open My Jobs and review the matches. Nothing was submitted.', 'complete');
+  }
   if (run) {
     const heartbeat = Date.parse(run.lastHeartbeatAt || '');
     const lease = Date.parse(run.leaseUntil || '');
@@ -34,8 +40,32 @@ export function jobAgentStatus({ run, discovery = {}, paused = false, needsYou =
     return result('Waiting for a status update', 'We cannot confirm that the search is still running. Check status; do not start a duplicate search.', 'waiting');
   }
   if (discovery.status === 'searching') return result('Looking for jobs', 'A search is in progress in this tab. Keep it open until results arrive.', 'working');
-  if (discovery.status === 'complete') return result('Search finished', 'Open My Jobs to review your matches. Nothing was submitted.', 'complete');
+  if (discovery.status === 'complete') {
+    const matches = Number(discovery.matches);
+    if (Number.isFinite(matches) && matches <= 0) {
+      return result('No matching jobs yet', 'Next: try a different type of job. Nothing was submitted.', 'complete');
+    }
+    return result('Search finished', 'Next: open My Jobs and review the matches. Nothing was submitted.', 'complete');
+  }
   return result('Ready — not running', 'Tell the Job Agent who you are, then start a search. It will ask only when it needs you.');
+}
+
+export function discoveryNextStep({ added = 0, searchLabel = '' } = {}) {
+  const where = String(searchLabel || '').replace(/\s+/g, ' ').trim();
+  if (added > 0) {
+    return {
+      headline: added === 1 ? 'I found 1 job for you.' : `I found ${added} jobs for you.`,
+      detail: 'Next: I’ll prepare résumé drafts, then you review the first one. Nothing was sent to an employer.',
+      action: { label: 'Review my jobs', prompt: 'Show my jobs' },
+    };
+  }
+  return {
+    headline: 'No matching jobs yet.',
+    detail: where
+      ? `I looked for ${where} roles and did not find a match. Next: try a different type of job.`
+      : 'I did not find a match this time. Next: try a different type of job.',
+    action: { label: 'Try a different job type', prompt: 'Try a different job type' },
+  };
 }
 
 export function parseMission(input, prior = {}) {

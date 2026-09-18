@@ -4,7 +4,7 @@ import { jobAgentConsentPolicyConfiguration, publicJobAgentConsent } from '../li
 import { readJobAgentConsent } from '../lib/job-agent-consent-store.js';
 import { jobAgentPilotAccessForSubject, publicJobAgentPilotAccess } from '../lib/job-agent-pilot-access.js';
 import { jobAgentAccessAllowed, jobAgentEntitlementConfiguration } from '../lib/job-agent-entitlement.js';
-import { isAdministratorSubject } from '../lib/admin-subject.js';
+import { isAdministratorSubject, isProductOwnerSubject } from '../lib/admin-subject.js';
 
 export function isAdminSubject(subject, env = process.env) {
   return isAdministratorSubject(subject, env);
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
   const auth = await authenticateApiRequest(req, { requireOpaqueSession: true });
   if (!auth.ok) return res.status(auth.status).json({ error: 'Request not authorized.', code: auth.code });
-  const adminConsole = isAdminSubject(auth.subject);
+  const adminConsole = isProductOwnerSubject(auth.subject);
   const runtime = jobAgentRuntimeConfiguration();
   const consentPolicy = jobAgentConsentPolicyConfiguration();
   const storedConsent = runtime ? await readJobAgentConsent({ ...runtime, subject: auth.subject }).catch(() => ({ consent: null, version: 0 })) : { consent: null, version: 0 };

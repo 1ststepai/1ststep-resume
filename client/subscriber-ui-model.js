@@ -212,8 +212,8 @@ export function userFacingJobNextStep(status, role = null, applicationSession = 
   if (applicationSession) return 'Continue the step that needs you. Nothing is sent until you approve it.';
   if (role?.sourceType === 'user-captured' && (!status || status === 'Found')) return 'Captured from your browser helper. Not verified against the employer listing yet.';
   return ({
-    Found: 'Next: confirm the employer listing, then prepare materials.',
-    Verified: 'Next: prepare a truthful résumé draft for this role.',
+    Found: 'Next: I’ll confirm the employer listing and prepare materials.',
+    Verified: 'Next: review the résumé draft when it is ready. Nothing is sent.',
     'Package Ready': 'Next: review the prepared materials. Not sent.',
     Applying: 'The agent is working on this application. It has not been submitted.',
     'Needs You': 'This application is waiting on you. Other jobs can continue.',

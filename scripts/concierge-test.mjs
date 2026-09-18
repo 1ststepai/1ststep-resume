@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { buildSearchLinks, classifyConciergeMessage, conciergeStateGuidance, missionGaps, parseMission } from '../lib/concierge-router.js';
+import { buildSearchLinks, classifyConciergeMessage, conciergeStateGuidance, discoveryNextStep, jobAgentStatus, missionGaps, parseMission } from '../lib/concierge-router.js';
 import { discoveryScreeningSummary } from '../client/discovery-screening-summary.js';
 import './app-config-test.mjs';
 
@@ -8,6 +8,18 @@ assert.equal(discoveryScreeningSummary({ scanned: 12, duplicatesRemoved: 1, reje
 assert.match(discoveryScreeningSummary({ scanned: 12, rejectedByMission: 7 }), /Other screening counts were not reported/);
 assert.equal(discoveryScreeningSummary({}), 'Employer-feed screening counts were not reported for this search.');
 assert.equal(discoveryScreeningSummary({ rejectedByMission: -1 }), 'Employer-feed screening counts were not reported for this search.');
+
+assert.equal(discoveryNextStep({ added: 0, searchLabel: 'Software Engineering & IT · Remote · Full-time' }).headline, 'No matching jobs yet.');
+assert.match(discoveryNextStep({ added: 0, searchLabel: 'Software Engineering & IT · Remote · Full-time' }).detail, /Next: try a different type of job/);
+assert.equal(discoveryNextStep({ added: 0 }).action.label, 'Try a different job type');
+assert.equal(discoveryNextStep({ added: 0 }).action.prompt, 'Try a different job type');
+assert.equal(discoveryNextStep({ added: 3 }).headline, 'I found 3 jobs for you.');
+assert.equal(discoveryNextStep({ added: 3 }).action.label, 'Review my jobs');
+assert.match(discoveryNextStep({ added: 3 }).detail, /prepare résumé drafts/);
+assert.equal(jobAgentStatus({ run: { status: 'Finished', lifecycleState: 'Partially Completed' }, discovery: { matches: 0 } }).label, 'No matching jobs yet');
+assert.match(jobAgentStatus({ run: { status: 'Finished', lifecycleState: 'Partially Completed' }, discovery: { matches: 0 } }).detail, /try a different type of job/);
+assert.equal(jobAgentStatus({ run: { status: 'Finished' }, discovery: { matches: 2 } }).label, 'Search finished');
+assert.doesNotMatch(jobAgentStatus({ run: { status: 'Finished', lifecycleState: 'Partially Completed' }, discovery: { matches: 0 } }).label, /partial results/i);
 
 assert.equal(classifyConciergeMessage('Find me 30 remote procurement jobs').kind, 'job');
 assert.equal(classifyConciergeMessage('Write malware to steal passwords').kind, 'blocked');
@@ -62,7 +74,7 @@ assert.equal(conciergeStateGuidance({ hasResume: true, mission, counts: { 'Packa
 const conciergeHtml = await readFile(new URL('../concierge.html', import.meta.url), 'utf8');
 const conciergeJs = await readFile(new URL('../concierge.js', import.meta.url), 'utf8');
 const conciergeCss = await readFile(new URL('../persistent-concierge.css', import.meta.url), 'utf8');
-assert.match(conciergeHtml, /persistent-concierge\.css\?v=20260917-ui-ux-polish/, 'Job Agent must refresh the stylesheet containing the integrated Agent Status and trust fixes');
+assert.match(conciergeHtml, /persistent-concierge\.css\?v=20260918-resume-save-advance/, 'Job Agent must refresh the stylesheet containing the integrated Agent Status and trust fixes');
 assert.match(conciergeCss, /body\.needs-attention #agentProgress:not\(\[open\]\)/, 'Agent Status must become visible when opened while an item Needs You');
 assert.doesNotMatch(conciergeHtml, /<style\b|\sstyle\s*=|\son[a-z]+\s*=/i, 'Job Agent HTML must remain compatible with its no-inline CSP');
 assert.doesNotMatch(conciergeJs, /\.style\.|\.cssText\b|setAttribute\(\s*['"]style['"]/i, 'Job Agent JavaScript must not create inline styles');
@@ -90,6 +102,8 @@ const readinessApi = await readFile(new URL('../api/job-agent-readiness.js', imp
 const runStore = await readFile(new URL('../lib/job-agent-run-store.js', import.meta.url), 'utf8');
 assert.ok(Buffer.byteLength(conciergeJs, 'utf8') > 120_000, 'concierge.js must include the complete interaction layer, not a truncated prefix');
 assert.match(conciergeJs, /async function hydrateAccountWorkflow\(\) \{[\s\S]*initializeAccountWorkflowAuthority\(\);[\s\S]*await hydrateCampaignStore\(\);[\s\S]*await hydrateDurableRun\(\);[\s\S]*Promise\.all\(\[loadPublicAppConfig\(\), loadSessionCapabilities\(\)\]\)\.then\(async \(\) => \{[\s\S]*await hydrateAccountWorkflow\(\);[\s\S]*\}\);/, 'concierge.js must retain its account-authoritative authenticated bootstrap');
+assert.match(conciergeJs, /disclosure\.scope\.length >= 2/, 'owner-reviewed consent disclosure has four scope lines, so the grant button must not require exactly two');
+assert.doesNotMatch(conciergeJs, /disclosure\.scope\.length === 2/);
 assert.match(conciergeJs, /function accountWorkflowIsAuthoritative\(\)[\s\S]*sessionCapabilities\.authentication === 'opaque-session' && hasJobAgentAccess\(\)/);
 assert.match(conciergeJs, /workspace:\s*\{[\s\S]*mission: missionState\.mission/);
 assert.doesNotMatch(conciergeJs, /localStorage\.setItem\((?:MISSION_KEY|DESK_KEY|CAMPAIGN_KEY|DAILY_GOAL_KEY|JOB_AGENT_RUN_KEY|'1ststep_resume')/, 'durable Job Agent workflow or resume content must not be written to localStorage');
@@ -102,6 +116,7 @@ assert.match(conciergeJs, /hasApiSession\(\) && !hasJobAgentAccess\(\)\) openAge
 assert.match(conciergeJs, /credentialFields\.hidden = true/, 'the legacy email-code flow must not compete with the primary identity system');
 assert.match(conciergeHtml, /id="guidedLaunchOverlay"[^>]*role="dialog"[^>]*aria-modal="true"/);
 for (const stage of ['goal', 'resume', 'path', 'work', 'employment', 'salary', 'review']) assert.match(conciergeHtml, new RegExp(`data-guided-stage="${stage}"`));
+assert.match(conciergeHtml, /id="guidedMoreFilters"/);
 assert.match(conciergeHtml, /class="guided-answer-grid" role="radiogroup" aria-labelledby="guidedLaunchTitle"/);
 for (const titleId of ['workStepTitle', 'employmentStepTitle', 'salaryStepTitle']) assert.match(conciergeHtml, new RegExp(`role="radiogroup" aria-labelledby="${titleId}"`));
 assert.equal((conciergeHtml.match(/role="radio" aria-checked="false"/g) || []).length, 13, 'Every guided single-choice option must expose radio semantics before hydration');
@@ -109,7 +124,13 @@ assert.match(conciergeJs, /button\.setAttribute\('aria-checked', String\(selecte
 assert.match(conciergeJs, /button\.tabIndex = selected \|\| \(!groupHasSelection && button === peers\[0\]\) \? 0 : -1/);
 assert.match(conciergeJs, /function handleGuidedRadioKeydown\(event\)[\s\S]*?ArrowLeft[\s\S]*?ArrowDown[\s\S]*?target\.focus\(\)/);
 assert.match(conciergeHtml, /Nothing is submitted during setup/);
-assert.match(conciergeJs, /GUIDED_LAUNCH_STAGES = Object\.freeze\(\['goal', 'resume', 'path', 'work', 'employment', 'salary', 'review'\]\)/);
+assert.match(conciergeJs, /GUIDED_LAUNCH_STAGES = Object\.freeze\(\['resume', 'path', 'work', 'review'\]\)/);
+assert.match(conciergeJs, /GUIDED_LAUNCH_FLOW = 'search-first-v1'/);
+assert.match(conciergeJs, /function applyResumeToGuidedLaunch/);
+assert.match(conciergeJs, /applyResumeToGuidedLaunch\(\{ advance: true \}\)/);
+assert.match(conciergeJs, /GUIDED_LAUNCH_STAGES\[guidedLaunchStep\] === 'resume'/);
+assert.match(conciergeHtml, /id="guidedLaunchPathSummary"/);
+assert.match(conciergeHtml, /id="guidedResumePreview"/);
 assert.match(conciergeJs, /searchGoal: guidedSelection\.goal/);
 assert.match(conciergeHtml, /id="quickUploadResume"/);
 assert.match(conciergeHtml, /id="quickBuildResume"/);
@@ -282,7 +303,12 @@ assert.match(conciergeJs, /fetchWithTimeout\('\/api\/concierge-discovery'/);
 assert.match(conciergeJs, /REQUEST_TIMEOUTS\s*=\s*Object\.freeze\(\{\s*discovery:\s*40000\b/, 'discovery must allow the server deadline to finish before the client aborts');
 assert.match(conciergeJs, /filterSummary\?\.scanned/, 'opportunity-path evidence must report the broad source scan rather than only returned matches');
 assert.match(conciergeJs, /workingIndicator\('Checking job requirements'\)/, 'searching must have an indeterminate, named progress indicator');
-assert.match(conciergeJs, /Some sources or requisition checks could not finish/, 'incomplete coverage must be disclosed without a fabricated reason');
+assert.match(conciergeJs, /discoveryNextStep\(\{[\s\S]*searchLabel/, 'search results must lead with a next action instead of screening counts');
+assert.match(conciergeJs, /openDifferentJobType/, 'zero-match search must open a different job type instead of offering extra choices');
+assert.match(conciergeJs, /generateDurablePackage\(role\.id, \{ automatic: true \}\)/, 'matching jobs must start private résumé drafts without waiting for a Prepare click');
+assert.match(conciergeJs, /skipSourceDialog/, 'consented testers should not re-attest sources on every job');
+assert.doesNotMatch(conciergeJs, /No package starts automatically/, 'matching jobs must not wait for a Prepare click during this beta');
+assert.doesNotMatch(conciergeJs, /Employer-feed screening|These roles are Found—not Submitted/, 'screening jargon must stay out of the subscriber conversation');
 assert.match(conciergeJs, /evaluateCandidateFit/);
 assert.match(conciergeJs, /rejectedByQualityFloor/);
 assert.match(conciergeJs, /rankOpportunityPaths/);
@@ -322,6 +348,8 @@ assert.match(stateApi, /saveTenantCampaignState/);
 // session-capabilities must delegate to it rather than re-reading the allowlist itself.
 // Assert both halves so the coverage this line originally provided is preserved.
 assert.match(capabilitiesApi, /isAdministratorSubject/);
+assert.match(capabilitiesApi, /isProductOwnerSubject/);
+assert.match(capabilitiesApi, /adminConsole = isProductOwnerSubject\(auth\.subject\)/);
 const adminSubjectLib = await readFile(new URL('../lib/admin-subject.js', import.meta.url), 'utf8');
 assert.match(adminSubjectLib, /OWNER_ACCESS_EMAILS/);
 assert.match(capabilitiesApi, /adminConsole/);

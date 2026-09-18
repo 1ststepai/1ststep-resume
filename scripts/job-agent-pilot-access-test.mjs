@@ -16,18 +16,28 @@ assert.equal(jobAgentPilotAccessForSubject(subject, {}).ok, true);
 assert.equal(jobAgentPilotConfiguration({ ...env, JOB_AGENT_PILOT_MAX_USERS: '11' }).ready, false);
 assert.equal(jobAgentPilotConfiguration({ ...env, JOB_AGENT_PILOT_ALLOWED_TENANTS: 'not-a-tenant' }).reason, 'pilot-allowlist-invalid');
 assert.equal(jobAgentPilotConfiguration({ ...env, JOB_AGENT_PILOT_ALLOWED_TENANTS: `${tenantId},${tenantId}` }).invitedTenantCount, 1);
+assert.equal(jobAgentPilotConfiguration({ ...env, JOB_AGENT_PILOT_ALLOWED_TENANTS: `${tenantId};${'c'.repeat(40)}` }).invitedTenantCount, 2);
+assert.equal(jobAgentPilotAccessForSubject(subject, { ...env, JOB_AGENT_PILOT_ALLOWED_TENANTS: `${tenantId} ${'b'.repeat(40)}` }).ok, true);
 assert.equal(jobAgentPilotAccessForSubject(subject, env).ok, true);
 assert.equal(jobAgentPilotAccessForTenant(tenantId, env).ok, true);
 const denied = jobAgentPilotAccessForSubject('not-invited@example.test', env);
 assert.equal(denied.ok, false);
 assert.equal(denied.status, 403);
 assert.equal(denied.code, 'JOB_AGENT_PILOT_INVITE_REQUIRED');
+const deniedTenantId = jobAgentTenantId('not-invited@example.test', partitionSecret);
+const publicDenied = publicJobAgentPilotAccess(denied);
+assert.deepEqual(publicDenied, { enforced: true, allowed: false, code: 'JOB_AGENT_PILOT_INVITE_REQUIRED', maxUsers: 3, invitedTenantCount: 2, admissionHint: deniedTenantId.slice(0, 8) });
+assert.equal(JSON.stringify(publicDenied).includes(tenantId), false);
+assert.equal(JSON.stringify(publicDenied).includes(deniedTenantId), false);
+assert.equal(JSON.stringify(publicDenied).includes(subject), false);
 const unavailable = jobAgentPilotAccessForSubject(subject, { ...env, RATE_LIMIT_HASH_SECRET: '' });
 assert.equal(unavailable.code, 'JOB_AGENT_PILOT_NOT_CONFIGURED');
-const publicDenied = publicJobAgentPilotAccess(denied);
-assert.deepEqual(publicDenied, { enforced: true, allowed: false, code: 'JOB_AGENT_PILOT_INVITE_REQUIRED', maxUsers: 3, invitedTenantCount: 2 });
-assert.equal(JSON.stringify(publicDenied).includes(tenantId), false);
-assert.equal(JSON.stringify(publicDenied).includes(subject), false);
+const operator = jobAgentPilotAccessForSubject('owner-operator@example.test', { ...env, OWNER_ACCESS_EMAILS: 'owner-operator@example.test' });
+assert.equal(operator.ok, false);
+assert.equal(operator.code, 'JOB_AGENT_PILOT_INVITE_REQUIRED');
+const productOwner = jobAgentPilotAccessForSubject('evan@1ststep.ai', env);
+assert.equal(productOwner.ok, true);
+assert.equal(productOwner.code, null);
 
 const utility = spawnSync(process.execPath, ['scripts/job-agent-pilot-tenant-id.mjs'], {
   cwd: new URL('..', import.meta.url), input: `${subject}\n`, encoding: 'utf8', env: { ...process.env, RATE_LIMIT_HASH_SECRET: partitionSecret },

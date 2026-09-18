@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { authoritativeReceiptCount, canonicalConversation, directSourceCoverage, maskedActivityFeed, missionStats, needsYouKind, statusTab, subscriberStatus, userFacingStatus } from '../lib/subscriber-ui-model.js';
+import { authoritativeReceiptCount, canonicalConversation, directSourceCoverage, maskedActivityFeed, missionStats, needsYouKind, statusTab, subscriberStatus, userFacingJobNextStep, userFacingStatus } from '../lib/subscriber-ui-model.js';
 
 const role = { id: 'role-1', packageRunId: 'package-1', status: 'Found' };
 assert.equal(subscriberStatus(role), 'Found');
@@ -13,7 +13,10 @@ assert.equal(subscriberStatus({ ...role, status: 'Submitted' }), 'Applying');
 assert.equal(subscriberStatus({ ...role, status: 'Submitted', receipt: { simulated: true, confirmationId: 'demo' } }), 'Applying');
 assert.equal(subscriberStatus({ ...role, status: 'Submitted', receipt: { confirmationId: 'EMP-123', receivedAt: '2026-08-29T10:00:00Z' } }), 'Receipt Verified');
 assert.equal(statusTab('Found'), 'Matches');
+assert.equal(statusTab('Verified'), 'Preparing');
 assert.equal(statusTab('Package Ready'), 'Preparing');
+assert.match(userFacingJobNextStep('Verified'), /review the résumé draft/);
+assert.match(userFacingJobNextStep('Found'), /confirm the employer listing and prepare/);
 assert.equal(statusTab('Needs You'), 'Needs You');
 assert.equal(statusTab('Receipt Verified'), 'Submitted');
 assert.equal(statusTab('Interview'), 'Interviews');
