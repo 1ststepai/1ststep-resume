@@ -12,7 +12,14 @@ import { jobAgentConsentGate } from '../lib/job-agent-consent-store.js';
 import { jobAgentLaunchManifest } from '../lib/job-agent-launch-manifest.js';
 import { documentRenderSandboxConfiguration } from '../lib/application-package-render-sandbox.js';
 import { applicationReceiptCaptureConfiguration } from '../lib/application-receipt-capture-provider.js';
+import { applicationReceiptEvidenceProviderConfiguration } from '../lib/application-receipt-evidence-provider.js';
+import { applicationReceiptTaskWorkerConfiguration } from '../lib/application-receipt-task-worker.js';
 import { employerBrowserWorkerConfiguration } from '../lib/employer-browser-worker.js';
+import {
+  createEmployerBrowserHandoff,
+  employerBrowserSessionProviderConfiguration,
+  resumeEmployerBrowserHandoff,
+} from '../lib/employer-browser-session-provider.js';
 import { extensionApplicationHandoffConfiguration } from '../lib/extension-application-handoff.js';
 import { jobAgentObjectStorageConfiguration } from '../lib/job-agent-object-storage.js';
 import { jobAgentNeedsYouNotificationConfiguration } from '../lib/job-agent-notification-store.js';
@@ -253,6 +260,32 @@ const ceilingEnv = {
   DOCUMENT_RENDER_SANDBOX_ENABLED: 'true',
   DOCUMENT_RENDER_SANDBOX_SNAPSHOT_ID: 'snap_owner_reviewed',
   EMPLOYER_BROWSER_WORKER_ENABLED: 'true',
+  EMPLOYER_BROWSER_SESSION_PROVIDER: 'remote-stream',
+  EMPLOYER_BROWSER_REMOTE_STREAM_ENABLED: 'true',
+  EMPLOYER_BROWSER_REMOTE_STREAM_API_URL: 'https://api.browser.invalid',
+  EMPLOYER_BROWSER_REMOTE_STREAM_ORIGIN: 'https://stream.browser.invalid/',
+  EMPLOYER_BROWSER_REMOTE_STREAM_API_KEY: 'remote-provider-test-key-at-least-32-characters',
+  EMPLOYER_BROWSER_PROVIDER_COSTS_APPROVED: 'true',
+  EMPLOYER_BROWSER_PROVIDER_COSTS_APPROVAL_VERSION: 'costs-beta-1',
+  EMPLOYER_BROWSER_REMOTE_STREAM_CSP_APPROVED: 'true',
+  EMPLOYER_BROWSER_REMOTE_STREAM_CSP_APPROVAL_VERSION: 'csp-beta-1',
+  EMPLOYER_BROWSER_REMOTE_STREAM_CSP_APPROVED_ORIGIN: 'https://stream.browser.invalid',
+  EMPLOYER_BROWSER_SESSION_FIXTURE_ENABLED: 'true',
+  JOB_AGENT_RECEIPT_VERIFICATION_WORKER_ENABLED: 'true',
+  JOB_AGENT_RECEIPT_VERIFICATION_WORKER_APPROVED: 'true',
+  JOB_AGENT_RECEIPT_VERIFICATION_WORKER_APPROVAL_VERSION: 'receipt-worker-v1',
+};
+const ordinaryRemoteStreamEnv = {
+  EMPLOYER_BROWSER_SESSION_PROVIDER: 'remote-stream',
+  EMPLOYER_BROWSER_REMOTE_STREAM_ENABLED: 'true',
+  EMPLOYER_BROWSER_REMOTE_STREAM_API_URL: 'https://api.browser.invalid',
+  EMPLOYER_BROWSER_REMOTE_STREAM_ORIGIN: 'https://stream.browser.invalid/',
+  EMPLOYER_BROWSER_REMOTE_STREAM_API_KEY: 'remote-provider-test-key-at-least-32-characters',
+  EMPLOYER_BROWSER_PROVIDER_COSTS_APPROVED: 'true',
+  EMPLOYER_BROWSER_PROVIDER_COSTS_APPROVAL_VERSION: 'costs-beta-1',
+  EMPLOYER_BROWSER_REMOTE_STREAM_CSP_APPROVED: 'true',
+  EMPLOYER_BROWSER_REMOTE_STREAM_CSP_APPROVAL_VERSION: 'csp-beta-1',
+  EMPLOYER_BROWSER_REMOTE_STREAM_CSP_APPROVED_ORIGIN: 'https://stream.browser.invalid',
 };
 assert.equal(jobAgentScheduleConfiguration(ceilingEnv).enabled, false);
 assert.equal(jobAgentScheduleConfiguration(ceilingEnv).reason, 'OWNER_REVIEWED_CAPABILITY_CEILING');
@@ -262,6 +295,51 @@ assert.equal(applicationReceiptCaptureConfiguration(ceilingEnv).ready, false);
 assert.equal(jobAgentObjectStorageConfiguration(ceilingEnv).ready, false);
 assert.equal(documentRenderSandboxConfiguration(ceilingEnv).enabled, false);
 assert.equal(employerBrowserWorkerConfiguration(ceilingEnv).enabled, false);
+assert.equal(applicationReceiptEvidenceProviderConfiguration(ceilingEnv).ready, false);
+assert.equal(applicationReceiptTaskWorkerConfiguration(ceilingEnv).ready, false);
+const ordinaryRemote = employerBrowserSessionProviderConfiguration(ordinaryRemoteStreamEnv);
+assert.equal(ordinaryRemote.enabled, true);
+assert.equal(ordinaryRemote.provider, 'remote-stream');
+assert.equal(ordinaryRemote.interactive, true);
+const cloudBrowser = employerBrowserSessionProviderConfiguration(ceilingEnv);
+assert.equal(cloudBrowser.enabled, false);
+assert.equal(cloudBrowser.interactive, false);
+assert.equal(cloudBrowser.reason, 'OWNER_REVIEWED_CAPABILITY_CEILING');
+assert.equal(employerBrowserSessionProviderConfiguration({
+  ...ceilingEnv, EMPLOYER_BROWSER_SESSION_PROVIDER: 'synthetic-fixture',
+}).enabled, false);
+let providerCalls = 0;
+const forbiddenProviderFetch = async () => {
+  providerCalls += 1;
+  throw new Error('owner-reviewed cloud-browser provider must not be contacted');
+};
+const ceilingApplication = {
+  id: 'application_owner_reviewed_ceiling',
+  updatedAt: '2026-09-17T20:55:00.000Z',
+  role: { employer: 'Example Employer', title: 'Buyer', requisitionId: 'REQ-2', directEmployerUrl: 'https://careers.company.invalid/apply/REQ-2' },
+  proposedFields: [{ fieldKey: 'firstName', label: 'First name', maskedPreview: 'J••••' }],
+};
+const createdHandoff = await createEmployerBrowserHandoff({
+  session: ceilingApplication, env: ceilingEnv, fetchImpl: forbiddenProviderFetch,
+});
+assert.equal(createdHandoff.status, 'not-configured');
+assert.equal(createdHandoff.reason, 'OWNER_REVIEWED_CAPABILITY_CEILING');
+assert.equal(createdHandoff.streamUrl, undefined);
+assert.equal(createdHandoff.interactive === true, false);
+assert.equal(providerCalls, 0);
+const resumedHandoff = await resumeEmployerBrowserHandoff({
+  session: ceilingApplication,
+  browserSession: {
+    provider: 'remote-stream', providerSessionReference: 'remote_session_reference_001',
+    employerHostname: 'careers.company.invalid', pageUrl: ceilingApplication.role.directEmployerUrl,
+    fieldSchemaHash: 'a'.repeat(64), status: 'ready', expiresAt: '2026-09-17T21:30:00.000Z',
+  },
+  env: ceilingEnv, fetchImpl: forbiddenProviderFetch,
+});
+assert.equal(resumedHandoff.status, 'not-configured');
+assert.equal(resumedHandoff.reason, 'OWNER_REVIEWED_CAPABILITY_CEILING');
+assert.equal(resumedHandoff.streamUrl, undefined);
+assert.equal(providerCalls, 0);
 const ceilingManifest = jobAgentLaunchManifest(ceilingEnv);
 assert.equal(ceilingManifest.capabilities.ownerReviewedControlledBeta.eligible, true);
 assert.equal(ceilingManifest.capabilities.signedBeta.eligible, false);

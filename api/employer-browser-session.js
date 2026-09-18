@@ -59,6 +59,10 @@ export default async function handler(req, res) {
         }
         return res.status(410).json({ session: null, view: { status: 'expired', containsCandidateFieldValues: false, submitted: false }, provider: publicProvider(providerConfiguration), externalApplicationExecution: false, submissionsEnabled: false });
       }
+      if (!providerConfiguration.enabled) {
+        const { provider: _provider, providerSessionReference: _providerSessionReference, ...publicSession } = browserSession;
+        return res.status(503).json({ session: publicSession, view: { status: 'not-configured', reason: providerConfiguration.reason || 'not-configured' }, provider: publicProvider(providerConfiguration), externalApplicationExecution: false, submissionsEnabled: false });
+      }
       const view = await resumeEmployerBrowserHandoff({ session: applicationSession, browserSession });
       const { provider: _provider, providerSessionReference: _providerSessionReference, ...publicSession } = browserSession;
       return res.status(view.status === 'expired' ? 410 : 200).json({ session: publicSession, view, provider: publicProvider(providerConfiguration), externalApplicationExecution: false, submissionsEnabled: false });
@@ -80,6 +84,7 @@ export default async function handler(req, res) {
     if (!consent.ok) return res.status(consent.status).json({ error: consent.error, code: consent.code });
     const existing = await readEmployerBrowserSessionForApplication({ ...config, subject: auth.subject, applicationSessionId, includeProviderReference: true });
     if (existing && existing.status !== 'expired') {
+      if (!providerConfiguration.enabled) return res.status(503).json({ error: 'The resumable browser handoff is not enabled.', code: 'BROWSER_HANDOFF_NOT_CONFIGURED', provider: publicProvider(providerConfiguration) });
       const view = await resumeEmployerBrowserHandoff({ session: applicationSession, browserSession: existing });
       const { provider: _provider, providerSessionReference: _providerSessionReference, ...publicSession } = existing;
       return res.status(200).json({ session: publicSession, view, replayed: true, provider: publicProvider(providerConfiguration), externalApplicationExecution: false, submissionsEnabled: false });

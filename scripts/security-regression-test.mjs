@@ -121,6 +121,8 @@ assert.doesNotMatch(files['lib/employer-browser-session-store.js'], /export asyn
 assert.match(files['api/application-sessions.js'], /closeEmployerBrowserSessionBeforeDelete/);
 assert.match(files['api/application-sessions.js'], /BROWSER_HANDOFF_CLOSE_RETRY_REQUIRED/);
 assert.doesNotMatch(files['api/employer-browser-session.js'], /providerSessionReference[^\n]*json\(/);
+assert.match(files['lib/employer-browser-session-provider.js'], /ownerReviewedCapabilityCeilingApplies/);
+assert.match(files['lib/employer-browser-session-provider.js'], /OWNER_REVIEWED_CAPABILITY_CEILING/);
 assert.match(files['lib/employer-browser-session-provider.js'], /fixture-forbidden-in-production/);
 assert.match(files['lib/employer-browser-session-provider.js'], /EMPLOYER_BROWSER_REMOTE_STREAM_ENABLED/);
 assert.match(files['lib/employer-browser-session-provider.js'], /EMPLOYER_BROWSER_PROVIDER_COSTS_APPROVED/);
