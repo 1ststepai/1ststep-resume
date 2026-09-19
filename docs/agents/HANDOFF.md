@@ -1,53 +1,50 @@
-# HANDOFF — Job Agent controlled-beta
+# HANDOFF — live Cursor ↔ Codex ↔ Claude baton
 
-Fresh Codex with zero chat history: read this, CURRENT-STATE, NEXT-ACTIONS, DECISIONS. Chat is not authority.
+Git and this file are authoritative. Chat history is not.
+Fresh executor with zero history: read this, `CURRENT-STATE.md`, `NEXT-ACTIONS.md`, `DECISIONS.md`, then `PRODUCT-FAMILY-RECONCILIATION-2026-09-18.md`.
 
-## Repository
+ACTIVE AGENT: none (baton open)
+LAST AGENT: Claude Code
+TIMESTAMP: 2026-09-18T21:30:00-04:00
+REPOSITORY: https://github.com/1ststepai/1ststep-resume.git
+CANONICAL BRANCH: `main` at `d64e1743a63c40760d2c7ce8ef8f5a2f75d53f29` (behind Production `7412af1`; see CURRENT-STATE)
+HEAD SHA: `50473c67e24da6e6acb11bd65ceded93b9b6a463` (RC code tip; the docs commit that adds this file follows it)
+ACTIVE BRANCH: `claude/job-agent-integrated-rc-20260918`
+ACTIVE WORKTREE: `C:/Users/evanp/Documents/Claude/Projects/1ststep.ai/.worktrees/claude-integrated-rc-20260918`
+TASK ID: JA-PRODUCT-FAMILY-RECONCILIATION-20260918
+TASK: Reconcile app/resume/partners, preserve dirty work, build one integrated RC on R3, fix demonstrated P0/P1s, record deployment parity.
+STATUS: RC IMPLEMENTED, COMMITTED, PUSHED. Not MERGED, not DEPLOYED, NOT HOSTED VERIFIED. Beta 0/5.
+LAST COMPLETED ACTION: Final RC test matrix and durable docs.
+FILES CHANGED: see `git log cfa483c..claude/job-agent-integrated-rc-20260918`.
+COMMITS CREATED: `e83658a` merge UX onto R3; `695578f` P0 consent fix + a11y + attribution + test fixes; `50473c6` extension digest re-pin; then docs.
+UNCOMMITTED CHANGES: none in this worktree. Other agents' dirty worktrees were preserved to `origin/preserve/*`, not modified.
+TESTS RUN: pretest:concierge, test:concierge, test:application-candidate, test:homepage, test:resilience, test:continuous-improvement, test:deployment-output, build:web, R3 ceiling + policy, security-regression, pilot-access, entitlement, extension release (23 browser) + unpacked MV3 smoke + controlled build, 16 Playwright specs.
+TEST RESULTS: see the reconciliation report "Test evidence". All unit/integration/security suites PASS. Browser: all PASS except 3 failures that also fail on pure R3 (signed-out fixtures) and occasional order-dependent flakes.
+KNOWN FAILURES: `dialog-keyboard` guided launch ×2, `discovery-retry` (pre-existing on R3; fixture opens setup while signed out).
+BLOCKERS: security re-review of RC deltas (P0-1); Director accept (P0-2); owner Preview gate (P0-4).
+DO NOT CHANGE: auth, consent, legal gates, access control, Vault/résumé authority, per-package source review, package truth, employer submission/transmission, PR #86 `bbb6ee3`, pilot allowlist, `JOB_AGENT_COUNSEL_APPROVED`, owner-reviewed policy semantics.
+NEXT ACTION: Independent security re-review of `git diff cfa483c claude/job-agent-integrated-rc-20260918` (NEXT-ACTIONS P0-1), then Director accept, then re-run `npm run pretest:concierge && npm run test:concierge && npm run test:browser:vault` on the accepted SHA.
+NEXT VERIFICATION: `npm run smoke` and `npm run test:agent-handoff` on this branch.
+DEPLOYMENT STATUS: RC NOT DEPLOYED (only the automatic SSO-protected Vercel Preview that every push creates). Production unchanged: app/resume `7412af1`, partners `7ec3acc`.
 
-- Remote: `https://github.com/1ststepai/1ststep-resume.git`
-- Production branch: `main` @ `d64e1743a63c40760d2c7ce8ef8f5a2f75d53f29` — **UNTOUCHED**
-- R3 AUTHORITATIVE SHA: `cfa483c77d22b2b6150255744865aee5583235f3` — independent audit **PASS**
-- FINAL UX CANDIDATE SHA: `cdab3c98af2cde461150adf5e59b5483758d2b35`
-- UX branch: `cursor/job-agent-ui-ux-polish-20260917`
-- Prior polish ancestor: `8d3ac083e4906c7d2940e7e4501191b8f4c923d3`
-- Action-first+landing inspect SHA: `6aa7b50a8121929d26d7aa852d4a5b37b49609e5`
-- Release handoff branch: `codex/owner-reviewed-controlled-beta-20260917`
-- Launch-access preservation (not R3): `afcd97351fd23f03b768e0ff5a7befc2aa42987a` on `cursor/owner-reviewed-launch-access-20260918`
-- Engineering PR #86: `bbb6ee31bffdd6c84729639c29d1d94c5ddb320e` **FROZEN**
-
-## Codex resume (zero Cursor context)
+## Resume from zero
 
 ```text
 git fetch origin
-git worktree add ../ja-codex-handoff origin/codex/owner-reviewed-controlled-beta-20260917
-# read docs/agents/HANDOFF.md CURRENT-STATE.md NEXT-ACTIONS.md DECISIONS.md
-# R3 = cfa483c77d22b2b6150255744865aee5583235f3
-# UX = cdab3c98af2cde461150adf5e59b5483758d2b35
-# next job = Director-only integrate of UX onto a NEW worktree of R3
+git worktree add ../ja-next origin/claude/job-agent-integrated-rc-20260918
+cd ../ja-next && npm ci
+# R3 = cfa483c77d22b2b6150255744865aee5583235f3 (immutable)
+# RC = origin/claude/job-agent-integrated-rc-20260918
+# If port 4175 is busy: set PORT=<free port> for Playwright
 ```
 
-Do **not** check out a dirty Cursor worktree. Do **not** merge UX into R3 in this job. Do **not** deploy.
+## Machine-captured Git snapshot
 
-## Completed
+Regenerate with `npm run agent:handoff-status`. Trust Git for SHAs and dirty files.
 
-- R3 independent audit PASS on `cfa483c`.
-- UX polish `8d3ac08` is an ancestor of the final UX candidate.
-- Action-first + landing conversion committed at `6aa7b50` and pushed.
-- Tester-accepted one-action / auto-prepare / first-draft review overlay committed at `cdab3c9` on the UX branch. **Not merged into R3.**
-- Tester invite / page-owner admin access work preserved at `afcd973`. **Not R3. Not integrated.**
-
-## Current work
-
-Director-only UX integrate onto a clean R3 worktree. Then relevant tests. Chrome extension exact-RC verification. Zero-user Preview. One-user E2E. Controlled beta up to 5. Production remains blocked.
-
-## Do-not-change
-
-Auth/consent/Vault/package/submission policy. PR #86. `JOB_AGENT_COUNSEL_APPROVED`. Employer submission/transmission. Pilot tenant enablement in this job. Production. Post-beta streams. Consultancy/partners/resume sites.
-
-## Tests required after Director integrate
-
-`npm run pretest:concierge && npm run test:concierge && npm run test:browser:vault` plus Playwright `scripts/concierge-job-capture-browser.spec.mjs` and `scripts/ui-handoff-browser.spec.mjs`. Then Chrome extension exact-RC verification.
-
-## Next exact action
-
-`JA-UX-INTEGRATE` — Director only. New worktree of `cfa483c`. Inspect `git diff 7ed4e18 cdab3c9`. Integrate presentation/action-first/launch-loop UX only if accepted. Do not Preview. Do not enable tenants.
+<!-- git-state:start -->
+- Captured by hand at RC write.
+- Active branch: `claude/job-agent-integrated-rc-20260918`
+- HEAD SHA: `50473c67e24da6e6acb11bd65ceded93b9b6a463`
+- origin/main: `d64e1743a63c40760d2c7ce8ef8f5a2f75d53f29`
+<!-- git-state:end -->
