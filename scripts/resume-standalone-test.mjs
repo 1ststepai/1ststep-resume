@@ -10,17 +10,18 @@ const [html, config, robots, sitemap] = await Promise.all([
 ]);
 
 assert.equal((html.match(/<h1\b/g) || []).length, 1);
-assert.match(html, /Tailor your résumé and cover letter\./);
-assert.match(html, /Start an ongoing Job Agent search/);
+assert.match(html, /Your Job Agent finds jobs and prepares every application\./);
+assert.doesNotMatch(html, /Start an ongoing Job Agent search/, 'one Job Agent path, not a competing text link');
+assert.ok(html.includes('["ref", "partner", "affiliate", "utm_source"'), 'partner referral must survive the hop to app.1ststep.ai');
 assert.equal(
-  (html.match(/https:\/\/app\.1ststep\.ai\/login\.html\?mode=sign-up&amp;returnTo=%2Fapp/g) || []).length,
+  (html.match(/https:\/\/app\.1ststep\.ai\/login\.html\?mode=sign-up&amp;returnTo=%2Fconcierge/g) || []).length,
   3,
-  'resume landing must offer account creation through the existing app Clerk flow',
+  'resume landing must start Job Agent through the existing app Clerk flow',
 );
 assert.equal(
-  (html.match(/>Create free account<\/a/g) || []).length,
+  (html.match(/>Start Job Agent — free<\/a/g) || []).length,
   3,
-  'resume landing must expose account creation in navigation, hero, and closing CTA',
+  'resume landing must expose the one Job Agent start in navigation, hero, and closing CTA',
 );
 assert.match(html, /Start free\. No card required\. You review before anything is sent\./);
 assert.match(html, /<link rel="canonical" href="https:\/\/resume\.1ststep\.ai\/">/);

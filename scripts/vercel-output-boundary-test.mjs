@@ -100,7 +100,7 @@ const expectedStatic = [
   'terms.html',
   'privacy.html',
   'style.css',
-  'home-motion-cb30a966e447.css',
+  'home-motion-a2d4bf9f9d9f.css',
   'home-momentum-90ff283f0fd8.jpg',
   'persistent-concierge.css',
   'product-choice.css',

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-const base = 'http://127.0.0.1:4175';
+const base = new URL(process.env.CONCIERGE_TEST_URL || 'http://127.0.0.1:4175/concierge').origin;
 
 test('subscriber workspace uses light surfaces and opens Needs You', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });

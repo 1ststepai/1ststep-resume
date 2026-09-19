@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const base = 'http://127.0.0.1:4175';
+const base = new URL(process.env.CONCIERGE_TEST_URL || 'http://127.0.0.1:4175/concierge').origin;
 
 // Escape-to-close and the Tab focus trap previously covered only 3 of the 14
 // dialogs. From the other 11 a keyboard user could Tab out into the page hidden

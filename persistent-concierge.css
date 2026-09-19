@@ -702,3 +702,4 @@ html[data-theme="dark"] .vault-authority,html[data-theme="dark"] .needs-continui
 html[data-theme="dark"] .vault-authority p,html[data-theme="dark"] .simple-job-card .job-next{color:#d6dee8}
 html[data-theme="dark"] body.needs-attention #openNeedsYou{background:#451a03;color:#fcd34d}
 
+html[data-theme="dark"] .guided-launch-stage .resume-choice,html[data-theme="dark"] .guided-launch-stage .resume-choice.primary,html[data-theme="dark"] .guided-launch-stage .resume-choice.saved{background:var(--agent-surface);color:var(--agent-ink)}

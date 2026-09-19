@@ -57,6 +57,7 @@ import {
 } from './client/persistent-campaign.js';
 import { buildAdminCostDashboard } from './client/admin-cost-dashboard.js';
 import { buildAdminSystemAlertDashboard } from './client/admin-system-alerts.js';
+import { submitReferral } from './client/referral-attribution.js';
 
 const MISSION_KEY = '1ststep_concierge_mission_v1';
 const DESK_KEY = '1ststep_concierge_desk_v2';
@@ -779,10 +780,8 @@ async function generateDurablePackage(roleId, { automatic = false, retryRequeste
   if (selectedBase && !selectedText) throw new Error('Your selected saved résumé version is unavailable. Open Saved Info and review the selection.');
   const resumeText = selectedText;
   if (resumeText.length < 200) throw new Error('Save a candidate-reviewed master resume first.');
-  const skipSourceDialog = automatic || automaticPreparationAuthorized(sessionCapabilities.jobAgentConsent);
-  const sourceReview = skipSourceDialog
-    ? { accepted: true, baseResumeSha256: selectedBase.sha256, verifiedFactsHash: selectedBase.factsHash, requisitionId: role.requisitionId }
-    : await reviewPackageSources(role, resumeText, selectedBase);
+  if (automatic) return null; // Beta requires a fresh, human-reviewed source attestation for each package.
+  const sourceReview = await reviewPackageSources(role, resumeText, selectedBase);
   if (!sourceReview) return null;
   if (!automaticPreparationAuthorized(sessionCapabilities.jobAgentConsent) && localStorage.getItem(PACKAGE_AI_CONSENT_KEY) !== 'approved') {
     if (automatic) return null;
@@ -834,6 +833,8 @@ async function generateDurablePackage(roleId, { automatic = false, retryRequeste
   return data.run;
 }
 
+// Called only right after the user explicitly reviews and saves a résumé, and
+// only when no base résumé is selected yet, so an existing choice is never replaced.
 async function ensureSelectedBaseResume() {
   if (applicantVault.vault?.selectedBaseResume && selectedVaultResumeText().length >= 200) return true;
   if (!vaultEnabled()) return false;
@@ -842,45 +843,25 @@ async function ensureSelectedBaseResume() {
   if (!document || !version) return false;
   try {
     await vaultAction('select-base-resume', { documentId: document.id, version: version.version, reviewed: true });
-  } catch {
-    return Boolean(applicantVault.vault?.selectedBaseResume && selectedVaultResumeText().length >= 200);
-  }
+  } catch { /* the Saved Info chooser remains available */ }
   return Boolean(applicantVault.vault?.selectedBaseResume && selectedVaultResumeText().length >= 200);
 }
 
+// Auto-preparation was removed from the release candidate: it self-attested the
+// per-package human source review (and selected a base résumé without one) that
+// the R3 security lineage requires. Re-adding it needs an owner decision plus an
+// independent security re-audit.
 let preparingMatches = false;
 async function prepareDiscoveredApplications({ announce = true } = {}) {
   if (preparingMatches || !hasApiSession() || !automaticPreparationAuthorized(sessionCapabilities.jobAgentConsent)
     || missionState.runState === 'Paused') return;
   const candidates = preparationCandidates(deskState.roles, { discoveryRunId: durableRun?.id, limit: dailyGoal.target });
-  if (!candidates.length) return;
-  if (!await ensureSelectedBaseResume()) {
-    if (announce) addMessage('assistant', '<strong>Your matches are saved.</strong><br>Next: save your résumé so I can prepare drafts. You do not need to repeat the search.');
+  if (!candidates.length || !announce) return;
+  if (!applicantVault.vault?.selectedBaseResume || selectedVaultResumeText().length < 200) {
+    addMessage('assistant', '<strong>Your matches are saved.</strong><br>Next: choose which résumé Job Agent should use in Saved Info. You do not need to repeat the search.');
     return;
   }
-  preparingMatches = true;
-  let reviewRoleId = null;
-  try {
-    if (announce) {
-      addMessage('assistant', `<strong>I’m preparing résumé drafts for ${candidates.length} job${candidates.length === 1 ? '' : 's'}.</strong><br>Next: review the first draft. Nothing is sent to an employer.`);
-    }
-    for (const role of candidates) {
-      if (missionState.runState === 'Paused') break;
-      try {
-        await generateDurablePackage(role.id, { automatic: true });
-        if (!reviewRoleId) reviewRoleId = role.id;
-      } catch (error) {
-        if (announce) addMessage('assistant', `<strong>I saved ${escapeHtml(role.title)} but could not prepare the draft yet.</strong><br>${escapeHtml(error.message)} Nothing was sent.`);
-      }
-    }
-    const reviewRole = deskState.roles.find(item => item.id === reviewRoleId);
-    if (reviewRole?.packageRunId && !reviewRole.packageDraft) await refreshDurablePackage(reviewRole.packageRunId, false);
-  } finally {
-    preparingMatches = false;
-  }
-  renderAll();
-  const ready = deskState.roles.find(item => item.packageDraft && (!reviewRoleId || item.id === reviewRoleId));
-  if (ready) openPackageReview(ready);
+  addMessage('assistant', '<strong>Your matches are saved.</strong><br>Next: open a job and choose Prepare application to confirm the résumé and facts for it. Nothing is sent to an employer.<div class="quick"><button data-prompt="Show my jobs">Review my jobs</button></div>');
 }
 
 async function renderDurablePackage(roleId) {
@@ -1385,7 +1366,7 @@ function openAgentAccess() {
   $('agentAccessMessage').textContent = hasJobAgentAccess()
     ? 'Your signed account has controlled-beta Job Agent access.'
     : pilotInviteRequired
-      ? `You’re signed in on ${location.host}, but this account is not on this preview’s invite list${sessionCapabilities.pilotAccess?.admissionHint ? ` (support ${sessionCapabilities.pilotAccess.admissionHint})` : ''}. Your saved-data controls remain available.`
+      ? `You’re signed in, but Job Agent beta access is limited to invited members and this account is not on the invite list${sessionCapabilities.pilotAccess?.admissionHint ? ` (support ${sessionCapabilities.pilotAccess.admissionHint})` : ''}. Your saved-data controls remain available.`
       : sessionCapabilities.pilotAccess?.code === 'JOB_AGENT_PILOT_NOT_CONFIGURED'
         ? 'Controlled-beta admission is temporarily unavailable. No Job Agent work can start.'
         : 'Secure sign-in is not configured for this environment. No code was sent.';
@@ -2547,6 +2528,7 @@ async function discoverMatchingJobs() {
     }).join('');
     const outcome = discoveryNextStep({
       added,
+      partial: isPartial,
       searchLabel: [selectedOpportunityPath()?.label || mission.role, guidedSelection.workMode || mission.workMode, guidedSelection.employmentType || mission.employmentTypes?.[0]].filter(Boolean).join(' · '),
     });
     addMessage('assistant', `<strong>${escapeHtml(outcome.headline)}</strong><br>${escapeHtml(outcome.detail)}${added > 0 && topMatches ? `<div class="job-matches">${topMatches}</div>` : ''}<div class="quick"><button data-prompt="${escapeHtml(outcome.action.prompt)}">${escapeHtml(outcome.action.label)}</button></div>`);
@@ -3154,7 +3136,7 @@ function renderMission() {
   $('progressClosed').textContent = subscriberStats.rejectedClosed;
   $('dailyGoalMessage').textContent = missionActive
     ? `${mission.role} · ${[...(mission.workModes || [mission.workMode]), ...(mission.employmentTypes || [])].filter(Boolean).join(' · ')} · suitable openings only`
-    : 'Suitable jobs and verified outcomes matter more than application volume.';
+    : 'Verified fit and your observed outcomes matter more than application volume.';
   const discoveryLabels = {
     searching: 'Checking job requirements',
     complete: `Search complete · ${missionState.discovery?.matches || 0} new matches`,
@@ -5165,17 +5147,14 @@ async function hydrateDurablePackages() {
   for (const role of pending) await refreshDurablePackage(role.packageRunId, false);
 }
 
+// The code was captured on any app page before sign-in (see referral-attribution.js).
 async function recordPartnerReferralAttribution() {
   if (!hasApiSession()) return;
-  const code = String(new URLSearchParams(window.location.search).get('ref') || '')
-    .trim().toLowerCase().replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '')
-    .replace(/-+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40).replace(/-+$/g, '');
-  if (!code) return;
-  await fetchWithTimeout('/api/partner?action=attribute', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...apiAuthorizationHeaders() },
-    body: JSON.stringify({ code }),
-  }, REQUEST_TIMEOUTS.persistence).catch(() => null);
+  await submitReferral({
+    storage: localStorage,
+    headers: apiAuthorizationHeaders(),
+    fetchImpl: (url, init) => fetchWithTimeout(url, init, REQUEST_TIMEOUTS.persistence),
+  }).catch(() => null);
 }
 
 async function hydrateAccountWorkflow() {

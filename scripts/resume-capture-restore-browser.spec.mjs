@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const origin = 'http://127.0.0.1:4175';
+const origin = new URL(process.env.CONCIERGE_TEST_URL || 'http://127.0.0.1:4175/concierge').origin;
 
 test('Resume Builder restores an acknowledged account-backed capture without the extension copy', async ({ page }) => {
   const captureId = 'browser-restore-capture-1234';

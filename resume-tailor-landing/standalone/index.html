@@ -1041,8 +1041,8 @@ html,body{margin:0;min-height:100%;background:#09090b}
           </svg></button
         ><a
           class="fs-btn fs-btn-primary"
-          href="https://app.1ststep.ai/login.html?mode=sign-up&amp;returnTo=%2Fapp"
-          >Create free account</a
+          href="https://app.1ststep.ai/login.html?mode=sign-up&amp;returnTo=%2Fconcierge"
+          >Start Job Agent — free</a
         >
       </div>
     </div>
@@ -1051,8 +1051,8 @@ html,body{margin:0;min-height:100%;background:#09090b}
     <div class="fs-wrap fs-hero-grid">
       <div class="fs-copy" data-reveal>
         <h1>
-          Tailor your résumé and cover letter.
-          <span>Stay in control.</span>
+          Your Job Agent finds jobs and prepares every application.
+          <span>You stay in control.</span>
         </h1>
         <p class="fs-lede">
           Capture the job once with the Chrome extension. 1stStep prepares
@@ -1061,16 +1061,14 @@ html,body{margin:0;min-height:100%;background:#09090b}
         <div class="fs-actions">
           <a
             class="fs-btn fs-btn-primary"
-            href="https://app.1ststep.ai/login.html?mode=sign-up&amp;returnTo=%2Fapp"
-            >Create free account</a
+            href="https://app.1ststep.ai/login.html?mode=sign-up&amp;returnTo=%2Fconcierge"
+            >Start Job Agent — free</a
           ><a
             class="fs-btn fs-btn-secondary"
             href="https://chromewebstore.google.com/detail/1ststepai-job-agent/gnbjcmennlcbkmakameknfcnioohnjkp"
             target="_blank"
             rel="noopener"
             ><i class="fs-chrome"></i>Get the Chrome extension</a
-          ><a class="fs-text-link" href="https://app.1ststep.ai"
-            >Start an ongoing Job Agent search →</a
           >
         </div>
         <p class="fs-hero-control">
@@ -1311,16 +1309,14 @@ html,body{margin:0;min-height:100%;background:#09090b}
       <div class="fs-actions">
         <a
           class="fs-btn fs-btn-primary"
-          href="https://app.1ststep.ai/login.html?mode=sign-up&amp;returnTo=%2Fapp"
-          >Create free account</a
+          href="https://app.1ststep.ai/login.html?mode=sign-up&amp;returnTo=%2Fconcierge"
+          >Start Job Agent — free</a
         ><a
           class="fs-btn fs-btn-secondary"
           href="https://chromewebstore.google.com/detail/1ststepai-job-agent/gnbjcmennlcbkmakameknfcnioohnjkp"
           target="_blank"
           rel="noopener"
           ><i class="fs-chrome"></i>Get the Chrome extension</a
-        ><a class="fs-btn fs-btn-secondary" href="https://app.1ststep.ai"
-          >Start an ongoing Job Agent search</a
         >
       </div>
       <footer class="fs-foot">
@@ -1400,6 +1396,19 @@ html,body{margin:0;min-height:100%;background:#09090b}
     ><i class="fs-chrome"></i>Get the Chrome extension</a
   >
 </main>
+<script>
+  (function () {
+    var keep = new URLSearchParams(location.search), carry = new URLSearchParams();
+    ["ref", "partner", "affiliate", "utm_source", "utm_medium", "utm_campaign"].forEach(function (k) { if (keep.get(k)) carry.set(k, keep.get(k).slice(0, 80)); });
+    if (!carry.toString()) return;
+    document.querySelectorAll('a[href^="https://app.1ststep.ai"]').forEach(function (a) {
+      var u = new URL(a.href);
+      if (u.pathname === "/login.html") { var r = new URL(u.searchParams.get("returnTo") || "/concierge", u.origin); carry.forEach(function (v, k) { r.searchParams.set(k, v); }); u.searchParams.set("returnTo", r.pathname + r.search); }
+      else carry.forEach(function (v, k) { u.searchParams.set(k, v); });
+      a.href = u.toString();
+    });
+  })();
+</script>
 <script>
   (function () {
     var seo = {

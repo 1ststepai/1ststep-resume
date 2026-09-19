@@ -50,13 +50,21 @@ export function jobAgentStatus({ run, discovery = {}, paused = false, needsYou =
   return result('Ready — not running', 'Tell the Job Agent who you are, then start a search. It will ask only when it needs you.');
 }
 
-export function discoveryNextStep({ added = 0, searchLabel = '' } = {}) {
+export function discoveryNextStep({ added = 0, searchLabel = '', partial = false } = {}) {
   const where = String(searchLabel || '').replace(/\s+/g, ' ').trim();
+  const incomplete = 'This search was incomplete: some job sources could not be checked.';
   if (added > 0) {
     return {
       headline: added === 1 ? 'I found 1 job for you.' : `I found ${added} jobs for you.`,
-      detail: 'Next: I’ll prepare résumé drafts, then you review the first one. Nothing was sent to an employer.',
+      detail: `${partial ? `${incomplete} ` : ''}Next: open a job and confirm the résumé to use, then I’ll prepare a draft for your review. Nothing was sent to an employer.`,
       action: { label: 'Review my jobs', prompt: 'Show my jobs' },
+    };
+  }
+  if (partial) {
+    return {
+      headline: 'Search incomplete.',
+      detail: `${incomplete} No match yet does not mean none exist. Next: search again.`,
+      action: { label: 'Search again', prompt: 'Retry job discovery' },
     };
   }
   return {

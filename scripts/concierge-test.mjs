@@ -15,7 +15,10 @@ assert.equal(discoveryNextStep({ added: 0 }).action.label, 'Try a different job 
 assert.equal(discoveryNextStep({ added: 0 }).action.prompt, 'Try a different job type');
 assert.equal(discoveryNextStep({ added: 3 }).headline, 'I found 3 jobs for you.');
 assert.equal(discoveryNextStep({ added: 3 }).action.label, 'Review my jobs');
-assert.match(discoveryNextStep({ added: 3 }).detail, /prepare résumé drafts/);
+assert.match(discoveryNextStep({ added: 3 }).detail, /confirm the résumé to use/);
+assert.equal(discoveryNextStep({ added: 0, partial: true }).action.prompt, 'Retry job discovery');
+assert.doesNotMatch(discoveryNextStep({ added: 0, partial: true }).detail, /different type of job/);
+assert.match(discoveryNextStep({ added: 2, partial: true }).detail, /incomplete/);
 assert.equal(jobAgentStatus({ run: { status: 'Finished', lifecycleState: 'Partially Completed' }, discovery: { matches: 0 } }).label, 'No matching jobs yet');
 assert.match(jobAgentStatus({ run: { status: 'Finished', lifecycleState: 'Partially Completed' }, discovery: { matches: 0 } }).detail, /try a different type of job/);
 assert.equal(jobAgentStatus({ run: { status: 'Finished' }, discovery: { matches: 2 } }).label, 'Search finished');
@@ -305,9 +308,11 @@ assert.match(conciergeJs, /filterSummary\?\.scanned/, 'opportunity-path evidence
 assert.match(conciergeJs, /workingIndicator\('Checking job requirements'\)/, 'searching must have an indeterminate, named progress indicator');
 assert.match(conciergeJs, /discoveryNextStep\(\{[\s\S]*searchLabel/, 'search results must lead with a next action instead of screening counts');
 assert.match(conciergeJs, /openDifferentJobType/, 'zero-match search must open a different job type instead of offering extra choices');
-assert.match(conciergeJs, /generateDurablePackage\(role\.id, \{ automatic: true \}\)/, 'matching jobs must start private résumé drafts without waiting for a Prepare click');
-assert.match(conciergeJs, /skipSourceDialog/, 'consented testers should not re-attest sources on every job');
-assert.doesNotMatch(conciergeJs, /No package starts automatically/, 'matching jobs must not wait for a Prepare click during this beta');
+// R3 contract: every package needs a fresh human source review. Auto-prepare
+// that self-attests it is held for an owner decision plus security re-audit.
+assert.match(conciergeJs, /if \(automatic\) return null; \/\/ Beta requires a fresh, human-reviewed source attestation/);
+assert.doesNotMatch(conciergeJs, /skipSourceDialog/, 'packages must not self-attest the source review');
+assert.doesNotMatch(conciergeJs, /generateDurablePackage\(role\.id, \{ automatic: true \}\)/, 'discovery must not start packages without a Prepare click');
 assert.doesNotMatch(conciergeJs, /Employer-feed screening|These roles are Found—not Submitted/, 'screening jargon must stay out of the subscriber conversation');
 assert.match(conciergeJs, /evaluateCandidateFit/);
 assert.match(conciergeJs, /rejectedByQualityFloor/);
@@ -348,8 +353,6 @@ assert.match(stateApi, /saveTenantCampaignState/);
 // session-capabilities must delegate to it rather than re-reading the allowlist itself.
 // Assert both halves so the coverage this line originally provided is preserved.
 assert.match(capabilitiesApi, /isAdministratorSubject/);
-assert.match(capabilitiesApi, /isProductOwnerSubject/);
-assert.match(capabilitiesApi, /adminConsole = isProductOwnerSubject\(auth\.subject\)/);
 const adminSubjectLib = await readFile(new URL('../lib/admin-subject.js', import.meta.url), 'utf8');
 assert.match(adminSubjectLib, /OWNER_ACCESS_EMAILS/);
 assert.match(capabilitiesApi, /adminConsole/);

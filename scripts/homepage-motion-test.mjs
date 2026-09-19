@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const source = readFileSync(new URL('../home-motion-e322125499c6.js', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const css = readFileSync(new URL('../home-motion-cb30a966e447.css', import.meta.url), 'utf8');
+const css = readFileSync(new URL('../home-motion-a2d4bf9f9d9f.css', import.meta.url), 'utf8');
 const icon = readFileSync(new URL('../1ststep-ai-icon.png', import.meta.url));
 function element() {
   const values = new Set();
@@ -92,7 +92,7 @@ assert.equal(journeyCards[1].attributes['aria-hidden'], 'false');
 assert(statSync(new URL('../home-momentum-90ff283f0fd8.jpg', import.meta.url)).size < 200_000, 'Hero asset stays under 200 KB');
 const buildSource = readFileSync(new URL('../build-public-web.mjs', import.meta.url), 'utf8');
 const vercelConfig = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
-const immutableAssets = ['home-motion-cb30a966e447.css', 'home-momentum-90ff283f0fd8.jpg', 'home-motion-e322125499c6.js'];
+const immutableAssets = ['home-motion-a2d4bf9f9d9f.css', 'home-momentum-90ff283f0fd8.jpg', 'home-motion-e322125499c6.js'];
 for (const asset of immutableAssets) {
   assert.match(buildSource, new RegExp(`'${asset.replaceAll('.', '\\.')}'`), `${asset} must be published`);
   const cacheRule = vercelConfig.headers.find(rule => rule.source === `/${asset}`);
@@ -103,7 +103,7 @@ for (const asset of immutableAssets) {
 }
 assert.match(buildSource, /'site-theme\.js'/);
 assert.match(html, /<link rel="preload" as="image" href="\/home-momentum-90ff283f0fd8\.jpg" type="image\/jpeg" fetchpriority="high">/);
-assert.match(html, /<link rel="stylesheet" href="\/home-motion-cb30a966e447\.css">/);
+assert.match(html, /<link rel="stylesheet" href="\/home-motion-a2d4bf9f9d9f\.css">/);
 assert.match(html, /<script src="\/home-motion-e322125499c6\.js" defer><\/script>/);
 assert.match(html, /<script src="\/home-funnel\.js" defer><\/script>/);
 const rootCsp = vercelConfig.headers.find(rule => rule.source === '/')?.headers.find(header => header.key === 'Content-Security-Policy')?.value;

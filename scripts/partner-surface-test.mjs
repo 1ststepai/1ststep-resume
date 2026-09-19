@@ -37,7 +37,8 @@ assert.match(styles, /@media\s*\(max-width:/);
 assert.match(build, /'partner\.html'/);
 assert.match(vercel, /"source": "\/partner"/);
 assert.match(vercel, /api\/partner\.js/);
-assert.match(concierge, /\/api\/partner\?action=attribute/);
+assert.match(concierge, /submitReferral\(/);
+assert.match(await readFile(new URL('../client/referral-attribution.js', import.meta.url), 'utf8'), /\/api\/partner\?action=attribute/);
 assert.match(concierge, /recordPartnerReferralAttribution\(\)/);
 
 console.log('Partner surface tests passed: explicit role paths, honest states, isolated browser behavior, and mobile-safe layout.');

@@ -53,11 +53,11 @@ test('approved onboarding saves every answer, survives reloads, and exposes ever
   await expect(page.locator('#launchLocation')).toHaveValue('Newark, NJ');
 
   await page.locator('#guidedLaunchNext').click();
-  await page.locator('#guidedMoreFilters summary').click();
+  await page.locator('#guidedMoreFilters > summary').click();
   await page.locator('[data-launch-choice="employmentType"][data-value="Contract"]').click();
   await expect.poll(() => account.snapshot().workspace.onboardingDraft?.employmentType).toBe('Contract');
   await reopenAtSavedStep(page);
-  await page.locator('#guidedMoreFilters summary').click();
+  await page.locator('#guidedMoreFilters > summary').click();
   await expect(page.locator('[data-launch-choice="employmentType"][data-value="Contract"]')).toHaveAttribute('aria-checked', 'true');
 
   await page.locator('[data-launch-choice="salary"][data-value="100000"]').click();
@@ -65,7 +65,7 @@ test('approved onboarding saves every answer, survives reloads, and exposes ever
   await page.locator('#jobRequest').fill('Exclude defense contractors');
   await expect.poll(() => account.snapshot().workspace.onboardingDraft).toMatchObject({ salary: 100000, exclusions: ['defense contractors'] });
   await reopenAtSavedStep(page);
-  await page.locator('#guidedMoreFilters summary').click();
+  await page.locator('#guidedMoreFilters > summary').click();
   await page.locator('[data-guided-stage="salary"] .fine-tune summary').click();
   await expect(page.locator('#jobRequest')).toHaveValue('defense contractors');
   await expect(page.locator('#neverIncludeList')).toContainText('Exclude defense contractors');
@@ -130,7 +130,9 @@ test('saving a resume closes setup and continues with a resume-based job path', 
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await page.locator('#openGuidedLaunch').click();
   await expect(page.locator('[data-guided-stage="resume"]')).toBeVisible();
-  await page.locator('#guidedLaunchNext').click();
+  // Action-first: Continue stays disabled until a résumé is chosen.
+  await expect(page.locator('#guidedLaunchNext')).toBeDisabled();
+  await page.locator('#quickUploadResume').click();
   await expect(page.locator('#resumeOverlay')).toHaveClass(/open/);
   await page.locator('#resumeEditor').fill(`Senior Buyer | Supplier Negotiation, Materials\n${'Procurement, sourcing, and vendor negotiation professional. '.repeat(20)}`);
   await page.locator('#saveResume').click();
@@ -164,4 +166,22 @@ test('resume generation cannot silently drop confirmed education or skills', asy
   await expect(page.locator('#resumeEditor')).toHaveValue(/Data & reporting/);
   await expect(page.locator('#resumeFactReview')).toContainText('Restore required');
   await expect(page.locator('#resumeMeta')).toContainText('omitted confirmed facts');
+});
+
+test('a partner referral from an anonymous homepage visit is attributed once after sign-in', async ({ page }) => {
+  const origin = new URL(baseUrl).origin;
+  await page.goto(`${origin}/?ref=Coach_Sam&utm_source=partner`, { waitUntil: 'domcontentloaded' });
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('1ststep_referral_attribution') || '{}').referralCode)).toBe('coach-sam');
+  await page.goto(`${origin}/?ref=someone-else`, { waitUntil: 'domcontentloaded' });
+  await routeApprovedAccount(page);
+  const attributions = [];
+  await page.route('**/api/partner?action=attribute', route => {
+    attributions.push(route.request().postDataJSON());
+    return route.fulfill({ json: { recorded: true, code: 'coach-sam', commissionEligible: false } });
+  });
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await expect.poll(() => attributions.length).toBe(1);
+  expect(attributions[0]).toEqual({ code: 'coach-sam' });
+  await page.reload({ waitUntil: 'networkidle' });
+  expect(attributions.length).toBe(1);
 });
